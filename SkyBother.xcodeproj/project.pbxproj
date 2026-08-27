@@ -1,0 +1,425 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A1B2C3D40000000000000028 /* BuiltInCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000004 /* BuiltInCatalog.swift */; };
+		A1B2C3D40000000000000029 /* Angles.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000006 /* Angles.swift */; };
+		A1B2C3D4000000000000002A /* Ephemeris.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000007 /* Ephemeris.swift */; };
+		A1B2C3D4000000000000002B /* JulianDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000008 /* JulianDate.swift */; };
+		A1B2C3D4000000000000002C /* Moon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000009 /* Moon.swift */; };
+		A1B2C3D4000000000000002D /* SkyCoordinates.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000000A /* SkyCoordinates.swift */; };
+		A1B2C3D4000000000000002E /* Sun.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000000B /* Sun.swift */; };
+		A1B2C3D4000000000000002F /* TimeWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000000C /* TimeWindow.swift */; };
+		A1B2C3D40000000000000030 /* Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000000E /* Preferences.swift */; };
+		A1B2C3D40000000000000031 /* Rig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000000F /* Rig.swift */; };
+		A1B2C3D40000000000000032 /* Site.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000010 /* Site.swift */; };
+		A1B2C3D40000000000000033 /* Target.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000011 /* Target.swift */; };
+		A1B2C3D40000000000000034 /* NightPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000013 /* NightPlan.swift */; };
+		A1B2C3D40000000000000035 /* Planner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000014 /* Planner.swift */; };
+		A1B2C3D40000000000000036 /* RigFit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000015 /* RigFit.swift */; };
+		A1B2C3D40000000000000037 /* SkyQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000016 /* SkyQuality.swift */; };
+		A1B2C3D40000000000000038 /* SkyBotherApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000017 /* SkyBotherApp.swift */; };
+		A1B2C3D40000000000000039 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000019 /* Formatting.swift */; };
+		A1B2C3D4000000000000003A /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000001A /* Persistence.swift */; };
+		A1B2C3D4000000000000003B /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000001C /* AppState.swift */; };
+		A1B2C3D4000000000000003C /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000001D /* Components.swift */; };
+		A1B2C3D4000000000000003D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000001E /* ContentView.swift */; };
+		A1B2C3D4000000000000003E /* NightDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000001F /* NightDetailView.swift */; };
+		A1B2C3D4000000000000003F /* NightListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000020 /* NightListView.swift */; };
+		A1B2C3D40000000000000040 /* NightTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000021 /* NightTimelineView.swift */; };
+		A1B2C3D40000000000000041 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000022 /* SettingsView.swift */; };
+		A1B2C3D40000000000000042 /* TargetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000023 /* TargetDetailView.swift */; };
+		A1B2C3D40000000000000043 /* GeocodingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000025 /* GeocodingClient.swift */; };
+		A1B2C3D40000000000000044 /* OpenMeteoClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000026 /* OpenMeteoClient.swift */; };
+		A1B2C3D40000000000000045 /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000027 /* WeatherModels.swift */; };
+		A1B2C3D40000000000000046 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A1B2C3D40000000000000047 /* SkyBother.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SkyBother.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1B2C3D40000000000000004 /* BuiltInCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuiltInCatalog.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000006 /* Angles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Angles.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000007 /* Ephemeris.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ephemeris.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000008 /* JulianDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JulianDate.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000009 /* Moon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Moon.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000000A /* SkyCoordinates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyCoordinates.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000000B /* Sun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sun.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000000C /* TimeWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeWindow.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000000E /* Preferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Preferences.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000000F /* Rig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rig.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000010 /* Site.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Site.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000011 /* Target.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Target.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000013 /* NightPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightPlan.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000014 /* Planner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planner.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000015 /* RigFit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RigFit.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000016 /* SkyQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyQuality.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000017 /* SkyBotherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyBotherApp.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000019 /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000001A /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000001C /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000001D /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000001E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000001F /* NightDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightDetailView.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000020 /* NightListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightListView.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000021 /* NightTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightTimelineView.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000022 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000023 /* TargetDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetDetailView.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000025 /* GeocodingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeocodingClient.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000026 /* OpenMeteoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenMeteoClient.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000027 /* WeatherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModels.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000002 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A1B2C3D4000000000000004D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A1B2C3D40000000000000049 = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D40000000000000001 /* SkyBother */,
+				A1B2C3D40000000000000048 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A1B2C3D40000000000000048 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D40000000000000047 /* SkyBother.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A1B2C3D40000000000000001 /* SkyBother */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D40000000000000002 /* Assets.xcassets */,
+				A1B2C3D40000000000000003 /* Catalog */,
+				A1B2C3D40000000000000005 /* Core */,
+				A1B2C3D4000000000000000D /* Model */,
+				A1B2C3D40000000000000012 /* Planner */,
+				A1B2C3D40000000000000017 /* SkyBotherApp.swift */,
+				A1B2C3D40000000000000018 /* Support */,
+				A1B2C3D4000000000000001B /* UI */,
+				A1B2C3D40000000000000024 /* Weather */,
+			);
+			path = SkyBother;
+			sourceTree = "<group>";
+		};
+		A1B2C3D40000000000000003 /* Catalog */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D40000000000000004 /* BuiltInCatalog.swift */,
+			);
+			path = Catalog;
+			sourceTree = "<group>";
+		};
+		A1B2C3D40000000000000005 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D40000000000000006 /* Angles.swift */,
+				A1B2C3D40000000000000007 /* Ephemeris.swift */,
+				A1B2C3D40000000000000008 /* JulianDate.swift */,
+				A1B2C3D40000000000000009 /* Moon.swift */,
+				A1B2C3D4000000000000000A /* SkyCoordinates.swift */,
+				A1B2C3D4000000000000000B /* Sun.swift */,
+				A1B2C3D4000000000000000C /* TimeWindow.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4000000000000000D /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4000000000000000E /* Preferences.swift */,
+				A1B2C3D4000000000000000F /* Rig.swift */,
+				A1B2C3D40000000000000010 /* Site.swift */,
+				A1B2C3D40000000000000011 /* Target.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		A1B2C3D40000000000000012 /* Planner */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D40000000000000013 /* NightPlan.swift */,
+				A1B2C3D40000000000000014 /* Planner.swift */,
+				A1B2C3D40000000000000015 /* RigFit.swift */,
+				A1B2C3D40000000000000016 /* SkyQuality.swift */,
+			);
+			path = Planner;
+			sourceTree = "<group>";
+		};
+		A1B2C3D40000000000000018 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D40000000000000019 /* Formatting.swift */,
+				A1B2C3D4000000000000001A /* Persistence.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4000000000000001B /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4000000000000001C /* AppState.swift */,
+				A1B2C3D4000000000000001D /* Components.swift */,
+				A1B2C3D4000000000000001E /* ContentView.swift */,
+				A1B2C3D4000000000000001F /* NightDetailView.swift */,
+				A1B2C3D40000000000000020 /* NightListView.swift */,
+				A1B2C3D40000000000000021 /* NightTimelineView.swift */,
+				A1B2C3D40000000000000022 /* SettingsView.swift */,
+				A1B2C3D40000000000000023 /* TargetDetailView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		A1B2C3D40000000000000024 /* Weather */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D40000000000000025 /* GeocodingClient.swift */,
+				A1B2C3D40000000000000026 /* OpenMeteoClient.swift */,
+				A1B2C3D40000000000000027 /* WeatherModels.swift */,
+			);
+			path = Weather;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A1B2C3D4000000000000004A /* SkyBother */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1B2C3D40000000000000050 /* Build configuration list for PBXNativeTarget "SkyBother" */;
+			buildPhases = (
+				A1B2C3D4000000000000004C /* Sources */,
+				A1B2C3D4000000000000004D /* Frameworks */,
+				A1B2C3D4000000000000004E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SkyBother;
+			productName = SkyBother;
+			productReference = A1B2C3D40000000000000047 /* SkyBother.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A1B2C3D4000000000000004B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A1B2C3D4000000000000004A = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A1B2C3D4000000000000004F /* Build configuration list for PBXProject "SkyBother" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A1B2C3D40000000000000049;
+			productRefGroup = A1B2C3D40000000000000048 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1B2C3D4000000000000004A /* SkyBother */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1B2C3D4000000000000004E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B2C3D40000000000000046 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A1B2C3D4000000000000004C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B2C3D40000000000000028 /* BuiltInCatalog.swift in Sources */,
+				A1B2C3D40000000000000029 /* Angles.swift in Sources */,
+				A1B2C3D4000000000000002A /* Ephemeris.swift in Sources */,
+				A1B2C3D4000000000000002B /* JulianDate.swift in Sources */,
+				A1B2C3D4000000000000002C /* Moon.swift in Sources */,
+				A1B2C3D4000000000000002D /* SkyCoordinates.swift in Sources */,
+				A1B2C3D4000000000000002E /* Sun.swift in Sources */,
+				A1B2C3D4000000000000002F /* TimeWindow.swift in Sources */,
+				A1B2C3D40000000000000030 /* Preferences.swift in Sources */,
+				A1B2C3D40000000000000031 /* Rig.swift in Sources */,
+				A1B2C3D40000000000000032 /* Site.swift in Sources */,
+				A1B2C3D40000000000000033 /* Target.swift in Sources */,
+				A1B2C3D40000000000000034 /* NightPlan.swift in Sources */,
+				A1B2C3D40000000000000035 /* Planner.swift in Sources */,
+				A1B2C3D40000000000000036 /* RigFit.swift in Sources */,
+				A1B2C3D40000000000000037 /* SkyQuality.swift in Sources */,
+				A1B2C3D40000000000000038 /* SkyBotherApp.swift in Sources */,
+				A1B2C3D40000000000000039 /* Formatting.swift in Sources */,
+				A1B2C3D4000000000000003A /* Persistence.swift in Sources */,
+				A1B2C3D4000000000000003B /* AppState.swift in Sources */,
+				A1B2C3D4000000000000003C /* Components.swift in Sources */,
+				A1B2C3D4000000000000003D /* ContentView.swift in Sources */,
+				A1B2C3D4000000000000003E /* NightDetailView.swift in Sources */,
+				A1B2C3D4000000000000003F /* NightListView.swift in Sources */,
+				A1B2C3D40000000000000040 /* NightTimelineView.swift in Sources */,
+				A1B2C3D40000000000000041 /* SettingsView.swift in Sources */,
+				A1B2C3D40000000000000042 /* TargetDetailView.swift in Sources */,
+				A1B2C3D40000000000000043 /* GeocodingClient.swift in Sources */,
+				A1B2C3D40000000000000044 /* OpenMeteoClient.swift in Sources */,
+				A1B2C3D40000000000000045 /* WeatherModels.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A1B2C3D40000000000000051 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A1B2C3D40000000000000052 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		A1B2C3D40000000000000053 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Sky Bother?";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skybother.SkyBother;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A1B2C3D40000000000000054 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Sky Bother?";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skybother.SkyBother;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A1B2C3D4000000000000004F /* Build configuration list for PBXProject "SkyBother" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B2C3D40000000000000051 /* Debug */,
+				A1B2C3D40000000000000052 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1B2C3D40000000000000050 /* Build configuration list for PBXNativeTarget "SkyBother" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B2C3D40000000000000053 /* Debug */,
+				A1B2C3D40000000000000054 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A1B2C3D4000000000000004B /* Project object */;
+}
