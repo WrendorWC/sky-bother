@@ -17,11 +17,16 @@ enum Palette {
     static let marginal = Color(red: 0.95, green: 0.70, blue: 0.24)
     static let skip = Color(red: 0.85, green: 0.36, blue: 0.34)
 
-    /// The two verdict tiers `go`/`worthwhile`/`marginal`/`skip` don't cover —
-    /// `exceptional` sits above them all as a deliberately rare, premium
-    /// highlight; `good` fills the gap between "excellent" and "marginal".
-    static let exceptional = Color(red: 1.0, green: 0.82, blue: 0.35)
-    static let good = Color(red: 0.30, green: 0.78, blue: 0.72)
+    /// The two verdict tiers `go`/`worthwhile`/`marginal`/`skip` don't cover.
+    /// Both sit on the same red→green ladder as the other three rather than
+    /// introducing an unrelated hue — gold or teal read as "caution" or
+    /// "neutral" out of context, breaking the red-is-bad/green-is-good
+    /// instinct the whole scheme depends on. `good` is the yellow-green step
+    /// between `marginal` (amber) and `go` (green); `exceptional` is a
+    /// brighter, more saturated green than `go` — still unmistakably "great",
+    /// just further along the same ladder — with a glow to make it pop.
+    static let good = Color(red: 0.70, green: 0.80, blue: 0.28)
+    static let exceptional = Color(red: 0.20, green: 0.92, blue: 0.55)
 
     // MARK: - App chrome
 

@@ -28,7 +28,7 @@ enum HelpContent {
     static let topics: [HelpTopic] = [
         HelpTopic(title: "Scores & verdicts", systemImage: "target", sections: [
             HelpSection(body: "Every night and every target gets a 0–100 score, shown in the coloured circle. It is a weighted geometric mean of several 0–1 factors, not a plain average — geometric because a single near-zero factor (no clear sky, no time above the horizon) should sink the score, not get smoothed away by the others being fine."),
-            HelpSection(heading: "The coloured tag", body: "The score is bucketed into five verdicts, shown as the pill next to the date or target name. Exceptional gets a deliberate gold glow — it's meant to be rare and to stand out from an ordinary good night:", swatches: [
+            HelpSection(heading: "The coloured tag", body: "The score is bucketed into five verdicts, shown as the pill next to the date or target name — all five sit on one red-to-green ladder, so colour always means the same thing: redder is worse, greener is better. Exceptional gets a brighter, more saturated green plus a glow, deliberately rare so it stands out from an ordinary good night:", swatches: [
                 HelpSwatch(color: Palette.exceptional, label: "90 and up — Exceptional"),
                 HelpSwatch(color: Palette.go, label: "75–89 — Excellent"),
                 HelpSwatch(color: Palette.good, label: "60–74 — Good"),
