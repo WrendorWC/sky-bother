@@ -11,6 +11,14 @@ import AppKit
 /// — but `NSApp` isn't safe to touch inside `App.init()` (it traps), so this
 /// has to happen from an actual AppKit lifecycle callback.
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    // Toolbars/title bars materialize with whatever appearance is active at
+    // window-creation time and don't always repaint themselves if it changes
+    // later — willFinishLaunching runs before SwiftUI creates the first
+    // window, so the appearance is already set by the time that happens.
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        NSApp.appearance = NSAppearance(named: .darkAqua)
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.appearance = NSAppearance(named: .darkAqua)
     }

@@ -35,6 +35,7 @@ struct ContentView: View {
             }
             .navigationTitle("Sky Bother?")
             .toolbarTitleDisplayMode(.inline)
+            .forcedToolbarBackground(Palette.spaceTop)
             .toolbar {
                 ToolbarItem {
                     Button {

@@ -128,6 +128,7 @@ struct NightDetailView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(isSelected ? Palette.accent.opacity(0.18) : Color.clear)
+        .animation(.easeInOut(duration: 0.18), value: isSelected)
         .contentShape(Rectangle())
         .onTapGesture { state.selectedTargetID = slot.targetPlan.id }
     }
@@ -366,10 +367,16 @@ struct TargetRowView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
+
+            TargetThumbnail(designation: targetPlan.target.designation)
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.panelBorder))
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
         .background(isSelected ? Palette.accent.opacity(0.18) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
+        .animation(.easeInOut(duration: 0.18), value: isSelected)
     }
 
     private var summary: String {

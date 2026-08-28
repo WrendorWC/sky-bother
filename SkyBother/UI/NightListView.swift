@@ -109,6 +109,7 @@ private struct NightRow: View {
                 Image(systemName: "sparkle")
                     .font(.caption)
                     .foregroundStyle(Palette.exceptional)
+                    .transition(.scale.combined(with: .opacity))
             }
         }
         .padding(.vertical, 4)
@@ -118,7 +119,9 @@ private struct NightRow: View {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Palette.exceptional.opacity(0.14))
                     .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.exceptional.opacity(0.45)))
+                    .transition(.opacity)
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: isExceptional)
     }
 }

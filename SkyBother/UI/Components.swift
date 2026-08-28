@@ -94,6 +94,22 @@ extension View {
         background(Palette.panel, in: RoundedRectangle(cornerRadius: cornerRadius))
             .overlay(RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(Palette.panelBorder))
     }
+
+    /// `.toolbarBackground(_:for:)` alone renders the default translucent
+    /// grey toolbar material on top of the colour rather than replacing it —
+    /// `.toolbarBackgroundVisibility(.visible, ...)` is what actually forces
+    /// it, but that call only exists on macOS 15+. This applies it on the
+    /// deployment targets that have it and falls back gracefully otherwise.
+    @ViewBuilder
+    func forcedToolbarBackground(_ color: Color) -> some View {
+        if #available(macOS 15.0, *) {
+            self.toolbarBackground(color, for: .windowToolbar)
+                .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
+        } else {
+            self.toolbarBackground(color, for: .windowToolbar)
+        }
+    }
+
 }
 
 /// Maps dates onto horizontal positions for every chart in the app, so the night
@@ -169,6 +185,7 @@ struct VerdictTag: View {
             .overlay(Capsule().strokeBorder(color.opacity(isExceptional ? 0.7 : 0)))
             .foregroundStyle(color)
             .shadow(color: isExceptional ? color.opacity(0.5) : .clear, radius: isExceptional ? 6 : 0)
+            .animation(.easeInOut(duration: 0.25), value: verdict)
     }
 }
 
@@ -204,6 +221,7 @@ struct FactorBar: View {
                     Capsule()
                         .fill(color)
                         .frame(width: max(2, geometry.size.width * factor.value))
+                        .animation(.easeOut(duration: 0.45), value: factor.value)
                 }
             }
             .frame(height: 8)
