@@ -145,7 +145,7 @@ private struct EquipmentSettings: View {
 
     var body: some View {
         Form {
-            Section("Preset") {
+            Section("Presets") {
                 Menu("Load a preset") {
                     ForEach(Rig.presets) { preset in
                         Button(preset.name) { state.applyPreset(preset) }
@@ -154,6 +154,42 @@ private struct EquipmentSettings: View {
                 Text("Presets use published optical specs and the standard dimensions of each model's sensor. Check them against your own unit — everything below is editable.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            Section("Your rigs") {
+                if state.settings.savedRigs.isEmpty {
+                    Text("Enter your numbers below, then save the rig here to switch back to it later. This is how you add an instrument that has no built-in preset.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                ForEach(state.settings.savedRigs) { saved in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(saved.name)
+                            Text(saved.opticalSummary)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if saved.id == state.rig.id {
+                            Text("in use")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Button("Use") { state.useSavedRig(saved) }
+                        }
+                        Button {
+                            state.removeRig(saved)
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.borderless)
+                        .help("Remove this saved rig")
+                    }
+                }
+                Button(state.isCurrentRigSaved ? "Update saved rig" : "Save this rig") {
+                    state.saveCurrentRig()
+                }
             }
 
             Section("Optics") {

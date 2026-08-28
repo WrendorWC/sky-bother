@@ -12,7 +12,7 @@ struct StoredSettings: Codable, Hashable, Sendable {
                                         rig: .seestarS50,
                                         preferences: .default,
                                         savedSites: [.placeholder],
-                                        savedRigs: Rig.presets)
+                                        savedRigs: [])
 }
 
 /// A small JSON file in Application Support. No database, no schema migration,
@@ -35,7 +35,11 @@ struct SettingsStore: Sendable {
         guard let fileURL, let data = try? Data(contentsOf: fileURL) else { return .initial }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        guard let settings = try? decoder.decode(StoredSettings.self, from: data) else { return .initial }
+        guard var settings = try? decoder.decode(StoredSettings.self, from: data) else { return .initial }
+        // Early versions seeded savedRigs with the built-in presets, which then
+        // showed up as if the user had saved them. Drop any entry that is just a
+        // preset under its own name; a genuinely custom rig differs somewhere.
+        settings.savedRigs.removeAll { $0.matchesABuiltInPreset }
         return settings
     }
 

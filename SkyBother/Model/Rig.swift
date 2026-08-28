@@ -81,6 +81,24 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                apertureMillimeters, focalRatio, focalLengthMillimeters, arcsecondsPerPixel)
     }
 
+    /// True when two rigs describe the same instrument, ignoring id and name.
+    /// Used to tell a genuinely custom rig apart from a copy of a built-in one.
+    func hasSameSpecs(as other: Rig) -> Bool {
+        apertureMillimeters == other.apertureMillimeters
+            && focalLengthMillimeters == other.focalLengthMillimeters
+            && sensorWidthMillimeters == other.sensorWidthMillimeters
+            && sensorHeightMillimeters == other.sensorHeightMillimeters
+            && pixelSizeMicrons == other.pixelSizeMicrons
+            && mountType == other.mountType
+            && hasNarrowbandFilter == other.hasNarrowbandFilter
+            && supportsMosaic == other.supportsMosaic
+    }
+
+    /// True when this is just one of the shipped presets under another name.
+    var matchesABuiltInPreset: Bool {
+        Rig.presets.contains { $0.hasSameSpecs(as: self) && $0.name == name }
+    }
+
     // MARK: - Presets
     //
     // Manufacturer figures for the optics; sensor dimensions are the standard

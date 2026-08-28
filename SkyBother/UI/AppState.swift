@@ -162,6 +162,30 @@ final class AppState: ObservableObject {
         Task { await rebuildPlans() }
     }
 
+    /// Keeps the current rig in the saved list so you can switch between several
+    /// instruments without re-typing their numbers.
+    func saveCurrentRig() {
+        if let index = settings.savedRigs.firstIndex(where: { $0.id == rig.id }) {
+            settings.savedRigs[index] = rig
+        } else {
+            settings.savedRigs.append(rig)
+        }
+    }
+
+    func removeRig(_ target: Rig) {
+        settings.savedRigs.removeAll { $0.id == target.id }
+    }
+
+    /// Switches to a saved rig, keeping its identity so edits update in place.
+    func useSavedRig(_ saved: Rig) {
+        settings.rig = saved
+        Task { await rebuildPlans() }
+    }
+
+    var isCurrentRigSaved: Bool {
+        settings.savedRigs.contains { $0.id == rig.id }
+    }
+
     // MARK: - Persistence
 
     private func scheduleSave() {
