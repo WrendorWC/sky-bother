@@ -85,14 +85,27 @@ struct NightTimelineView: View {
         let stepX = size.width / CGFloat(samples.count - 1)
         let maximumDepth = size.height * 0.68
 
-        var path = Path()
-        path.move(to: CGPoint(x: 0, y: 0))
-        for (index, sample) in samples.enumerated() {
+        // The chart samples every few minutes, but the forecast itself only
+        // actually changes at hourly boundaries — everything between two
+        // hours is already a straight line, so a smooth curve through every
+        // dense sample barely rounds anything (neighbouring samples are
+        // colinear). Threading it through roughly one point per hour, where
+        // the real direction changes are, is what actually rounds the
+        // zig-zag instead of leaving it looking the same at a glance.
+        let intervalMinutes = max(1.0, samples[1].date.timeIntervalSince(samples[0].date) / 60)
+        let samplesPerHour = max(1, Int((60 / intervalMinutes).rounded()))
+        var hourIndices = Array(stride(from: 0, to: samples.count, by: samplesPerHour))
+        if hourIndices.last != samples.count - 1 { hourIndices.append(samples.count - 1) }
+
+        let points = hourIndices.map { index -> CGPoint in
             let x = CGFloat(index) * stepX
-            let depth = CGFloat(clamp(sample.cloudCover / 100, 0, 1)) * maximumDepth
-            path.addLine(to: CGPoint(x: x, y: depth))
+            let depth = CGFloat(clamp(samples[index].cloudCover / 100, 0, 1)) * maximumDepth
+            return CGPoint(x: x, y: depth)
         }
+
+        var path = Path.smoothLine(through: points)
         path.addLine(to: CGPoint(x: size.width, y: 0))
+        path.addLine(to: CGPoint(x: 0, y: 0))
         path.closeSubpath()
 
         context.fill(path, with: .linearGradient(
@@ -101,14 +114,7 @@ struct NightTimelineView: View {
             endPoint: CGPoint(x: 0, y: maximumDepth)))
 
         // A crisp lower edge makes the cloud line readable against dark sky.
-        var edge = Path()
-        for (index, sample) in samples.enumerated() {
-            let x = CGFloat(index) * stepX
-            let depth = CGFloat(clamp(sample.cloudCover / 100, 0, 1)) * maximumDepth
-            if index == 0 { edge.move(to: CGPoint(x: x, y: depth)) }
-            else { edge.addLine(to: CGPoint(x: x, y: depth)) }
-        }
-        context.stroke(edge, with: .color(Palette.cloud.opacity(0.85)), lineWidth: 1)
+        context.stroke(Path.smoothLine(through: points), with: .color(Palette.cloud.opacity(0.85)), lineWidth: 1)
     }
 
     /// A thin arc showing the moon's altitude through the night, drawn only over

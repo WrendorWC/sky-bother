@@ -112,6 +112,40 @@ extension View {
 
 }
 
+extension Path {
+    /// A smooth curve threaded through every point, rather than the sharp
+    /// zig-zag straight `addLine` between them produces — used for the
+    /// timeline's cloud outline, whose underlying samples only really change
+    /// at hourly forecast boundaries, so a straight-line path reads as a
+    /// series of harsh angular kinks next to the chart's other, smoother
+    /// elements. Converts each span into a cubic Bézier using the classic
+    /// Catmull-Rom construction (each segment's control points are derived
+    /// from its neighbours), so the curve still passes exactly through the
+    /// real data — this only changes how the gaps between points are drawn.
+    static func smoothLine(through points: [CGPoint]) -> Path {
+        var path = Path()
+        guard let first = points.first else { return path }
+        path.move(to: first)
+        guard points.count > 1 else { return path }
+        guard points.count > 2 else {
+            path.addLine(to: points[1])
+            return path
+        }
+
+        for i in 0..<(points.count - 1) {
+            let p0 = i == 0 ? points[i] : points[i - 1]
+            let p1 = points[i]
+            let p2 = points[i + 1]
+            let p3 = i + 2 < points.count ? points[i + 2] : points[i + 1]
+
+            let control1 = CGPoint(x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6)
+            let control2 = CGPoint(x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6)
+            path.addCurve(to: p2, control1: control1, control2: control2)
+        }
+        return path
+    }
+}
+
 /// Maps dates onto horizontal positions for every chart in the app, so the night
 /// timeline and each target's availability bar share one time axis.
 struct TimeAxis {
