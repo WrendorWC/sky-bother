@@ -8,14 +8,16 @@ struct NightDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
-                // This column is a plain VStack, not a List/ScrollView, so it
-                // doesn't get the automatic clearance those get under the
-                // window's title bar — without extra top padding, the mission
-                // summary panel renders under the title bar text.
-                .padding(.horizontal, 20)
-                .padding(.top, 34)
-                .padding(.bottom, 20)
+            // header is a fixed, non-scrolling block — mission summary, stats,
+            // the timeline, legend and tonight's plan all stacked — which on
+            // a short window or small display can be taller than the column
+            // itself. Without its own scroll view, that content just clips or
+            // visually collides instead of being reachable.
+            ScrollView {
+                header
+                    .padding(20)
+            }
+            .frame(maxHeight: 560)
             Divider()
             filterBar
                 .padding(.horizontal, 20)

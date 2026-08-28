@@ -1,8 +1,24 @@
 import SwiftUI
 import AppKit
 
+/// The whole theme is hardcoded dark with no light variant, so the app always
+/// needs dark mode regardless of the system setting. Forcing it via
+/// `.preferredColorScheme(.dark)` as a view modifier fights with
+/// NavigationSplitView's title bar layout on macOS — the title area stops
+/// reserving real space and draws as a floating overlay instead, which is
+/// what was overlapping the mission summary panel and the sidebar's first
+/// row. Setting the appearance at the application level instead avoids that
+/// — but `NSApp` isn't safe to touch inside `App.init()` (it traps), so this
+/// has to happen from an actual AppKit lifecycle callback.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.appearance = NSAppearance(named: .darkAqua)
+    }
+}
+
 @main
 struct SkyBotherApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var state = AppState()
 
     var body: some Scene {
@@ -10,7 +26,6 @@ struct SkyBotherApp: App {
             ContentView()
                 .environmentObject(state)
                 .tint(Palette.accent)
-                .preferredColorScheme(.dark)
                 .frame(minWidth: 1120, minHeight: 720)
         }
         .defaultSize(width: 1500, height: 920)
@@ -32,14 +47,12 @@ struct SkyBotherApp: App {
         WindowGroup(id: "catalog") {
             TargetCatalogView()
                 .tint(Palette.accent)
-                .preferredColorScheme(.dark)
         }
         .defaultSize(width: 980, height: 720)
 
         WindowGroup(id: "help") {
             HelpView()
                 .tint(Palette.accent)
-                .preferredColorScheme(.dark)
         }
         .defaultSize(width: 900, height: 700)
 
@@ -47,14 +60,12 @@ struct SkyBotherApp: App {
             SettingsView()
                 .environmentObject(state)
                 .tint(Palette.accent)
-                .preferredColorScheme(.dark)
         }
 
         MenuBarExtra {
             MenuBarSummaryView()
                 .environmentObject(state)
                 .tint(Palette.accent)
-                .preferredColorScheme(.dark)
         } label: {
             Image(systemName: "moon.stars.fill")
         }

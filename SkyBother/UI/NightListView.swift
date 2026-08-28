@@ -19,11 +19,6 @@ struct NightListView: View {
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
         .background(Palette.spaceBackground)
-        // The custom background above seems to interfere with the sidebar's
-        // usual automatic clearance under the window's title bar, so the
-        // first row was rendering under the traffic lights — this restores
-        // that breathing room explicitly.
-        .contentMargins(.top, 14, for: .scrollContent)
         .overlay {
             if state.plans.isEmpty && state.isLoading {
                 ProgressView("Loading forecast…")
