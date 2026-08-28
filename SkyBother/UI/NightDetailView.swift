@@ -7,24 +7,30 @@ struct NightDetailView: View {
     private var targets: [TargetPlan] { state.visibleTargets(for: plan) }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // header is a fixed, non-scrolling block — mission summary, stats,
-            // the timeline, legend and tonight's plan all stacked — which on
-            // a short window or small display can be taller than the column
-            // itself. Without its own scroll view, that content just clips or
-            // visually collides instead of being reachable.
-            ScrollView {
+        // One scroll view for the whole column — mission summary, stats,
+        // timeline, legend and tonight's plan at the top, then the target
+        // list below — rather than two independently-scrolling regions
+        // stacked on top of each other. The filter bar pins in place as a
+        // section header once you scroll past it, so it stays reachable
+        // while browsing targets without needing its own scroll area.
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                 header
                     .padding(20)
+                Divider()
+
+                Section {
+                    targetListContent
+                } header: {
+                    filterBar
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Palette.panel)
+                    Divider()
+                }
             }
-            .frame(maxHeight: 560)
-            Divider()
-            filterBar
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-            Divider()
-            targetList
         }
+        .scrollIndicators(.visible)
         .spaceBackground()
         .navigationTitle(Format.longDate(plan.date, in: plan.timeZone))
         .navigationSubtitle(plan.site.name)
@@ -103,7 +109,8 @@ struct NightDetailView: View {
     }
 
     private func autoPlanRow(_ slot: AutoPlanSlot) -> some View {
-        HStack(spacing: 12) {
+        let isSelected = state.selectedTargetID == slot.targetPlan.id
+        return HStack(spacing: 12) {
             ScoreBadge(score: slot.targetPlan.score, size: 30)
             VStack(alignment: .leading, spacing: 2) {
                 Text(slot.targetPlan.target.displayName)
@@ -120,6 +127,9 @@ struct NightDetailView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+        .background(isSelected ? Palette.accent.opacity(0.18) : Color.clear)
+        .contentShape(Rectangle())
+        .onTapGesture { state.selectedTargetID = slot.targetPlan.id }
     }
 
     // MARK: - Mission summary
@@ -285,20 +295,21 @@ struct NightDetailView: View {
     // MARK: - Targets
 
     @ViewBuilder
-    private var targetList: some View {
+    private var targetListContent: some View {
         if targets.isEmpty {
             EmptyStateView(title: emptyTitle,
                            message: emptyMessage,
                            systemImage: "binoculars")
+                .frame(minHeight: 320)
         } else {
-            List(selection: $state.selectedTargetID) {
-                ForEach(targets) { targetPlan in
-                    TargetRowView(plan: plan, targetPlan: targetPlan)
-                        .tag(targetPlan.id)
-                }
+            ForEach(targets) { targetPlan in
+                TargetRowView(plan: plan, targetPlan: targetPlan,
+                             isSelected: state.selectedTargetID == targetPlan.id)
+                    .padding(.horizontal, 20)
+                    .contentShape(Rectangle())
+                    .onTapGesture { state.selectedTargetID = targetPlan.id }
+                Divider().padding(.leading, 20)
             }
-            .listStyle(.inset)
-            .scrollContentBackground(.hidden)
         }
     }
 
@@ -321,6 +332,7 @@ struct TargetRowView: View {
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
     var targetPlan: TargetPlan
+    var isSelected: Bool = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 13) {
@@ -356,6 +368,8 @@ struct TargetRowView: View {
             }
         }
         .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .background(isSelected ? Palette.accent.opacity(0.18) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
     }
 
     private var summary: String {
@@ -376,6 +390,7 @@ struct TargetRowView: View {
 /// A Gantt-style strip of the auto-planned session, sharing the night
 /// timeline's time axis so it lines up with everything above it.
 private struct AutoPlanStripView: View {
+    @EnvironmentObject private var state: AppState
     var plan: NightPlan
     var slots: [AutoPlanSlot]
 
@@ -388,8 +403,11 @@ private struct AutoPlanStripView: View {
                     let endX = axis.x(for: slot.window.end)
                     let rect = CGRect(x: startX, y: 0, width: max(2, endX - startX), height: size.height)
                     let color = Palette.score(slot.targetPlan.score)
-                    context.fill(Path(roundedRect: rect, cornerRadius: 5), with: .color(color.opacity(0.75)))
-                    context.stroke(Path(roundedRect: rect, cornerRadius: 5), with: .color(color), lineWidth: 1)
+                    let isSelected = state.selectedTargetID == slot.targetPlan.id
+                    context.fill(Path(roundedRect: rect, cornerRadius: 5),
+                                 with: .color(color.opacity(isSelected ? 0.95 : 0.75)))
+                    context.stroke(Path(roundedRect: rect, cornerRadius: 5),
+                                   with: .color(isSelected ? .white : color), lineWidth: isSelected ? 2 : 1)
 
                     if rect.width > 50 {
                         context.draw(Text(slot.targetPlan.target.displayName)
@@ -400,6 +418,16 @@ private struct AutoPlanStripView: View {
                     }
                 }
             }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                    .onEnded { value in
+                        let x = value.location.x
+                        if let hit = slots.first(where: { x >= axis.x(for: $0.window.start) && x <= axis.x(for: $0.window.end) }) {
+                            state.selectedTargetID = hit.targetPlan.id
+                        }
+                    }
+            )
         }
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.panelBorder))
