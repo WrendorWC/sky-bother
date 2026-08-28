@@ -9,7 +9,13 @@ struct NightDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-                .padding(20)
+                // This column is a plain VStack, not a List/ScrollView, so it
+                // doesn't get the automatic clearance those get under the
+                // window's title bar — without extra top padding, the mission
+                // summary panel renders under the title bar text.
+                .padding(.horizontal, 20)
+                .padding(.top, 34)
+                .padding(.bottom, 20)
             Divider()
             filterBar
                 .padding(.horizontal, 20)
