@@ -24,22 +24,25 @@ func primaryFactor(in factors: [ScoreFactor], actualScore: Double) -> (factor: S
         .max { $0.1 < $1.1 }
 }
 
-/// A short, plain-language read on what a factor is doing — tuned per factor
-/// name, since "Moon: Poor" and "Detectability: Poor" mean very different
-/// things to someone deciding whether to set up.
+/// A short, plain-language read on what a factor is costing you — every
+/// caller uses this only for the factor already identified as the primary
+/// limitation, so this always describes the downside, even when that
+/// factor's own tier is merely "Good" rather than outright "Poor": in a
+/// night or target where everything else is Exceptional, a "Good" factor
+/// can still be the single biggest reason the score isn't higher, and the
+/// phrasing should say so rather than compliment it.
 func limitationPhrase(for factor: ScoreFactor) -> String {
-    let bad = factor.value < 0.4
     switch factor.name {
-    case "Moon": return bad ? "bright moon" : "dark moon"
-    case "Clear dark time": return bad ? "short dark window" : "long dark window"
-    case "Sky clarity": return bad ? "cloud during the dark hours" : "clear skies"
-    case "Conditions": return bad ? "dew or wind risk" : "calm, dry conditions"
-    case "Time on target": return bad ? "not up for long enough" : "plenty of time on target"
-    case "Sky darkness": return bad ? "twilight or moonlit sky" : "genuinely dark sky"
-    case "Clear sky": return bad ? "clouds during the window" : "clear during the window"
-    case "Altitude": return bad ? "stays low, heavy air mass" : "climbs high overhead"
-    case "Framing": return bad ? "poor fit for your frame" : "fills your frame well"
-    case "Detectability": return bad ? "too faint for your sky" : "stands out from your sky"
+    case "Moon": return "bright moon"
+    case "Clear dark time": return "short dark window"
+    case "Sky clarity": return "cloud during the dark hours"
+    case "Conditions": return "dew or wind risk"
+    case "Time on target": return "not up for long enough"
+    case "Sky darkness": return "twilight or moonlit sky"
+    case "Clear sky": return "clouds during the window"
+    case "Altitude": return "stays low, heavy air mass"
+    case "Framing": return "poor fit for your frame"
+    case "Detectability": return "faint against your sky"
     default: return factor.name.lowercased()
     }
 }
