@@ -56,7 +56,69 @@ struct NightDetailView: View {
             NightTimelineView(plan: plan)
 
             legend
+
+            autoPlanSection
         }
+    }
+
+    // MARK: - Auto-plan
+
+    private var autoPlan: [AutoPlanSlot] {
+        AutoPlanner.plan(for: plan, minimumScore: state.preferences.minimumScore)
+    }
+
+    private var autoPlanSection: some View {
+        let slots = autoPlan
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                SectionHeader("Tonight's plan")
+                Spacer()
+                if !slots.isEmpty {
+                    Text("\(slots.count) target\(slots.count == 1 ? "" : "s") · \(Format.hours(slots.reduce(0) { $0 + $1.window.durationHours }))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if slots.isEmpty {
+                Text("Nothing tonight clears your minimum score for long enough to build a session around.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else {
+                AutoPlanStripView(plan: plan, slots: slots)
+                    .frame(height: 34)
+
+                VStack(spacing: 0) {
+                    ForEach(Array(slots.enumerated()), id: \.element.id) { index, slot in
+                        autoPlanRow(slot)
+                        if index < slots.count - 1 {
+                            Divider().padding(.leading, 50)
+                        }
+                    }
+                }
+                .panelStyle()
+            }
+        }
+    }
+
+    private func autoPlanRow(_ slot: AutoPlanSlot) -> some View {
+        HStack(spacing: 12) {
+            ScoreBadge(score: slot.targetPlan.score, size: 30)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(slot.targetPlan.target.displayName)
+                    .font(.callout.weight(.semibold))
+                Text(slot.targetPlan.fit.framingNote)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            Text("\(Format.time(slot.window.start, in: plan.timeZone))–\(Format.time(slot.window.end, in: plan.timeZone))")
+                .font(.callout.monospacedDigit())
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     private var statistics: some View {
@@ -261,5 +323,38 @@ struct TargetRowView: View {
             parts.append("⚠ \(warning.lowercased())")
         }
         return parts.joined(separator: " · ")
+    }
+}
+
+/// A Gantt-style strip of the auto-planned session, sharing the night
+/// timeline's time axis so it lines up with everything above it.
+private struct AutoPlanStripView: View {
+    var plan: NightPlan
+    var slots: [AutoPlanSlot]
+
+    var body: some View {
+        GeometryReader { geometry in
+            let axis = TimeAxis(window: plan.chartWindow, width: geometry.size.width)
+            Canvas { context, size in
+                for slot in slots {
+                    let startX = axis.x(for: slot.window.start)
+                    let endX = axis.x(for: slot.window.end)
+                    let rect = CGRect(x: startX, y: 0, width: max(2, endX - startX), height: size.height)
+                    let color = Palette.score(slot.targetPlan.score)
+                    context.fill(Path(roundedRect: rect, cornerRadius: 5), with: .color(color.opacity(0.75)))
+                    context.stroke(Path(roundedRect: rect, cornerRadius: 5), with: .color(color), lineWidth: 1)
+
+                    if rect.width > 50 {
+                        context.draw(Text(slot.targetPlan.target.displayName)
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(.white),
+                                     at: CGPoint(x: rect.midX, y: rect.midY),
+                                     anchor: .center)
+                    }
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.panelBorder))
     }
 }

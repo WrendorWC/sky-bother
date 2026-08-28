@@ -188,8 +188,17 @@ struct FramingPreview: View {
             let frameHeight = rig.fieldOfViewHeightArcminutes
             guard frameWidth > 0, frameHeight > 0 else { return }
 
-            let objectWidth = max(0.2, target.majorAxisArcminutes)
-            let objectHeight = max(0.2, target.minorAxisArcminutes)
+            // There's no way to know the real position angle on sky at
+            // imaging time — that depends on the moment's field rotation, not
+            // just the target — so this orients the target's long axis along
+            // whichever of the frame's two dimensions is actually longer, the
+            // best-case assumption. Hardcoding that to the frame's *width*
+            // (the old behaviour) looks right for every landscape sensor but
+            // is 90° wrong for a portrait one, like the Seestar S50 Pro's
+            // 6.26mm × 11.14mm chip.
+            let frameIsPortrait = frameHeight > frameWidth
+            let objectWidth = max(0.2, frameIsPortrait ? target.minorAxisArcminutes : target.majorAxisArcminutes)
+            let objectHeight = max(0.2, frameIsPortrait ? target.majorAxisArcminutes : target.minorAxisArcminutes)
 
             // Fit whichever is larger — the frame or the object — with a margin,
             // so an oversized target visibly spills past the frame edges.
