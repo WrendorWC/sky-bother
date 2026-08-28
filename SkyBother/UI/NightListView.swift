@@ -17,10 +17,12 @@ struct NightListView: View {
             }
         }
         .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
+        .background(Palette.spaceBackground)
         .overlay {
             if state.plans.isEmpty && state.isLoading {
                 ProgressView("Loading forecast…")
-                    .controlSize(.small)
+                    .controlSize(.regular)
             }
         }
         .toolbar {
@@ -38,22 +40,22 @@ struct NightListView: View {
 
     @ViewBuilder
     private var footer: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 5) {
             if let message = state.weatherErrorMessage {
                 Label(message, systemImage: "wifi.exclamationmark")
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(Palette.marginal)
                     .fixedSize(horizontal: false, vertical: true)
             } else if let age = state.forecastAgeDescription {
                 Text("Forecast updated \(age)")
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Text("Bortle \(state.site.bortleClass) · \(state.rig.name)")
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(.top, 4)
+        .padding(.top, 5)
     }
 }
 
@@ -62,19 +64,19 @@ private struct NightRow: View {
     var isTonight: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
-            ScoreBadge(score: plan.score, size: 32)
+        HStack(spacing: 12) {
+            ScoreBadge(score: plan.score, size: 38)
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 5) {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
                     Text(isTonight ? "Tonight" : Format.weekday(plan.date, in: plan.timeZone))
-                        .font(.subheadline.weight(.semibold))
+                        .font(.body.weight(.semibold))
                     Text(Format.dayAndMonth(plan.date, in: plan.timeZone))
-                        .font(.subheadline)
+                        .font(.body)
                         .foregroundStyle(.secondary)
                 }
 
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
                     Label {
                         Text(Format.hours(plan.clearDarkHours))
                     } icon: {
@@ -95,12 +97,12 @@ private struct NightRow: View {
                         }
                     }
                 }
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.secondary)
                 .labelStyle(.titleAndIcon)
             }
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 3)
+        .padding(.vertical, 4)
     }
 }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var state: AppState
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         if state.needsLocationSetup {
@@ -10,11 +11,11 @@ struct ContentView: View {
         } else {
             NavigationSplitView {
                 NightListView()
-                    .navigationSplitViewColumnWidth(min: 214, ideal: 244, max: 320)
+                    .navigationSplitViewColumnWidth(min: 250, ideal: 290, max: 380)
             } content: {
                 if let plan = state.selectedPlan {
                     NightDetailView(plan: plan)
-                        .navigationSplitViewColumnWidth(min: 460, ideal: 620)
+                        .navigationSplitViewColumnWidth(min: 540, ideal: 720)
                 } else {
                     EmptyStateView(title: "No nights planned",
                                    message: "Set a location in Settings, then refresh.",
@@ -25,7 +26,7 @@ struct ContentView: View {
                    let selectedID = state.selectedTargetID,
                    let targetPlan = plan.targets.first(where: { $0.id == selectedID }) {
                     TargetDetailView(plan: plan, targetPlan: targetPlan)
-                        .navigationSplitViewColumnWidth(min: 300, ideal: 360, max: 460)
+                        .navigationSplitViewColumnWidth(min: 360, ideal: 440, max: 560)
                 } else {
                     EmptyStateView(title: "Pick a target",
                                    message: "Select something from the list to see how it sits in your frame tonight.",
@@ -33,6 +34,24 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("Sky Bother?")
+            .toolbar {
+                ToolbarItem {
+                    Button {
+                        openWindow(id: "catalog")
+                    } label: {
+                        Label("Target Catalog", systemImage: "photo.on.rectangle.angled")
+                    }
+                    .help("Browse the target catalog with photos")
+                }
+                ToolbarItem {
+                    Button {
+                        openWindow(id: "help")
+                    } label: {
+                        Label("Help", systemImage: "questionmark.circle")
+                    }
+                    .help("What the scores, colours and charts mean")
+                }
+            }
             .task {
                 await state.refresh()
             }
@@ -46,19 +65,20 @@ struct EmptyStateView: View {
     var systemImage: String
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             Image(systemName: systemImage)
-                .font(.system(size: 34))
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 44))
+                .foregroundStyle(Palette.accent.opacity(0.7))
             Text(title)
-                .font(.headline)
+                .font(.title3.weight(.semibold))
             Text(message)
-                .font(.callout)
+                .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 260)
+                .frame(maxWidth: 320)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+        .spaceBackground()
     }
 }

@@ -18,15 +18,15 @@ struct LocationOnboardingView: View {
     @State private var manualTimeZone = TimeZone.current.identifier
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 6) {
-                Image(systemName: "moon.stars")
-                    .font(.system(size: 30))
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 7) {
+                Image(systemName: "moon.stars.fill")
+                    .font(.system(size: 36))
+                    .foregroundStyle(Palette.accent)
                 Text("Where are you observing from?")
-                    .font(.title2.weight(.semibold))
+                    .font(.title.weight(.semibold))
                 Text("Twilight times, the moon's position and tonight's weather all depend on exactly where you are. Search for your town, or enter coordinates directly.")
-                    .font(.callout)
+                    .font(.body)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -109,9 +109,10 @@ struct LocationOnboardingView: View {
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }
-        .padding(28)
-        .frame(maxWidth: 460)
+        .padding(34)
+        .frame(maxWidth: 540)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .spaceBackground()
     }
 
     private var manualEntryLooksValid: Bool {

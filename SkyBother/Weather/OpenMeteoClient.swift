@@ -63,8 +63,12 @@ struct OpenMeteoClient {
             throw WeatherError.badResponse(http.statusCode)
         }
 
+        // `Hourly` now spells out every key explicitly (see its CodingKeys) —
+        // `.convertFromSnakeCase` would fight those exact raw values instead of
+        // the property names, breaking every field, not just the ones it
+        // already couldn't handle. `Payload`'s own keys (timezone, elevation,
+        // hourly) have no underscores, so they don't need a strategy either.
         let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
         guard let payload = try? decoder.decode(Payload.self, from: data) else {
             throw WeatherError.malformedData
         }
@@ -92,6 +96,27 @@ struct OpenMeteoClient {
             let windGusts10m: [Double?]?
             let visibility: [Double?]?
             let precipitationProbability: [Double?]?
+
+            // `.convertFromSnakeCase` cannot see the word boundary in
+            // "temperature_2m" — the digit right after the underscore breaks
+            // its heuristic, so it silently fails to match these five keys and
+            // every field falls back to its default (temperature pinned at
+            // 10°C, wind gusts at 10 km/h, etc.) regardless of the real
+            // forecast. Spelling the keys out here is the fix.
+            enum CodingKeys: String, CodingKey {
+                case time
+                case cloudCover = "cloud_cover"
+                case cloudCoverLow = "cloud_cover_low"
+                case cloudCoverMid = "cloud_cover_mid"
+                case cloudCoverHigh = "cloud_cover_high"
+                case temperature2m = "temperature_2m"
+                case dewPoint2m = "dew_point_2m"
+                case relativeHumidity2m = "relative_humidity_2m"
+                case windSpeed10m = "wind_speed_10m"
+                case windGusts10m = "wind_gusts_10m"
+                case visibility
+                case precipitationProbability = "precipitation_probability"
+            }
         }
 
         let timezone: String?

@@ -33,11 +33,17 @@ final class AppState: ObservableObject {
     var site: Site {
         get { settings.site }
         set {
-            settings.site = newValue
+            // A single assignment to `settings`, not two, so this only
+            // publishes once — this setter fires from live TextField bindings,
+            // and a second publish in the same pass trips SwiftUI's "publishing
+            // changes from within view updates" check.
+            var updated = settings
+            updated.site = newValue
             // Any direct edit to the site (e.g. hand-typing coordinates in
             // Settings) counts as configuring a real location, same as picking
             // a search result.
-            settings.hasSetLocation = true
+            updated.hasSetLocation = true
+            settings = updated
         }
     }
 

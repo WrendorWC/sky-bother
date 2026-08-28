@@ -12,7 +12,7 @@ struct SettingsView: View {
             PlanningSettings()
                 .tabItem { Label("Planning", systemImage: "slider.horizontal.3") }
         }
-        .frame(width: 520, height: 470)
+        .frame(width: 640, height: 580)
         .onChange(of: state.settings) { _, _ in
             state.requestReplan()
         }
@@ -123,6 +123,8 @@ private struct LocationSettings: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(Palette.spaceBackground)
     }
 
     private func search() async {
@@ -230,6 +232,8 @@ private struct EquipmentSettings: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(Palette.spaceBackground)
     }
 }
 
@@ -280,6 +284,8 @@ private struct PlanningSettings: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(Palette.spaceBackground)
     }
 
     private var darknessCaption: String {

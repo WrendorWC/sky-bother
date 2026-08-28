@@ -39,6 +39,11 @@
 		A1B2C3D40000000000000045 /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000027 /* WeatherModels.swift */; };
 		A1B2C3D40000000000000046 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* Assets.xcassets */; };
 		A1B2C3D40000000000000056 /* LocationOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000055 /* LocationOnboardingView.swift */; };
+		A1B2C3D40000000000000058 /* Images in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000057 /* Images */; };
+		A1B2C3D4000000000000005A /* TargetImages.json in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000059 /* TargetImages.json */; };
+		A1B2C3D4000000000000005C /* TargetImageCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000005B /* TargetImageCatalog.swift */; };
+		A1B2C3D4000000000000005E /* TargetCatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000005D /* TargetCatalogView.swift */; };
+		A1B2C3D40000000000000060 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000005F /* HelpView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +80,11 @@
 		A1B2C3D40000000000000027 /* WeatherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModels.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000002 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1B2C3D40000000000000055 /* LocationOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationOnboardingView.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000057 /* Images */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Images; sourceTree = "<group>"; };
+		A1B2C3D40000000000000059 /* TargetImages.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = TargetImages.json; sourceTree = "<group>"; };
+		A1B2C3D4000000000000005B /* TargetImageCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetImageCatalog.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000005D /* TargetCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetCatalogView.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000005F /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,6 +134,9 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D40000000000000004 /* BuiltInCatalog.swift */,
+				A1B2C3D4000000000000005B /* TargetImageCatalog.swift */,
+				A1B2C3D40000000000000059 /* TargetImages.json */,
+				A1B2C3D40000000000000057 /* Images */,
 			);
 			path = Catalog;
 			sourceTree = "<group>";
@@ -185,6 +198,8 @@
 				A1B2C3D40000000000000022 /* SettingsView.swift */,
 				A1B2C3D40000000000000023 /* TargetDetailView.swift */,
 				A1B2C3D40000000000000055 /* LocationOnboardingView.swift */,
+				A1B2C3D4000000000000005D /* TargetCatalogView.swift */,
+				A1B2C3D4000000000000005F /* HelpView.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -258,6 +273,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1B2C3D40000000000000046 /* Assets.xcassets in Resources */,
+				A1B2C3D40000000000000058 /* Images in Resources */,
+				A1B2C3D4000000000000005A /* TargetImages.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -299,6 +316,9 @@
 				A1B2C3D40000000000000044 /* OpenMeteoClient.swift in Sources */,
 				A1B2C3D40000000000000045 /* WeatherModels.swift in Sources */,
 				A1B2C3D40000000000000056 /* LocationOnboardingView.swift in Sources */,
+				A1B2C3D4000000000000005C /* TargetImageCatalog.swift in Sources */,
+				A1B2C3D4000000000000005E /* TargetCatalogView.swift in Sources */,
+				A1B2C3D40000000000000060 /* HelpView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

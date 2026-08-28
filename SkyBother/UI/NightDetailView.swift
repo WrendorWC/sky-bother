@@ -9,14 +9,15 @@ struct NightDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-                .padding(16)
+                .padding(20)
             Divider()
             filterBar
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
             Divider()
             targetList
         }
+        .spaceBackground()
         .navigationTitle(Format.longDate(plan.date, in: plan.timeZone))
         .navigationSubtitle(plan.site.name)
     }
@@ -24,30 +25,30 @@ struct NightDetailView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 9) {
                         Text(Format.longDate(plan.date, in: plan.timeZone))
-                            .font(.title2.weight(.semibold))
+                            .font(.title.weight(.semibold))
                         VerdictTag(verdict: plan.verdict)
                     }
                     Text(plan.headline)
-                        .font(.callout)
+                        .font(.body)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                ScoreBadge(score: plan.score, size: 46)
+                ScoreBadge(score: plan.score, size: 54)
             }
 
             if plan.isCloudedOut {
                 Label("The forecast writes this night off. The list below shows what would have been up if it clears.",
                       systemImage: "cloud.rain.fill")
-                    .font(.caption)
+                    .font(.callout)
                     .foregroundStyle(Palette.marginal)
-                    .padding(8)
+                    .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Palette.marginal.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+                    .background(Palette.marginal.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
             }
 
             statistics
@@ -59,7 +60,7 @@ struct NightDetailView: View {
     }
 
     private var statistics: some View {
-        HStack(alignment: .top, spacing: 22) {
+        HStack(alignment: .top, spacing: 26) {
             LabelledValue(label: "Astronomical dark",
                           value: darkWindowText,
                           systemImage: "moon.stars")
@@ -98,18 +99,18 @@ struct NightDetailView: View {
     }
 
     private var legend: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 16) {
             legendItem(color: Palette.cloud.opacity(0.7), label: "cloud from the top")
             legendItem(color: Palette.moonlight.opacity(0.8), label: "moonlight and its altitude")
             legendItem(color: Palette.astronomical, label: "darker background = darker sky")
             Spacer()
             if let dewWarning = dewWarning {
                 Label(dewWarning, systemImage: "drop.fill")
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(Palette.marginal)
             }
         }
-        .font(.caption2)
+        .font(.caption)
         .foregroundStyle(.secondary)
     }
 
@@ -119,10 +120,10 @@ struct NightDetailView: View {
     }
 
     private func legendItem(color: Color, label: String) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 5) {
             RoundedRectangle(cornerRadius: 2)
                 .fill(color)
-                .frame(width: 12, height: 8)
+                .frame(width: 14, height: 9)
                 .overlay(RoundedRectangle(cornerRadius: 2).strokeBorder(Color.primary.opacity(0.15)))
             Text(label)
         }
@@ -131,17 +132,18 @@ struct NightDetailView: View {
     // MARK: - Filters
 
     private var filterBar: some View {
-        HStack(spacing: 10) {
-            HStack(spacing: 5) {
+        HStack(spacing: 12) {
+            HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
                 TextField("Filter targets", text: $state.searchText)
                     .textFieldStyle(.plain)
-                    .frame(width: 160)
+                    .frame(width: 190)
             }
-            .padding(.horizontal, 7)
-            .padding(.vertical, 4)
-            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+            .padding(.horizontal, 9)
+            .padding(.vertical, 6)
+            .background(Palette.panel, in: RoundedRectangle(cornerRadius: 7))
+            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.panelBorder))
 
             Menu {
                 Button("All types") { state.typeFilter.removeAll() }
@@ -166,7 +168,7 @@ struct NightDetailView: View {
                 ProgressView().controlSize(.small)
             }
             Text("\(targets.count) worth considering")
-                .font(.caption)
+                .font(.callout)
                 .foregroundStyle(.secondary)
         }
     }
@@ -187,6 +189,7 @@ struct NightDetailView: View {
                 }
             }
             .listStyle(.inset)
+            .scrollContentBackground(.hidden)
         }
     }
 
@@ -211,39 +214,39 @@ struct TargetRowView: View {
     var targetPlan: TargetPlan
 
     var body: some View {
-        HStack(alignment: .top, spacing: 11) {
-            ScoreBadge(score: targetPlan.score, size: 34)
+        HStack(alignment: .top, spacing: 13) {
+            ScoreBadge(score: targetPlan.score, size: 40)
 
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 7) {
                     Text(targetPlan.target.displayName)
-                        .font(.body.weight(.medium))
+                        .font(.body.weight(.semibold))
                     if targetPlan.target.commonName != nil {
                         Text(targetPlan.target.designation)
-                            .font(.caption)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
                     }
                     Image(systemName: targetPlan.target.type.symbolName)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(.caption)
+                        .foregroundStyle(Palette.accent)
                     Text(targetPlan.target.type.shortName)
-                        .font(.caption2)
+                        .font(.caption)
                         .foregroundStyle(.tertiary)
                     Spacer(minLength: 0)
                     Text(targetPlan.usableHoursText)
-                        .font(.caption.monospacedDigit().weight(.medium))
+                        .font(.callout.monospacedDigit().weight(.medium))
                         .foregroundStyle(.secondary)
                 }
 
                 TargetAvailabilityBar(plan: plan, targetPlan: targetPlan)
 
                 Text(summary)
-                    .font(.caption)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
         }
-        .padding(.vertical, 5)
+        .padding(.vertical, 6)
     }
 
     private var summary: String {

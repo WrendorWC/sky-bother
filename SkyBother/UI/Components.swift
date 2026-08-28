@@ -17,6 +17,24 @@ enum Palette {
     static let marginal = Color(red: 0.95, green: 0.70, blue: 0.24)
     static let skip = Color(red: 0.85, green: 0.36, blue: 0.34)
 
+    // MARK: - App chrome
+
+    /// The app's own accent — a nebula violet, used for the tint and for
+    /// anything that isn't already carrying a verdict colour.
+    static let accent = Color(red: 0.62, green: 0.52, blue: 0.98)
+    static let accentWarm = Color(red: 0.98, green: 0.55, blue: 0.62)
+
+    /// Deep-space background, applied behind every window so the app reads as
+    /// one dark, colour-tinted surface instead of the flat system background.
+    static let spaceTop = Color(red: 0.055, green: 0.05, blue: 0.11)
+    static let spaceBottom = Color(red: 0.10, green: 0.07, blue: 0.16)
+    static let spaceBackground = LinearGradient(colors: [spaceTop, spaceBottom],
+                                                startPoint: .top, endPoint: .bottom)
+
+    /// A slightly raised panel on top of the space background, for cards and rows.
+    static let panel = Color(red: 0.14, green: 0.12, blue: 0.20)
+    static let panelBorder = Color(red: 0.62, green: 0.52, blue: 0.98).opacity(0.18)
+
     static func verdict(_ verdict: Verdict) -> Color {
         switch verdict {
         case .go: return go
@@ -48,6 +66,21 @@ enum Palette {
         return Color(red: first.redComponent + (second.redComponent - first.redComponent) * clamped,
                      green: first.greenComponent + (second.greenComponent - first.greenComponent) * clamped,
                      blue: first.blueComponent + (second.blueComponent - first.blueComponent) * clamped)
+    }
+}
+
+extension View {
+    /// The deep-space gradient every window sits on, so lists and forms read as
+    /// part of one coloured surface instead of the flat system background.
+    func spaceBackground() -> some View {
+        background(Palette.spaceBackground.ignoresSafeArea())
+    }
+
+    /// A raised card on top of the space background — used for anything that
+    /// would otherwise be a plain system-coloured row or box.
+    func panelStyle(cornerRadius: CGFloat = 10) -> some View {
+        background(Palette.panel, in: RoundedRectangle(cornerRadius: cornerRadius))
+            .overlay(RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(Palette.panelBorder))
     }
 }
 
@@ -83,14 +116,14 @@ struct TimeAxis {
 
 struct ScoreBadge: View {
     var score: Double
-    var size: CGFloat = 34
+    var size: CGFloat = 40
 
     var body: some View {
         ZStack {
             Circle()
-                .fill(Palette.score(score).opacity(0.18))
+                .fill(Palette.score(score).opacity(0.2))
             Circle()
-                .strokeBorder(Palette.score(score).opacity(0.55), lineWidth: 1.5)
+                .strokeBorder(Palette.score(score).opacity(0.6), lineWidth: 2)
             Text("\(Int(score.rounded()))")
                 .font(.system(size: size * 0.38, weight: .semibold, design: .rounded))
                 .foregroundStyle(Palette.score(score))
@@ -104,10 +137,10 @@ struct VerdictTag: View {
 
     var body: some View {
         Text(verdict.rawValue)
-            .font(.caption.weight(.semibold))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(Palette.verdict(verdict).opacity(0.16), in: Capsule())
+            .font(.callout.weight(.semibold))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(Palette.verdict(verdict).opacity(0.2), in: Capsule())
             .foregroundStyle(Palette.verdict(verdict))
     }
 }
@@ -117,18 +150,18 @@ struct FactorBar: View {
     var factor: ScoreFactor
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(factor.name)
-                    .font(.callout)
+                    .font(.body)
                 Spacer()
                 Text("\(factor.percentage)%")
-                    .font(.callout.monospacedDigit())
+                    .font(.body.monospacedDigit())
                     .foregroundStyle(.secondary)
                 Text("×\(String(format: "%.2f", factor.weight))")
-                    .font(.caption2.monospacedDigit())
+                    .font(.caption.monospacedDigit())
                     .foregroundStyle(.tertiary)
-                    .frame(width: 38, alignment: .trailing)
+                    .frame(width: 44, alignment: .trailing)
             }
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
@@ -138,9 +171,9 @@ struct FactorBar: View {
                         .frame(width: max(2, geometry.size.width * factor.value))
                 }
             }
-            .frame(height: 6)
+            .frame(height: 8)
             Text(factor.detail)
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.secondary)
         }
     }
@@ -152,19 +185,19 @@ struct LabelledValue: View {
     var systemImage: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 4) {
                 if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                        .foregroundStyle(Palette.accent)
                 }
                 Text(label)
-                    .font(.caption)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
             }
             Text(value)
-                .font(.body.weight(.medium))
+                .font(.title3.weight(.medium))
                 .monospacedDigit()
         }
     }
@@ -174,14 +207,37 @@ struct WarningRow: View {
     var text: String
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
+        HStack(alignment: .firstTextBaseline, spacing: 7) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(Palette.marginal)
             Text(text)
-                .font(.caption)
+                .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// A target's reference photo, if the built-in catalog has one, filling and
+/// cropping its space. Falls back to a plain placeholder so callers never have
+/// to branch on whether a given target has art.
+struct TargetThumbnail: View {
+    var designation: String
+    var contentMode: ContentMode = .fill
+
+    var body: some View {
+        if let image = TargetImageCatalog.nsImage(for: designation) {
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: contentMode)
+        } else {
+            ZStack {
+                Palette.panel
+                Image(systemName: "sparkles")
+                    .font(.title2)
+                    .foregroundStyle(.tertiary)
+            }
         }
     }
 }

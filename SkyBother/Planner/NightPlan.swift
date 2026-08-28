@@ -25,7 +25,7 @@ func weightedGeometricScore(_ factors: [ScoreFactor]) -> Double {
 }
 
 enum Verdict: String, Sendable {
-    case go = "Go"
+    case go = "You should be outside tonight"
     case worthwhile = "Worth setting up"
     case marginal = "Marginal"
     case skip = "Skip it"

@@ -9,7 +9,7 @@ struct TargetDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 22) {
                 headline
                 framing
                 altitude
@@ -17,30 +17,31 @@ struct TargetDetailView: View {
                 if !targetPlan.warnings.isEmpty { warnings }
                 facts
             }
-            .padding(16)
+            .padding(20)
         }
+        .spaceBackground()
         .navigationTitle(target.displayName)
     }
 
     // MARK: - Sections
 
     private var headline: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(target.displayName)
-                        .font(.title3.weight(.semibold))
+                        .font(.title2.weight(.semibold))
                     Text("\(target.designation) · \(target.type.displayName) in \(target.constellation)")
-                        .font(.caption)
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                ScoreBadge(score: targetPlan.score, size: 42)
+                ScoreBadge(score: targetPlan.score, size: 50)
             }
-            HStack(spacing: 8) {
+            HStack(spacing: 9) {
                 VerdictTag(verdict: targetPlan.verdict)
                 Text(recommendation)
-                    .font(.callout)
+                    .font(.body)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -63,31 +64,38 @@ struct TargetDetailView: View {
     }
 
     private var framing: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 7) {
             SectionHeader("In your frame")
             FramingPreview(target: target, rig: state.rig)
-                .frame(height: 148)
+                .frame(height: 300)
             Text(targetPlan.fit.framingNote)
-                .font(.caption)
+                .font(.callout)
             if let sampling = targetPlan.fit.samplingNote {
                 Text(sampling)
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Text("\(state.rig.name) · \(state.rig.fieldOfViewSummary) · \(state.rig.opticalSummary)")
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
+            if let info = TargetImageCatalog.info(for: target.designation), let url = URL(string: info.sourceURL) {
+                Link(destination: url) {
+                    Label("Photo: \(info.sourceTitle) via Wikipedia", systemImage: "link")
+                }
+                .font(.caption)
+                .foregroundStyle(Palette.accent)
+            }
         }
     }
 
     private var altitude: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 7) {
             SectionHeader("Through the night")
             TargetAltitudeChart(plan: plan, targetPlan: targetPlan,
                                 minimumAltitude: max(plan.site.horizonAltitude,
                                                      state.preferences.minimumUsefulAltitude))
-                .frame(height: 132)
+                .frame(height: 150)
             HStack {
                 if let transit = targetPlan.transitTime {
                     Text("Highest at \(Format.time(transit, in: plan.timeZone)) · \(Format.degrees(targetPlan.maximumAltitude))")
@@ -95,26 +103,26 @@ struct TargetDetailView: View {
                 Spacer()
                 Text("dashed line = your minimum altitude")
             }
-            .font(.caption2)
+            .font(.caption)
             .foregroundStyle(.secondary)
         }
     }
 
     private var scoring: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             SectionHeader("Why this score")
             ForEach(targetPlan.factors) { factor in
                 FactorBar(factor: factor)
             }
             Text("Factors combine as a weighted geometric mean, so one bad factor pulls the score down rather than being averaged away.")
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
 
     private var warnings: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 7) {
             SectionHeader("Worth knowing")
             ForEach(targetPlan.warnings, id: \.self) { warning in
                 WarningRow(text: warning)
@@ -123,7 +131,7 @@ struct TargetDetailView: View {
     }
 
     private var facts: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 7) {
             SectionHeader("Numbers")
             factRow("Coordinates", Format.coordinates(target.coordinate))
             factRow("Magnitude", String(format: "%.1f", target.magnitude))
@@ -147,11 +155,11 @@ struct TargetDetailView: View {
     private func factRow(_ label: String, _ value: String) -> some View {
         HStack {
             Text(label)
-                .font(.caption)
+                .font(.callout)
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.caption.monospacedDigit())
+                .font(.callout.monospacedDigit())
         }
     }
 }
@@ -162,9 +170,9 @@ struct SectionHeader: View {
 
     var body: some View {
         Text(title.uppercased())
-            .font(.caption2.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .kerning(0.6)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Palette.accent)
+            .kerning(0.7)
     }
 }
 
@@ -194,10 +202,21 @@ struct FramingPreview: View {
                                     y: centre.y - objectHeight * scale / 2,
                                     width: objectWidth * scale,
                                     height: objectHeight * scale)
-            context.fill(Path(ellipseIn: objectRect),
-                         with: .color(Palette.worthwhile.opacity(0.38)))
-            context.stroke(Path(ellipseIn: objectRect),
-                           with: .color(Palette.worthwhile.opacity(0.85)), lineWidth: 1)
+
+            if let photo = TargetImageCatalog.nsImage(for: target.designation) {
+                context.drawLayer { layer in
+                    layer.clip(to: Path(ellipseIn: objectRect))
+                    layer.draw(Image(nsImage: photo), in: aspectFilled(photo.size, into: objectRect))
+                    layer.fill(Path(ellipseIn: objectRect), with: .color(.black.opacity(0.1)))
+                }
+                context.stroke(Path(ellipseIn: objectRect),
+                               with: .color(Palette.worthwhile.opacity(0.9)), lineWidth: 2)
+            } else {
+                context.fill(Path(ellipseIn: objectRect),
+                             with: .color(Palette.worthwhile.opacity(0.38)))
+                context.stroke(Path(ellipseIn: objectRect),
+                               with: .color(Palette.worthwhile.opacity(0.85)), lineWidth: 1.5)
+            }
 
             let frameRect = CGRect(x: centre.x - frameWidth * scale / 2,
                                    y: centre.y - frameHeight * scale / 2,
@@ -206,22 +225,38 @@ struct FramingPreview: View {
             let fits = objectWidth <= frameWidth * 0.9 && objectHeight <= frameHeight * 0.9
             context.stroke(Path(frameRect),
                            with: .color(fits ? Palette.go : Palette.marginal),
-                           style: StrokeStyle(lineWidth: 1.5, dash: fits ? [] : [4, 3]))
+                           style: StrokeStyle(lineWidth: 2, dash: fits ? [] : [5, 4]))
 
             context.draw(Text(String(format: "%.2f° × %.2f°", frameWidth / 60, frameHeight / 60))
-                            .font(.system(size: 9, design: .rounded))
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
                             .foregroundColor(fits ? Palette.go : Palette.marginal),
-                         at: CGPoint(x: frameRect.minX + 2, y: max(7, frameRect.minY - 7)),
+                         at: CGPoint(x: frameRect.minX + 4, y: max(11, frameRect.minY - 11)),
                          anchor: .topLeading)
 
             context.draw(Text(target.sizeSummary)
-                            .font(.system(size: 9, design: .rounded))
-                            .foregroundColor(Palette.worthwhile),
-                         at: CGPoint(x: centre.x, y: min(size.height - 7, objectRect.maxY + 8)),
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white),
+                         at: CGPoint(x: centre.x, y: min(size.height - 11, objectRect.maxY + 13)),
                          anchor: .center)
         }
-        .background(Color.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.primary.opacity(0.12)))
+        .background(Palette.spaceTop, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.panelBorder, lineWidth: 1.5))
+    }
+
+    /// The rect an image should be drawn in to fill `bounds` while preserving
+    /// its own aspect ratio (and spilling past the bounds on one axis), the way
+    /// `.aspectRatio(contentMode: .fill)` would for a SwiftUI `Image`.
+    private func aspectFilled(_ imageSize: CGSize, into bounds: CGRect) -> CGRect {
+        guard imageSize.width > 0, imageSize.height > 0 else { return bounds }
+        let imageAspect = imageSize.width / imageSize.height
+        let boundsAspect = bounds.width / bounds.height
+        if imageAspect > boundsAspect {
+            let width = bounds.height * imageAspect
+            return CGRect(x: bounds.midX - width / 2, y: bounds.minY, width: width, height: bounds.height)
+        } else {
+            let height = bounds.width / imageAspect
+            return CGRect(x: bounds.minX, y: bounds.midY - height / 2, width: bounds.width, height: height)
+        }
     }
 }
 
@@ -244,7 +279,7 @@ struct TargetAltitudeChart: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.primary.opacity(0.12)))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.panelBorder))
     }
 
     private func y(for altitude: Double, height: CGFloat) -> CGFloat {

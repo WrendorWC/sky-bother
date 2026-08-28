@@ -5,8 +5,10 @@ import SwiftUI
 /// is the chart the whole app is arranged around — every target bar below it
 /// shares the same time axis, so you can read straight down a column.
 struct NightTimelineView: View {
+    @EnvironmentObject private var state: AppState
+
     var plan: NightPlan
-    var height: CGFloat = 132
+    var height: CGFloat = 152
     var showsHourLabels: Bool = true
 
     @State private var hoverLocation: CGPoint?
@@ -41,7 +43,7 @@ struct NightTimelineView: View {
         }
         .frame(height: height)
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.primary.opacity(0.12)))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.panelBorder))
     }
 
     // MARK: - Layers
@@ -199,24 +201,24 @@ struct NightTimelineView: View {
     }
 
     private func readoutCard(sample: NightSample) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 3) {
             Text(Format.time(sample.date, in: plan.timeZone))
-                .font(.caption.weight(.semibold).monospacedDigit())
+                .font(.callout.weight(.semibold).monospacedDigit())
             if sample.hasWeather {
-                Text("\(Int(sample.cloudCover))% cloud · \(Format.temperature(celsius: sample.temperature, imperial: false))")
-                    .font(.caption2)
+                Text("\(Int(sample.cloudCover))% cloud · \(Format.temperature(celsius: sample.temperature, imperial: state.preferences.usesImperialUnits))")
+                    .font(.caption)
             }
             Text("darkness \(Int(sample.darkness * 100))%")
-                .font(.caption2)
+                .font(.caption)
             if sample.moonAltitude > 0 {
                 Text("moon \(Format.degrees(sample.moonAltitude)) up")
-                    .font(.caption2)
+                    .font(.caption)
             }
         }
         .foregroundStyle(.white)
-        .padding(6)
-        .background(Color.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 5))
-        .frame(width: 142, alignment: .leading)
+        .padding(8)
+        .background(Color.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 6))
+        .frame(width: 170, alignment: .leading)
     }
 
     private func nearestSample(to date: Date) -> NightSample? {
@@ -230,7 +232,7 @@ struct NightTimelineView: View {
 struct TargetAvailabilityBar: View {
     var plan: NightPlan
     var targetPlan: TargetPlan
-    var height: CGFloat = 22
+    var height: CGFloat = 26
 
     var body: some View {
         GeometryReader { geometry in
