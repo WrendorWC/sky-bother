@@ -10,6 +10,7 @@ struct SkyBotherApp: App {
             ContentView()
                 .environmentObject(state)
                 .tint(Palette.accent)
+                .preferredColorScheme(.dark)
                 .frame(minWidth: 1120, minHeight: 720)
         }
         .defaultSize(width: 1500, height: 920)
@@ -31,12 +32,14 @@ struct SkyBotherApp: App {
         WindowGroup(id: "catalog") {
             TargetCatalogView()
                 .tint(Palette.accent)
+                .preferredColorScheme(.dark)
         }
         .defaultSize(width: 980, height: 720)
 
         WindowGroup(id: "help") {
             HelpView()
                 .tint(Palette.accent)
+                .preferredColorScheme(.dark)
         }
         .defaultSize(width: 900, height: 700)
 
@@ -44,12 +47,14 @@ struct SkyBotherApp: App {
             SettingsView()
                 .environmentObject(state)
                 .tint(Palette.accent)
+                .preferredColorScheme(.dark)
         }
 
         MenuBarExtra {
             MenuBarSummaryView()
                 .environmentObject(state)
                 .tint(Palette.accent)
+                .preferredColorScheme(.dark)
         } label: {
             Image(systemName: "moon.stars.fill")
         }
