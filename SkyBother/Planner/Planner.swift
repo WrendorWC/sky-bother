@@ -310,6 +310,7 @@ struct Planner: Sendable {
         return MoonSummary(illuminatedFraction: illumination,
                            phaseName: Moon.phaseName(daysSinceJ2000: middle),
                            symbolName: Moon.symbolName(daysSinceJ2000: middle),
+                           isWaxing: Moon.isWaxing(daysSinceJ2000: middle),
                            upWindows: upWindows,
                            maximumAltitude: maximumAltitude,
                            minutesUpDuringDarkness: Double(minutesUp) * sampleStepMinutes,

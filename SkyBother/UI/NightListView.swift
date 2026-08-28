@@ -63,6 +63,8 @@ private struct NightRow: View {
     var plan: NightPlan
     var isTonight: Bool
 
+    private var isExceptional: Bool { plan.verdict == .exceptional }
+
     var body: some View {
         HStack(spacing: 12) {
             ScoreBadge(score: plan.score, size: 38)
@@ -86,7 +88,8 @@ private struct NightRow: View {
                     Label {
                         Text("\(plan.moon.illuminationPercent)%")
                     } icon: {
-                        Image(systemName: plan.moon.symbolName)
+                        MoonPhaseDisc(illuminatedFraction: plan.moon.illuminatedFraction,
+                                     isWaxing: plan.moon.isWaxing, diameter: 12)
                     }
 
                     if plan.hasWeather {
@@ -102,7 +105,20 @@ private struct NightRow: View {
                 .labelStyle(.titleAndIcon)
             }
             Spacer(minLength: 0)
+            if isExceptional {
+                Image(systemName: "sparkle")
+                    .font(.caption)
+                    .foregroundStyle(Palette.exceptional)
+            }
         }
         .padding(.vertical, 4)
+        .padding(.horizontal, isExceptional ? 6 : 0)
+        .background {
+            if isExceptional {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Palette.exceptional.opacity(0.14))
+                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.exceptional.opacity(0.45)))
+            }
+        }
     }
 }

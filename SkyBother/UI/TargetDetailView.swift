@@ -11,6 +11,7 @@ struct TargetDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 headline
+                if targetPlan.verdict == .marginal || targetPlan.verdict == .poor { whyNot }
                 framing
                 altitude
                 scoring
@@ -92,29 +93,47 @@ struct TargetDetailView: View {
     private var altitude: some View {
         VStack(alignment: .leading, spacing: 7) {
             SectionHeader("Through the night")
-            TargetAltitudeChart(plan: plan, targetPlan: targetPlan,
-                                minimumAltitude: max(plan.site.horizonAltitude,
-                                                     state.preferences.minimumUsefulAltitude))
-                .frame(height: 150)
             HStack {
                 if let transit = targetPlan.transitTime {
                     Text("Highest at \(Format.time(transit, in: plan.timeZone)) · \(Format.degrees(targetPlan.maximumAltitude))")
                 }
                 Spacer()
-                Text("dashed line = your minimum altitude")
+                if let best = targetPlan.bestWindow, !best.isEmpty {
+                    Text("best window \(Format.time(best.start, in: plan.timeZone))–\(Format.time(best.end, in: plan.timeZone))")
+                }
             }
-            .font(.caption)
+            .font(.callout)
             .foregroundStyle(.secondary)
+            Text("Traced live on tonight's main timeline — this target is selected there too.")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
         }
+    }
+
+    // MARK: - Why this score
+
+    private var primaryFactorResult: (factor: ScoreFactor, impact: Double)? {
+        primaryFactor(in: targetPlan.factors, actualScore: targetPlan.score)
     }
 
     private var scoring: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader("Why this score")
-            ForEach(targetPlan.factors) { factor in
-                FactorBar(factor: factor)
+
+            if let primary = primaryFactorResult, primary.impact > 1 {
+                Label {
+                    Text("Main limitation: \(primary.factor.name) — \(limitationPhrase(for: primary.factor))")
+                } icon: {
+                    Image(systemName: "arrow.down.circle.fill")
+                }
+                .font(.callout.weight(.medium))
+                .foregroundStyle(Palette.marginal)
             }
-            Text("Factors combine as a weighted geometric mean, so one bad factor pulls the score down rather than being averaged away.")
+
+            ForEach(targetPlan.factors) { factor in
+                FactorBar(factor: factor, impact: scoreImpact(of: factor, in: targetPlan.factors, actualScore: targetPlan.score))
+            }
+            Text("Each impact is the real model re-run with that one factor made perfect — how many points you'd gain, not an invented share of the total.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -126,6 +145,15 @@ struct TargetDetailView: View {
             SectionHeader("Worth knowing")
             ForEach(targetPlan.warnings, id: \.self) { warning in
                 WarningRow(text: warning)
+            }
+        }
+    }
+
+    private var whyNot: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            SectionHeader("Why not recommended")
+            ForEach(whyNotBullets(factors: targetPlan.factors), id: \.self) { bullet in
+                WarningRow(text: bullet)
             }
         }
     }
@@ -269,95 +297,3 @@ struct FramingPreview: View {
     }
 }
 
-/// The target's altitude curve over the night, drawn against the same sky
-/// background as the main timeline.
-struct TargetAltitudeChart: View {
-    var plan: NightPlan
-    var targetPlan: TargetPlan
-    var minimumAltitude: Double
-
-    var body: some View {
-        GeometryReader { geometry in
-            let axis = TimeAxis(window: plan.chartWindow, width: geometry.size.width)
-            Canvas { context, size in
-                drawBackground(context: context, size: size)
-                drawGrid(context: context, size: size)
-                drawUsableWindows(context: context, size: size, axis: axis)
-                drawCurve(context: context, size: size)
-                drawHourLabels(context: context, size: size, axis: axis)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.panelBorder))
-    }
-
-    private func y(for altitude: Double, height: CGFloat) -> CGFloat {
-        height - CGFloat(clamp(altitude / 90, 0, 1)) * (height - 14)
-    }
-
-    private func drawBackground(context: GraphicsContext, size: CGSize) {
-        let samples = plan.samples
-        guard samples.count > 1 else { return }
-        let stepX = size.width / CGFloat(samples.count - 1)
-        for (index, sample) in samples.enumerated() {
-            let x = CGFloat(index) * stepX
-            let rect = CGRect(x: x - stepX / 2, y: 0, width: stepX + 1, height: size.height)
-            context.fill(Path(rect), with: .color(Palette.sky(sunAltitude: sample.sunAltitude)))
-            if sample.moonAltitude > 0 && sample.moonBrightness > 0.01 {
-                context.fill(Path(rect), with: .color(Palette.moonlight.opacity(0.3 * sample.moonBrightness)))
-            }
-        }
-    }
-
-    private func drawGrid(context: GraphicsContext, size: CGSize) {
-        for altitude in [30.0, 60.0] {
-            var path = Path()
-            let lineY = y(for: altitude, height: size.height)
-            path.move(to: CGPoint(x: 0, y: lineY))
-            path.addLine(to: CGPoint(x: size.width, y: lineY))
-            context.stroke(path, with: .color(.white.opacity(0.14)), lineWidth: 1)
-            context.draw(Text("\(Int(altitude))°").font(.system(size: 8)).foregroundColor(.white.opacity(0.45)),
-                         at: CGPoint(x: 12, y: lineY - 6))
-        }
-
-        var threshold = Path()
-        let thresholdY = y(for: minimumAltitude, height: size.height)
-        threshold.move(to: CGPoint(x: 0, y: thresholdY))
-        threshold.addLine(to: CGPoint(x: size.width, y: thresholdY))
-        context.stroke(threshold, with: .color(Palette.marginal.opacity(0.75)),
-                       style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
-    }
-
-    private func drawUsableWindows(context: GraphicsContext, size: CGSize, axis: TimeAxis) {
-        for window in targetPlan.windows {
-            let startX = axis.x(for: window.start)
-            let endX = axis.x(for: window.end)
-            let rect = CGRect(x: startX, y: 0, width: max(1, endX - startX), height: size.height)
-            context.fill(Path(rect), with: .color(Palette.go.opacity(0.16)))
-        }
-    }
-
-    private func drawCurve(context: GraphicsContext, size: CGSize) {
-        let trace = targetPlan.altitudeTrace
-        guard trace.count > 1 else { return }
-        let stepX = size.width / CGFloat(trace.count - 1)
-        var path = Path()
-        for (index, altitude) in trace.enumerated() {
-            let point = CGPoint(x: CGFloat(index) * stepX, y: y(for: altitude, height: size.height))
-            if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
-        }
-        context.stroke(path, with: .color(.white.opacity(0.92)),
-                       style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
-    }
-
-    private func drawHourLabels(context: GraphicsContext, size: CGSize, axis: TimeAxis) {
-        let ticks = axis.hourTicks(timeZone: plan.timeZone)
-        let step = (size.width / CGFloat(max(1, ticks.count))) < 34 ? 2 : 1
-        for (index, tick) in ticks.enumerated() where index % step == 0 {
-            context.draw(Text(Format.time(tick, in: plan.timeZone))
-                            .font(.system(size: 8, design: .rounded))
-                            .foregroundColor(.white.opacity(0.6)),
-                         at: CGPoint(x: axis.x(for: tick), y: size.height - 5))
-        }
-    }
-}

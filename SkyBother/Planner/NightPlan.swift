@@ -24,18 +24,20 @@ func weightedGeometricScore(_ factors: [ScoreFactor]) -> Double {
     return clamp(exp(sum / totalWeight) * 100, 0, 100)
 }
 
-enum Verdict: String, Sendable {
-    case go = "You should be outside tonight"
-    case worthwhile = "Worth setting up"
+enum Verdict: String, CaseIterable, Sendable {
+    case exceptional = "Exceptional"
+    case excellent = "Excellent"
+    case good = "Good"
     case marginal = "Marginal"
-    case skip = "Skip it"
+    case poor = "Poor"
 
     static func forScore(_ score: Double) -> Verdict {
         switch score {
-        case 68...: return .go
-        case 45..<68: return .worthwhile
-        case 22..<45: return .marginal
-        default: return .skip
+        case 90...: return .exceptional
+        case 75..<90: return .excellent
+        case 60..<75: return .good
+        case 45..<60: return .marginal
+        default: return .poor
         }
     }
 }
@@ -44,6 +46,7 @@ struct MoonSummary: Hashable, Sendable {
     var illuminatedFraction: Double
     var phaseName: String
     var symbolName: String
+    var isWaxing: Bool
     var upWindows: [TimeWindow]
     var maximumAltitude: Double
     var minutesUpDuringDarkness: Double
@@ -143,6 +146,10 @@ struct NightPlan: Identifiable, Hashable, Sendable {
     var verdict: Verdict { Verdict.forScore(score) }
 
     var darkHours: Double { darkWindows.totalMinutes / 60 }
+    /// The single longest dark-and-clear-enough stretch — "best imaging window".
+    var bestImagingWindow: TimeWindow? { clearDarkWindows.longest }
+    /// The night's own single best target, if anything is up at all tonight.
+    var bestTarget: TargetPlan? { targets.filter { $0.usableMinutes > 0 }.max { $0.score < $1.score } }
     var clearDarkHours: Double { clearDarkWindows.totalMinutes / 60 }
     var moonlessDarkHours: Double { moonlessDarkWindows.totalMinutes / 60 }
     var hasDewRisk: Bool { hasWeather && minimumDewSpread < 2.5 }

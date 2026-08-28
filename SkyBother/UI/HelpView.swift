@@ -28,11 +28,12 @@ enum HelpContent {
     static let topics: [HelpTopic] = [
         HelpTopic(title: "Scores & verdicts", systemImage: "target", sections: [
             HelpSection(body: "Every night and every target gets a 0–100 score, shown in the coloured circle. It is a weighted geometric mean of several 0–1 factors, not a plain average — geometric because a single near-zero factor (no clear sky, no time above the horizon) should sink the score, not get smoothed away by the others being fine."),
-            HelpSection(heading: "The coloured tag", body: "The score is bucketed into four verdicts, shown as the pill next to the date or target name:", swatches: [
-                HelpSwatch(color: Palette.go, label: "68 and up — You should be outside tonight"),
-                HelpSwatch(color: Palette.worthwhile, label: "45–67 — Worth setting up"),
-                HelpSwatch(color: Palette.marginal, label: "22–44 — Marginal"),
-                HelpSwatch(color: Palette.skip, label: "Under 22 — Skip it")
+            HelpSection(heading: "The coloured tag", body: "The score is bucketed into five verdicts, shown as the pill next to the date or target name. Exceptional gets a deliberate gold glow — it's meant to be rare and to stand out from an ordinary good night:", swatches: [
+                HelpSwatch(color: Palette.exceptional, label: "90 and up — Exceptional"),
+                HelpSwatch(color: Palette.go, label: "75–89 — Excellent"),
+                HelpSwatch(color: Palette.good, label: "60–74 — Good"),
+                HelpSwatch(color: Palette.marginal, label: "45–59 — Marginal"),
+                HelpSwatch(color: Palette.skip, label: "Under 45 — Poor")
             ]),
             HelpSection(heading: "Night score vs. target score", body: "A night's score weighs clear dark time (35%), sky clarity (30%), the moon (25%) and conditions like wind and dew (10%). A target's score weighs time on target (26%), sky darkness (18%), clear sky (18%), how well it fills your frame (15%), how detectable it is against your sky (14%) and altitude (9%). They're separate numbers on purpose — a night can be great while a specific target is a poor fit for it, or the other way around.")
         ]),
@@ -45,7 +46,8 @@ enum HelpContent {
                 HelpSwatch(color: Palette.moonlight, label: "Pale wash over the background, plus the traced line near the bottom — moonlight and the moon's altitude through the night")
             ]),
             HelpSection(heading: "The dotted lines and the red line", body: "The two dotted verticals mark astronomical dusk and dawn — the boundary this app treats as \"properly dark\". The thin red line is simply the current time, when tonight is in view."),
-            HelpSection(heading: "Hovering", body: "Hold the pointer anywhere on the chart for an exact readout: time, cloud %, temperature, how dark it is (as a percentage), and the moon's altitude if it's up.")
+            HelpSection(heading: "Hovering", body: "Hold the pointer anywhere on the chart for an exact readout: time, cloud %, temperature, how dark it is (as a percentage), and the moon's altitude if it's up."),
+            HelpSection(heading: "When a target is selected", body: "Pick a target from the list and this same chart overlays its altitude curve (the bold white line), its usable windows (tinted in its own score colour) and its single best window (the dashed box) directly on top of the sky and cloud layers — so you can read straight up from \"this is the best window\" to \"and here's why\" without switching to a second chart.")
         ]),
 
         HelpTopic(title: "Target availability bars", systemImage: "chart.xyaxis.line", sections: [
@@ -62,7 +64,9 @@ enum HelpContent {
         ]),
 
         HelpTopic(title: "Score breakdown", systemImage: "list.bullet.rectangle", sections: [
-            HelpSection(body: "\"Why this score\" on a target's page lists every factor that fed its geometric mean, each as a bar from 0–100% with its weight shown alongside (×0.26 and so on). A short line under each bar explains the specific number behind it — the actual usable minutes, the actual surface brightness, and so on."),
+            HelpSection(body: "\"Why this score\" on a target's page lists every factor that fed its geometric mean, each with its own Exceptional-through-Poor rating and a bar from 0–100%. A short line under each bar explains the specific number behind it — the actual usable minutes, the actual surface brightness, and so on."),
+            HelpSection(heading: "The \"−N\" next to a factor", body: "That number is real, not invented: it's the score with that one factor set to perfect (1.0), re-run through the same geometric mean, minus the actual score. It's how many points that specific factor is genuinely costing you right now — not a fixed share of its weight, since in a geometric mean what one factor costs depends on what every other factor is doing too. The \"Main limitation\" line at the top is simply whichever factor's −N is largest."),
+            HelpSection(heading: "\"Why not recommended\"", body: "Marginal and poor targets get a short bullet list pulled from whichever factors are actually weakest, in their own words — not a canned excuse."),
             HelpSection(heading: "Detectability", body: "This is surface brightness against your sky, not just how bright the target's catalogue magnitude says it is: its light is spread over its full catalogued size and compared against your Bortle-class sky background, adjusted for your f-ratio, integration time and any filter. It's why the same galaxy can score well from a dark site and near zero from a city, even on an identical clear night."),
             HelpSection(heading: "Framing", body: "Full marks go to a target filling 30–80% of your frame's long side. Smaller wastes the sensor; larger needs a mosaic, penalised lightly if your rig supports one and heavily if it doesn't.")
         ]),

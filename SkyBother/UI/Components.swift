@@ -17,6 +17,12 @@ enum Palette {
     static let marginal = Color(red: 0.95, green: 0.70, blue: 0.24)
     static let skip = Color(red: 0.85, green: 0.36, blue: 0.34)
 
+    /// The two verdict tiers `go`/`worthwhile`/`marginal`/`skip` don't cover —
+    /// `exceptional` sits above them all as a deliberately rare, premium
+    /// highlight; `good` fills the gap between "excellent" and "marginal".
+    static let exceptional = Color(red: 1.0, green: 0.82, blue: 0.35)
+    static let good = Color(red: 0.30, green: 0.78, blue: 0.72)
+
     // MARK: - App chrome
 
     /// The app's own accent — a nebula violet, used for the tint and for
@@ -37,10 +43,11 @@ enum Palette {
 
     static func verdict(_ verdict: Verdict) -> Color {
         switch verdict {
-        case .go: return go
-        case .worthwhile: return worthwhile
+        case .exceptional: return exceptional
+        case .excellent: return go
+        case .good: return good
         case .marginal: return marginal
-        case .skip: return skip
+        case .poor: return skip
         }
     }
 
@@ -114,60 +121,83 @@ struct TimeAxis {
     }
 }
 
+/// A radial gauge rather than a flat badge — the ring itself reads as a
+/// fraction of 100 before you even look at the number, and an exceptional
+/// score gets a soft glow so it's unmistakable next to an ordinary one.
 struct ScoreBadge: View {
     var score: Double
     var size: CGFloat = 40
 
+    private var color: Color { Palette.score(score) }
+    private var isExceptional: Bool { Verdict.forScore(score) == .exceptional }
+
     var body: some View {
         ZStack {
             Circle()
-                .fill(Palette.score(score).opacity(0.2))
+                .stroke(Color.primary.opacity(0.09), lineWidth: max(2, size * 0.1))
             Circle()
-                .strokeBorder(Palette.score(score).opacity(0.6), lineWidth: 2)
+                .trim(from: 0, to: max(0.015, min(1, score / 100)))
+                .stroke(color, style: StrokeStyle(lineWidth: max(2, size * 0.1), lineCap: .round))
+                .rotationEffect(.degrees(-90))
             Text("\(Int(score.rounded()))")
-                .font(.system(size: size * 0.38, weight: .semibold, design: .rounded))
-                .foregroundStyle(Palette.score(score))
+                .font(.system(size: size * 0.36, weight: .bold, design: .rounded))
+                .foregroundStyle(color)
         }
         .frame(width: size, height: size)
+        .shadow(color: isExceptional ? color.opacity(0.75) : .clear, radius: isExceptional ? size * 0.2 : 0)
+        .animation(.easeInOut(duration: 0.35), value: score)
     }
 }
 
 struct VerdictTag: View {
     var verdict: Verdict
 
+    private var color: Color { Palette.verdict(verdict) }
+    private var isExceptional: Bool { verdict == .exceptional }
+
     var body: some View {
         Text(verdict.rawValue)
             .font(.callout.weight(.semibold))
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
-            .background(Palette.verdict(verdict).opacity(0.2), in: Capsule())
-            .foregroundStyle(Palette.verdict(verdict))
+            .background(color.opacity(isExceptional ? 0.32 : 0.2), in: Capsule())
+            .overlay(Capsule().strokeBorder(color.opacity(isExceptional ? 0.7 : 0)))
+            .foregroundStyle(color)
+            .shadow(color: isExceptional ? color.opacity(0.5) : .clear, radius: isExceptional ? 6 : 0)
     }
 }
 
 /// A labelled 0-100% bar, used for score factors and conditions.
 struct FactorBar: View {
     var factor: ScoreFactor
+    /// Points the overall score would gain if this factor were perfect —
+    /// pass 0 to hide it (e.g. when there's no meaningful score to compare
+    /// against). See `scoreImpact(of:in:actualScore:)`.
+    var impact: Double = 0
+
+    private var factorVerdict: Verdict { Verdict.forScore(Double(factor.percentage)) }
+    private var color: Color { Palette.verdict(factorVerdict) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
+            HStack(spacing: 8) {
                 Text(factor.name)
                     .font(.body)
+                Text(factorVerdict.rawValue)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(color)
                 Spacer()
-                Text("\(factor.percentage)%")
-                    .font(.body.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                Text("×\(String(format: "%.2f", factor.weight))")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.tertiary)
-                    .frame(width: 44, alignment: .trailing)
+                if impact >= 1 {
+                    Text("−\(Int(impact.rounded()))")
+                        .font(.body.monospacedDigit().weight(.semibold))
+                        .foregroundStyle(Palette.marginal)
+                }
             }
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.primary.opacity(0.08))
                     Capsule()
-                        .fill(Palette.score(factor.value * 100))
+                        .fill(color)
                         .frame(width: max(2, geometry.size.width * factor.value))
                 }
             }
@@ -216,6 +246,67 @@ struct WarningRow: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+}
+
+/// An actual rendered phase disc rather than a flat SF Symbol — the real
+/// terminator shape, so a glance tells you crescent from gibbous and which
+/// way it's heading, not just "there's a moon icon here".
+struct MoonPhaseDisc: View {
+    var illuminatedFraction: Double
+    var isWaxing: Bool
+    var diameter: CGFloat = 20
+    var litColor: Color = Palette.moonlight
+    var darkColor: Color = Color.black.opacity(0.55)
+
+    var body: some View {
+        Canvas { context, size in
+            let r = min(size.width, size.height) / 2
+            let center = CGPoint(x: size.width / 2, y: size.height / 2)
+            let discRect = CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2)
+            let discPath = Path(ellipseIn: discRect)
+
+            context.fill(discPath, with: .color(darkColor))
+
+            let f = clamp(illuminatedFraction, 0, 1)
+            if f > 0.01 {
+                let limbRight = isWaxing
+                let limbRect = CGRect(x: limbRight ? center.x : discRect.minX, y: discRect.minY,
+                                      width: r, height: discRect.height)
+                let otherRect = CGRect(x: limbRight ? discRect.minX : center.x, y: discRect.minY,
+                                       width: r, height: discRect.height)
+
+                context.drawLayer { outer in
+                    outer.clip(to: discPath)
+                    outer.fill(Path(limbRect), with: .color(litColor))
+
+                    if f < 0.5 {
+                        // Crescent: the limb half, minus a central cap that
+                        // shrinks to nothing as the sliver grows toward quarter.
+                        let rx = r * (1 - 2 * f)
+                        let capRect = CGRect(x: center.x - rx, y: discRect.minY, width: rx * 2, height: discRect.height)
+                        outer.drawLayer { inner in
+                            inner.clip(to: Path(limbRect))
+                            inner.fill(Path(ellipseIn: capRect), with: .color(darkColor))
+                        }
+                    } else if f < 0.99 {
+                        // Gibbous: the limb half plus a growing cap bulging
+                        // into the other half from the centre line outward.
+                        let rx = r * (2 * f - 1)
+                        let capRect = CGRect(x: center.x - rx, y: discRect.minY, width: rx * 2, height: discRect.height)
+                        outer.drawLayer { inner in
+                            inner.clip(to: Path(otherRect))
+                            inner.fill(Path(ellipseIn: capRect), with: .color(litColor))
+                        }
+                    } else {
+                        outer.fill(Path(otherRect), with: .color(litColor))
+                    }
+                }
+            }
+
+            context.stroke(discPath, with: .color(.white.opacity(0.22)), lineWidth: 1)
+        }
+        .frame(width: diameter, height: diameter)
     }
 }
 

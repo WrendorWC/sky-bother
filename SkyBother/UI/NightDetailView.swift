@@ -24,22 +24,14 @@ struct NightDetailView: View {
 
     // MARK: - Header
 
+    private var selectedTargetPlan: TargetPlan? {
+        guard let id = state.selectedTargetID else { return nil }
+        return plan.targets.first { $0.id == id }
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 5) {
-                    HStack(spacing: 9) {
-                        Text(Format.longDate(plan.date, in: plan.timeZone))
-                            .font(.title.weight(.semibold))
-                        VerdictTag(verdict: plan.verdict)
-                    }
-                    Text(plan.headline)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                ScoreBadge(score: plan.score, size: 54)
-            }
+            missionSummary
 
             if plan.isCloudedOut {
                 Label("The forecast writes this night off. The list below shows what would have been up if it clears.",
@@ -53,7 +45,8 @@ struct NightDetailView: View {
 
             statistics
 
-            NightTimelineView(plan: plan)
+            NightTimelineView(plan: plan, selectedTarget: selectedTargetPlan)
+                .animation(.easeInOut(duration: 0.3), value: state.selectedTargetID)
 
             legend
 
@@ -121,6 +114,49 @@ struct NightDetailView: View {
         .padding(.vertical, 8)
     }
 
+    // MARK: - Mission summary
+
+    /// The 2-3-second answer: is tonight worth it, when, at what, and why
+    /// not more. Everything below this is the detail that backs it up.
+    private var missionSummary: some View {
+        HStack(alignment: .center, spacing: 16) {
+            ScoreBadge(score: plan.score, size: 58)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 9) {
+                    Text(Format.longDate(plan.date, in: plan.timeZone))
+                        .font(.title2.weight(.bold))
+                    VerdictTag(verdict: plan.verdict)
+                }
+                Text(missionSummaryLine)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            MoonPhaseDisc(illuminatedFraction: plan.moon.illuminatedFraction, isWaxing: plan.moon.isWaxing, diameter: 34)
+                .help("\(plan.moon.illuminationPercent)% \(plan.moon.phaseName.lowercased())")
+        }
+        .padding(16)
+        .panelStyle(cornerRadius: 14)
+        .animation(.easeInOut(duration: 0.3), value: plan.id)
+    }
+
+    private var missionSummaryLine: String {
+        var parts: [String] = []
+        if let window = plan.bestImagingWindow, !window.isEmpty {
+            parts.append("best imaging \(Format.time(window.start, in: plan.timeZone))–\(Format.time(window.end, in: plan.timeZone))")
+        } else {
+            parts.append(plan.headline)
+        }
+        if let best = plan.bestTarget {
+            parts.append("best target \(best.target.displayName) · \(Int(best.score.rounded()))")
+        }
+        if let limitation = nightLimitationPhrase(for: plan) {
+            parts.append("main limitation: \(limitation)")
+        }
+        return parts.joined(separator: " · ")
+    }
+
     private var statistics: some View {
         HStack(alignment: .top, spacing: 26) {
             LabelledValue(label: "Astronomical dark",
@@ -165,6 +201,9 @@ struct NightDetailView: View {
             legendItem(color: Palette.cloud.opacity(0.7), label: "cloud from the top")
             legendItem(color: Palette.moonlight.opacity(0.8), label: "moonlight and its altitude")
             legendItem(color: Palette.astronomical, label: "darker background = darker sky")
+            if let target = selectedTargetPlan {
+                legendItem(color: .white, label: "\(target.target.displayName)'s altitude · dashed box = its best window")
+            }
             Spacer()
             if let dewWarning = dewWarning {
                 Label(dewWarning, systemImage: "drop.fill")

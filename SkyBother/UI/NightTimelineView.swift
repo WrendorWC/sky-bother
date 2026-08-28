@@ -10,6 +10,11 @@ struct NightTimelineView: View {
     var plan: NightPlan
     var height: CGFloat = 152
     var showsHourLabels: Bool = true
+    /// When set, the target's altitude curve and usable/optimal windows are
+    /// overlaid directly on this chart — the centerpiece view answering
+    /// "why is this target best at this particular time?" without needing a
+    /// second chart to compare against.
+    var selectedTarget: TargetPlan? = nil
 
     @State private var hoverLocation: CGPoint?
 
@@ -22,6 +27,9 @@ struct NightTimelineView: View {
                     drawSky(context: context, size: size)
                     drawCloud(context: context, size: size)
                     drawMoonTrace(context: context, size: size)
+                    if let selectedTarget {
+                        drawSelectedTarget(context: context, size: size, axis: axis, target: selectedTarget)
+                    }
                     drawBoundaries(context: context, size: size, axis: axis)
                     if showsHourLabels {
                         drawHourTicks(context: context, size: size, axis: axis)
@@ -126,6 +134,64 @@ struct NightTimelineView: View {
         }
         context.stroke(path, with: .color(Palette.moonlight.opacity(0.85)),
                        style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+    }
+
+    /// The selected target's own altitude curve, its usable windows, and its
+    /// single best window — laid on the same axis as everything else, so you
+    /// can read straight up from "best window" to "why": what the sky and
+    /// moon are doing at that exact moment.
+    private func drawSelectedTarget(context: GraphicsContext, size: CGSize, axis: TimeAxis, target: TargetPlan) {
+        let color = Palette.score(target.score)
+        func y(for altitude: Double) -> CGFloat {
+            size.height - CGFloat(clamp(altitude / 90, 0, 1)) * (size.height - 16)
+        }
+
+        for window in target.windows {
+            let startX = axis.x(for: window.start)
+            let endX = axis.x(for: window.end)
+            let rect = CGRect(x: startX, y: 0, width: max(1, endX - startX), height: size.height)
+            context.fill(Path(rect), with: .color(color.opacity(0.10)))
+        }
+
+        if let best = target.bestWindow, !best.isEmpty {
+            let startX = axis.x(for: best.start)
+            let endX = axis.x(for: best.end)
+            let rect = CGRect(x: startX, y: 0, width: max(1, endX - startX), height: size.height)
+            context.fill(Path(rect), with: .color(color.opacity(0.16)))
+            context.stroke(Path(rect), with: .color(color.opacity(0.8)), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+        }
+
+        for altitude in [30.0, 60.0] {
+            var grid = Path()
+            grid.move(to: CGPoint(x: 0, y: y(for: altitude)))
+            grid.addLine(to: CGPoint(x: size.width, y: y(for: altitude)))
+            context.stroke(grid, with: .color(.white.opacity(0.1)), lineWidth: 1)
+        }
+
+        let trace = target.altitudeTrace
+        if trace.count > 1 {
+            let stepX = size.width / CGFloat(trace.count - 1)
+            var path = Path()
+            for (index, altitude) in trace.enumerated() {
+                let point = CGPoint(x: CGFloat(index) * stepX, y: y(for: altitude))
+                if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
+            }
+            context.stroke(path, with: .color(.white.opacity(0.95)),
+                           style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+        }
+
+        if let best = target.bestTime, plan.chartWindow.contains(best) {
+            let x = axis.x(for: best)
+            var mark = Path()
+            mark.move(to: CGPoint(x: x, y: 0))
+            mark.addLine(to: CGPoint(x: x, y: size.height))
+            context.stroke(mark, with: .color(color), lineWidth: 1.5)
+            context.draw(Text(target.target.displayName)
+                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white),
+                         at: CGPoint(x: min(size.width - 6, x + 6), y: 12),
+                         anchor: .topLeading)
+        }
     }
 
     private func drawBoundaries(context: GraphicsContext, size: CGSize, axis: TimeAxis) {
