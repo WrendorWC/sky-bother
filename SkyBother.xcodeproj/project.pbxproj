@@ -38,6 +38,7 @@
 		A1B2C3D40000000000000044 /* OpenMeteoClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000026 /* OpenMeteoClient.swift */; };
 		A1B2C3D40000000000000045 /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000027 /* WeatherModels.swift */; };
 		A1B2C3D40000000000000046 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* Assets.xcassets */; };
+		A1B2C3D40000000000000056 /* LocationOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000055 /* LocationOnboardingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -73,6 +74,7 @@
 		A1B2C3D40000000000000026 /* OpenMeteoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenMeteoClient.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000027 /* WeatherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModels.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000002 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1B2C3D40000000000000055 /* LocationOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationOnboardingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -182,6 +184,7 @@
 				A1B2C3D40000000000000021 /* NightTimelineView.swift */,
 				A1B2C3D40000000000000022 /* SettingsView.swift */,
 				A1B2C3D40000000000000023 /* TargetDetailView.swift */,
+				A1B2C3D40000000000000055 /* LocationOnboardingView.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -295,6 +298,7 @@
 				A1B2C3D40000000000000043 /* GeocodingClient.swift in Sources */,
 				A1B2C3D40000000000000044 /* OpenMeteoClient.swift in Sources */,
 				A1B2C3D40000000000000045 /* WeatherModels.swift in Sources */,
+				A1B2C3D40000000000000056 /* LocationOnboardingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

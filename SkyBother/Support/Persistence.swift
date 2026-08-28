@@ -7,12 +7,44 @@ struct StoredSettings: Codable, Hashable, Sendable {
     var preferences: Preferences
     var savedSites: [Site]
     var savedRigs: [Rig]
+    /// Whether the user has ever chosen a real site. False only until first-run
+    /// onboarding finishes; `site` is meaningless while this is false and must
+    /// not be used to fetch weather or build a plan.
+    var hasSetLocation: Bool
 
-    static let initial = StoredSettings(site: .placeholder,
+    static let initial = StoredSettings(site: .unset,
                                         rig: .seestarS50,
                                         preferences: .default,
-                                        savedSites: [.placeholder],
-                                        savedRigs: [])
+                                        savedSites: [],
+                                        savedRigs: [],
+                                        hasSetLocation: false)
+
+    // Custom Codable so settings files saved before `hasSetLocation` existed
+    // decode cleanly: any file that already has a `site` was written after the
+    // user changed something, which only happens once a real site is in use, so
+    // it defaults to true rather than re-triggering onboarding for it.
+    enum CodingKeys: String, CodingKey {
+        case site, rig, preferences, savedSites, savedRigs, hasSetLocation
+    }
+
+    init(site: Site, rig: Rig, preferences: Preferences, savedSites: [Site], savedRigs: [Rig], hasSetLocation: Bool) {
+        self.site = site
+        self.rig = rig
+        self.preferences = preferences
+        self.savedSites = savedSites
+        self.savedRigs = savedRigs
+        self.hasSetLocation = hasSetLocation
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        site = try container.decode(Site.self, forKey: .site)
+        rig = try container.decode(Rig.self, forKey: .rig)
+        preferences = try container.decode(Preferences.self, forKey: .preferences)
+        savedSites = try container.decode([Site].self, forKey: .savedSites)
+        savedRigs = try container.decode([Rig].self, forKey: .savedRigs)
+        hasSetLocation = try container.decodeIfPresent(Bool.self, forKey: .hasSetLocation) ?? true
+    }
 }
 
 /// A small JSON file in Application Support. No database, no schema migration,

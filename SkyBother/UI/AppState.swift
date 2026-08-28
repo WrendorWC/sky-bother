@@ -32,7 +32,13 @@ final class AppState: ObservableObject {
 
     var site: Site {
         get { settings.site }
-        set { settings.site = newValue }
+        set {
+            settings.site = newValue
+            // Any direct edit to the site (e.g. hand-typing coordinates in
+            // Settings) counts as configuring a real location, same as picking
+            // a search result.
+            settings.hasSetLocation = true
+        }
     }
 
     var rig: Rig {
@@ -51,6 +57,11 @@ final class AppState: ObservableObject {
     }
 
     var tonight: NightPlan? { plans.first }
+
+    /// True until the user has chosen a real site. While true, the main window
+    /// shows onboarding instead of a plan — there is no sensible default
+    /// location to compute one against.
+    var needsLocationSetup: Bool { !settings.hasSetLocation }
 
     var forecastAgeDescription: String? {
         guard forecast.retrievedAt != .distantPast else { return nil }
@@ -129,7 +140,9 @@ final class AppState: ObservableObject {
     // MARK: - Site and rig management
 
     func apply(_ result: GeocodingResult) {
-        var newSite = result.makeSite(bortleClass: site.bortleClass, horizonAltitude: site.horizonAltitude)
+        let previousBortle = settings.hasSetLocation ? site.bortleClass : Site.unset.bortleClass
+        let previousHorizon = settings.hasSetLocation ? site.horizonAltitude : Site.unset.horizonAltitude
+        var newSite = result.makeSite(bortleClass: previousBortle, horizonAltitude: previousHorizon)
         // Keep the id stable if this is the same place, so saved sites do not duplicate.
         if let existing = settings.savedSites.first(where: {
             abs($0.latitude - newSite.latitude) < 0.01 && abs($0.longitude - newSite.longitude) < 0.01
@@ -137,6 +150,24 @@ final class AppState: ObservableObject {
             newSite.id = existing.id
         }
         settings.site = newSite
+        settings.hasSetLocation = true
+        if !settings.savedSites.contains(where: { $0.id == newSite.id }) {
+            settings.savedSites.append(newSite)
+        }
+        Task { await refresh() }
+    }
+
+    /// Completes first-run onboarding for someone entering coordinates by hand
+    /// instead of searching.
+    func finishLocationSetup(withManualSite newSite: Site) {
+        var newSite = newSite
+        if let existing = settings.savedSites.first(where: {
+            abs($0.latitude - newSite.latitude) < 0.01 && abs($0.longitude - newSite.longitude) < 0.01
+        }) {
+            newSite.id = existing.id
+        }
+        settings.site = newSite
+        settings.hasSetLocation = true
         if !settings.savedSites.contains(where: { $0.id == newSite.id }) {
             settings.savedSites.append(newSite)
         }

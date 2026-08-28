@@ -58,11 +58,14 @@ struct Site: Codable, Hashable, Identifiable, Sendable {
         return String(format: "%.3f°%@ %.3f°%@", abs(latitude), latHemisphere, abs(longitude), lonHemisphere)
     }
 
-    static let placeholder = Site(name: "Boston, MA",
-                                  latitude: 42.3601,
-                                  longitude: -71.0589,
-                                  elevationMeters: 6,
-                                  timeZoneIdentifier: "America/New_York",
-                                  bortleClass: 8,
-                                  horizonAltitude: 20)
+    /// Used only before the user has ever set a real site — see
+    /// `StoredSettings.hasSetLocation`. Nothing should compute a plan against
+    /// this; it exists so `Site` can stay non-optional in `StoredSettings`.
+    static let unset = Site(name: "",
+                            latitude: 0,
+                            longitude: 0,
+                            elevationMeters: 0,
+                            timeZoneIdentifier: TimeZone.current.identifier,
+                            bortleClass: 5,
+                            horizonAltitude: 20)
 }

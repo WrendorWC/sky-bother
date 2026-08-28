@@ -4,33 +4,38 @@ struct ContentView: View {
     @EnvironmentObject private var state: AppState
 
     var body: some View {
-        NavigationSplitView {
-            NightListView()
-                .navigationSplitViewColumnWidth(min: 214, ideal: 244, max: 320)
-        } content: {
-            if let plan = state.selectedPlan {
-                NightDetailView(plan: plan)
-                    .navigationSplitViewColumnWidth(min: 460, ideal: 620)
-            } else {
-                EmptyStateView(title: "No nights planned",
-                               message: "Set a location in Settings, then refresh.",
-                               systemImage: "moon.stars")
+        if state.needsLocationSetup {
+            LocationOnboardingView()
+                .navigationTitle("Sky Bother?")
+        } else {
+            NavigationSplitView {
+                NightListView()
+                    .navigationSplitViewColumnWidth(min: 214, ideal: 244, max: 320)
+            } content: {
+                if let plan = state.selectedPlan {
+                    NightDetailView(plan: plan)
+                        .navigationSplitViewColumnWidth(min: 460, ideal: 620)
+                } else {
+                    EmptyStateView(title: "No nights planned",
+                                   message: "Set a location in Settings, then refresh.",
+                                   systemImage: "moon.stars")
+                }
+            } detail: {
+                if let plan = state.selectedPlan,
+                   let selectedID = state.selectedTargetID,
+                   let targetPlan = plan.targets.first(where: { $0.id == selectedID }) {
+                    TargetDetailView(plan: plan, targetPlan: targetPlan)
+                        .navigationSplitViewColumnWidth(min: 300, ideal: 360, max: 460)
+                } else {
+                    EmptyStateView(title: "Pick a target",
+                                   message: "Select something from the list to see how it sits in your frame tonight.",
+                                   systemImage: "scope")
+                }
             }
-        } detail: {
-            if let plan = state.selectedPlan,
-               let selectedID = state.selectedTargetID,
-               let targetPlan = plan.targets.first(where: { $0.id == selectedID }) {
-                TargetDetailView(plan: plan, targetPlan: targetPlan)
-                    .navigationSplitViewColumnWidth(min: 300, ideal: 360, max: 460)
-            } else {
-                EmptyStateView(title: "Pick a target",
-                               message: "Select something from the list to see how it sits in your frame tonight.",
-                               systemImage: "scope")
+            .navigationTitle("Sky Bother?")
+            .task {
+                await state.refresh()
             }
-        }
-        .navigationTitle("Sky Bother?")
-        .task {
-            await state.refresh()
         }
     }
 }
