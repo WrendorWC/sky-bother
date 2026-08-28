@@ -112,6 +112,18 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                                 hasNarrowbandFilter: true, supportsMosaic: true,
                                 zenithAvoidanceAltitude: 80)
 
+    /// 50mm f/5.2 four-element APO, 1/1.2" 4K sensor. ZWO quote the telephoto
+    /// resolution as 2160 x 3840 portrait, so the frame is taller than it is
+    /// wide: 2160 and 3840 pixels at 2.9um give 6.26 x 11.14mm. That geometry
+    /// computes to a 2.816-degree diagonal, matching the published 2.8 degrees.
+    /// Dual-band filter is OIII 30nm / Ha 20nm, telephoto only.
+    static let seestarS50Pro = Rig(name: "ZWO Seestar S50 Pro",
+                                   apertureMillimeters: 50, focalLengthMillimeters: 260,
+                                   sensorWidthMillimeters: 6.26, sensorHeightMillimeters: 11.14,
+                                   pixelSizeMicrons: 2.9, mountType: .altAzimuth,
+                                   hasNarrowbandFilter: true, supportsMosaic: true,
+                                   zenithAvoidanceAltitude: 80)
+
     static let seestarS30 = Rig(name: "ZWO Seestar S30",
                                 apertureMillimeters: 30, focalLengthMillimeters: 150,
                                 sensorWidthMillimeters: 5.6, sensorHeightMillimeters: 3.2,
@@ -168,6 +180,6 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                           hasNarrowbandFilter: true, supportsMosaic: false,
                           zenithAvoidanceAltitude: 90)
 
-    static let presets: [Rig] = [seestarS50, seestarS30, celestronOrigin, unistellarEVscope2,
+    static let presets: [Rig] = [seestarS50Pro, seestarS50, seestarS30, celestronOrigin, unistellarEVscope2,
                                  vesperaII, dwarf3, cameraOnTracker, refractor80, sct8]
 }
