@@ -13,25 +13,33 @@ struct ContentView: View {
                 NightListView()
                     .navigationSplitViewColumnWidth(min: 250, ideal: 290, max: 380)
             } content: {
-                if let plan = state.selectedPlan {
-                    NightDetailView(plan: plan)
-                        .navigationSplitViewColumnWidth(min: 540, ideal: 720)
-                } else {
-                    EmptyStateView(title: "No nights planned",
-                                   message: "Set a location in Settings, then refresh.",
-                                   systemImage: "moon.stars")
+                // The width constraint has to apply regardless of which
+                // branch renders — it was only on the "has a plan" branch,
+                // so the column snapped to a new width the instant a plan
+                // (or target, below) got selected instead of staying put.
+                Group {
+                    if let plan = state.selectedPlan {
+                        NightDetailView(plan: plan)
+                    } else {
+                        EmptyStateView(title: "No nights planned",
+                                       message: "Set a location in Settings, then refresh.",
+                                       systemImage: "moon.stars")
+                    }
                 }
+                .navigationSplitViewColumnWidth(min: 540, ideal: 720)
             } detail: {
-                if let plan = state.selectedPlan,
-                   let selectedID = state.selectedTargetID,
-                   let targetPlan = plan.targets.first(where: { $0.id == selectedID }) {
-                    TargetDetailView(plan: plan, targetPlan: targetPlan)
-                        .navigationSplitViewColumnWidth(min: 360, ideal: 440, max: 560)
-                } else {
-                    EmptyStateView(title: "Pick a target",
-                                   message: "Select something from the list to see how it sits in your frame tonight.",
-                                   systemImage: "scope")
+                Group {
+                    if let plan = state.selectedPlan,
+                       let selectedID = state.selectedTargetID,
+                       let targetPlan = plan.targets.first(where: { $0.id == selectedID }) {
+                        TargetDetailView(plan: plan, targetPlan: targetPlan)
+                    } else {
+                        EmptyStateView(title: "Pick a target",
+                                       message: "Select something from the list to see how it sits in your frame tonight.",
+                                       systemImage: "scope")
+                    }
                 }
+                .navigationSplitViewColumnWidth(min: 360, ideal: 440, max: 560)
             }
             .navigationTitle("Sky Bother?")
             .toolbarTitleDisplayMode(.inline)
