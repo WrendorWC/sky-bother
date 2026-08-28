@@ -67,8 +67,12 @@ struct TargetDetailView: View {
     private var framing: some View {
         VStack(alignment: .leading, spacing: 7) {
             SectionHeader("In your frame")
+            // Shrunk from 300 — the framing preview was consuming most of the
+            // right column's vertical space while "Through the night" and
+            // "Why this score" got pushed below the fold. Same geometry, just
+            // less of it.
             FramingPreview(target: target, rig: state.rig)
-                .frame(height: 300)
+                .frame(height: 250)
             Text(targetPlan.fit.framingNote)
                 .font(.callout)
             if let sampling = targetPlan.fit.samplingNote {

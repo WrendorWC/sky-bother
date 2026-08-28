@@ -4,20 +4,30 @@ struct NightListView: View {
     @EnvironmentObject private var state: AppState
 
     var body: some View {
-        List(selection: $state.selectedNightID) {
-            Section {
-                ForEach(state.plans) { plan in
-                    NightRow(plan: plan, isTonight: plan.id == state.plans.first?.id)
-                        .tag(plan.id)
-                }
-            } header: {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(state.site.name)
-            } footer: {
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 12)
+                    .padding(.bottom, 4)
+
+                ForEach(state.plans) { plan in
+                    NightRow(plan: plan,
+                            isTonight: plan.id == state.plans.first?.id,
+                            isSelected: state.selectedNightID == plan.id)
+                        .padding(.horizontal, 8)
+                        .contentShape(Rectangle())
+                        .onTapGesture { state.selectedNightID = plan.id }
+                }
+
                 footer
+                    .padding(.horizontal, 14)
+                    .padding(.top, 6)
             }
+            .padding(.bottom, 12)
         }
-        .listStyle(.sidebar)
-        .scrollContentBackground(.hidden)
         .background(Palette.spaceBackground)
         .overlay {
             if state.plans.isEmpty && state.isLoading {
@@ -55,13 +65,13 @@ struct NightListView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(.top, 5)
     }
 }
 
 private struct NightRow: View {
     var plan: NightPlan
     var isTonight: Bool
+    var isSelected: Bool
 
     private var isExceptional: Bool { plan.verdict == .exceptional }
 
@@ -112,16 +122,28 @@ private struct NightRow: View {
                     .transition(.scale.combined(with: .opacity))
             }
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, isExceptional ? 6 : 0)
-        .background {
+        .padding(.vertical, 7)
+        .padding(.horizontal, 8)
+        .background(isSelected ? Palette.accent.opacity(0.14) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(isSelected ? Palette.accent.opacity(0.55) : .clear, lineWidth: 1)
+        }
+        .overlay {
             if isExceptional {
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Palette.exceptional.opacity(0.14))
-                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.exceptional.opacity(0.45)))
+                    .strokeBorder(Palette.exceptional.opacity(0.45))
                     .transition(.opacity)
             }
         }
+        .background {
+            if isExceptional {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Palette.exceptional.opacity(0.1))
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.15), value: isSelected)
         .animation(.easeInOut(duration: 0.3), value: isExceptional)
     }
 }

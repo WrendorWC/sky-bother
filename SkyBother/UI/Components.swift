@@ -226,13 +226,29 @@ struct VerdictTag: View {
 /// A labelled 0-100% bar, used for score factors and conditions.
 struct FactorBar: View {
     var factor: ScoreFactor
-    /// Points the overall score would gain if this factor were perfect —
-    /// pass 0 to hide it (e.g. when there's no meaningful score to compare
-    /// against). See `scoreImpact(of:in:actualScore:)`.
+    /// Points the overall score would gain if this factor were perfect. See
+    /// `scoreImpact(of:in:actualScore:)` — this is always the real
+    /// counterfactual, never a display-only estimate, and is shown even when
+    /// it rounds to zero so every factor carries the same kind of indicator
+    /// and a glance at the column tells you which ones actually cost you
+    /// points versus which were along for the ride.
     var impact: Double = 0
 
     private var factorVerdict: Verdict { Verdict.forScore(Double(factor.percentage)) }
     private var color: Color { Palette.verdict(factorVerdict) }
+    private var roundedImpact: Int { Int(impact.rounded()) }
+
+    /// Severity-scaled rather than a flat colour, so a factor that's actually
+    /// costing points jumps out instead of reading the same as every other
+    /// mostly-green bar.
+    private var impactColor: Color {
+        switch roundedImpact {
+        case 8...: return Palette.skip
+        case 3...7: return Palette.marginal
+        case 1...2: return .secondary
+        default: return .secondary.opacity(0.55)
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -243,11 +259,9 @@ struct FactorBar: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(color)
                 Spacer()
-                if impact >= 1 {
-                    Text("−\(Int(impact.rounded()))")
-                        .font(.body.monospacedDigit().weight(.semibold))
-                        .foregroundStyle(Palette.marginal)
-                }
+                Text(roundedImpact >= 1 ? "−\(roundedImpact)" : "0")
+                    .font(.callout.monospacedDigit().weight(roundedImpact >= 3 ? .bold : .medium))
+                    .foregroundStyle(impactColor)
             }
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {

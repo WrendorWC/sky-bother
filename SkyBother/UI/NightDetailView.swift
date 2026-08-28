@@ -32,8 +32,12 @@ struct NightDetailView: View {
         }
         .scrollIndicators(.visible)
         .spaceBackground()
-        .navigationTitle(Format.longDate(plan.date, in: plan.timeZone))
-        .navigationSubtitle(plan.site.name)
+        // The hero card below already owns the selected night's identity
+        // (date, verdict, best target) in a much bigger typeface — repeating
+        // the date here just gave the same fact two competing headings. The
+        // title bar is for the thing the hero doesn't say: where you're
+        // observing from.
+        .navigationTitle(plan.site.name)
     }
 
     // MARK: - Header
@@ -140,16 +144,35 @@ struct NightDetailView: View {
     private var missionSummary: some View {
         HStack(alignment: .center, spacing: 16) {
             ScoreBadge(score: plan.score, size: 58)
+            // Three distinct lines rather than one run-on sentence: the
+            // operational fact (when to shoot), the recommendation (what to
+            // shoot), and the caveat (what's limiting it) each read as their
+            // own thought instead of being flattened into equally-weighted
+            // clauses of a single caption.
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 9) {
                     Text(Format.longDate(plan.date, in: plan.timeZone))
                         .font(.title2.weight(.bold))
                     VerdictTag(verdict: plan.verdict)
                 }
-                Text(missionSummaryLine)
+                Text(operationalSummaryLine)
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                if let best = plan.bestTarget {
+                    HStack(spacing: 6) {
+                        Text("Best target")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Palette.accent)
+                        Text("\(best.target.displayName) · \(Int(best.score.rounded()))")
+                            .font(.callout.weight(.medium))
+                    }
+                }
+                if let limitation = nightLimitationPhrase(for: plan) {
+                    Text("Main limitation: \(limitation)")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
             }
             Spacer(minLength: 0)
             MoonPhaseDisc(illuminatedFraction: plan.moon.illuminatedFraction, isWaxing: plan.moon.isWaxing, diameter: 34)
@@ -160,20 +183,11 @@ struct NightDetailView: View {
         .animation(.easeInOut(duration: 0.3), value: plan.id)
     }
 
-    private var missionSummaryLine: String {
-        var parts: [String] = []
+    private var operationalSummaryLine: String {
         if let window = plan.bestImagingWindow, !window.isEmpty {
-            parts.append("best imaging \(Format.time(window.start, in: plan.timeZone))–\(Format.time(window.end, in: plan.timeZone))")
-        } else {
-            parts.append(plan.headline)
+            return "Best imaging \(Format.time(window.start, in: plan.timeZone))–\(Format.time(window.end, in: plan.timeZone))"
         }
-        if let best = plan.bestTarget {
-            parts.append("best target \(best.target.displayName) · \(Int(best.score.rounded()))")
-        }
-        if let limitation = nightLimitationPhrase(for: plan) {
-            parts.append("main limitation: \(limitation)")
-        }
-        return parts.joined(separator: " · ")
+        return plan.headline
     }
 
     private var statistics: some View {
@@ -287,7 +301,7 @@ struct NightDetailView: View {
             if state.isPlanning {
                 ProgressView().controlSize(.small)
             }
-            Text("\(targets.count) worth considering")
+            Text("\(targets.count) targets meet criteria")
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
@@ -411,10 +425,14 @@ private struct AutoPlanStripView: View {
                     let rect = CGRect(x: startX, y: 0, width: max(2, endX - startX), height: size.height)
                     let color = Palette.score(slot.targetPlan.score)
                     let isSelected = state.selectedTargetID == slot.targetPlan.id
+                    // Selection outline uses the app's one accent colour
+                    // rather than plain white, so this strip agrees with the
+                    // sidebar, target list and timeline about what
+                    // "selected" looks like instead of inventing its own.
                     context.fill(Path(roundedRect: rect, cornerRadius: 5),
                                  with: .color(color.opacity(isSelected ? 0.95 : 0.75)))
                     context.stroke(Path(roundedRect: rect, cornerRadius: 5),
-                                   with: .color(isSelected ? .white : color), lineWidth: isSelected ? 2 : 1)
+                                   with: .color(isSelected ? Palette.accent : color), lineWidth: isSelected ? 2 : 1)
 
                     if rect.width > 50 {
                         context.draw(Text(slot.targetPlan.target.displayName)

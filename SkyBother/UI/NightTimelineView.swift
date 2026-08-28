@@ -146,8 +146,15 @@ struct NightTimelineView: View {
     /// single best window — laid on the same axis as everything else, so you
     /// can read straight up from "best window" to "why": what the sky and
     /// moon are doing at that exact moment.
+    /// Everything selection-related uses the app's one accent colour rather
+    /// than the target's own score colour — score colour means quality
+    /// everywhere else in the app (the badges, the factor bars), and reusing
+    /// it here would blur that meaning. Violet reads unambiguously as "this
+    /// is the thing you picked," and it's the same colour selection uses in
+    /// the sidebar and target list, so the whole app agrees on one selection
+    /// language instead of each view inventing its own.
     private func drawSelectedTarget(context: GraphicsContext, size: CGSize, axis: TimeAxis, target: TargetPlan) {
-        let color = Palette.score(target.score)
+        let color = Palette.accent
         func y(for altitude: Double) -> CGFloat {
             size.height - CGFloat(clamp(altitude / 90, 0, 1)) * (size.height - 16)
         }
@@ -156,24 +163,29 @@ struct NightTimelineView: View {
             let startX = axis.x(for: window.start)
             let endX = axis.x(for: window.end)
             let rect = CGRect(x: startX, y: 0, width: max(1, endX - startX), height: size.height)
-            context.fill(Path(rect), with: .color(color.opacity(0.10)))
+            context.fill(Path(rect), with: .color(color.opacity(0.08)))
         }
 
         if let best = target.bestWindow, !best.isEmpty {
             let startX = axis.x(for: best.start)
             let endX = axis.x(for: best.end)
             let rect = CGRect(x: startX, y: 0, width: max(1, endX - startX), height: size.height)
+            // A translucent fill with a thin, solid edge reads as "this
+            // window" without the heavier dashed box competing for attention.
             context.fill(Path(rect), with: .color(color.opacity(0.16)))
-            context.stroke(Path(rect), with: .color(color.opacity(0.8)), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+            context.stroke(Path(rect), with: .color(color.opacity(0.5)), lineWidth: 1)
         }
 
         for altitude in [30.0, 60.0] {
             var grid = Path()
             grid.move(to: CGPoint(x: 0, y: y(for: altitude)))
             grid.addLine(to: CGPoint(x: size.width, y: y(for: altitude)))
-            context.stroke(grid, with: .color(.white.opacity(0.1)), lineWidth: 1)
+            context.stroke(grid, with: .color(.white.opacity(0.08)), lineWidth: 1)
         }
 
+        // Highest-priority element on the whole chart: the selected target's
+        // altitude, so it needs to visibly outrank the moon trace and cloud
+        // silhouette rather than compete with them as just another line.
         let trace = target.altitudeTrace
         if trace.count > 1 {
             let stepX = size.width / CGFloat(trace.count - 1)
@@ -182,8 +194,8 @@ struct NightTimelineView: View {
                 let point = CGPoint(x: CGFloat(index) * stepX, y: y(for: altitude))
                 if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
             }
-            context.stroke(path, with: .color(.white.opacity(0.95)),
-                           style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+            context.stroke(path, with: .color(color),
+                           style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
         }
 
         if let best = target.bestTime, plan.chartWindow.contains(best) {
