@@ -295,7 +295,7 @@ struct NightDetailView: View {
             legendItem(color: Palette.moonlight.opacity(0.8), label: "moonlight and its altitude")
             legendItem(color: Palette.astronomical, label: "darker background = darker sky")
             if let target = selectedTargetPlan {
-                legendItem(color: .white, label: "\(target.target.displayName)'s altitude · dashed box = its best window")
+                legendItem(color: Palette.accent, label: "\(target.target.displayName)'s altitude · shaded box = its best window")
             }
             Spacer()
             if let dewWarning = dewWarning {
