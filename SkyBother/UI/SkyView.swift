@@ -18,8 +18,9 @@ struct SkyView: View {
     /// previewing equipment here never touches `state.rig` itself.
     @State private var framingRigOverride: Rig?
     @State private var cameraRollDegrees: Double = 0
-    /// Nil until the user clicks the sky to place the frame — until then it
-    /// follows the Core (the doc's actual use case) or the zenith.
+    /// Nil until the user clicks the sky to place the frame manually —
+    /// cleared again the moment the target selection changes, so picking a
+    /// different target always wins over a previous manual placement.
     @State private var cameraFrameCenterOverride: HorizontalCoordinate?
 
     private var daysSinceJ2000: Double { scrubTime.daysSinceJ2000 }
@@ -29,6 +30,7 @@ struct SkyView: View {
         var point: SkyProjection.UnitPoint
         var color: Color
         var isSelected: Bool
+        var majorAxisArcminutes: Double
     }
 
     /// Only targets currently above the horizon — anything below would
@@ -41,7 +43,8 @@ struct SkyView: View {
             return Placement(id: targetPlan.id,
                              point: SkyProjection.project(horizontal),
                              color: Palette.score(targetPlan.score),
-                             isSelected: targetPlan.id == state.selectedTargetID)
+                             isSelected: targetPlan.id == state.selectedTargetID,
+                             majorAxisArcminutes: targetPlan.target.majorAxisArcminutes)
         }
     }
 
@@ -59,17 +62,19 @@ struct SkyView: View {
 
     private var framingRig: Rig { framingRigOverride ?? state.rig }
 
-    /// Falls back to a live default only for the instant before
-    /// `onChange(of: showsCameraFrame)` below freezes it — once the frame
-    /// has an actual placement, this never recomputes from a moving
-    /// reference again. A camera, once pointed somewhere, doesn't
-    /// re-aim itself just because time passed.
+    /// A manual click always wins. Otherwise: the selected target, if
+    /// there is one — tracking it live as time moves is exactly the point,
+    /// the same "traced live" idea the main timeline already uses for
+    /// whichever target is selected — or dead centre of the view (the
+    /// zenith) when nothing is. Selecting a *different* target clears the
+    /// override below, so picking something new always takes over framing.
     private var cameraFrameCenter: HorizontalCoordinate {
-        cameraFrameCenterOverride ?? defaultCameraFrameCenter
-    }
-
-    private var defaultCameraFrameCenter: HorizontalCoordinate {
-        showsMilkyWay ? galacticCoreHorizontal : HorizontalCoordinate(altitude: 90, azimuth: 0)
+        if let override = cameraFrameCenterOverride { return override }
+        if let selectedID = state.selectedTargetID,
+           let targetPlan = plan.targets.first(where: { $0.id == selectedID }) {
+            return horizontal(of: targetPlan.target.coordinate)
+        }
+        return HorizontalCoordinate(altitude: 90, azimuth: 0)
     }
 
     /// The galactic plane, sampled every 4° of galactic longitude and
@@ -162,10 +167,8 @@ struct SkyView: View {
         // it's pointed *once*, the moment the layer turns on, instead of
         // leaving it permanently tied to a value (the Core's position) that
         // moves every time the scrub time does.
-        .onChange(of: showsCameraFrame) { _, isOn in
-            if isOn && cameraFrameCenterOverride == nil {
-                cameraFrameCenterOverride = defaultCameraFrameCenter
-            }
+        .onChange(of: state.selectedTargetID) { _, _ in
+            cameraFrameCenterOverride = nil
         }
     }
 
@@ -290,7 +293,8 @@ struct SkyView: View {
         for placement in targetPlacements {
             let screen = CGPoint(x: center.x + CGFloat(placement.point.x) * radius,
                                  y: center.y + CGFloat(placement.point.y) * radius)
-            let size: CGFloat = placement.isSelected ? 10 : 6
+            let size = targetDotDiameter(majorAxisArcminutes: placement.majorAxisArcminutes,
+                                         isSelected: placement.isSelected, radius: radius)
             let color = placement.isSelected ? Palette.accent : placement.color
             context.fill(Path(ellipseIn: CGRect(x: screen.x - size / 2, y: screen.y - size / 2, width: size, height: size)),
                         with: .color(color))
@@ -331,6 +335,22 @@ struct SkyView: View {
 
     private func screenPoint(for unit: SkyProjection.UnitPoint, center: CGPoint, radius: CGFloat) -> CGPoint {
         CGPoint(x: center.x + CGFloat(unit.x) * radius, y: center.y + CGFloat(unit.y) * radius)
+    }
+
+    /// Sized to the target's real catalogued extent rather than a flat 6pt
+    /// for everything — a fixed dot told you *where* something was but
+    /// nothing about *how big*, which is exactly what matters once you're
+    /// comparing it against a drawn camera frame. `radius` already encodes
+    /// how many points correspond to one degree at this zoom (90° of
+    /// altitude spans the whole radius), so the real angular size converts
+    /// straight to a screen size. Floored so small objects stay visible and
+    /// clickable, and capped so a genuinely huge target (the Veil, M31)
+    /// doesn't swallow its neighbours.
+    private func targetDotDiameter(majorAxisArcminutes: Double, isSelected: Bool, radius: CGFloat) -> CGFloat {
+        let pointsPerDegree = radius / 90
+        let realDiameter = CGFloat(majorAxisArcminutes / 60) * pointsPerDegree
+        let floor: CGFloat = isSelected ? 10 : 6
+        return min(max(realDiameter, floor), 30)
     }
 
     /// A soft, layered stroke — a wide faint pass plus a narrower brighter
