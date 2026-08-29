@@ -103,10 +103,7 @@ struct SkyView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Toggle("Milky Way", isOn: $showsMilkyWay)
-                .toggleStyle(.button)
-                .controlSize(.small)
-                .tint(Palette.accentWarm)
+            milkyWayToggle
 
             GeometryReader { geometry in
                 let side = min(geometry.size.width, geometry.size.height)
@@ -131,6 +128,25 @@ struct SkyView: View {
 
             timeScrubber
         }
+    }
+
+    /// `.toggleStyle(.button)` alone doesn't give a clear at-a-glance
+    /// on/off read — a filled capsule with a checkmark when active versus
+    /// an outline-only one when not is the same on/off language the rest
+    /// of the app already uses for filter chips and tags.
+    private var milkyWayToggle: some View {
+        Button {
+            showsMilkyWay.toggle()
+        } label: {
+            Label("Milky Way", systemImage: showsMilkyWay ? "checkmark.circle.fill" : "circle")
+                .font(.caption.weight(.semibold))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(showsMilkyWay ? Palette.accentWarm.opacity(0.22) : Color.clear, in: Capsule())
+        .overlay(Capsule().strokeBorder(Palette.accentWarm.opacity(showsMilkyWay ? 0.55 : 0.3)))
+        .foregroundStyle(showsMilkyWay ? Palette.accentWarm : .secondary)
     }
 
     // MARK: - Drawing
