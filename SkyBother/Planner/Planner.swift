@@ -365,8 +365,17 @@ struct Planner: Sendable {
 
         var usableCount = 0
         var darknessSum = 0.0
-        var clearSum = 0.0
         var extinctionSum = 0.0
+        // Tracked separately from clearSum/usableCount: this counts every
+        // sample the target is actually above the horizon and the sky is
+        // dark, regardless of whether cloud happened to clear the usability
+        // bar right then. Averaging clearFactor over just the already-usable
+        // samples would only ever measure "was the usable time clear?" —
+        // trivially yes, since clearEnough is part of what makes a sample
+        // usable — and could never reflect a mostly-cloudy night that only
+        // offered a short clear break.
+        var potentialWindowCount = 0
+        var clearPotentialSum = 0.0
         var maximumAltitude = -90.0
         var altitudeAtBest = -90.0
         var azimuthAtBest = 0.0
@@ -403,8 +412,13 @@ struct Planner: Sendable {
             let targetDarkness = SkyQuality.targetDarkness(sunAltitude: context.sunAltitude,
                                                            effectiveMoonBrightness: effectiveMoon)
 
-            let clearEnough = ignoreCloud || !hasWeather || sample.clearFactor >= clearThreshold
             let darkEnough = SkyQuality.twilightFactor(sunAltitude: context.sunAltitude) >= preferences.minimumDarkness
+            if aboveFloor && darkEnough {
+                potentialWindowCount += 1
+                clearPotentialSum += sample.clearFactor
+            }
+
+            let clearEnough = ignoreCloud || !hasWeather || sample.clearFactor >= clearThreshold
             let isUsable = aboveFloor && darkEnough && clearEnough
             usableFlags.append(isUsable)
 
@@ -413,7 +427,6 @@ struct Planner: Sendable {
             usableCount += 1
             darknessSum += targetDarkness
             effectiveMoonSum += effectiveMoon
-            clearSum += sample.clearFactor
             let extinction = SkyQuality.extinctionFactor(altitude: horizontal.altitude)
             extinctionSum += extinction
             minimumSeparation = min(minimumSeparation, separation)
@@ -439,7 +452,12 @@ struct Planner: Sendable {
 
         let usableMinutes = Double(usableCount) * sampleStepMinutes
         let meanDarkness = darknessSum / Double(usableCount)
-        let meanClear = clearSum / Double(usableCount)
+        // Over the target's whole potential dark, above-floor window — not
+        // just the usable subset — so a target that only squeaked out a few
+        // clear minutes in an otherwise cloudy night scores accordingly,
+        // instead of Clear sky reporting the usable time was clear (it was,
+        // by definition) and missing how much of the night was not.
+        let meanClear = potentialWindowCount > 0 ? clearPotentialSum / Double(potentialWindowCount) : 0
         let meanExtinction = extinctionSum / Double(usableCount)
 
         // Detectability is judged at the best moment, with the whole usable
