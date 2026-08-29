@@ -111,12 +111,23 @@ private struct LocationSettings: View {
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
-                            if saved.id != state.site.id {
+                            if saved.id == state.site.id {
+                                Text("in use")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            } else {
                                 Button("Use") {
                                     state.site = saved
                                     Task { await state.refresh() }
                                 }
                             }
+                            Button {
+                                state.removeSite(saved)
+                            } label: {
+                                Image(systemName: "trash")
+                            }
+                            .buttonStyle(.borderless)
+                            .help("Remove this saved site")
                         }
                     }
                 }

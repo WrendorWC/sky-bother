@@ -146,13 +146,22 @@ final class AppState: ObservableObject {
     // MARK: - Site and rig management
 
     func apply(_ result: GeocodingResult) {
-        let previousBortle = settings.hasSetLocation ? site.bortleClass : Site.unset.bortleClass
         let previousHorizon = settings.hasSetLocation ? site.horizonAltitude : Site.unset.horizonAltitude
-        var newSite = result.makeSite(bortleClass: previousBortle, horizonAltitude: previousHorizon)
         // Keep the id stable if this is the same place, so saved sites do not duplicate.
-        if let existing = settings.savedSites.first(where: {
-            abs($0.latitude - newSite.latitude) < 0.01 && abs($0.longitude - newSite.longitude) < 0.01
-        }) {
+        let existing = settings.savedSites.first {
+            abs($0.latitude - result.latitude) < 0.01 && abs($0.longitude - result.longitude) < 0.01
+        }
+        // A genuinely new site gets a first guess at its Bortle class from
+        // the geocoder's population figure, rather than silently inheriting
+        // whatever the previous site happened to be set to — population is a
+        // loose proxy for light pollution, but it is better than a copy-paste
+        // default the user has to remember to change. Re-picking a place
+        // that is already saved keeps whatever Bortle class was set for it.
+        let bortle = existing?.bortleClass
+            ?? result.estimatedBortleClass
+            ?? (settings.hasSetLocation ? site.bortleClass : Site.unset.bortleClass)
+        var newSite = result.makeSite(bortleClass: bortle, horizonAltitude: previousHorizon)
+        if let existing {
             newSite.id = existing.id
         }
         settings.site = newSite

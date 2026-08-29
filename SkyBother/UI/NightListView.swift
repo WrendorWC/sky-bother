@@ -129,17 +129,6 @@ private struct NightRow: View {
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(isSelected ? Palette.accent.opacity(0.55) : .clear, lineWidth: 1)
         }
-        .overlay {
-            // The score badge already glows on an exceptional night — a
-            // filled green background behind the whole row on top of that
-            // was double-signalling the same thing. The outline alone still
-            // marks the row as something special without competing with it.
-            if isExceptional {
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(Palette.exceptional.opacity(0.45))
-                    .transition(.opacity)
-            }
-        }
         .animation(.easeInOut(duration: 0.15), value: isSelected)
         .animation(.easeInOut(duration: 0.3), value: isExceptional)
     }

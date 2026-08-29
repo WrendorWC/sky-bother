@@ -76,7 +76,8 @@ struct SkyBotherApp: App {
                 .environmentObject(state)
                 .tint(Palette.accent)
         } label: {
-            Image(systemName: "moon.stars.fill")
+            MenuBarScoreIcon()
+                .environmentObject(state)
         }
         .menuBarExtraStyle(.window)
     }
@@ -99,6 +100,57 @@ private struct HelpWindowButton: View {
     var body: some View {
         Button("Sky Bother Help") { openWindow(id: "help") }
             .keyboardShortcut("?", modifiers: .command)
+    }
+}
+
+/// The menu bar icon becomes tonight's own score badge — same ring, same
+/// colour, same number as everywhere else in the app — so the answer to
+/// "is tonight worth it" is visible without opening anything. Falls back to
+/// a plain glyph before a plan exists yet (no location set, still loading).
+///
+/// Rendered to a bitmap with `ImageRenderer` rather than handed to
+/// `MenuBarExtra` as plain SwiftUI shape content — a `Circle().stroke(...)`
+/// placed directly in a status-item label doesn't reliably get the frame it
+/// asks for from the menu bar's own layout host, so the ring collapses away
+/// and only the text survives. Rendering it ourselves sidesteps that: we
+/// hand the menu bar a finished, exactly-sized image instead of a layout to
+/// resolve.
+private struct MenuBarScoreIcon: View {
+    @EnvironmentObject private var state: AppState
+
+    var body: some View {
+        if let plan = state.tonight {
+            Image(nsImage: Self.badgeImage(score: plan.score))
+        } else {
+            Image(systemName: "moon.stars.fill")
+        }
+    }
+
+    @MainActor
+    private static func badgeImage(score: Double) -> NSImage {
+        let renderer = ImageRenderer(content: MenuBarBadge(score: score))
+        renderer.scale = NSScreen.main?.backingScaleFactor ?? 2
+        return renderer.nsImage ?? NSImage(systemSymbolName: "moon.stars.fill", accessibilityDescription: nil) ?? NSImage()
+    }
+}
+
+private struct MenuBarBadge: View {
+    var score: Double
+    private var color: Color { Palette.score(score) }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.secondary.opacity(0.4), lineWidth: 2)
+            Circle()
+                .trim(from: 0, to: max(0.02, min(1, score / 100)))
+                .stroke(color, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            Text("\(Int(score.rounded()))")
+                .font(.system(size: 9, weight: .bold, design: .rounded))
+                .foregroundStyle(color)
+        }
+        .frame(width: 18, height: 18)
     }
 }
 

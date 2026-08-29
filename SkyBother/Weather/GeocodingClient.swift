@@ -9,10 +9,31 @@ struct GeocodingResult: Identifiable, Hashable, Sendable {
     var timeZoneIdentifier: String
     var country: String?
     var admin1: String?
+    var population: Int?
 
     /// "Cambridge, Massachusetts, United States"
     var subtitle: String {
         [admin1, country].compactMap { $0 }.joined(separator: ", ")
+    }
+
+    /// A first guess at Bortle class from population alone, since that is
+    /// the one signal the free geocoder actually gives us. This is
+    /// deliberately coarse — population correlates with light pollution far
+    /// more loosely than density or regional lighting practices do — so it
+    /// exists only to give a new site a plausible starting point instead of
+    /// silently inheriting whatever the previous site happened to be set to.
+    /// Nil when the geocoder didn't report a population (common for smaller
+    /// places), leaving the caller to fall back to something else.
+    var estimatedBortleClass: Int? {
+        guard let population else { return nil }
+        switch population {
+        case ..<2_000: return 3
+        case ..<20_000: return 4
+        case ..<100_000: return 5
+        case ..<500_000: return 6
+        case ..<2_000_000: return 7
+        default: return 8
+        }
     }
 
     func makeSite(bortleClass: Int, horizonAltitude: Double) -> Site {
@@ -64,7 +85,8 @@ struct GeocodingClient {
                             elevationMeters: $0.elevation ?? 0,
                             timeZoneIdentifier: $0.timezone ?? TimeZone.current.identifier,
                             country: $0.country,
-                            admin1: $0.admin1)
+                            admin1: $0.admin1,
+                            population: $0.population)
         }
     }
 
@@ -78,6 +100,7 @@ struct GeocodingClient {
             let timezone: String?
             let country: String?
             let admin1: String?
+            let population: Int?
         }
         let results: [Entry]?
     }
