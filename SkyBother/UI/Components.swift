@@ -11,6 +11,9 @@ enum Palette {
     static let astronomical = Color(red: 0.025, green: 0.03, blue: 0.075)
     static let moonlight = Color(red: 0.98, green: 0.93, blue: 0.74)
     static let cloud = Color(red: 0.86, green: 0.89, blue: 0.94)
+    /// The Milky Way band in the sky view — dim and cool so it reads as
+    /// structure in the background rather than competing with targets.
+    static let milkyWay = Color(red: 0.80, green: 0.84, blue: 0.92)
 
     static let go = Color(red: 0.24, green: 0.78, blue: 0.47)
     static let worthwhile = Color(red: 0.30, green: 0.66, blue: 0.90)
