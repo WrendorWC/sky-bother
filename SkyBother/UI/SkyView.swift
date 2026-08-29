@@ -59,9 +59,17 @@ struct SkyView: View {
 
     private var framingRig: Rig { framingRigOverride ?? state.rig }
 
+    /// Falls back to a live default only for the instant before
+    /// `onChange(of: showsCameraFrame)` below freezes it — once the frame
+    /// has an actual placement, this never recomputes from a moving
+    /// reference again. A camera, once pointed somewhere, doesn't
+    /// re-aim itself just because time passed.
     private var cameraFrameCenter: HorizontalCoordinate {
-        if let override = cameraFrameCenterOverride { return override }
-        return showsMilkyWay ? galacticCoreHorizontal : HorizontalCoordinate(altitude: 90, azimuth: 0)
+        cameraFrameCenterOverride ?? defaultCameraFrameCenter
+    }
+
+    private var defaultCameraFrameCenter: HorizontalCoordinate {
+        showsMilkyWay ? galacticCoreHorizontal : HorizontalCoordinate(altitude: 90, azimuth: 0)
     }
 
     /// The galactic plane, sampled every 4° of galactic longitude and
@@ -149,6 +157,15 @@ struct SkyView: View {
             .frame(maxWidth: .infinity, alignment: .center)
 
             timeScrubber
+        }
+        // This is the fix for the frame silently drifting: capture wherever
+        // it's pointed *once*, the moment the layer turns on, instead of
+        // leaving it permanently tied to a value (the Core's position) that
+        // moves every time the scrub time does.
+        .onChange(of: showsCameraFrame) { _, isOn in
+            if isOn && cameraFrameCenterOverride == nil {
+                cameraFrameCenterOverride = defaultCameraFrameCenter
+            }
         }
     }
 

@@ -131,6 +131,27 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                                 hasNarrowbandFilter: true, supportsMosaic: true,
                                 zenithAvoidanceAltitude: 80)
 
+    // The S50 Pro and S30 each also carry a second, wide-angle camera
+    // alongside their main imaging optics — used on the device for
+    // framing/context, and here for starscape/Milky Way planning, which
+    // wants a much shorter focal length than either main camera offers.
+    // ZWO doesn't publish detailed specs for these the way they do the
+    // main optics, so these numbers are a best estimate rather than a
+    // manufacturer figure — check them against your own unit.
+    static let seestarS50ProWide = Rig(name: "ZWO Seestar S50 Pro (wide)",
+                                       apertureMillimeters: 7, focalLengthMillimeters: 16,
+                                       sensorWidthMillimeters: 5.6, sensorHeightMillimeters: 3.2,
+                                       pixelSizeMicrons: 2.9, mountType: .altAzimuth,
+                                       hasNarrowbandFilter: false, supportsMosaic: false,
+                                       zenithAvoidanceAltitude: 80)
+
+    static let seestarS30Wide = Rig(name: "ZWO Seestar S30 (wide)",
+                                    apertureMillimeters: 7, focalLengthMillimeters: 16,
+                                    sensorWidthMillimeters: 5.6, sensorHeightMillimeters: 3.2,
+                                    pixelSizeMicrons: 2.9, mountType: .altAzimuth,
+                                    hasNarrowbandFilter: false, supportsMosaic: false,
+                                    zenithAvoidanceAltitude: 80)
+
     static let celestronOrigin = Rig(name: "Celestron Origin",
                                      apertureMillimeters: 152, focalLengthMillimeters: 335,
                                      sensorWidthMillimeters: 7.4, sensorHeightMillimeters: 5.0,
@@ -206,5 +227,6 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
 
     static let presets: [Rig] = [seestarS50Pro, seestarS50, seestarS30, celestronOrigin, unistellarEVscope2,
                                  vesperaII, dwarf3, cameraOnTracker, refractor80, sct8,
-                                 apsc10mm, apsc16mm, fullFrame24mm]
+                                 apsc10mm, apsc16mm, fullFrame24mm,
+                                 seestarS50ProWide, seestarS30Wide]
 }
