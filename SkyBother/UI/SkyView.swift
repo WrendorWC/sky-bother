@@ -13,6 +13,14 @@ struct SkyView: View {
     /// Not persisted to Preferences — a per-viewing toggle for one layer,
     /// not a setting worth growing the stored-settings surface for yet.
     @State private var showsMilkyWay = true
+    @State private var showsCameraFrame = false
+    /// Nil until the user picks something other than their active rig —
+    /// previewing equipment here never touches `state.rig` itself.
+    @State private var framingRigOverride: Rig?
+    @State private var cameraRollDegrees: Double = 0
+    /// Nil until the user clicks the sky to place the frame — until then it
+    /// follows the Core (the doc's actual use case) or the zenith.
+    @State private var cameraFrameCenterOverride: HorizontalCoordinate?
 
     private var daysSinceJ2000: Double { scrubTime.daysSinceJ2000 }
 
@@ -47,6 +55,13 @@ struct SkyView: View {
 
     private var galacticCoreHorizontal: HorizontalCoordinate {
         horizontal(of: GalacticCoordinates.galacticCenter)
+    }
+
+    private var framingRig: Rig { framingRigOverride ?? state.rig }
+
+    private var cameraFrameCenter: HorizontalCoordinate {
+        if let override = cameraFrameCenterOverride { return override }
+        return showsMilkyWay ? galacticCoreHorizontal : HorizontalCoordinate(altitude: 90, azimuth: 0)
     }
 
     /// The galactic plane, sampled every 4° of galactic longitude and
@@ -103,7 +118,14 @@ struct SkyView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            milkyWayToggle
+            HStack(spacing: 8) {
+                milkyWayToggle
+                cameraFrameToggle
+            }
+
+            if showsCameraFrame {
+                cameraFrameControls
+            }
 
             GeometryReader { geometry in
                 let side = min(geometry.size.width, geometry.size.height)
@@ -123,7 +145,7 @@ struct SkyView: View {
                 )
             }
             .aspectRatio(1, contentMode: .fit)
-            .frame(maxWidth: 420)
+            .frame(maxWidth: 840)
             .frame(maxWidth: .infinity, alignment: .center)
 
             timeScrubber
@@ -147,6 +169,60 @@ struct SkyView: View {
         .background(showsMilkyWay ? Palette.accentWarm.opacity(0.22) : Color.clear, in: Capsule())
         .overlay(Capsule().strokeBorder(Palette.accentWarm.opacity(showsMilkyWay ? 0.55 : 0.3)))
         .foregroundStyle(showsMilkyWay ? Palette.accentWarm : .secondary)
+    }
+
+    private var cameraFrameToggle: some View {
+        Button {
+            showsCameraFrame.toggle()
+        } label: {
+            Label("Camera Frame", systemImage: showsCameraFrame ? "checkmark.circle.fill" : "circle")
+                .font(.caption.weight(.semibold))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(showsCameraFrame ? Palette.cameraFrame.opacity(0.18) : Color.clear, in: Capsule())
+        .overlay(Capsule().strokeBorder(Palette.cameraFrame.opacity(showsCameraFrame ? 0.55 : 0.3)))
+        .foregroundStyle(showsCameraFrame ? Palette.cameraFrame : .secondary)
+    }
+
+    /// A rig picker (previewing equipment without touching `state.rig`) and
+    /// a roll slider — direct-manipulation drag-to-rotate on a shape that's
+    /// curved post-projection isn't worth the complexity here, so a slider
+    /// is the pragmatic middle ground.
+    private var cameraFrameControls: some View {
+        HStack(spacing: 14) {
+            Menu {
+                ForEach(Rig.presets) { preset in
+                    Button(preset.name) { framingRigOverride = preset }
+                }
+                if !state.settings.savedRigs.isEmpty {
+                    Divider()
+                    ForEach(state.settings.savedRigs) { saved in
+                        Button(saved.name) { framingRigOverride = saved }
+                    }
+                }
+            } label: {
+                Label(framingRig.name, systemImage: "camera.aperture")
+                    .font(.caption)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+
+            HStack(spacing: 6) {
+                Text("Roll")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Slider(value: $cameraRollDegrees, in: 0...359)
+                    .frame(width: 120)
+                Text("\(Int(cameraRollDegrees))°")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 32, alignment: .trailing)
+            }
+
+            Spacer()
+        }
     }
 
     // MARK: - Drawing
@@ -208,6 +284,28 @@ struct SkyView: View {
                               with: .color(color.opacity(0.6)), lineWidth: 1.5)
             }
         }
+
+        if showsCameraFrame {
+            drawCameraFrame(context: context, center: center, radius: radius)
+        }
+    }
+
+    /// Only drawn when the whole frame clears the horizon — partially
+    /// clipping a frame that dips below it would need real polygon
+    /// clipping against the horizon circle, not worth it for a planning
+    /// overlay; the readout below explains why nothing's shown instead.
+    private func drawCameraFrame(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
+        let footprint = CameraFrame.footprint(centerAltitude: cameraFrameCenter.altitude,
+                                              centerAzimuth: cameraFrameCenter.azimuth,
+                                              fieldOfViewWidthDegrees: framingRig.fieldOfViewWidthDegrees,
+                                              fieldOfViewHeightDegrees: framingRig.fieldOfViewHeightDegrees,
+                                              rollDegrees: cameraRollDegrees)
+        guard !footprint.isEmpty, footprint.allSatisfy({ $0.altitude > 0 }) else { return }
+        let points = footprint.map { screenPoint(for: $0, center: center, radius: radius) }
+        var path = Path.smoothLine(through: points)
+        path.closeSubpath()
+        context.fill(path, with: .color(Palette.cameraFrame.opacity(0.05)))
+        context.stroke(path, with: .color(Palette.cameraFrame.opacity(0.85)), lineWidth: 1.5)
     }
 
     private func screenPoint(for horizontal: HorizontalCoordinate, center: CGPoint, radius: CGFloat) -> CGPoint {
@@ -267,9 +365,14 @@ struct SkyView: View {
         guard radius > 0 else { return }
         let tapUnit = SkyProjection.UnitPoint(x: Double((location.x - center.x) / radius),
                                               y: Double((location.y - center.y) / radius))
-        guard let nearest = targetPlacements.min(by: { distance($0.point, tapUnit) < distance($1.point, tapUnit) }),
-              distance(nearest.point, tapUnit) < 0.08 else { return }
-        state.selectedTargetID = nearest.id
+        if let nearest = targetPlacements.min(by: { distance($0.point, tapUnit) < distance($1.point, tapUnit) }),
+           distance(nearest.point, tapUnit) < 0.08 {
+            state.selectedTargetID = nearest.id
+            return
+        }
+        if showsCameraFrame, let tapped = SkyProjection.unproject(tapUnit) {
+            cameraFrameCenterOverride = tapped
+        }
     }
 
     private func distance(_ a: SkyProjection.UnitPoint, _ b: SkyProjection.UnitPoint) -> Double {
@@ -320,6 +423,35 @@ struct SkyView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
+
+            if showsCameraFrame {
+                let frameCenter = cameraFrameCenter
+                let centerText = frameCenter.altitude > 0
+                    ? "\(Int(frameCenter.azimuth.rounded()))° \(frameCenter.compassPoint) · \(Format.degrees(frameCenter.altitude))"
+                    : "below the horizon"
+                Text("Camera Frame · \(framingRig.fieldOfViewSummary) · \(centerText)")
+                    .font(.caption)
+                    .foregroundStyle(Palette.cameraFrame)
+                    .lineLimit(1)
+                if showsMilkyWay {
+                    Text(coreFitSummary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
         }
+    }
+
+    /// A rough check, not a real point-in-polygon test against the actual
+    /// projected (and possibly rolled) rectangle — comparing the Core's
+    /// separation from the frame centre against half the field's diagonal.
+    /// Worded as "roughly" rather than implying more precision than that.
+    private var coreFitSummary: String {
+        guard galacticCoreHorizontal.altitude > 0 else { return "The Galactic Core is below the horizon." }
+        let diagonal = (framingRig.fieldOfViewWidthDegrees * framingRig.fieldOfViewWidthDegrees
+                       + framingRig.fieldOfViewHeightDegrees * framingRig.fieldOfViewHeightDegrees).squareRoot()
+        let fits = cameraFrameCenter.separation(to: galacticCoreHorizontal) < diagonal / 2
+        return fits ? "The Galactic Core roughly fits in this frame." : "The Galactic Core is outside this frame."
     }
 }

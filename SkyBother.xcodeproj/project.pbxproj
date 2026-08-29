@@ -49,6 +49,7 @@
 		A1B2C3D40000000000000066 /* SkyProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000065 /* SkyProjection.swift */; };
 		A1B2C3D40000000000000068 /* SkyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000067 /* SkyView.swift */; };
 		A1B2C3D4000000000000006A /* GalacticCoordinates.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000069 /* GalacticCoordinates.swift */; };
+		A1B2C3D4000000000000006C /* CameraFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000006B /* CameraFrame.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -95,6 +96,7 @@
 		A1B2C3D40000000000000065 /* SkyProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyProjection.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000067 /* SkyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyView.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000069 /* GalacticCoordinates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalacticCoordinates.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000006B /* CameraFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraFrame.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -145,6 +147,7 @@
 				A1B2C3D4000000000000000A /* SkyCoordinates.swift */,
 				A1B2C3D40000000000000065 /* SkyProjection.swift */,
 				A1B2C3D40000000000000069 /* GalacticCoordinates.swift */,
+				A1B2C3D4000000000000006B /* CameraFrame.swift */,
 				A1B2C3D4000000000000000B /* Sun.swift */,
 				A1B2C3D4000000000000000C /* TimeWindow.swift */,
 			);
@@ -339,6 +342,7 @@
 				A1B2C3D40000000000000066 /* SkyProjection.swift in Sources */,
 				A1B2C3D40000000000000068 /* SkyView.swift in Sources */,
 				A1B2C3D4000000000000006A /* GalacticCoordinates.swift in Sources */,
+				A1B2C3D4000000000000006C /* CameraFrame.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

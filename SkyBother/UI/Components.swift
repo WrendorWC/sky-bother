@@ -14,6 +14,11 @@ enum Palette {
     /// The Milky Way band in the sky view — dim and cool so it reads as
     /// structure in the background rather than competing with targets.
     static let milkyWay = Color(red: 0.80, green: 0.84, blue: 0.92)
+    /// A camera's framed field of view in the sky view — a clean,
+    /// near-white "viewfinder" line, a distinct category from quality
+    /// colours, selection violet, the Core's warm accent and the Milky
+    /// Way's dim off-white.
+    static let cameraFrame = Color(red: 0.95, green: 0.97, blue: 0.98)
 
     static let go = Color(red: 0.24, green: 0.78, blue: 0.47)
     static let worthwhile = Color(red: 0.30, green: 0.66, blue: 0.90)

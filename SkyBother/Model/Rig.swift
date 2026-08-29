@@ -166,6 +166,30 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                                      hasNarrowbandFilter: false, supportsMosaic: false,
                                      zenithAvoidanceAltitude: 90)
 
+    // Wide-field starscape rigs — a Milky Way/landscape composition is just
+    // a very short, very fast "telescope" in this model, so these need no
+    // new equipment concept, only new numbers.
+    static let apsc10mm = Rig(name: "APS-C + 10mm lens",
+                              apertureMillimeters: 3.6, focalLengthMillimeters: 10,
+                              sensorWidthMillimeters: 23.5, sensorHeightMillimeters: 15.6,
+                              pixelSizeMicrons: 3.9, mountType: .equatorialTracked,
+                              hasNarrowbandFilter: false, supportsMosaic: false,
+                              zenithAvoidanceAltitude: 90)
+
+    static let apsc16mm = Rig(name: "APS-C + 16mm lens",
+                              apertureMillimeters: 5.7, focalLengthMillimeters: 16,
+                              sensorWidthMillimeters: 23.5, sensorHeightMillimeters: 15.6,
+                              pixelSizeMicrons: 3.9, mountType: .equatorialTracked,
+                              hasNarrowbandFilter: false, supportsMosaic: false,
+                              zenithAvoidanceAltitude: 90)
+
+    static let fullFrame24mm = Rig(name: "Full-frame + 24mm lens",
+                                   apertureMillimeters: 17.1, focalLengthMillimeters: 24,
+                                   sensorWidthMillimeters: 36, sensorHeightMillimeters: 24,
+                                   pixelSizeMicrons: 4.3, mountType: .equatorialTracked,
+                                   hasNarrowbandFilter: false, supportsMosaic: false,
+                                   zenithAvoidanceAltitude: 90)
+
     static let refractor80 = Rig(name: "80mm refractor + APS-C",
                                  apertureMillimeters: 80, focalLengthMillimeters: 480,
                                  sensorWidthMillimeters: 23.5, sensorHeightMillimeters: 15.7,
@@ -181,5 +205,6 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                           zenithAvoidanceAltitude: 90)
 
     static let presets: [Rig] = [seestarS50Pro, seestarS50, seestarS30, celestronOrigin, unistellarEVscope2,
-                                 vesperaII, dwarf3, cameraOnTracker, refractor80, sct8]
+                                 vesperaII, dwarf3, cameraOnTracker, refractor80, sct8,
+                                 apsc10mm, apsc16mm, fullFrame24mm]
 }
