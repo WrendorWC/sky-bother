@@ -216,6 +216,13 @@ struct TimeAxis {
         return CGFloat(fraction) * width
     }
 
+    /// Inverse of `x(for:)` — the date at a given horizontal position, for
+    /// turning a click or drag location back into a point in time.
+    func date(for x: CGFloat) -> Date {
+        let fraction = clamp(Double(x / max(1, width)), 0, 1)
+        return window.start.addingTimeInterval(window.duration * fraction)
+    }
+
     /// Whole-hour tick marks inside the window, in the site's local time.
     func hourTicks(timeZone: TimeZone) -> [Date] {
         var calendar = Calendar(identifier: .gregorian)

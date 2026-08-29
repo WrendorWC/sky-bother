@@ -4,7 +4,29 @@ struct NightDetailView: View {
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
 
+    /// Shared with the sky view — one clock between the two, not two
+    /// independent ones. Starts at "now" when tonight is actually in
+    /// progress, otherwise the middle of astronomical darkness, since that's
+    /// the part of the night actually worth looking at.
+    @State private var scrubTime: Date
+    @State private var isSkyViewExpanded = false
+
     private var targets: [TargetPlan] { state.visibleTargets(for: plan) }
+
+    init(plan: NightPlan) {
+        self.plan = plan
+        let window = plan.chartWindow
+        let now = Date()
+        let initialScrubTime: Date
+        if window.contains(now) {
+            initialScrubTime = now
+        } else if let dusk = plan.astronomicalDusk, let dawn = plan.astronomicalDawn {
+            initialScrubTime = dusk.addingTimeInterval(dawn.timeIntervalSince(dusk) / 2)
+        } else {
+            initialScrubTime = window.start.addingTimeInterval(window.duration / 2)
+        }
+        _scrubTime = State(initialValue: initialScrubTime)
+    }
 
     var body: some View {
         // One scroll view for the whole column — mission summary, stats,
@@ -85,12 +107,29 @@ struct NightDetailView: View {
             // stationary cursor) into an animated transaction — fighting the
             // scroll view's own momentum and producing a visible jitter that
             // made it hard to scroll back to the top.
-            NightTimelineView(plan: plan, selectedTarget: selectedTargetPlan)
+            NightTimelineView(plan: plan, selectedTarget: selectedTargetPlan, scrubTime: $scrubTime)
 
             legend
 
+            skySection
+
             autoPlanSection
         }
+    }
+
+    // MARK: - Sky view
+
+    /// Collapsed by default — this is a new, optional lens on the same
+    /// night, not a replacement for the density Phase 1B already tuned for
+    /// people who just want the deep-sky planner.
+    private var skySection: some View {
+        DisclosureGroup(isExpanded: $isSkyViewExpanded) {
+            SkyView(plan: plan, scrubTime: $scrubTime)
+                .padding(.top, 12)
+        } label: {
+            SectionHeader("Sky view")
+        }
+        .tint(Palette.accent)
     }
 
     // MARK: - Auto-plan
