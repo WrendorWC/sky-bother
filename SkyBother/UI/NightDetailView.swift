@@ -14,11 +14,24 @@ struct NightDetailView: View {
         // section header once you scroll past it, so it stays reachable
         // while browsing targets without needing its own scroll area.
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+            // The header (mission summary, stats, timeline, legend, tonight's
+            // plan) is one big one-off block, not repeating content — it
+            // stays in a plain VStack, laid out eagerly like normal, rather
+            // than as a sibling item inside the LazyVStack below. Lazy
+            // stacks estimate the size of anything not yet on screen, and a
+            // block this tall and this variable (a whole chart, a
+            // conditional cloud-out banner) is exactly the kind of item that
+            // estimate gets wrong — which showed up as the scroll position
+            // visibly fighting itself while scrolling back up past it. The
+            // target list below, which can run to 60+ rows, is the part that
+            // actually benefits from being lazy.
+            VStack(alignment: .leading, spacing: 0) {
                 header
                     .padding(20)
                 Divider()
+            }
 
+            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                 Section {
                     targetListContent
                 } header: {
@@ -63,8 +76,16 @@ struct NightDetailView: View {
 
             statistics
 
+            // No .animation() here deliberately: NightTimelineView draws
+            // everything in a Canvas, which redraws immediately rather than
+            // interpolating, so this had no visible effect on the selection
+            // change it looked like it was meant to smooth. What it did do
+            // is sweep in the timeline's own unrelated internal state (hover
+            // tracking, which refires while the content scrolls under a
+            // stationary cursor) into an animated transaction — fighting the
+            // scroll view's own momentum and producing a visible jitter that
+            // made it hard to scroll back to the top.
             NightTimelineView(plan: plan, selectedTarget: selectedTargetPlan)
-                .animation(.easeInOut(duration: 0.3), value: state.selectedTargetID)
 
             legend
 
