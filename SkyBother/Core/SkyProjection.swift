@@ -24,15 +24,4 @@ enum SkyProjection {
         return UnitPoint(x: radius * sinDeg(coordinate.azimuth),
                          y: -radius * cosDeg(coordinate.azimuth))
     }
-
-    /// Inverse of `project`, for hit-testing a tap/click against the sky.
-    /// Returns nil for points outside the horizon circle — nothing to select
-    /// out there.
-    static func unproject(_ point: UnitPoint) -> HorizontalCoordinate? {
-        let radius = (point.x * point.x + point.y * point.y).squareRoot()
-        guard radius <= 1 else { return nil }
-        let altitude = 90 - radius * 90
-        let azimuth = normalize360(atan2Deg(point.x, -point.y))
-        return HorizontalCoordinate(altitude: altitude, azimuth: azimuth)
-    }
 }

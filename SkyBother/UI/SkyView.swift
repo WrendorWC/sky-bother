@@ -18,10 +18,6 @@ struct SkyView: View {
     /// previewing equipment here never touches `state.rig` itself.
     @State private var framingRigOverride: Rig?
     @State private var cameraRollDegrees: Double = 0
-    /// Nil until the user clicks the sky to place the frame manually —
-    /// cleared again the moment the target selection changes, so picking a
-    /// different target always wins over a previous manual placement.
-    @State private var cameraFrameCenterOverride: HorizontalCoordinate?
 
     private var daysSinceJ2000: Double { scrubTime.daysSinceJ2000 }
 
@@ -48,8 +44,15 @@ struct SkyView: View {
         }
     }
 
-    private var moonHorizontal: HorizontalCoordinate {
-        horizontal(of: Moon.position(daysSinceJ2000: daysSinceJ2000).coordinate)
+    private var moonPosition: MoonPosition { Moon.position(daysSinceJ2000: daysSinceJ2000) }
+
+    private var moonHorizontal: HorizontalCoordinate { horizontal(of: moonPosition.coordinate) }
+
+    /// The Moon's real apparent diameter, from its actual distance tonight
+    /// rather than the ~0.52° average — small-angle approximation (real
+    /// Moon diameter ÷ distance, in radians), plenty accurate at this scale.
+    private var moonAngularDiameterDegrees: Double {
+        (3474.8 / moonPosition.distanceKilometers) * (180 / Double.pi)
     }
 
     private var sunAltitude: Double {
@@ -62,14 +65,15 @@ struct SkyView: View {
 
     private var framingRig: Rig { framingRigOverride ?? state.rig }
 
-    /// A manual click always wins. Otherwise: the selected target, if
-    /// there is one — tracking it live as time moves is exactly the point,
-    /// the same "traced live" idea the main timeline already uses for
-    /// whichever target is selected — or dead centre of the view (the
-    /// zenith) when nothing is. Selecting a *different* target clears the
-    /// override below, so picking something new always takes over framing.
+    /// The selected target, if there is one — tracking it live as time
+    /// moves is exactly the point, the same "traced live" idea the main
+    /// timeline already uses for whichever target is selected — or dead
+    /// centre of the view (the zenith) when nothing is. Deliberately just
+    /// these two states, nothing else: an earlier click-to-place override
+    /// could survive a rig change or scrub and leave the frame visually
+    /// "pinned" wherever it was last clicked, no longer describing anything
+    /// live on the sky.
     private var cameraFrameCenter: HorizontalCoordinate {
-        if let override = cameraFrameCenterOverride { return override }
         if let selectedID = state.selectedTargetID,
            let targetPlan = plan.targets.first(where: { $0.id == selectedID }) {
             return horizontal(of: targetPlan.target.coordinate)
@@ -77,25 +81,43 @@ struct SkyView: View {
         return HorizontalCoordinate(altitude: 90, azimuth: 0)
     }
 
-    /// The galactic plane, sampled every 4° of galactic longitude and
-    /// projected — broken into separate runs wherever it dips below the
-    /// horizon, rather than one path that would otherwise cut straight
-    /// through the ground.
-    private var milkyWaySegments: [[SkyProjection.UnitPoint]] {
+    /// The galactic plane's real width, not a stylized line: a closed
+    /// ribbon spanning `halfWidthDegrees` of galactic latitude either side
+    /// of the plane, sampled every 4° of longitude and projected — broken
+    /// into separate runs wherever the centreline dips below the horizon,
+    /// rather than one path that would otherwise cut straight through the
+    /// ground. Each returned segment is a closed polygon: the "top" edge
+    /// (positive latitude) followed by the "bottom" edge reversed, ready to
+    /// fill directly.
+    private func milkyWayBandSegments(halfWidthDegrees: Double) -> [[SkyProjection.UnitPoint]] {
         var segments: [[SkyProjection.UnitPoint]] = []
-        var current: [SkyProjection.UnitPoint] = []
+        var top: [SkyProjection.UnitPoint] = []
+        var bottom: [SkyProjection.UnitPoint] = []
         for longitude in stride(from: 0.0, through: 360.0, by: 4.0) {
-            let point = horizontal(of: GalacticCoordinates.equatorial(galacticLongitude: longitude, galacticLatitude: 0))
-            if point.altitude > 0 {
-                current.append(SkyProjection.project(point))
-            } else if !current.isEmpty {
-                segments.append(current)
-                current = []
+            let centerline = horizontal(of: GalacticCoordinates.equatorial(galacticLongitude: longitude, galacticLatitude: 0))
+            if centerline.altitude > 0 {
+                let topPoint = horizontal(of: GalacticCoordinates.equatorial(galacticLongitude: longitude, galacticLatitude: halfWidthDegrees))
+                let bottomPoint = horizontal(of: GalacticCoordinates.equatorial(galacticLongitude: longitude, galacticLatitude: -halfWidthDegrees))
+                top.append(SkyProjection.project(topPoint))
+                bottom.append(SkyProjection.project(bottomPoint))
+            } else if !top.isEmpty {
+                segments.append(top + bottom.reversed())
+                top = []
+                bottom = []
             }
         }
-        if !current.isEmpty { segments.append(current) }
+        if !top.isEmpty { segments.append(top + bottom.reversed()) }
         return segments
     }
+
+    /// Two nested bands rather than one — a wide, faint outer glow and a
+    /// narrower, brighter core — reads as diffuse structure rather than a
+    /// hard-edged shape, the same layering the old fixed-width stroke used,
+    /// just now sized to the plane's actual extent instead of flat pixels.
+    /// The real photographic Milky Way's width varies a lot along its
+    /// length; these are representative constants, not a rigorous model.
+    private var milkyWayOuterBand: [[SkyProjection.UnitPoint]] { milkyWayBandSegments(halfWidthDegrees: 8) }
+    private var milkyWayInnerBand: [[SkyProjection.UnitPoint]] { milkyWayBandSegments(halfWidthDegrees: 3) }
 
     /// Every span tonight where the Core clears a useful altitude — the same
     /// above-threshold windowing the planner already uses for dusk/dawn and
@@ -162,13 +184,6 @@ struct SkyView: View {
             .frame(maxWidth: .infinity, alignment: .center)
 
             timeScrubber
-        }
-        // This is the fix for the frame silently drifting: capture wherever
-        // it's pointed *once*, the moment the layer turns on, instead of
-        // leaving it permanently tied to a value (the Core's position) that
-        // moves every time the scrub time does.
-        .onChange(of: state.selectedTargetID) { _, _ in
-            cameraFrameCenterOverride = nil
         }
     }
 
@@ -286,7 +301,9 @@ struct SkyView: View {
 
         if moonHorizontal.altitude > 0 {
             let screen = screenPoint(for: moonHorizontal, center: center, radius: radius)
-            context.fill(Path(ellipseIn: CGRect(x: screen.x - 6, y: screen.y - 6, width: 12, height: 12)),
+            let diameter = moonDiameter(radius: radius)
+            context.fill(Path(ellipseIn: CGRect(x: screen.x - diameter / 2, y: screen.y - diameter / 2,
+                                                width: diameter, height: diameter)),
                         with: .color(Palette.moonlight))
         }
 
@@ -353,17 +370,33 @@ struct SkyView: View {
         return min(max(realDiameter, floor), 30)
     }
 
-    /// A soft, layered stroke — a wide faint pass plus a narrower brighter
-    /// one, the same cheap trick the main timeline's cloud layer uses —
-    /// reads as diffuse structure rather than a hard drawn line. The Core
-    /// itself gets its own warm-accent marker so it doesn't blend into
-    /// either the band or the target dots.
+    /// Same real-size-to-screen-size conversion as `targetDotDiameter`, for
+    /// the Moon's own true angular size — floored well above its literal
+    /// (tiny) size at most zoom levels so it stays a recognisable disc
+    /// rather than a near-invisible speck, capped so it can't dominate.
+    private func moonDiameter(radius: CGFloat) -> CGFloat {
+        let pointsPerDegree = radius / 90
+        let realDiameter = CGFloat(moonAngularDiameterDegrees) * pointsPerDegree
+        return min(max(realDiameter, 10), 26)
+    }
+
+    /// Filled ribbons rather than a stroked line, so the band reads as the
+    /// swath of sky it actually is — a wide faint outer glow plus a
+    /// narrower brighter core, reading as diffuse structure rather than a
+    /// hard edge. The Core itself gets its own warm-accent marker so it
+    /// doesn't blend into either band or the target dots.
     private func drawMilkyWay(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
-        for segment in milkyWaySegments where segment.count > 1 {
+        for segment in milkyWayOuterBand where segment.count > 3 {
             let points = segment.map { screenPoint(for: $0, center: center, radius: radius) }
-            let path = Path.smoothLine(through: points)
-            context.stroke(path, with: .color(Palette.milkyWay.opacity(0.12)), lineWidth: 14)
-            context.stroke(path, with: .color(Palette.milkyWay.opacity(0.22)), lineWidth: 6)
+            var path = Path.smoothLine(through: points)
+            path.closeSubpath()
+            context.fill(path, with: .color(Palette.milkyWay.opacity(0.14)))
+        }
+        for segment in milkyWayInnerBand where segment.count > 3 {
+            let points = segment.map { screenPoint(for: $0, center: center, radius: radius) }
+            var path = Path.smoothLine(through: points)
+            path.closeSubpath()
+            context.fill(path, with: .color(Palette.milkyWay.opacity(0.24)))
         }
 
         guard galacticCoreHorizontal.altitude > 0 else { return }
@@ -405,10 +438,6 @@ struct SkyView: View {
         if let nearest = targetPlacements.min(by: { distance($0.point, tapUnit) < distance($1.point, tapUnit) }),
            distance(nearest.point, tapUnit) < 0.08 {
             state.selectedTargetID = nearest.id
-            return
-        }
-        if showsCameraFrame, let tapped = SkyProjection.unproject(tapUnit) {
-            cameraFrameCenterOverride = tapped
         }
     }
 
