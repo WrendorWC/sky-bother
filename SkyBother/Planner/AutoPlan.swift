@@ -9,18 +9,21 @@ struct AutoPlanSlot: Identifiable, Hashable, Sendable {
 }
 
 /// Picks a session plan for the night: an ordered, non-overlapping sequence of
-/// targets — since a single scope can only point at one thing at a time — that
-/// maximises total quality. Each candidate's window already comes out of the
-/// same score the rest of the app shows (time on target, sky darkness, clear
-/// sky, framing, detectability, altitude), so "best combination" here means
-/// exactly that same score, just scheduled instead of merely sorted.
+/// targets — since a single scope can only point at one thing at a time.
 ///
-/// This is the textbook weighted interval scheduling problem: sort candidates
-/// by end time, and for each one decide whether including it (plus the best
-/// plan that finishes before it starts) beats skipping it. It reliably finds
-/// the actual optimum, not a greedy approximation — so it will correctly
-/// prefer two shorter, better-scoring windows over one long mediocre one when
-/// that combination scores higher, and vice versa.
+/// This used to be solved as textbook weighted interval scheduling, maximising
+/// the *sum* of the chosen targets' scores. That reliably backfired: a target's
+/// score is a standalone 0–100 quality rating, not a currency meant to be added
+/// up across picks, so summing let two mediocre targets (52 + 54 = 106) outbid
+/// one genuinely excellent one (94) and quietly bump it from its own plan —
+/// exactly the target the rest of the app was calling out as the night's best.
+///
+/// Instead this fills the night greedily, best score first: take the
+/// highest-scoring candidate unconditionally, then keep taking the next-best
+/// one that doesn't overlap anything already claimed. The single best target on
+/// a given night can therefore never lose its slot to a pile of worse ones —
+/// the only thing that can bump a candidate is something that scores higher and
+/// wants the same time.
 enum AutoPlanner {
     /// Below this, a window isn't worth suggesting a setup change for.
     static let minimumSlotMinutes: Double = 20
@@ -34,46 +37,15 @@ enum AutoPlanner {
                 }
                 return (targetPlan, window)
             }
-            .sorted { $0.1.end < $1.1.end }
-
-        guard !candidates.isEmpty else { return [] }
-
-        // bestValue[k] = the best total score achievable using only
-        // candidates[0..<k]. include[i] records whether the optimum at i+1
-        // actually uses candidate i, so the chosen set can be walked back out.
-        var bestValue = [Double](repeating: 0, count: candidates.count + 1)
-        var include = [Bool](repeating: false, count: candidates.count)
-        var predecessor = [Int](repeating: -1, count: candidates.count)
-
-        for i in 0..<candidates.count {
-            var p = -1
-            for j in stride(from: i - 1, through: 0, by: -1) where candidates[j].1.end <= candidates[i].1.start {
-                p = j
-                break
-            }
-            predecessor[i] = p
-
-            let withCandidate = candidates[i].0.score + bestValue[p + 1]
-            let withoutCandidate = bestValue[i]
-            if withCandidate > withoutCandidate {
-                bestValue[i + 1] = withCandidate
-                include[i] = true
-            } else {
-                bestValue[i + 1] = withoutCandidate
-            }
-        }
+            .sorted { $0.0.score > $1.0.score }
 
         var chosen: [(TargetPlan, TimeWindow)] = []
-        var i = candidates.count - 1
-        while i >= 0 {
-            if include[i] {
-                chosen.append(candidates[i])
-                i = predecessor[i]
-            } else {
-                i -= 1
-            }
+        for candidate in candidates where !chosen.contains(where: { $0.1.intersection(with: candidate.1) != nil }) {
+            chosen.append(candidate)
         }
 
-        return chosen.reversed().map { AutoPlanSlot(targetPlan: $0.0, window: $0.1) }
+        return chosen
+            .sorted { $0.1.start < $1.1.start }
+            .map { AutoPlanSlot(targetPlan: $0.0, window: $0.1) }
     }
 }

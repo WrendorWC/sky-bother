@@ -35,6 +35,7 @@ struct SkyBotherApp: App {
                 .environmentObject(state)
                 .tint(Palette.accent)
                 .frame(minWidth: 1120, minHeight: 720)
+                .background(TitleBarZoomAndDragFix())
         }
         .defaultSize(width: 1500, height: 920)
         .commands {

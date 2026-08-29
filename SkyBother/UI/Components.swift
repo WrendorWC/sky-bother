@@ -112,6 +112,63 @@ extension View {
 
 }
 
+/// SwiftUI's toolbar content claims nearly the full height of the title bar
+/// for hit-testing on this app's layout — the custom sidebar-toggle and
+/// refresh buttons, and the inline title item, are all sized to the toolbar's
+/// full height — which leaves only the sliver right next to the traffic
+/// lights as the OS's native double-click-to-zoom/drag territory. This
+/// installs an invisible view behind everything else already in the window's
+/// title bar container, so double-clicking or dragging any part of the header
+/// that isn't literally on top of a button reaches the window the same way it
+/// would with a plain, chrome-only title bar.
+struct TitleBarZoomAndDragFix: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let probe = NSView(frame: .zero)
+        DispatchQueue.main.async { install(from: probe) }
+        return probe
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private func install(from probe: NSView) {
+        guard let window = probe.window, let container = titlebarContainer(in: window) else { return }
+        let markerID = NSUserInterfaceItemIdentifier("com.skybother.titlebarZoomFix")
+        guard !container.subviews.contains(where: { $0.identifier == markerID }) else { return }
+
+        let catcher = ZoomAndDragCatcherView(frame: container.bounds)
+        catcher.identifier = markerID
+        catcher.autoresizingMask = [.width, .height]
+        if let frontmost = container.subviews.first {
+            container.addSubview(catcher, positioned: .below, relativeTo: frontmost)
+        } else {
+            container.addSubview(catcher)
+        }
+    }
+
+    /// The traffic lights' immediate superview is the classic title bar
+    /// strip; its superview is the container that also holds the toolbar,
+    /// spanning the full height of what reads on screen as "the header".
+    private func titlebarContainer(in window: NSWindow) -> NSView? {
+        window.standardWindowButton(.closeButton)?.superview?.superview
+    }
+}
+
+private final class ZoomAndDragCatcherView: NSView {
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        window?.isMovableByWindowBackground = true
+        let doubleClick = NSClickGestureRecognizer(target: self, action: #selector(handleDoubleClick))
+        doubleClick.numberOfClicksRequired = 2
+        addGestureRecognizer(doubleClick)
+    }
+
+    @objc private func handleDoubleClick() {
+        window?.performZoom(nil)
+    }
+
+    override var mouseDownCanMoveWindow: Bool { true }
+}
+
 extension Path {
     /// A smooth curve threaded through every point, rather than the sharp
     /// zig-zag straight `addLine` between them produces — used for the
