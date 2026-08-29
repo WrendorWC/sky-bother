@@ -62,20 +62,34 @@ struct NightTimelineView: View {
             context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Palette.astronomical))
             return
         }
-        let stepX = size.width / CGFloat(samples.count - 1)
 
-        for (index, sample) in samples.enumerated() {
-            let x = CGFloat(index) * stepX
-            let rect = CGRect(x: x - stepX / 2, y: 0, width: stepX + 1, height: size.height)
-            context.fill(Path(rect), with: .color(Palette.sky(sunAltitude: sample.sunAltitude)))
+        let rect = CGRect(origin: .zero, size: size)
+        let start = CGPoint(x: 0, y: size.height / 2)
+        let end = CGPoint(x: size.width, y: size.height / 2)
 
-            // Moonlight lifts the background wherever the moon is above the
-            // horizon, in proportion to how much light it is actually throwing.
-            if sample.moonAltitude > 0 && sample.moonBrightness > 0.01 {
-                let wash = 0.34 * sample.moonBrightness
-                context.fill(Path(rect), with: .color(Palette.moonlight.opacity(wash)))
-            }
+        // One continuous gradient across every sample's colour, rather than a
+        // flat-filled rect per sample. A solid-filled column has no blending
+        // into its neighbours, so the sequence of columns reads as a visible
+        // staircase of hard edges rather than a gradient — most noticeable
+        // through the low-contrast twilight blues, where the eye is most
+        // sensitive to banding. A gradient lets the renderer interpolate
+        // continuously between each sample's real, already-smooth colour.
+        let skyStops = samples.enumerated().map { index, sample in
+            Gradient.Stop(color: Palette.sky(sunAltitude: sample.sunAltitude),
+                          location: CGFloat(index) / CGFloat(samples.count - 1))
         }
+        context.fill(Path(rect), with: .linearGradient(Gradient(stops: skyStops), startPoint: start, endPoint: end))
+
+        // Moonlight lifts the background wherever the moon is above the
+        // horizon, in proportion to how much light it's actually throwing —
+        // also blended continuously, so moonrise and moonset fade in rather
+        // than snapping on at whichever sample happens to cross the horizon.
+        let moonStops = samples.enumerated().map { index, sample -> Gradient.Stop in
+            let wash = sample.moonAltitude > 0 ? 0.34 * sample.moonBrightness : 0
+            return Gradient.Stop(color: Palette.moonlight.opacity(wash),
+                                 location: CGFloat(index) / CGFloat(samples.count - 1))
+        }
+        context.fill(Path(rect), with: .linearGradient(Gradient(stops: moonStops), startPoint: start, endPoint: end))
     }
 
     private func drawCloud(context: GraphicsContext, size: CGSize) {
