@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "A1B2C3D4000000000000004A"
+               BlueprintIdentifier = "19CB57DDEADCFD559E93E4FB"
                BuildableName = "SkyBother.app"
                BlueprintName = "SkyBother"
                ReferencedContainer = "container:SkyBother.xcodeproj">
@@ -44,7 +44,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "A1B2C3D4000000000000004A"
+            BlueprintIdentifier = "19CB57DDEADCFD559E93E4FB"
             BuildableName = "SkyBother.app"
             BlueprintName = "SkyBother"
             ReferencedContainer = "container:SkyBother.xcodeproj">
@@ -61,7 +61,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "A1B2C3D4000000000000004A"
+            BlueprintIdentifier = "19CB57DDEADCFD559E93E4FB"
             BuildableName = "SkyBother.app"
             BlueprintName = "SkyBother"
             ReferencedContainer = "container:SkyBother.xcodeproj">

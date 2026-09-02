@@ -5,23 +5,105 @@ struct TargetDetailView: View {
     var plan: NightPlan
     var targetPlan: TargetPlan
 
+    /// True once the full headline card has scrolled past the top of the
+    /// column — the trigger for showing the compact sticky replacement.
+    @State private var isHeaderCollapsed = false
+
     private var target: Target { targetPlan.target }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                headline
-                if targetPlan.verdict == .marginal || targetPlan.verdict == .poor { whyNot }
-                framing
-                altitude
-                scoring
-                if !targetPlan.warnings.isEmpty { warnings }
-                facts
+        ZStack(alignment: .top) {
+            scrollContent
+                .spaceBackground()
+
+            if isHeaderCollapsed {
+                compactHeader
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
-            .padding(20)
         }
-        .spaceBackground()
+        .animation(.easeInOut(duration: 0.16), value: isHeaderCollapsed)
         .navigationTitle(target.displayName)
+    }
+
+    private var scrollBody: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            headline
+                .background(
+                    GeometryReader { geometry in
+                        Color.clear.preference(
+                            key: ScrollOffsetKey.self,
+                            value: geometry.frame(in: .named("targetDetailScroll")).maxY)
+                    }
+                )
+            if targetPlan.verdict == .marginal || targetPlan.verdict == .poor { whyNot }
+            framing
+            altitude
+            scoring
+            if !targetPlan.warnings.isEmpty { warnings }
+            facts
+        }
+        .padding(20)
+    }
+
+    // `onScrollGeometryChange` (macOS 15+) reads the ScrollView's real content
+    // offset directly — no coordinate-space bookkeeping, so nothing to get
+    // subtly wrong. The `GeometryReader`-in-`.background()` + named
+    // coordinate space technique used in the macOS 14 fallback below is the
+    // standard workaround for OSes without it, kept only for that fallback.
+    @ViewBuilder
+    private var scrollContent: some View {
+        if #available(macOS 15.0, *) {
+            ScrollView {
+                scrollBody
+            }
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentOffset.y
+            } action: { _, offset in
+                isHeaderCollapsed = offset > 90
+            }
+        } else {
+            ScrollView {
+                scrollBody
+            }
+            .coordinateSpace(name: "targetDetailScroll")
+            .onPreferenceChange(ScrollOffsetKey.self) { maxY in
+                isHeaderCollapsed = maxY < 36
+            }
+        }
+    }
+
+    // MARK: - Sticky header
+
+    /// Retains just enough of the headline to keep the target identified —
+    /// name, catalog number, score, verdict — once the full card above has
+    /// scrolled out of view, the same identity a glance at the headline gives
+    /// you, without needing to scroll back up to remember what you're looking at.
+    private var compactHeader: some View {
+        HStack(spacing: 9) {
+            ScoreBadge(score: targetPlan.score, size: 26)
+            Text(target.displayName)
+                .font(.callout.weight(.semibold))
+                .lineLimit(1)
+            if target.commonName != nil {
+                Text("·").foregroundStyle(.tertiary)
+                Text(target.designation)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            Text("·").foregroundStyle(.tertiary)
+            Text("\(Int(targetPlan.score.rounded()))")
+                .font(.callout.monospacedDigit().weight(.semibold))
+                .foregroundStyle(Palette.score(targetPlan.score))
+            Text("·").foregroundStyle(.tertiary)
+            Text(targetPlan.verdict.rawValue)
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(Palette.verdict(targetPlan.verdict))
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(Palette.spaceTop, in: Rectangle())
+        .overlay(Divider(), alignment: .bottom)
     }
 
     // MARK: - Sections
@@ -97,17 +179,20 @@ struct TargetDetailView: View {
     private var altitude: some View {
         VStack(alignment: .leading, spacing: 7) {
             SectionHeader("Through the night")
-            HStack {
-                if let transit = targetPlan.transitTime {
-                    Text("Highest at \(Format.time(transit, in: plan.timeZone)) · \(Format.degrees(targetPlan.maximumAltitude))")
-                }
-                Spacer()
-                if let best = targetPlan.bestWindow, !best.isEmpty {
-                    Text("best window \(Format.time(best.start, in: plan.timeZone))–\(Format.time(best.end, in: plan.timeZone))")
+            if let transit = targetPlan.transitTime {
+                Text("Highest at \(Format.time(transit, in: plan.timeZone)) · \(Format.degrees(targetPlan.maximumAltitude))")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            if let best = targetPlan.bestWindow, !best.isEmpty {
+                if let risk = targetPlan.bestWindowZenithRisk {
+                    ZenithRiskWindowBar(window: best, risk: risk, timeZone: plan.timeZone)
+                } else {
+                    Text("Best window \(Format.time(best.start, in: plan.timeZone))–\(Format.time(best.end, in: plan.timeZone))")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .font(.callout)
-            .foregroundStyle(.secondary)
             Text("Traced live on tonight's main timeline — this target is selected there too.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
@@ -121,8 +206,14 @@ struct TargetDetailView: View {
     }
 
     private var scoring: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader("Why this score")
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 5) {
+                SectionHeader("Why this score")
+                Image(systemName: "info.circle")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .hoverTooltip("Each impact is the real model re-run with that one factor made perfect — how many points you'd gain, not an invented share of the total.")
+            }
 
             if let primary = primaryFactorResult, primary.impact > 1 {
                 Label {
@@ -134,10 +225,12 @@ struct TargetDetailView: View {
                 .foregroundStyle(Palette.marginal)
             }
 
-            ForEach(targetPlan.factors) { factor in
-                FactorBar(factor: factor, impact: scoreImpact(of: factor, in: targetPlan.factors, actualScore: targetPlan.score))
+            VStack(alignment: .leading, spacing: 7) {
+                ForEach(targetPlan.factors) { factor in
+                    FactorBar(factor: factor, impact: scoreImpact(of: factor, in: targetPlan.factors, actualScore: targetPlan.score))
+                }
             }
-            Text("Each impact is the real model re-run with that one factor made perfect — how many points you'd gain, not an invented share of the total.")
+            Text("Impact shows how many score points this factor costs under tonight's conditions.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -214,23 +307,37 @@ struct FramingPreview: View {
     var target: Target
     var rig: Rig
 
+    private var frameWidth: Double { rig.fieldOfViewWidthArcminutes }
+    private var frameHeight: Double { rig.fieldOfViewHeightArcminutes }
+
+    // There's no way to know the real position angle on sky at imaging time —
+    // that depends on the moment's field rotation, not just the target — so
+    // this orients the target's long axis along whichever of the frame's two
+    // dimensions is actually longer, the best-case assumption. Hardcoding
+    // that to the frame's *width* (the old behaviour) looks right for every
+    // landscape sensor but is 90° wrong for a portrait one, like the Seestar
+    // S50 Pro's 6.26mm × 11.14mm chip.
+    private var frameIsPortrait: Bool { frameHeight > frameWidth }
+    private var objectWidth: Double {
+        max(0.2, frameIsPortrait ? target.minorAxisArcminutes : target.majorAxisArcminutes)
+    }
+    private var objectHeight: Double {
+        max(0.2, frameIsPortrait ? target.majorAxisArcminutes : target.minorAxisArcminutes)
+    }
+    private var fits: Bool {
+        objectWidth <= frameWidth * 0.9 && objectHeight <= frameHeight * 0.9
+    }
+
     var body: some View {
-        Canvas { context, size in
-            let frameWidth = rig.fieldOfViewWidthArcminutes
-            let frameHeight = rig.fieldOfViewHeightArcminutes
+        ZStack(alignment: .topLeading) {
+            Canvas { context, size in
             guard frameWidth > 0, frameHeight > 0 else { return }
 
-            // There's no way to know the real position angle on sky at
-            // imaging time — that depends on the moment's field rotation, not
-            // just the target — so this orients the target's long axis along
-            // whichever of the frame's two dimensions is actually longer, the
-            // best-case assumption. Hardcoding that to the frame's *width*
-            // (the old behaviour) looks right for every landscape sensor but
-            // is 90° wrong for a portrait one, like the Seestar S50 Pro's
-            // 6.26mm × 11.14mm chip.
-            let frameIsPortrait = frameHeight > frameWidth
-            let objectWidth = max(0.2, frameIsPortrait ? target.minorAxisArcminutes : target.majorAxisArcminutes)
-            let objectHeight = max(0.2, frameIsPortrait ? target.majorAxisArcminutes : target.minorAxisArcminutes)
+            // A faint starfield and grid so this reads as a finished sky
+            // visualization rather than an empty technical diagram — drawn
+            // first, well under the target ellipse and frame in opacity, and
+            // before anything else so it never competes with them.
+            drawBackgroundField(context: context, size: size, seed: target.designation)
 
             // Fit whichever is larger — the frame or the object — with a margin,
             // so an oversized target visibly spills past the frame edges.
@@ -263,25 +370,28 @@ struct FramingPreview: View {
                                    y: centre.y - frameHeight * scale / 2,
                                    width: frameWidth * scale,
                                    height: frameHeight * scale)
-            let fits = objectWidth <= frameWidth * 0.9 && objectHeight <= frameHeight * 0.9
             context.stroke(Path(frameRect),
                            with: .color(fits ? Palette.go : Palette.marginal),
                            style: StrokeStyle(lineWidth: 2, dash: fits ? [] : [5, 4]))
-
-            context.draw(Text(String(format: "%.2f° × %.2f°", frameWidth / 60, frameHeight / 60))
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundColor(fits ? Palette.go : Palette.marginal),
-                         at: CGPoint(x: frameRect.minX + 4, y: max(11, frameRect.minY - 11)),
-                         anchor: .topLeading)
 
             context.draw(Text(target.sizeSummary)
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(.white),
                          at: CGPoint(x: centre.x, y: min(size.height - 11, objectRect.maxY + 13)),
                          anchor: .center)
+            }
+            .background(Palette.spaceTop, in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.panelBorder, lineWidth: 1.5))
+
+            // Pinned to the panel corner rather than the (scaled, variable-position)
+            // frame rectangle, so it can never land on top of the frame border.
+            if frameWidth > 0, frameHeight > 0 {
+                Text(String(format: "%.2f° × %.2f°", frameWidth / 60, frameHeight / 60))
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(fits ? Palette.go : Palette.marginal)
+                    .padding(8)
+            }
         }
-        .background(Palette.spaceTop, in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.panelBorder, lineWidth: 1.5))
     }
 
     /// The rect an image should be drawn in to fill `bounds` while preserving
@@ -298,6 +408,30 @@ struct FramingPreview: View {
             let height = bounds.width / imageAspect
             return CGRect(x: bounds.minX, y: bounds.midY - height / 2, width: bounds.width, height: height)
         }
+    }
+
+    /// A sparse starfield plus a faint alignment grid, so the panel reads as
+    /// a finished sky visualization rather than an empty diagram. Stars are
+    /// seeded from the target's designation rather than `Double.random`, so
+    /// they're stable across the many redraws a `Canvas` does on every hover
+    /// and scrub — unseeded randomness would visibly flicker.
+    private func drawBackgroundField(context: GraphicsContext, size: CGSize, seed: String) {
+        let centre = CGPoint(x: size.width / 2, y: size.height / 2)
+        for fraction: CGFloat in [0.25, 0.45, 0.68] {
+            let r = min(size.width, size.height) / 2 * fraction
+            context.stroke(Path(ellipseIn: CGRect(x: centre.x - r, y: centre.y - r, width: r * 2, height: r * 2)),
+                           with: .color(.white.opacity(0.045)), lineWidth: 1)
+        }
+        var cross = Path()
+        cross.move(to: CGPoint(x: 0, y: centre.y))
+        cross.addLine(to: CGPoint(x: size.width, y: centre.y))
+        cross.move(to: CGPoint(x: centre.x, y: 0))
+        cross.addLine(to: CGPoint(x: centre.x, y: size.height))
+        context.stroke(cross, with: .color(.white.opacity(0.04)), lineWidth: 1)
+
+        // Shared with TargetThumbnail's "no photo" placeholder (Components.swift)
+        // so the app has one starfield visual language rather than two.
+        drawStarfield(context: context, size: size, seed: seed)
     }
 }
 

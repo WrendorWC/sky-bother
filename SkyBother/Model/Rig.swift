@@ -9,9 +9,9 @@ enum MountType: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var displayName: String {
         switch self {
-        case .altAzimuth: return "Alt-azimuth"
-        case .equatorialTracked: return "Equatorial, unguided"
-        case .equatorialGuided: return "Equatorial, guided"
+        case .altAzimuth: return "Alt-Azimuth"
+        case .equatorialTracked: return "Equatorial, Unguided"
+        case .equatorialGuided: return "Equatorial, Guided"
         }
     }
 

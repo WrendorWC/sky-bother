@@ -33,6 +33,12 @@ struct Preferences: Codable, Hashable, Sendable {
     var dewWarningSpread: Double = 2.5
     /// Show temperatures in Fahrenheit and wind in mph.
     var usesImperialUnits: Bool = false
+    /// Whether to mark zenith-risk spans (Sky View's amber path, the
+    /// segmented time bar, ranked-row and Tonight's Plan warning triangles).
+    /// Already irrelevant for an equatorial mount — `Planner` only ever
+    /// computes a zenith-risk window for an alt-az rig in the first place —
+    /// this is for turning it off even on one, if it's just noise to you.
+    var showsZenithRiskWarnings: Bool = true
 
     static let `default` = Preferences()
 }

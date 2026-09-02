@@ -225,13 +225,16 @@ private struct EquipmentSettings: View {
                 Toggle("Dual-band / narrowband filter", isOn: $state.rig.hasNarrowbandFilter)
                 Toggle("Can shoot mosaics", isOn: $state.rig.supportsMosaic)
                 if state.rig.mountType.rotatesField {
-                    VStack(alignment: .leading) {
-                        Slider(value: $state.rig.zenithAvoidanceAltitude, in: 60...90, step: 1) {
-                            Text("Warn above")
+                    Toggle("Show zenith risk warnings", isOn: $state.preferences.showsZenithRiskWarnings)
+                    if state.preferences.showsZenithRiskWarnings {
+                        VStack(alignment: .leading) {
+                            Slider(value: $state.rig.zenithAvoidanceAltitude, in: 60...90, step: 1) {
+                                Text("Warn above")
+                            }
+                            Text("Alt-az mounts rotate the field fastest overhead, and many smart telescopes stall near the zenith. Targets passing above \(Format.degrees(state.rig.zenithAvoidanceAltitude)) get a warning.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                        Text("Alt-az mounts rotate the field fastest overhead, and many smart telescopes stall near the zenith. Targets passing above \(Format.degrees(state.rig.zenithAvoidanceAltitude)) get a warning.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
                 }
             }

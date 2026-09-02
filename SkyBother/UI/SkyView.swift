@@ -29,13 +29,14 @@ struct SkyView: View {
         var majorAxisArcminutes: Double
     }
 
-    /// Only targets currently above the horizon — anything below would
-    /// otherwise project onto the rim, which reads as "grazing the horizon"
-    /// rather than "not up right now."
+    /// Only targets actually visible from this site right now — above the
+    /// *blocked* horizon (trees/houses/hills), not just the geometric one,
+    /// since the circle itself is cropped to that same boundary below and
+    /// nothing outside it should be selectable either.
     private var targetPlacements: [Placement] {
         plan.targets.compactMap { targetPlan in
             let horizontal = horizontal(of: targetPlan.target.coordinate)
-            guard horizontal.altitude > 0 else { return nil }
+            guard horizontal.altitude > plan.site.horizonAltitude else { return nil }
             return Placement(id: targetPlan.id,
                              point: SkyProjection.project(horizontal),
                              color: Palette.score(targetPlan.score),
@@ -79,6 +80,36 @@ struct SkyView: View {
             return horizontal(of: targetPlan.target.coordinate)
         }
         return HorizontalCoordinate(altitude: 90, azimuth: 0)
+    }
+
+    private var selectedTargetPlan: TargetPlan? {
+        guard let selectedID = state.selectedTargetID else { return nil }
+        return plan.targets.first { $0.id == selectedID }
+    }
+
+    /// One sample every 6 minutes across the whole chart window — dense
+    /// enough for a smooth arc, cheap enough to recompute on every scrub
+    /// (it's only evaluated for the one selected target, not all of them).
+    private struct PathSample {
+        var point: SkyProjection.UnitPoint
+        var isVisible: Bool
+        var isZenithRisk: Bool
+    }
+
+    private func pathSamples(for targetPlan: TargetPlan) -> [PathSample] {
+        stride(from: plan.chartWindow.start.timeIntervalSince1970,
+               through: plan.chartWindow.end.timeIntervalSince1970,
+               by: 360).map { epoch in
+            let date = Date(timeIntervalSince1970: epoch)
+            let position = SkyCoordinates.horizontal(targetPlan.target.coordinate,
+                                                      daysSinceJ2000: date.daysSinceJ2000,
+                                                      latitude: plan.site.latitude,
+                                                      longitude: plan.site.longitude)
+            let isRisk = targetPlan.zenithRiskWindows.contains { $0.contains(date) }
+            return PathSample(point: SkyProjection.project(position),
+                              isVisible: position.altitude > plan.site.horizonAltitude,
+                              isZenithRisk: isRisk)
+        }
     }
 
     /// The galactic plane's real width, not a stylized line: a closed
@@ -171,7 +202,7 @@ struct SkyView: View {
                     Canvas { context, _ in
                         draw(context: context, center: center, radius: radius)
                     }
-                    compassLabels(center: center, radius: radius)
+                    compassLabels(center: center, radius: visibleRadius(radius))
                 }
                 .contentShape(Rectangle())
                 .gesture(
@@ -262,31 +293,40 @@ struct SkyView: View {
 
     // MARK: - Drawing
 
+    /// The radius of the sky actually visible from this site — the full
+    /// 90° hemisphere shrunk to whatever altitude trees/houses/hills allow,
+    /// the same single blocked-altitude value used everywhere else in the
+    /// app. This *is* the drawn circle's boundary, not a dimmed overlay on
+    /// top of the full hemisphere — anything below it isn't visible from
+    /// here, so it isn't shown.
+    private func visibleRadius(_ radius: CGFloat) -> CGFloat {
+        radius * CGFloat(clamp((90 - plan.site.horizonAltitude) / 90, 0, 1))
+    }
+
     private func draw(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
         guard radius > 0 else { return }
-        let rect = CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
-        let horizonPath = Path(ellipseIn: rect)
+        var context = context
+        let visible = visibleRadius(radius)
+        let visibleRect = CGRect(x: center.x - visible, y: center.y - visible, width: visible * 2, height: visible * 2)
+        let horizonPath = Path(ellipseIn: visibleRect)
 
         context.fill(horizonPath, with: .color(Palette.sky(sunAltitude: sunAltitude)))
+        context.stroke(horizonPath, with: .color(Palette.panelBorder), lineWidth: 1)
 
-        // Blocked-horizon ring: the annulus between the true horizon and
-        // whatever altitude trees/houses/hills actually allow — the same
-        // single blocked-altitude value used everywhere else in the app.
-        let blockedRadius = radius * CGFloat(clamp((90 - plan.site.horizonAltitude) / 90, 0, 1))
-        if blockedRadius < radius {
-            let blockedRect = CGRect(x: center.x - blockedRadius, y: center.y - blockedRadius,
-                                     width: blockedRadius * 2, height: blockedRadius * 2)
-            var ring = Path(ellipseIn: rect)
-            ring.addPath(Path(ellipseIn: blockedRect))
-            context.fill(ring, with: .color(.black.opacity(0.38)), style: FillStyle(eoFill: true))
-        }
+        // Everything from here down is confined to the visible dome —
+        // altitude rings, the Milky Way, targets, the Moon, the camera
+        // frame — rather than each needing its own check against the
+        // blocked horizon, so a target or a frame that only partially
+        // clears it is honestly truncated right at the rim instead of
+        // either vanishing entirely or spilling out past a boundary that's
+        // supposed to mean "can't see past here."
+        context.clip(to: horizonPath)
 
         for altitude in [30.0, 60.0] {
             let r = radius * CGFloat(clamp((90 - altitude) / 90, 0, 1))
             let ringRect = CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2)
             context.stroke(Path(ellipseIn: ringRect), with: .color(.white.opacity(0.12)), lineWidth: 1)
         }
-        context.stroke(horizonPath, with: .color(Palette.panelBorder), lineWidth: 1)
 
         if showsMilkyWay {
             drawMilkyWay(context: context, center: center, radius: radius)
@@ -305,6 +345,10 @@ struct SkyView: View {
             context.fill(Path(ellipseIn: CGRect(x: screen.x - diameter / 2, y: screen.y - diameter / 2,
                                                 width: diameter, height: diameter)),
                         with: .color(Palette.moonlight))
+        }
+
+        if let selectedTargetPlan {
+            drawSelectedTargetPath(context: context, center: center, radius: radius, targetPlan: selectedTargetPlan)
         }
 
         for placement in targetPlacements {
@@ -326,6 +370,36 @@ struct SkyView: View {
         if showsCameraFrame {
             drawCameraFrame(context: context, center: center, radius: radius)
         }
+    }
+
+    /// The selected target's track across the whole chart window, so its
+    /// dot's motion through the night is visible rather than just its
+    /// current position. Split into contiguous runs by visibility and by
+    /// zenith-risk state, rather than one path, so the portion where the
+    /// target passes close enough to the zenith to risk field rotation or an
+    /// alt-az stall gets its own warning-coloured stroke instead of that
+    /// risk living only in a warning string elsewhere.
+    private func drawSelectedTargetPath(context: GraphicsContext, center: CGPoint, radius: CGFloat, targetPlan: TargetPlan) {
+        let samples = pathSamples(for: targetPlan)
+        guard samples.count > 1 else { return }
+
+        var runPoints: [CGPoint] = []
+        var runIsRisk = false
+
+        func flush() {
+            guard runPoints.count > 1 else { runPoints = []; return }
+            let color = runIsRisk ? Palette.marginal : Palette.accent
+            context.stroke(Path.smoothLine(through: runPoints), with: .color(color.opacity(0.55)), lineWidth: runIsRisk ? 2.5 : 2)
+            runPoints = []
+        }
+
+        for sample in samples {
+            guard sample.isVisible else { flush(); continue }
+            if !runPoints.isEmpty && sample.isZenithRisk != runIsRisk { flush() }
+            runIsRisk = sample.isZenithRisk
+            runPoints.append(screenPoint(for: sample.point, center: center, radius: radius))
+        }
+        flush()
     }
 
     /// Only drawn when the whole frame clears the horizon — partially

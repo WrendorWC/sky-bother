@@ -7,6 +7,10 @@ struct StoredSettings: Codable, Hashable, Sendable {
     var preferences: Preferences
     var savedSites: [Site]
     var savedRigs: [Rig]
+    /// Targets the user typed in by hand — anything the built-in catalog
+    /// doesn't cover. Scored and planned exactly like a built-in target; see
+    /// `AppState.rebuildPlans()`.
+    var customTargets: [Target]
     /// Whether the user has ever chosen a real site. False only until first-run
     /// onboarding finishes; `site` is meaningless while this is false and must
     /// not be used to fetch weather or build a plan.
@@ -17,22 +21,27 @@ struct StoredSettings: Codable, Hashable, Sendable {
                                         preferences: .default,
                                         savedSites: [],
                                         savedRigs: [],
+                                        customTargets: [],
                                         hasSetLocation: false)
 
-    // Custom Codable so settings files saved before `hasSetLocation` existed
-    // decode cleanly: any file that already has a `site` was written after the
-    // user changed something, which only happens once a real site is in use, so
-    // it defaults to true rather than re-triggering onboarding for it.
+    // Custom Codable so settings files saved before `hasSetLocation` or
+    // `customTargets` existed decode cleanly: any file that already has a
+    // `site` was written after the user changed something, which only
+    // happens once a real site is in use, so `hasSetLocation` defaults to
+    // true rather than re-triggering onboarding for it; `customTargets`
+    // simply defaults to empty.
     enum CodingKeys: String, CodingKey {
-        case site, rig, preferences, savedSites, savedRigs, hasSetLocation
+        case site, rig, preferences, savedSites, savedRigs, customTargets, hasSetLocation
     }
 
-    init(site: Site, rig: Rig, preferences: Preferences, savedSites: [Site], savedRigs: [Rig], hasSetLocation: Bool) {
+    init(site: Site, rig: Rig, preferences: Preferences, savedSites: [Site], savedRigs: [Rig],
+         customTargets: [Target], hasSetLocation: Bool) {
         self.site = site
         self.rig = rig
         self.preferences = preferences
         self.savedSites = savedSites
         self.savedRigs = savedRigs
+        self.customTargets = customTargets
         self.hasSetLocation = hasSetLocation
     }
 
@@ -43,6 +52,7 @@ struct StoredSettings: Codable, Hashable, Sendable {
         preferences = try container.decode(Preferences.self, forKey: .preferences)
         savedSites = try container.decode([Site].self, forKey: .savedSites)
         savedRigs = try container.decode([Rig].self, forKey: .savedRigs)
+        customTargets = try container.decodeIfPresent([Target].self, forKey: .customTargets) ?? []
         hasSetLocation = try container.decodeIfPresent(Bool.self, forKey: .hasSetLocation) ?? true
     }
 }

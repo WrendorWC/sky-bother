@@ -10,8 +10,33 @@ struct NightDetailView: View {
     /// the part of the night actually worth looking at.
     @State private var scrubTime: Date
     @State private var isSkyViewExpanded = false
+    @State private var sortOption: TargetSortOption = .relevance
+    @State private var isHeaderCollapsed = false
+    /// Hand-picking your own candidate pool for Tonight's Plan, rather than
+    /// the usual "everything that clears your minimum score." Transient,
+    /// like the target selection itself — this describes what you're
+    /// curating for tonight's session, not a saved preference.
+    @State private var isCustomPlanMode = false
+    @State private var customPlanTargetIDs: Set<String> = []
+    /// True while the scroll view is actively moving — see the note on
+    /// `NightTimelineView.isScrolling`; this is what actually drives it.
+    @State private var isScrolling = false
+    @State private var scrollSettleTask: Task<Void, Never>?
 
-    private var targets: [TargetPlan] { state.visibleTargets(for: plan) }
+    /// Filtering happens in `AppState.visibleTargets(for:)`; sorting is a
+    /// pure display concern on top of that, so it stays local view state
+    /// rather than something the planner needs to know about.
+    private var targets: [TargetPlan] {
+        let filtered = state.visibleTargets(for: plan)
+        switch sortOption {
+        case .relevance:
+            return filtered // already score-descending, straight from the planner
+        case .alphabetical:
+            return filtered.sorted { $0.target.displayName.localizedCaseInsensitiveCompare($1.target.displayName) == .orderedAscending }
+        case .size:
+            return filtered.sorted { $0.target.majorAxisArcminutes > $1.target.majorAxisArcminutes }
+        }
+    }
 
     init(plan: NightPlan) {
         self.plan = plan
@@ -28,13 +53,98 @@ struct NightDetailView: View {
         _scrubTime = State(initialValue: initialScrubTime)
     }
 
+    /// Identifies the very top of the scroll content, so the compact header
+    /// can scroll back to it on tap.
+    private let topAnchorID = "nightDetailTop"
+
     var body: some View {
-        // One scroll view for the whole column — mission summary, stats,
-        // timeline, legend and tonight's plan at the top, then the target
-        // list below — rather than two independently-scrolling regions
-        // stacked on top of each other. The filter bar pins in place as a
-        // section header once you scroll past it, so it stays reachable
-        // while browsing targets without needing its own scroll area.
+        ScrollViewReader { proxy in
+            ZStack(alignment: .top) {
+                Group {
+                    if #available(macOS 15.0, *) {
+                        plainScrollView
+                            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                                geometry.contentOffset.y
+                            } action: { _, offset in
+                                // The mission-summary card is roughly this
+                                // tall; once it's scrolled past, swap in the
+                                // compact score/best-target header in its place.
+                                isHeaderCollapsed = offset > 130
+                                markScrolling()
+                            }
+                    } else {
+                        plainScrollView
+                    }
+                }
+
+                if isHeaderCollapsed {
+                    compactHeader
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            withAnimation { proxy.scrollTo(topAnchorID, anchor: .top) }
+                        }
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.16), value: isHeaderCollapsed)
+        // The hero card below already owns the selected night's identity
+        // (date, verdict, best target) in a much bigger typeface — repeating
+        // the date here just gave the same fact two competing headings. The
+        // title bar is for the thing the hero doesn't say: where you're
+        // observing from.
+        .navigationTitle(plan.site.name)
+    }
+
+    /// Marks scrolling as in-flight and schedules clearing it again after a
+    /// short quiet period — `onScrollGeometryChange` only fires while the
+    /// offset is actually changing, not on a distinct "scroll ended" event,
+    /// so this is a simple debounce rather than a real gesture-end signal.
+    private func markScrolling() {
+        isScrolling = true
+        scrollSettleTask?.cancel()
+        scrollSettleTask = Task {
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            guard !Task.isCancelled else { return }
+            isScrolling = false
+        }
+    }
+
+    /// Retains just the score, date/verdict and best target once the full
+    /// mission-summary card above has scrolled out of view — the same
+    /// glanceable identity the card gives you, without scrolling back up.
+    private var compactHeader: some View {
+        HStack(spacing: 9) {
+            ScoreBadge(score: plan.score, size: 26)
+            Text(Format.longDate(plan.date, in: plan.timeZone))
+                .font(.callout.weight(.semibold))
+                .lineLimit(1)
+            Text("·").foregroundStyle(.tertiary)
+            Text(plan.verdict.rawValue)
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(Palette.verdict(plan.verdict))
+            if let best = plan.bestTarget {
+                Text("·").foregroundStyle(.tertiary)
+                Text("Best: \(best.target.displayName) · \(Int(best.score.rounded()))")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(Palette.spaceTop, in: Rectangle())
+        .overlay(Divider(), alignment: .bottom)
+    }
+
+    // One scroll view for the whole column — mission summary, stats,
+    // timeline, legend and tonight's plan at the top, then the target
+    // list below — rather than two independently-scrolling regions
+    // stacked on top of each other. The filter bar pins in place as a
+    // section header once you scroll past it, so it stays reachable
+    // while browsing targets without needing its own scroll area.
+    private var plainScrollView: some View {
         ScrollView {
             // The header (mission summary, stats, timeline, legend, tonight's
             // plan) is one big one-off block, not repeating content — it
@@ -50,6 +160,7 @@ struct NightDetailView: View {
             VStack(alignment: .leading, spacing: 0) {
                 header
                     .padding(20)
+                    .id(topAnchorID)
                 Divider()
             }
 
@@ -67,12 +178,6 @@ struct NightDetailView: View {
         }
         .scrollIndicators(.visible)
         .spaceBackground()
-        // The hero card below already owns the selected night's identity
-        // (date, verdict, best target) in a much bigger typeface — repeating
-        // the date here just gave the same fact two competing headings. The
-        // title bar is for the thing the hero doesn't say: where you're
-        // observing from.
-        .navigationTitle(plan.site.name)
     }
 
     // MARK: - Header
@@ -86,16 +191,6 @@ struct NightDetailView: View {
         VStack(alignment: .leading, spacing: 14) {
             missionSummary
 
-            if plan.isCloudedOut {
-                Label("The forecast writes this night off. The list below shows what would have been up if it clears.",
-                      systemImage: "cloud.rain.fill")
-                    .font(.callout)
-                    .foregroundStyle(Palette.marginal)
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Palette.marginal.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
-            }
-
             statistics
 
             // No .animation() here deliberately: NightTimelineView draws
@@ -107,7 +202,7 @@ struct NightDetailView: View {
             // stationary cursor) into an animated transaction — fighting the
             // scroll view's own momentum and producing a visible jitter that
             // made it hard to scroll back to the top.
-            NightTimelineView(plan: plan, selectedTarget: selectedTargetPlan, scrubTime: $scrubTime)
+            NightTimelineView(plan: plan, selectedTarget: selectedTargetPlan, scrubTime: $scrubTime, isScrolling: isScrolling)
 
             legend
 
@@ -128,6 +223,10 @@ struct NightDetailView: View {
                 .padding(.top, 12)
         } label: {
             SectionHeader("Sky view")
+                // DisclosureGroup only toggles on its own triangle by
+                // default — the label itself isn't otherwise clickable.
+                .contentShape(Rectangle())
+                .onTapGesture { isSkyViewExpanded.toggle() }
         }
         .tint(Palette.accent)
     }
@@ -135,7 +234,8 @@ struct NightDetailView: View {
     // MARK: - Auto-plan
 
     private var autoPlan: [AutoPlanSlot] {
-        AutoPlanner.plan(for: plan, minimumScore: state.preferences.minimumScore)
+        AutoPlanner.plan(for: plan, minimumScore: state.preferences.minimumScore,
+                         restrictedTo: isCustomPlanMode ? customPlanTargetIDs : nil)
     }
 
     private var autoPlanSection: some View {
@@ -149,12 +249,38 @@ struct NightDetailView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                if isCustomPlanMode && !customPlanTargetIDs.isEmpty {
+                    Button("Clear") { customPlanTargetIDs.removeAll() }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Palette.accent)
+                        .font(.caption.weight(.semibold))
+                }
+                Button {
+                    isCustomPlanMode.toggle()
+                } label: {
+                    Label(isCustomPlanMode ? "Done" : "Plan My Own", systemImage: isCustomPlanMode ? "checkmark.circle.fill" : "checklist")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Palette.accent)
+                .font(.caption.weight(.semibold))
             }
 
-            if slots.isEmpty {
-                Text("Nothing tonight clears your minimum score for long enough to build a session around.")
+            if isCustomPlanMode && customPlanTargetIDs.isEmpty {
+                Text("Check targets in the list below to build a plan from exactly the ones you want — this replaces the usual minimum-score cutoff entirely.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
+            } else if slots.isEmpty {
+                Text(isCustomPlanMode
+                     ? "None of your selected targets have a usable window tonight that clears each other."
+                     : "Nothing tonight clears your minimum score for long enough to build a session around.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else if let only = slots.first, slots.count == 1 {
+                // A single target doesn't need the same target shown three
+                // times running (timeline block, plan row, ranked result) —
+                // the graphical strip only earns its place once there's more
+                // than one thing to show relative order between.
+                singleSlotSummary(only)
             } else {
                 AutoPlanStripView(plan: plan, slots: slots)
                     .frame(height: 34)
@@ -170,6 +296,42 @@ struct NightDetailView: View {
                 .panelStyle()
             }
         }
+    }
+
+    private func singleSlotSummary(_ slot: AutoPlanSlot) -> some View {
+        let isSelected = state.selectedTargetID == slot.targetPlan.id
+        return HStack(spacing: 8) {
+            ScoreBadge(score: slot.targetPlan.score, size: 26)
+            Text(slot.targetPlan.target.displayName)
+                .font(.callout.weight(.semibold))
+            Text("·")
+                .foregroundStyle(.tertiary)
+            Text("\(Format.time(slot.window.start, in: plan.timeZone))–\(Format.time(slot.window.end, in: plan.timeZone))")
+                .font(.callout.monospacedDigit())
+                .foregroundStyle(.secondary)
+            Text("·")
+                .foregroundStyle(.tertiary)
+            Text(Format.hours(slot.window.durationHours))
+                .font(.callout.monospacedDigit())
+                .foregroundStyle(.secondary)
+            if let risk = slot.targetPlan.zenithRiskWindows.compactMap({ slot.window.intersection(with: $0) }).first {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(Palette.marginal)
+                    .hoverTooltip("Zenith risk from \(Format.time(risk.start, in: plan.timeZone)) — field rotation peaks near the zenith and some alt-az mounts stall there.")
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        // Tint applied before panelStyle, so it layers on top of the opaque
+        // panel fill (a plain .background after panelStyle would land behind
+        // it and never show).
+        .background(isSelected ? Palette.accent.opacity(0.18) : Color.clear)
+        .panelStyle()
+        .animation(.easeInOut(duration: 0.18), value: isSelected)
+        .contentShape(Rectangle())
+        .onTapGesture { state.selectedTargetID = slot.targetPlan.id }
     }
 
     private func autoPlanRow(_ slot: AutoPlanSlot) -> some View {
@@ -215,28 +377,63 @@ struct NightDetailView: View {
                         .font(.title2.weight(.bold))
                     VerdictTag(verdict: plan.verdict)
                 }
+                // Capped at 2 lines with that height always reserved, rather
+                // than `.fixedSize(vertical: true)`'s unbounded growth — this
+                // line falls back to `plan.headline` (a full sentence) on a
+                // night with no best-imaging window, which is often long
+                // enough to wrap where the short "Best imaging HH:MM–HH:MM"
+                // line on a good night doesn't. Switching between the two
+                // was pushing the timeline and everything below it down;
+                // reserving the space up front keeps the card the same
+                // height regardless of which night is selected.
                 Text(operationalSummaryLine)
                     .font(.callout)
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2, reservesSpace: true)
+                    .hoverTooltip(operationalSummaryLine)
                 if let best = plan.bestTarget {
+                    let bestTargetLine = "\(best.target.displayName) · \(Int(best.score.rounded()))"
                     HStack(spacing: 6) {
                         Text("Best target")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(Palette.accent)
-                        Text("\(best.target.displayName) · \(Int(best.score.rounded()))")
+                        Text(bestTargetLine)
                             .font(.callout.weight(.medium))
+                            .lineLimit(1)
                     }
+                    .hoverTooltip(bestTargetLine)
                 }
                 if let limitation = nightLimitationPhrase(for: plan) {
-                    Text("Main limitation: \(limitation)")
+                    let limitationLine = "Main limitation: \(limitation)"
+                    Text(limitationLine)
                         .font(.caption)
                         .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                        .hoverTooltip(limitationLine)
                 }
             }
             Spacer(minLength: 0)
+            // A compact badge rather than the full-width banner this used to
+            // be: that banner sat between the header and the timeline, so on
+            // every clouded-out night it inserted or removed a whole block
+            // and shoved the timeline, legend and Tonight's Plan down —
+            // visually noisy on exactly the nights this fires most. Living
+            // here instead, it's just one more fixed-size item in a row that
+            // already reflows around variable content, so nothing below the
+            // card moves.
+            if plan.isCloudedOut {
+                VStack(spacing: 2) {
+                    Image(systemName: "cloud.rain.fill")
+                        .font(.title)
+                        .foregroundStyle(Palette.marginal)
+                    Text("Clouded Out")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Palette.marginal)
+                }
+                .hoverTooltip("The forecast writes this night off. The list below shows what would have been up if it clears.")
+            }
             MoonPhaseDisc(illuminatedFraction: plan.moon.illuminatedFraction, isWaxing: plan.moon.isWaxing, diameter: 34)
-                .help("\(plan.moon.illuminationPercent)% \(plan.moon.phaseName.lowercased())")
+                .hoverTooltip("\(plan.moon.illuminationPercent)% \(plan.moon.phaseName.lowercased())")
         }
         .padding(16)
         .panelStyle(cornerRadius: 14)
@@ -319,8 +516,17 @@ struct NightDetailView: View {
                 .fill(color)
                 .frame(width: 14, height: 9)
                 .overlay(RoundedRectangle(cornerRadius: 2).strokeBorder(Color.primary.opacity(0.15)))
+            // Fixed to one line: the selected-target item's label is dynamic
+            // (target name included) and, unconstrained, would wrap to a
+            // second line in a narrower window — growing the whole legend
+            // row's height every time a selection appears or disappears,
+            // shifting everything below it. Truncating keeps the row's
+            // height constant regardless of what's selected.
             Text(label)
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
+        .hoverTooltip(label)
     }
 
     // MARK: - Filters
@@ -340,7 +546,7 @@ struct NightDetailView: View {
             .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.panelBorder))
 
             Menu {
-                Button("All types") { state.typeFilter.removeAll() }
+                Button("All Types") { state.typeFilter.removeAll() }
                 Divider()
                 ForEach(TargetType.allCases) { type in
                     Toggle(type.displayName, isOn: Binding(
@@ -350,8 +556,21 @@ struct NightDetailView: View {
                         }))
                 }
             } label: {
-                Label(state.typeFilter.isEmpty ? "All types" : "\(state.typeFilter.count) types",
+                Label(state.typeFilter.isEmpty ? "All Types" : "\(state.typeFilter.count) Types",
                       systemImage: "line.3.horizontal.decrease.circle")
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+
+            Menu {
+                Picker("Sort by", selection: $sortOption) {
+                    ForEach(TargetSortOption.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+                .pickerStyle(.inline)
+            } label: {
+                Label(sortOption.rawValue, systemImage: "arrow.up.arrow.down.circle")
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
@@ -378,11 +597,24 @@ struct NightDetailView: View {
                 .frame(minHeight: 320)
         } else {
             ForEach(targets) { targetPlan in
-                TargetRowView(plan: plan, targetPlan: targetPlan,
-                             isSelected: state.selectedTargetID == targetPlan.id)
-                    .padding(.horizontal, 20)
-                    .contentShape(Rectangle())
-                    .onTapGesture { state.selectedTargetID = targetPlan.id }
+                HStack(spacing: 10) {
+                    if isCustomPlanMode {
+                        let isChecked = customPlanTargetIDs.contains(targetPlan.id)
+                        Image(systemName: isChecked ? "checkmark.square.fill" : "square")
+                            .font(.title3)
+                            .foregroundStyle(isChecked ? Palette.accent : .secondary)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                if isChecked { customPlanTargetIDs.remove(targetPlan.id) }
+                                else { customPlanTargetIDs.insert(targetPlan.id) }
+                            }
+                    }
+                    TargetRowView(plan: plan, targetPlan: targetPlan,
+                                 isSelected: state.selectedTargetID == targetPlan.id)
+                }
+                .padding(.horizontal, 20)
+                .contentShape(Rectangle())
+                .onTapGesture { state.selectedTargetID = targetPlan.id }
                 Divider().padding(.leading, 20)
             }
         }
@@ -401,6 +633,14 @@ struct NightDetailView: View {
         }
         return "Try lowering the minimum altitude or minimum score in Settings."
     }
+}
+
+enum TargetSortOption: String, CaseIterable, Identifiable {
+    case relevance = "Most Relevant"
+    case alphabetical = "Alphabetical"
+    case size = "Size in the Sky"
+
+    var id: String { rawValue }
 }
 
 struct TargetRowView: View {
@@ -429,17 +669,22 @@ struct TargetRowView: View {
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                     Spacer(minLength: 0)
-                    Text(targetPlan.usableHoursText)
-                        .font(.callout.monospacedDigit().weight(.medium))
-                        .foregroundStyle(.secondary)
                 }
 
                 TargetAvailabilityBar(plan: plan, targetPlan: targetPlan)
 
-                Text(summary)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                HStack(spacing: 5) {
+                    Text(summary)
+                        .font(.callout.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    if let risk = targetPlan.bestWindowZenithRisk {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(Palette.marginal)
+                            .help("Zenith risk from \(Format.time(risk.start, in: plan.timeZone)) — field rotation peaks near the zenith and some alt-az mounts stall there.")
+                    }
+                }
             }
 
             TargetThumbnail(designation: targetPlan.target.designation)
@@ -453,17 +698,17 @@ struct TargetRowView: View {
         .animation(.easeInOut(duration: 0.18), value: isSelected)
     }
 
+    /// Fixed-order, fixed-format fields rather than prose — so scanning
+    /// straight down the list compares the same value in the same place on
+    /// every row instead of parsing a different sentence shape each time.
     private var summary: String {
         var parts: [String] = []
         if let best = targetPlan.bestTime {
-            parts.append("best \(Format.time(best, in: plan.timeZone))")
+            parts.append("\(Format.time(best, in: plan.timeZone)) best")
         }
-        parts.append("peaks \(Format.degrees(targetPlan.maximumAltitude))")
-        parts.append(targetPlan.fit.framingNote.lowercased())
-        // The mosaic warning repeats the framing note, so skip it here.
-        if let warning = targetPlan.warnings.first(where: { $0 != targetPlan.fit.framingNote }) {
-            parts.append("⚠ \(warning.lowercased())")
-        }
+        parts.append("\(Format.degrees(targetPlan.maximumAltitude)) peak")
+        parts.append("\(Int((targetPlan.fit.fillFraction * 100).rounded()))% frame")
+        parts.append(targetPlan.usableHoursText)
         return parts.joined(separator: " · ")
     }
 }

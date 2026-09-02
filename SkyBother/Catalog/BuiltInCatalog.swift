@@ -490,5 +490,17 @@ enum BuiltInCatalog {
                majorAxisArcminutes: 40, minorAxisArcminutes: 30, constellation: "Sco"),
     ]
 
-    static let all: [Target] = messier + showpieces
+    /// The ~1000 brightest NGC/IC objects not already covered by `messier` or
+    /// `showpieces`, generated from the OpenNGC database (CC-BY-SA-4.0; see
+    /// Scripts/build_extended_catalog.py) rather than hand-typed — accurate
+    /// astronomical data at this scale isn't something to type from memory.
+    static let extended: [Target] = {
+        guard let url = Bundle.main.url(forResource: "ExtendedCatalog", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let decoded = try? JSONDecoder().decode([Target].self, from: data)
+        else { return [] }
+        return decoded
+    }()
+
+    static let all: [Target] = messier + showpieces + extended
 }

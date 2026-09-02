@@ -211,6 +211,64 @@ extension Path {
     }
 }
 
+/// A hand-built hover tooltip, standing in for the system `.help()` —
+/// `.help()` isn't showing up reliably anywhere in this app, while the night
+/// timeline's own hand-rolled hover readout (built the same way, off
+/// `onHover`/`onContinuousHover`) does. This follows that same proven pattern
+/// rather than continuing to fight the system tooltip.
+private struct HoverTooltip: ViewModifier {
+    var text: String
+    @State private var isHovering = false
+
+    func body(content: Content) -> some View {
+        content
+            .contentShape(Rectangle())
+            .onHover { isHovering = $0 }
+            .overlay(alignment: .top) {
+                if isHovering {
+                    Text(text)
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(Color.black.opacity(0.9), in: RoundedRectangle(cornerRadius: 6))
+                        .frame(maxWidth: 260, alignment: .leading)
+                        // `.overlay(alignment:)` proposes the tooltip its
+                        // anchor's own width — often a small icon or badge,
+                        // just a few points wide — which made Text wrap into
+                        // a near-vertical column of single characters.
+                        // `.fixedSize()` (both axes) makes it use its natural
+                        // width instead, capped at 260 by the frame above,
+                        // wrapping only once the text is actually that long.
+                        .fixedSize()
+                        .offset(y: -26)
+                        .allowsHitTesting(false)
+                        .transition(.opacity)
+                        .zIndex(10)
+                }
+            }
+            .animation(.easeInOut(duration: 0.1), value: isHovering)
+    }
+}
+
+extension View {
+    /// A custom hover tooltip — see `HoverTooltip`. Use this instead of
+    /// `.help()` anywhere in this app; `.help()` does not reliably appear.
+    func hoverTooltip(_ text: String) -> some View {
+        modifier(HoverTooltip(text: text))
+    }
+}
+
+/// Reports how far a view's bottom edge has scrolled, within a named
+/// coordinate space — used by the target inspector's collapsing sticky
+/// header to know when the full headline has scrolled out of view.
+struct ScrollOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = .infinity
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 /// Maps dates onto horizontal positions for every chart in the app, so the night
 /// timeline and each target's availability bar share one time axis.
 struct TimeAxis {
@@ -323,16 +381,18 @@ struct FactorBar: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
                 Text(factor.name)
-                    .font(.body)
+                    .font(.callout)
                 Text(factorVerdict.rawValue)
-                    .font(.caption.weight(.semibold))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(color)
                 Spacer()
+                // The impact number is the thing worth scanning for — bigger
+                // and bolder than the bar itself, not a footnote next to it.
                 Text(roundedImpact >= 1 ? "−\(roundedImpact)" : "0")
-                    .font(.callout.monospacedDigit().weight(roundedImpact >= 3 ? .bold : .medium))
+                    .font(.callout.monospacedDigit().weight(roundedImpact >= 3 ? .bold : .semibold))
                     .foregroundStyle(impactColor)
             }
             GeometryReader { geometry in
@@ -344,9 +404,9 @@ struct FactorBar: View {
                         .animation(.easeOut(duration: 0.45), value: factor.value)
                 }
             }
-            .frame(height: 8)
+            .frame(height: 5)
             Text(factor.detail)
-                .font(.caption)
+                .font(.caption2)
                 .foregroundStyle(.secondary)
         }
     }
@@ -368,10 +428,71 @@ struct LabelledValue: View {
                 Text(label)
                     .font(.callout)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
+            // This row's item count varies (weather data isn't always
+            // available), so its available width per item does too. Two
+            // lines' worth of height is always reserved, whether the value
+            // needs it or not, so a narrower item never wraps and grows the
+            // whole statistics row's height — and on the rare value that
+            // still doesn't fit even across two lines, it trails off with an
+            // ellipsis rather than growing further, with the untruncated
+            // text one hover away instead of just being lost.
             Text(value)
                 .font(.title3.weight(.medium))
                 .monospacedDigit()
+                .lineLimit(2, reservesSpace: true)
+                .hoverTooltip(value)
+        }
+    }
+}
+
+/// A time window with its zenith-risk portion marked directly on it, rather
+/// than the risk living only in a warning string elsewhere — a segmented bar
+/// plus inline labels, e.g. "21:18 ━━━ ⚠ Zenith risk 23:15 ━━━━━ 03:53".
+struct ZenithRiskWindowBar: View {
+    var window: TimeWindow
+    var risk: TimeWindow
+    var timeZone: TimeZone
+
+    private var beforeFraction: Double {
+        guard window.duration > 0 else { return 0 }
+        return clamp(risk.start.timeIntervalSince(window.start) / window.duration, 0, 1)
+    }
+    private var riskFraction: Double {
+        guard window.duration > 0 else { return 0 }
+        return clamp(risk.duration / window.duration, 0, 1)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Palette.accent.opacity(0.4))
+                    Capsule()
+                        .fill(Palette.marginal)
+                        .frame(width: max(2, width * riskFraction))
+                        .offset(x: width * beforeFraction)
+                }
+            }
+            .frame(height: 5)
+            HStack(spacing: 5) {
+                Text(Format.time(window.start, in: timeZone))
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 4)
+                Label {
+                    Text("Zenith risk \(Format.time(risk.start, in: timeZone))")
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .imageScale(.small)
+                }
+                .foregroundStyle(Palette.marginal)
+                Spacer(minLength: 4)
+                Text(Format.time(window.end, in: timeZone))
+                    .foregroundStyle(.secondary)
+            }
+            .font(.caption.monospacedDigit())
         }
     }
 }
@@ -453,9 +574,49 @@ struct MoonPhaseDisc: View {
     }
 }
 
+/// A minimal deterministic xorshift generator — `Double.random`/`CGFloat.random`
+/// still work with it via the `RandomNumberGenerator` protocol, but the
+/// sequence only depends on the seed, not on when it's called. Used anywhere
+/// a `Canvas` redraws often (hover, scrub) and needs a starfield that doesn't
+/// visibly flicker, which plain unseeded randomness would.
+struct SeededGenerator: RandomNumberGenerator {
+    private var state: UInt64
+
+    init(seed: Int) {
+        let bits = UInt64(bitPattern: Int64(seed))
+        state = bits == 0 ? 0x9E3779B97F4A7C15 : bits
+    }
+
+    mutating func next() -> UInt64 {
+        state ^= state << 13
+        state ^= state >> 7
+        state ^= state << 17
+        return state
+    }
+}
+
+/// Draws a sparse, stable starfield into `context` — seeded from `seed` so
+/// it's the same on every redraw for a given target rather than flickering.
+/// Shared by the framing preview's background and the "no photo" placeholder,
+/// so the app has one visual language for "here's some sky" rather than two.
+func drawStarfield(context: GraphicsContext, size: CGSize, seed: String) {
+    var generator = SeededGenerator(seed: seed.hashValue)
+    let starCount = Int((size.width * size.height) / 900)
+    for _ in 0..<starCount {
+        let x = CGFloat.random(in: 0...size.width, using: &generator)
+        let y = CGFloat.random(in: 0...size.height, using: &generator)
+        let radius = CGFloat.random(in: 0.4...1.3, using: &generator)
+        let opacity = Double.random(in: 0.12...0.45, using: &generator)
+        context.fill(Path(ellipseIn: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)),
+                     with: .color(.white.opacity(opacity)))
+    }
+}
+
 /// A target's reference photo, if the built-in catalog has one, filling and
-/// cropping its space. Falls back to a plain placeholder so callers never have
-/// to branch on whether a given target has art.
+/// cropping its space. Falls back to a starry "no photo" placeholder so
+/// callers never have to branch on whether a given target has art — most of
+/// the ~1000 extended-catalog objects don't have a Wikipedia photo to draw
+/// from, so this is the common case, not a rare edge case.
 struct TargetThumbnail: View {
     var designation: String
     var contentMode: ContentMode = .fill
@@ -466,11 +627,26 @@ struct TargetThumbnail: View {
                 .resizable()
                 .aspectRatio(contentMode: contentMode)
         } else {
-            ZStack {
-                Palette.panel
-                Image(systemName: "sparkles")
-                    .font(.title2)
-                    .foregroundStyle(.tertiary)
+            GeometryReader { geometry in
+                ZStack {
+                    Palette.spaceTop
+                    Canvas { context, size in
+                        drawStarfield(context: context, size: size, seed: designation)
+                    }
+                    VStack(spacing: 5) {
+                        Image(systemName: "sparkles")
+                            .font(.title3)
+                            .foregroundStyle(.tertiary)
+                        // Only worth the label where there's room to read it —
+                        // this same view renders at everything from a 56pt row
+                        // icon up to a 300pt detail sheet.
+                        if geometry.size.height > 90 {
+                            Text("No Photo Available")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                }
             }
         }
     }

@@ -21,6 +21,16 @@ struct NightTimelineView: View {
     /// view with it. Nil for callers (the menu bar popover) that don't need
     /// a scrub concept at all.
     var scrubTime: Binding<Date>? = nil
+    /// True while the enclosing scroll view is actively moving. Content
+    /// scrolling under a *stationary* cursor still changes the cursor's
+    /// position relative to this view, which fires `onContinuousHover` the
+    /// same as a real mouse move would — flooding `hoverLocation` with
+    /// updates and fighting the scroll view's own momentum, which read as
+    /// jitter and a scroll that "got hung up" reversing direction. Ignoring
+    /// hover while scrolling is in flight fixes that; the readout wasn't
+    /// meaningful mid-scroll anyway, since it wasn't reflecting a
+    /// deliberate point of interest.
+    var isScrolling: Bool = false
 
     @State private var hoverLocation: CGPoint?
 
@@ -52,10 +62,14 @@ struct NightTimelineView: View {
             }
             .contentShape(Rectangle())
             .onContinuousHover { phase in
+                guard !isScrolling else { hoverLocation = nil; return }
                 switch phase {
                 case .active(let location): hoverLocation = location
                 case .ended: hoverLocation = nil
                 }
+            }
+            .onChange(of: isScrolling) { _, scrolling in
+                if scrolling { hoverLocation = nil }
             }
             // Always attached, but a no-op via optional chaining when no
             // scrubTime binding was supplied — a ternary between a real
