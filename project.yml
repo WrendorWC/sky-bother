@@ -19,7 +19,18 @@ targets:
     type: application
     platform: macOS
     sources:
-      - SkyBother
+      # A plain glob would turn Catalog/Images into a regular group — each
+      # photo copied loose into the bundle's Resources root — but
+      # TargetImageCatalog.swift looks photos up with
+      # `subdirectory: "Images"`, which needs the folder copied as a single
+      # unit (a "folder reference", Xcode's blue-folder icon) so it survives
+      # as Resources/Images/ in the built app. Excluded from the main glob
+      # and re-added below with `type: folder` to get that treatment.
+      - path: SkyBother
+        excludes:
+          - Catalog/Images
+      - path: SkyBother/Catalog/Images
+        type: folder
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.skybother.SkyBother

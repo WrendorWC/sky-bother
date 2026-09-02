@@ -16,15 +16,15 @@ enum TargetType: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var displayName: String {
         switch self {
-        case .emissionNebula: return "Emission nebula"
-        case .reflectionNebula: return "Reflection nebula"
-        case .planetaryNebula: return "Planetary nebula"
-        case .supernovaRemnant: return "Supernova remnant"
+        case .emissionNebula: return "Emission Nebula"
+        case .reflectionNebula: return "Reflection Nebula"
+        case .planetaryNebula: return "Planetary Nebula"
+        case .supernovaRemnant: return "Supernova Remnant"
         case .galaxy: return "Galaxy"
-        case .galaxyGroup: return "Galaxy group"
-        case .globularCluster: return "Globular cluster"
-        case .openCluster: return "Open cluster"
-        case .starCloud: return "Star cloud"
+        case .galaxyGroup: return "Galaxy Group"
+        case .globularCluster: return "Globular Cluster"
+        case .openCluster: return "Open Cluster"
+        case .starCloud: return "Star Cloud"
         case .asterism: return "Asterism"
         }
     }
@@ -38,8 +38,8 @@ enum TargetType: String, Codable, CaseIterable, Identifiable, Sendable {
         case .galaxy: return "Galaxy"
         case .galaxyGroup: return "Group"
         case .globularCluster: return "Globular"
-        case .openCluster: return "Open cluster"
-        case .starCloud: return "Star cloud"
+        case .openCluster: return "Open Cluster"
+        case .starCloud: return "Star Cloud"
         case .asterism: return "Asterism"
         }
     }

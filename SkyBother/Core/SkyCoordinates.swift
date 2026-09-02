@@ -33,6 +33,16 @@ struct HorizontalCoordinate: Hashable, Sendable {
         let index = Int((normalize360(azimuth) / 22.5).rounded()) % 16
         return points[index]
     }
+
+    /// Great-circle separation from another point in the sky, in degrees —
+    /// the same spherical law of cosines `SkyCoordinates.separation` uses
+    /// for equatorial coordinates, just with altitude/azimuth standing in
+    /// for declination/right ascension.
+    func separation(to other: HorizontalCoordinate) -> Double {
+        let cosSep = sinDeg(altitude) * sinDeg(other.altitude)
+            + cosDeg(altitude) * cosDeg(other.altitude) * cosDeg(azimuth - other.azimuth)
+        return acosDeg(cosSep)
+    }
 }
 
 enum SkyCoordinates {

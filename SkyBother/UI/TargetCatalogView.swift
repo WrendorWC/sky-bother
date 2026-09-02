@@ -5,24 +5,40 @@ import SwiftUI
 /// pointing at before you commit a night to it. Independent of any night's
 /// plan: this is "what's out there", not "what's up tonight".
 struct TargetCatalogView: View {
+    @EnvironmentObject private var state: AppState
     @State private var searchText = ""
     @State private var typeFilter: Set<TargetType> = []
     @State private var selected: Target?
+    @State private var editorContext: CustomTargetEditorContext?
+    @State private var sortOption: CatalogSortOption = .alphabetical
 
-    /// Targets that can plausibly rise for a northern-hemisphere observer.
-    /// Excludes the handful of deep-southern showpieces (Magellanic Clouds,
-    /// 47 Tucanae, Carina Nebula) that never clear the horizon north of the
-    /// tropics.
+    /// Built-in targets that can plausibly rise for a northern-hemisphere
+    /// observer. Excludes the handful of deep-southern showpieces (Magellanic
+    /// Clouds, 47 Tucanae, Carina Nebula) that never clear the horizon north
+    /// of the tropics. Custom targets skip this filter entirely — the user
+    /// added them on purpose, wherever they are.
     private static let northernReachable = BuiltInCatalog.all
         .filter { $0.declination > -55 }
-        .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
+
+    private var customTargetIDs: Set<String> {
+        Set(state.customTargets.map(\.id))
+    }
 
     private var targets: [Target] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return Self.northernReachable.filter { target in
+        let all = Self.northernReachable + state.customTargets
+        let filtered = all.filter { target in
             if !typeFilter.isEmpty && !typeFilter.contains(target.type) { return false }
             if !query.isEmpty && !target.searchText.contains(query) { return false }
             return true
+        }
+        switch sortOption {
+        case .alphabetical:
+            return filtered.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
+        case .size:
+            return filtered.sorted { $0.majorAxisArcminutes > $1.majorAxisArcminutes }
+        case .brightness:
+            return filtered.sorted { $0.magnitude < $1.magnitude }
         }
     }
 
@@ -35,8 +51,15 @@ struct TargetCatalogView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 16) {
                     ForEach(targets) { target in
-                        TargetCatalogCell(target: target)
-                            .onTapGesture { selected = target }
+                        let isCustom = customTargetIDs.contains(target.id)
+                        TargetCatalogCell(target: target, isCustom: isCustom)
+                            .onTapGesture {
+                                if isCustom {
+                                    editorContext = CustomTargetEditorContext(existing: target)
+                                } else {
+                                    selected = target
+                                }
+                            }
                     }
                 }
                 .padding(20)
@@ -47,6 +70,9 @@ struct TargetCatalogView: View {
         .frame(minWidth: 760, minHeight: 560)
         .sheet(item: $selected) { target in
             TargetCatalogDetail(target: target)
+        }
+        .sheet(item: $editorContext) { context in
+            CustomTargetEditor(existing: context.existing)
         }
     }
 
@@ -65,7 +91,7 @@ struct TargetCatalogView: View {
             .frame(maxWidth: 280)
 
             Menu {
-                Button("All types") { typeFilter.removeAll() }
+                Button("All Types") { typeFilter.removeAll() }
                 Divider()
                 ForEach(TargetType.allCases) { type in
                     Toggle(type.displayName, isOn: Binding(
@@ -75,8 +101,21 @@ struct TargetCatalogView: View {
                         }))
                 }
             } label: {
-                Label(typeFilter.isEmpty ? "All types" : "\(typeFilter.count) types",
+                Label(typeFilter.isEmpty ? "All Types" : "\(typeFilter.count) Types",
                       systemImage: "line.3.horizontal.decrease.circle")
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+
+            Menu {
+                Picker("Sort by", selection: $sortOption) {
+                    ForEach(CatalogSortOption.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+                .pickerStyle(.inline)
+            } label: {
+                Label(sortOption.rawValue, systemImage: "arrow.up.arrow.down.circle")
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
@@ -86,13 +125,39 @@ struct TargetCatalogView: View {
             Text("\(targets.count) targets")
                 .font(.callout)
                 .foregroundStyle(.secondary)
+
+            Button {
+                editorContext = CustomTargetEditorContext(existing: nil)
+            } label: {
+                Label("Add Custom Target", systemImage: "plus.circle.fill")
+            }
+            .help("Add a target of your own — anything the built-in catalog doesn't cover")
         }
         .padding(16)
     }
 }
 
+/// Identifies one presentation of the custom-target editor sheet — `nil`
+/// existing means "adding new," a value means "editing that target." Wrapped
+/// in its own `Identifiable` rather than using `Target?` directly as the
+/// `sheet(item:)` driver, since `nil` there would mean "no sheet" instead of
+/// "new target."
+private enum CatalogSortOption: String, CaseIterable, Identifiable {
+    case alphabetical = "Alphabetical"
+    case size = "Size in the Sky"
+    case brightness = "Brightness"
+
+    var id: String { rawValue }
+}
+
+private struct CustomTargetEditorContext: Identifiable {
+    let id = UUID()
+    var existing: Target?
+}
+
 private struct TargetCatalogCell: View {
     var target: Target
+    var isCustom: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
@@ -109,6 +174,14 @@ private struct TargetCatalogCell: View {
                     Text(target.displayName)
                         .font(.callout.weight(.semibold))
                         .lineLimit(1)
+                    if isCustom {
+                        Text("Custom")
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Palette.accent.opacity(0.22), in: Capsule())
+                            .foregroundStyle(Palette.accent)
+                    }
                 }
                 Text("\(target.designation) · \(target.constellation)")
                     .font(.caption)
@@ -180,5 +253,113 @@ private struct TargetCatalogDetail: View {
             Text(value)
                 .font(.callout.monospacedDigit())
         }
+    }
+}
+
+/// Add or edit a hand-typed target — anything the built-in catalog doesn't
+/// cover. Coordinates are decimal degrees, matching how the site's own
+/// latitude/longitude are entered in Settings, rather than introducing a
+/// separate sexagesimal (HH:MM:SS) input style just for this form.
+private struct CustomTargetEditor: View {
+    @EnvironmentObject private var state: AppState
+    @Environment(\.dismiss) private var dismiss
+    var existing: Target?
+
+    @State private var designation: String
+    @State private var commonName: String
+    @State private var type: TargetType
+    @State private var rightAscension: Double
+    @State private var declination: Double
+    @State private var magnitude: Double
+    @State private var majorAxisArcminutes: Double
+    @State private var minorAxisArcminutes: Double
+    @State private var constellation: String
+
+    init(existing: Target?) {
+        self.existing = existing
+        _designation = State(initialValue: existing?.designation ?? "")
+        _commonName = State(initialValue: existing?.commonName ?? "")
+        _type = State(initialValue: existing?.type ?? .emissionNebula)
+        _rightAscension = State(initialValue: existing?.rightAscension ?? 0)
+        _declination = State(initialValue: existing?.declination ?? 0)
+        _magnitude = State(initialValue: existing?.magnitude ?? 8)
+        _majorAxisArcminutes = State(initialValue: existing?.majorAxisArcminutes ?? 10)
+        _minorAxisArcminutes = State(initialValue: existing?.minorAxisArcminutes ?? 10)
+        _constellation = State(initialValue: existing?.constellation ?? "")
+    }
+
+    private var isValid: Bool {
+        !designation.trimmingCharacters(in: .whitespaces).isEmpty
+            && (0...360).contains(rightAscension)
+            && (-90...90).contains(declination)
+    }
+
+    var body: some View {
+        Form {
+            Section("Identity") {
+                TextField("Designation", text: $designation)
+                TextField("Common name (optional)", text: $commonName)
+                Picker("Type", selection: $type) {
+                    ForEach(TargetType.allCases) { type in
+                        Text(type.displayName).tag(type)
+                    }
+                }
+                TextField("Constellation (e.g. Cyg)", text: $constellation)
+            }
+
+            Section("Position (J2000, decimal degrees)") {
+                TextField("Right ascension", value: $rightAscension, format: .number.precision(.fractionLength(4)))
+                TextField("Declination", value: $declination, format: .number.precision(.fractionLength(4)))
+            }
+
+            Section("Size & Brightness") {
+                TextField("Magnitude", value: $magnitude, format: .number.precision(.fractionLength(1)))
+                HStack {
+                    TextField("Major axis (′)", value: $majorAxisArcminutes, format: .number.precision(.fractionLength(1)))
+                    TextField("Minor axis (′)", value: $minorAxisArcminutes, format: .number.precision(.fractionLength(1)))
+                }
+            }
+
+            if existing != nil {
+                Section {
+                    Button("Delete Target", role: .destructive) {
+                        if let existing { state.removeCustomTarget(existing) }
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(Palette.spaceBackground)
+        .frame(width: 420, height: 480)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { dismiss() }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") { save() }
+                    .disabled(!isValid)
+            }
+        }
+    }
+
+    private func save() {
+        let trimmedCommonName = commonName.trimmingCharacters(in: .whitespaces)
+        let target = Target(designation: designation.trimmingCharacters(in: .whitespaces),
+                            commonName: trimmedCommonName.isEmpty ? nil : trimmedCommonName,
+                            type: type,
+                            rightAscension: rightAscension,
+                            declination: declination,
+                            magnitude: magnitude,
+                            majorAxisArcminutes: majorAxisArcminutes,
+                            minorAxisArcminutes: minorAxisArcminutes,
+                            constellation: constellation.trimmingCharacters(in: .whitespaces))
+        if let existing {
+            state.updateCustomTarget(originalID: existing.id, with: target)
+        } else {
+            state.addCustomTarget(target)
+        }
+        dismiss()
     }
 }

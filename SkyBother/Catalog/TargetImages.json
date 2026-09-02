@@ -1,8 +1,18 @@
 {
+  "IC 1297": {
+    "file": "IC1297.jpg",
+    "sourceTitle": "IC 1297",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_1297"
+  },
   "IC 1396": {
     "file": "IC1396.jpg",
     "sourceTitle": "IC 1396",
     "sourceURL": "https://en.wikipedia.org/wiki/IC_1396"
+  },
+  "IC 1459": {
+    "file": "IC1459.jpg",
+    "sourceTitle": "IC 1459",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_1459"
   },
   "IC 1805": {
     "file": "IC1805.jpg",
@@ -14,6 +24,36 @@
     "sourceTitle": "Westerhout 5",
     "sourceURL": "https://en.wikipedia.org/wiki/Westerhout_5"
   },
+  "IC 2006": {
+    "file": "IC2006.jpg",
+    "sourceTitle": "IC 2006",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_2006"
+  },
+  "IC 2163": {
+    "file": "IC2163.jpg",
+    "sourceTitle": "NGC 2207 and IC 2163",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2207_and_IC_2163"
+  },
+  "IC 2391": {
+    "file": "IC2391.png",
+    "sourceTitle": "IC 2391",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_2391"
+  },
+  "IC 2395": {
+    "file": "IC2395.jpg",
+    "sourceTitle": "IC 2395",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_2395"
+  },
+  "IC 2714": {
+    "file": "IC2714.jpg",
+    "sourceTitle": "IC 2714",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_2714"
+  },
+  "IC 2944": {
+    "file": "IC2944.jpg",
+    "sourceTitle": "IC 2944",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_2944"
+  },
   "IC 405": {
     "file": "IC405.jpg",
     "sourceTitle": "IC 405",
@@ -23,6 +63,16 @@
     "file": "IC410.jpg",
     "sourceTitle": "IC 410",
     "sourceURL": "https://en.wikipedia.org/wiki/IC_410"
+  },
+  "IC 418": {
+    "file": "IC418.jpg",
+    "sourceTitle": "IC 418",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_418"
+  },
+  "IC 4214": {
+    "file": "IC4214.jpg",
+    "sourceTitle": "IC 4214",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_4214"
   },
   "IC 434": {
     "file": "IC434.jpg",
@@ -34,10 +84,70 @@
     "sourceTitle": "IC 443",
     "sourceURL": "https://en.wikipedia.org/wiki/IC_443"
   },
+  "IC 447": {
+    "file": "IC447.png",
+    "sourceTitle": "IC 447",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_447"
+  },
+  "IC 4499": {
+    "file": "IC4499.jpg",
+    "sourceTitle": "IC 4499",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_4499"
+  },
+  "IC 4592": {
+    "file": "IC4592.jpg",
+    "sourceTitle": "IC 4592",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_4592"
+  },
+  "IC 4593": {
+    "file": "IC4593.png",
+    "sourceTitle": "IC 4593",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_4593"
+  },
+  "IC 4662": {
+    "file": "IC4662.jpg",
+    "sourceTitle": "IC 4662",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_4662"
+  },
+  "IC 4665": {
+    "file": "IC4665.png",
+    "sourceTitle": "IC 4665",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_4665"
+  },
+  "IC 4756": {
+    "file": "IC4756.jpg",
+    "sourceTitle": "IC 4756",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_4756"
+  },
+  "IC 4996": {
+    "file": "IC4996.png",
+    "sourceTitle": "IC 4996",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_4996"
+  },
+  "IC 5052": {
+    "file": "IC5052.jpg",
+    "sourceTitle": "IC 5052",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_5052"
+  },
   "IC 5070": {
     "file": "IC5070.jpg",
     "sourceTitle": "Pelican Nebula",
     "sourceURL": "https://en.wikipedia.org/wiki/Pelican_Nebula"
+  },
+  "IC 5152": {
+    "file": "IC5152.png",
+    "sourceTitle": "IC 5152",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_5152"
+  },
+  "IC 5217": {
+    "file": "IC5217.jpg",
+    "sourceTitle": "IC 5217",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_5217"
+  },
+  "IC 5332": {
+    "file": "IC5332.jpg",
+    "sourceTitle": "IC 5332",
+    "sourceURL": "https://en.wikipedia.org/wiki/IC_5332"
   },
   "M1": {
     "file": "M1.jpg",
@@ -594,70 +704,1275 @@
     "sourceTitle": "Markarian's Chain",
     "sourceURL": "https://en.wikipedia.org/wiki/Markarian%27s_Chain"
   },
+  "NGC 1022": {
+    "file": "NGC1022.jpg",
+    "sourceTitle": "NGC 1022",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1022"
+  },
+  "NGC 1023": {
+    "file": "NGC1023.jpg",
+    "sourceTitle": "NGC 1023",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1023"
+  },
+  "NGC 1042": {
+    "file": "NGC1042.jpg",
+    "sourceTitle": "NGC 1042",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1042"
+  },
+  "NGC 1052": {
+    "file": "NGC1052.jpg",
+    "sourceTitle": "NGC 1052",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1052"
+  },
+  "NGC 1055": {
+    "file": "NGC1055.jpg",
+    "sourceTitle": "NGC 1055",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1055"
+  },
+  "NGC 1084": {
+    "file": "NGC1084.jpg",
+    "sourceTitle": "NGC 1084",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1084"
+  },
+  "NGC 1087": {
+    "file": "NGC1087.png",
+    "sourceTitle": "NGC 1087",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1087"
+  },
+  "NGC 1169": {
+    "file": "NGC1169.jpg",
+    "sourceTitle": "NGC 1169",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1169"
+  },
+  "NGC 1187": {
+    "file": "NGC1187.jpg",
+    "sourceTitle": "NGC 1187",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1187"
+  },
+  "NGC 1199": {
+    "file": "NGC1199.png",
+    "sourceTitle": "NGC 1199",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1199"
+  },
+  "NGC 1201": {
+    "file": "NGC1201.jpg",
+    "sourceTitle": "NGC 1201",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1201"
+  },
+  "NGC 1245": {
+    "file": "NGC1245.jpg",
+    "sourceTitle": "NGC 1245",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1245"
+  },
+  "NGC 1261": {
+    "file": "NGC1261.jpg",
+    "sourceTitle": "NGC 1261",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1261"
+  },
+  "NGC 1269": {
+    "file": "NGC1269.jpg",
+    "sourceTitle": "NGC 1291",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1291"
+  },
+  "NGC 1300": {
+    "file": "NGC1300.jpg",
+    "sourceTitle": "NGC 1300",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1300"
+  },
+  "NGC 1316": {
+    "file": "NGC1316.jpg",
+    "sourceTitle": "NGC 1316",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1316"
+  },
+  "NGC 133": {
+    "file": "NGC133.png",
+    "sourceTitle": "NGC 133",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_133"
+  },
   "NGC 1333": {
     "file": "NGC1333.jpg",
     "sourceTitle": "NGC 1333",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_1333"
+  },
+  "NGC 1360": {
+    "file": "NGC1360.jpg",
+    "sourceTitle": "NGC 1360",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1360"
+  },
+  "NGC 1365": {
+    "file": "NGC1365.jpg",
+    "sourceTitle": "NGC 1365",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1365"
+  },
+  "NGC 1367": {
+    "file": "NGC1367.jpg",
+    "sourceTitle": "NGC 1367",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1367"
+  },
+  "NGC 1379": {
+    "file": "NGC1379.jpg",
+    "sourceTitle": "NGC 1379",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1379"
+  },
+  "NGC 1385": {
+    "file": "NGC1385.jpg",
+    "sourceTitle": "NGC 1385",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1385"
+  },
+  "NGC 1399": {
+    "file": "NGC1399.png",
+    "sourceTitle": "NGC 1399",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1399"
+  },
+  "NGC 1400": {
+    "file": "NGC1400.png",
+    "sourceTitle": "NGC 1400",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1400"
+  },
+  "NGC 1439": {
+    "file": "NGC1439.jpg",
+    "sourceTitle": "NGC 1439",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1439"
+  },
+  "NGC 1448": {
+    "file": "NGC1448.jpg",
+    "sourceTitle": "NGC 1448",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1448"
+  },
+  "NGC 146": {
+    "file": "NGC146.png",
+    "sourceTitle": "NGC 146",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_146"
+  },
+  "NGC 147": {
+    "file": "NGC147.jpg",
+    "sourceTitle": "NGC 147",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_147"
   },
   "NGC 1499": {
     "file": "NGC1499.jpg",
     "sourceTitle": "California Nebula",
     "sourceURL": "https://en.wikipedia.org/wiki/California_Nebula"
   },
+  "NGC 150": {
+    "file": "NGC150.jpg",
+    "sourceTitle": "NGC 150",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_150"
+  },
+  "NGC 1502": {
+    "file": "NGC1502.png",
+    "sourceTitle": "NGC 1502",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1502"
+  },
+  "NGC 1511": {
+    "file": "NGC1511.jpg",
+    "sourceTitle": "NGC 1511",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1511"
+  },
+  "NGC 1513": {
+    "file": "NGC1513.jpg",
+    "sourceTitle": "NGC 1513",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1513"
+  },
+  "NGC 1527": {
+    "file": "NGC1527.jpg",
+    "sourceTitle": "NGC 1527",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1527"
+  },
+  "NGC 1533": {
+    "file": "NGC1533.jpg",
+    "sourceTitle": "NGC 1533",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1533"
+  },
+  "NGC 1543": {
+    "file": "NGC1543.jpg",
+    "sourceTitle": "NGC 1543",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1543"
+  },
+  "NGC 1546": {
+    "file": "NGC1546.jpg",
+    "sourceTitle": "NGC 1546",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1546"
+  },
+  "NGC 1553": {
+    "file": "NGC1553.jpg",
+    "sourceTitle": "NGC 1553",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1553"
+  },
+  "NGC 1559": {
+    "file": "NGC1559.png",
+    "sourceTitle": "NGC 1559",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1559"
+  },
+  "NGC 1566": {
+    "file": "NGC1566.jpg",
+    "sourceTitle": "NGC 1566",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1566"
+  },
+  "NGC 1569": {
+    "file": "NGC1569.jpg",
+    "sourceTitle": "NGC 1569",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1569"
+  },
+  "NGC 1664": {
+    "file": "NGC1664.png",
+    "sourceTitle": "NGC 1664",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1664"
+  },
+  "NGC 1763": {
+    "file": "NGC1763.jpg",
+    "sourceTitle": "NGC 1763",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1763"
+  },
+  "NGC 1783": {
+    "file": "NGC1783.jpg",
+    "sourceTitle": "NGC 1783",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1783"
+  },
+  "NGC 1806": {
+    "file": "NGC1806.jpg",
+    "sourceTitle": "NGC 1806",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1806"
+  },
+  "NGC 1817": {
+    "file": "NGC1817.jpg",
+    "sourceTitle": "NGC 1817",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1817"
+  },
+  "NGC 1818": {
+    "file": "NGC1818.jpg",
+    "sourceTitle": "NGC 1818",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1818"
+  },
+  "NGC 1846": {
+    "file": "NGC1846.jpg",
+    "sourceTitle": "NGC 1846",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1846"
+  },
+  "NGC 1848": {
+    "file": "NGC1848.png",
+    "sourceTitle": "Mensa (constellation)",
+    "sourceURL": "https://en.wikipedia.org/wiki/Mensa_(constellation)"
+  },
+  "NGC 185": {
+    "file": "NGC185.jpg",
+    "sourceTitle": "NGC 185",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_185"
+  },
+  "NGC 1850": {
+    "file": "NGC1850.jpg",
+    "sourceTitle": "NGC 1850",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1850"
+  },
+  "NGC 1851": {
+    "file": "NGC1851.jpg",
+    "sourceTitle": "NGC 1851",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1851"
+  },
+  "NGC 1856": {
+    "file": "NGC1856.jpg",
+    "sourceTitle": "NGC 1856",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1856"
+  },
+  "NGC 1860": {
+    "file": "NGC1860.png",
+    "sourceTitle": "NGC 1860",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1860"
+  },
+  "NGC 1871": {
+    "file": "NGC1871.jpg",
+    "sourceTitle": "NGC 1871",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1871"
+  },
+  "NGC 1872": {
+    "file": "NGC1872.jpg",
+    "sourceTitle": "NGC 1872",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1872"
+  },
+  "NGC 188": {
+    "file": "NGC188.jpg",
+    "sourceTitle": "NGC 188",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_188"
+  },
+  "NGC 189": {
+    "file": "NGC189.jpg",
+    "sourceTitle": "NGC 189",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_189"
+  },
+  "NGC 1893": {
+    "file": "NGC1893.jpg",
+    "sourceTitle": "NGC 1893",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1893"
+  },
+  "NGC 1907": {
+    "file": "NGC1907.jpg",
+    "sourceTitle": "NGC 1907",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1907"
+  },
+  "NGC 1934": {
+    "file": "NGC1934.jpg",
+    "sourceTitle": "NGC 1934",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1934"
+  },
+  "NGC 1955": {
+    "file": "NGC1955.jpg",
+    "sourceTitle": "NGC 1955",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1955"
+  },
+  "NGC 1964": {
+    "file": "NGC1964.jpg",
+    "sourceTitle": "NGC 1964",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1964"
+  },
+  "NGC 1980": {
+    "file": "NGC1980.jpg",
+    "sourceTitle": "NGC 1980",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1980"
+  },
+  "NGC 1981": {
+    "file": "NGC1981.jpg",
+    "sourceTitle": "NGC 1981",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_1981"
+  },
+  "NGC 2002": {
+    "file": "NGC2002.png",
+    "sourceTitle": "NGC 2002",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2002"
+  },
+  "NGC 2003": {
+    "file": "NGC2003.jpg",
+    "sourceTitle": "NGC 2003",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2003"
+  },
+  "NGC 2009": {
+    "file": "NGC2009.jpg",
+    "sourceTitle": "NGC 2009",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2009"
+  },
   "NGC 2024": {
     "file": "NGC2024.jpg",
     "sourceTitle": "Flame Nebula",
     "sourceURL": "https://en.wikipedia.org/wiki/Flame_Nebula"
+  },
+  "NGC 2071": {
+    "file": "NGC2071.jpg",
+    "sourceTitle": "NGC 2071",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2071"
+  },
+  "NGC 2074": {
+    "file": "NGC2074.jpg",
+    "sourceTitle": "NGC 2074",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2074"
+  },
+  "NGC 2078": {
+    "file": "NGC2078.jpg",
+    "sourceTitle": "NGC 2078",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2078"
+  },
+  "NGC 2090": {
+    "file": "NGC2090.jpg",
+    "sourceTitle": "NGC 2090",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2090"
+  },
+  "NGC 210": {
+    "file": "NGC210.jpg",
+    "sourceTitle": "NGC 210",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_210"
+  },
+  "NGC 2146": {
+    "file": "NGC2146.jpg",
+    "sourceTitle": "NGC 2146",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2146"
+  },
+  "NGC 2158": {
+    "file": "NGC2158.jpg",
+    "sourceTitle": "NGC 2158",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2158"
+  },
+  "NGC 2194": {
+    "file": "NGC2194.jpg",
+    "sourceTitle": "NGC 2194",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2194"
+  },
+  "NGC 2196": {
+    "file": "NGC2196.png",
+    "sourceTitle": "NGC 2196",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2196"
+  },
+  "NGC 2204": {
+    "file": "NGC2204.jpg",
+    "sourceTitle": "NGC 2204",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2204"
+  },
+  "NGC 2207": {
+    "file": "NGC2207.jpg",
+    "sourceTitle": "NGC 2207 and IC 2163",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2207_and_IC_2163"
+  },
+  "NGC 2232": {
+    "file": "NGC2232.png",
+    "sourceTitle": "NGC 2232",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2232"
   },
   "NGC 2237": {
     "file": "NGC2237.jpg",
     "sourceTitle": "Rosette Nebula",
     "sourceURL": "https://en.wikipedia.org/wiki/Rosette_Nebula"
   },
+  "NGC 2238": {
+    "file": "NGC2238.jpg",
+    "sourceTitle": "Rosette Nebula",
+    "sourceURL": "https://en.wikipedia.org/wiki/Rosette_Nebula"
+  },
+  "NGC 2239": {
+    "file": "NGC2239.jpg",
+    "sourceTitle": "NGC 2244",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2244"
+  },
   "NGC 2264": {
     "file": "NGC2264.jpg",
     "sourceTitle": "NGC 2264",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_2264"
+  },
+  "NGC 2293": {
+    "file": "NGC2293.png",
+    "sourceTitle": "NGC 2293",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2293"
+  },
+  "NGC 2298": {
+    "file": "NGC2298.jpg",
+    "sourceTitle": "NGC 2298",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2298"
+  },
+  "NGC 2299": {
+    "file": "NGC2299.jpg",
+    "sourceTitle": "NGC 2302",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2302"
+  },
+  "NGC 2336": {
+    "file": "NGC2336.png",
+    "sourceTitle": "NGC 2336",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2336"
+  },
+  "NGC 2355": {
+    "file": "NGC2355.jpg",
+    "sourceTitle": "NGC 2355",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2355"
   },
   "NGC 2359": {
     "file": "NGC2359.jpg",
     "sourceTitle": "NGC 2359",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_2359"
   },
+  "NGC 2362": {
+    "file": "NGC2362.png",
+    "sourceTitle": "NGC 2362",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2362"
+  },
+  "NGC 2374": {
+    "file": "NGC2374.jpg",
+    "sourceTitle": "NGC 2374",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2374"
+  },
   "NGC 2392": {
     "file": "NGC2392.jpg",
     "sourceTitle": "Eskimo Nebula",
     "sourceURL": "https://en.wikipedia.org/wiki/Eskimo_Nebula"
+  },
+  "NGC 2403": {
+    "file": "NGC2403.jpg",
+    "sourceTitle": "NGC 2403",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2403"
+  },
+  "NGC 2419": {
+    "file": "NGC2419.jpg",
+    "sourceTitle": "NGC 2419",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2419"
+  },
+  "NGC 2420": {
+    "file": "NGC2420.jpg",
+    "sourceTitle": "NGC 2420",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2420"
+  },
+  "NGC 2423": {
+    "file": "NGC2423.png",
+    "sourceTitle": "NGC 2423",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2423"
+  },
+  "NGC 2438": {
+    "file": "NGC2438.jpg",
+    "sourceTitle": "NGC 2438",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2438"
+  },
+  "NGC 2440": {
+    "file": "NGC2440.jpg",
+    "sourceTitle": "NGC 2440",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2440"
+  },
+  "NGC 2442": {
+    "file": "NGC2442.jpg",
+    "sourceTitle": "NGC 2442 and NGC 2443",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2442_and_NGC_2443"
+  },
+  "NGC 246": {
+    "file": "NGC246.jpg",
+    "sourceTitle": "NGC 246",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_246"
+  },
+  "NGC 247": {
+    "file": "NGC247.jpg",
+    "sourceTitle": "NGC 247",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_247"
+  },
+  "NGC 2506": {
+    "file": "NGC2506.png",
+    "sourceTitle": "NGC 2506",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2506"
+  },
+  "NGC 2509": {
+    "file": "NGC2509.jpg",
+    "sourceTitle": "NGC 2509",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2509"
+  },
+  "NGC 2516": {
+    "file": "NGC2516.jpg",
+    "sourceTitle": "NGC 2516",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2516"
   },
   "NGC 253": {
     "file": "NGC253.jpg",
     "sourceTitle": "Sculptor Galaxy",
     "sourceURL": "https://en.wikipedia.org/wiki/Sculptor_Galaxy"
   },
+  "NGC 2547": {
+    "file": "NGC2547.jpg",
+    "sourceTitle": "NGC 2547",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2547"
+  },
+  "NGC 2559": {
+    "file": "NGC2559.jpg",
+    "sourceTitle": "NGC 2559",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2559"
+  },
+  "NGC 2566": {
+    "file": "NGC2566.jpg",
+    "sourceTitle": "NGC 2566",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2566"
+  },
+  "NGC 2567": {
+    "file": "NGC2567.jpg",
+    "sourceTitle": "NGC 2567",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2567"
+  },
+  "NGC 2627": {
+    "file": "NGC2627.jpg",
+    "sourceTitle": "NGC 2627",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2627"
+  },
+  "NGC 2659": {
+    "file": "NGC2659.jpg",
+    "sourceTitle": "NGC 2659",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2659"
+  },
+  "NGC 2685": {
+    "file": "NGC2685.jpg",
+    "sourceTitle": "NGC 2685",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2685"
+  },
+  "NGC 2787": {
+    "file": "NGC2787.jpg",
+    "sourceTitle": "NGC 2787",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2787"
+  },
   "NGC 281": {
     "file": "NGC281.jpg",
     "sourceTitle": "NGC 281",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_281"
+  },
+  "NGC 2835": {
+    "file": "NGC2835.png",
+    "sourceTitle": "NGC 2835",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2835"
+  },
+  "NGC 2841": {
+    "file": "NGC2841.jpg",
+    "sourceTitle": "NGC 2841",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2841"
+  },
+  "NGC 2867": {
+    "file": "NGC2867.jpg",
+    "sourceTitle": "NGC 2867",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2867"
+  },
+  "NGC 288": {
+    "file": "NGC288.jpg",
+    "sourceTitle": "NGC 288",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_288"
+  },
+  "NGC 289": {
+    "file": "NGC289.jpg",
+    "sourceTitle": "NGC 289",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_289"
   },
   "NGC 2903": {
     "file": "NGC2903.jpg",
     "sourceTitle": "NGC 2903",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_2903"
   },
+  "NGC 2935": {
+    "file": "NGC2935.jpg",
+    "sourceTitle": "NGC 2935",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2935"
+  },
+  "NGC 2950": {
+    "file": "NGC2950.jpg",
+    "sourceTitle": "NGC 2950",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2950"
+  },
+  "NGC 2974": {
+    "file": "NGC2974.png",
+    "sourceTitle": "NGC 2974",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2974"
+  },
+  "NGC 2976": {
+    "file": "NGC2976.jpg",
+    "sourceTitle": "NGC 2976",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2976"
+  },
+  "NGC 2985": {
+    "file": "NGC2985.jpg",
+    "sourceTitle": "NGC 2985",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2985"
+  },
+  "NGC 2986": {
+    "file": "NGC2986.jpg",
+    "sourceTitle": "NGC 2986",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2986"
+  },
+  "NGC 2997": {
+    "file": "NGC2997.jpg",
+    "sourceTitle": "NGC 2997",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_2997"
+  },
+  "NGC 300": {
+    "file": "NGC300.jpg",
+    "sourceTitle": "NGC 300",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_300"
+  },
+  "NGC 3059": {
+    "file": "NGC3059.jpg",
+    "sourceTitle": "NGC 3059",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3059"
+  },
+  "NGC 3087": {
+    "file": "NGC3087.jpg",
+    "sourceTitle": "NGC 3087",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3087"
+  },
+  "NGC 3109": {
+    "file": "NGC3109.jpg",
+    "sourceTitle": "NGC 3109",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3109"
+  },
+  "NGC 3114": {
+    "file": "NGC3114.jpg",
+    "sourceTitle": "NGC 3114",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3114"
+  },
+  "NGC 3115": {
+    "file": "NGC3115.jpg",
+    "sourceTitle": "NGC 3115",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3115"
+  },
+  "NGC 3132": {
+    "file": "NGC3132.png",
+    "sourceTitle": "NGC 3132",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3132"
+  },
+  "NGC 3166": {
+    "file": "NGC3166.jpg",
+    "sourceTitle": "NGC 3166",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3166"
+  },
+  "NGC 3175": {
+    "file": "NGC3175.jpg",
+    "sourceTitle": "NGC 3175",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3175"
+  },
+  "NGC 3193": {
+    "file": "NGC3193.jpg",
+    "sourceTitle": "NGC 3193",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3193"
+  },
+  "NGC 3201": {
+    "file": "NGC3201.jpg",
+    "sourceTitle": "NGC 3201",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3201"
+  },
+  "NGC 3239": {
+    "file": "NGC3239.jpg",
+    "sourceTitle": "NGC 3239",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3239"
+  },
+  "NGC 3242": {
+    "file": "NGC3242.png",
+    "sourceTitle": "NGC 3242",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3242"
+  },
+  "NGC 3247": {
+    "file": "NGC3247.jpg",
+    "sourceTitle": "RCW 49",
+    "sourceURL": "https://en.wikipedia.org/wiki/RCW_49"
+  },
+  "NGC 3258": {
+    "file": "NGC3258.jpg",
+    "sourceTitle": "NGC 3258",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3258"
+  },
+  "NGC 3261": {
+    "file": "NGC3261.jpg",
+    "sourceTitle": "NGC 3261",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3261"
+  },
+  "NGC 3268": {
+    "file": "NGC3268.jpg",
+    "sourceTitle": "NGC 3268",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3268"
+  },
+  "NGC 3293": {
+    "file": "NGC3293.jpg",
+    "sourceTitle": "NGC 3293",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3293"
+  },
+  "NGC 3301": {
+    "file": "NGC3301.jpg",
+    "sourceTitle": "NGC 3301",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3301"
+  },
+  "NGC 3311": {
+    "file": "NGC3311.jpg",
+    "sourceTitle": "NGC 3311",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3311"
+  },
+  "NGC 3359": {
+    "file": "NGC3359.jpg",
+    "sourceTitle": "NGC 3359",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3359"
+  },
+  "NGC 3412": {
+    "file": "NGC3412.jpg",
+    "sourceTitle": "NGC 3412",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3412"
+  },
+  "NGC 3414": {
+    "file": "NGC3414.jpg",
+    "sourceTitle": "NGC 3414",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3414"
+  },
+  "NGC 3511": {
+    "file": "NGC3511.jpg",
+    "sourceTitle": "NGC 3511",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3511"
+  },
+  "NGC 3521": {
+    "file": "NGC3521.jpg",
+    "sourceTitle": "NGC 3521",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3521"
+  },
+  "NGC 3532": {
+    "file": "NGC3532.jpg",
+    "sourceTitle": "NGC 3532",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3532"
+  },
+  "NGC 3593": {
+    "file": "NGC3593.jpg",
+    "sourceTitle": "NGC 3593",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3593"
+  },
+  "NGC 3607": {
+    "file": "NGC3607.jpg",
+    "sourceTitle": "NGC 3607",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3607"
+  },
+  "NGC 3608": {
+    "file": "NGC3608.jpg",
+    "sourceTitle": "NGC 3608",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3608"
+  },
+  "NGC 3610": {
+    "file": "NGC3610.jpg",
+    "sourceTitle": "NGC 3610",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3610"
+  },
+  "NGC 3613": {
+    "file": "NGC3613.jpg",
+    "sourceTitle": "NGC 3613",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3613"
+  },
   "NGC 3628": {
     "file": "NGC3628.jpg",
     "sourceTitle": "NGC 3628",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_3628"
+  },
+  "NGC 3665": {
+    "file": "NGC3665.jpg",
+    "sourceTitle": "NGC 3665",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3665"
+  },
+  "NGC 3672": {
+    "file": "NGC3672.jpg",
+    "sourceTitle": "NGC 3672",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3672"
+  },
+  "NGC 3675": {
+    "file": "NGC3675.jpg",
+    "sourceTitle": "NGC 3675",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3675"
+  },
+  "NGC 3686": {
+    "file": "NGC3686.jpg",
+    "sourceTitle": "NGC 3686",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3686"
+  },
+  "NGC 376": {
+    "file": "NGC376.jpg",
+    "sourceTitle": "NGC 376",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_376"
+  },
+  "NGC 381": {
+    "file": "NGC381.jpg",
+    "sourceTitle": "NGC 381",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_381"
+  },
+  "NGC 3887": {
+    "file": "NGC3887.png",
+    "sourceTitle": "NGC 3887",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3887"
+  },
+  "NGC 3893": {
+    "file": "NGC3893.jpg",
+    "sourceTitle": "NGC 3893",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3893"
+  },
+  "NGC 3898": {
+    "file": "NGC3898.png",
+    "sourceTitle": "NGC 3898",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3898"
+  },
+  "NGC 3918": {
+    "file": "NGC3918.jpg",
+    "sourceTitle": "NGC 3918",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3918"
+  },
+  "NGC 3998": {
+    "file": "NGC3998.jpg",
+    "sourceTitle": "NGC 3998",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_3998"
+  },
+  "NGC 4013": {
+    "file": "NGC4013.jpg",
+    "sourceTitle": "NGC 4013",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4013"
+  },
+  "NGC 4030": {
+    "file": "NGC4030.jpg",
+    "sourceTitle": "NGC 4030",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4030"
+  },
+  "NGC 4036": {
+    "file": "NGC4036.jpg",
+    "sourceTitle": "NGC 4036",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4036"
   },
   "NGC 4038": {
     "file": "NGC4038.jpg",
     "sourceTitle": "Antennae Galaxies",
     "sourceURL": "https://en.wikipedia.org/wiki/Antennae_Galaxies"
   },
+  "NGC 4039": {
+    "file": "NGC4039.jpg",
+    "sourceTitle": "Antennae Galaxies",
+    "sourceURL": "https://en.wikipedia.org/wiki/Antennae_Galaxies"
+  },
+  "NGC 404": {
+    "file": "NGC404.jpg",
+    "sourceTitle": "NGC 404",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_404"
+  },
+  "NGC 4041": {
+    "file": "NGC4041.png",
+    "sourceTitle": "NGC 4041",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4041"
+  },
+  "NGC 4088": {
+    "file": "NGC4088.jpg",
+    "sourceTitle": "NGC 4088",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4088"
+  },
+  "NGC 4100": {
+    "file": "NGC4100.png",
+    "sourceTitle": "NGC 4100",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4100"
+  },
+  "NGC 4103": {
+    "file": "NGC4103.png",
+    "sourceTitle": "NGC 4103",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4103"
+  },
+  "NGC 4111": {
+    "file": "NGC4111.jpg",
+    "sourceTitle": "NGC 4111",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4111"
+  },
+  "NGC 4123": {
+    "file": "NGC4123.jpg",
+    "sourceTitle": "NGC 4123",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4123"
+  },
+  "NGC 4125": {
+    "file": "NGC4125.jpg",
+    "sourceTitle": "NGC 4125",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4125"
+  },
+  "NGC 4145": {
+    "file": "NGC4145.jpg",
+    "sourceTitle": "NGC 4145",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4145"
+  },
+  "NGC 4157": {
+    "file": "NGC4157.jpg",
+    "sourceTitle": "NGC 4157",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4157"
+  },
+  "NGC 4179": {
+    "file": "NGC4179.jpg",
+    "sourceTitle": "NGC 4179",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4179"
+  },
+  "NGC 4208": {
+    "file": "NGC4208.jpg",
+    "sourceTitle": "NGC 4212",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4212"
+  },
+  "NGC 4230": {
+    "file": "NGC4230.jpg",
+    "sourceTitle": "NGC 4230",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4230"
+  },
+  "NGC 4242": {
+    "file": "NGC4242.jpg",
+    "sourceTitle": "NGC 4242",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4242"
+  },
+  "NGC 4244": {
+    "file": "NGC4244.png",
+    "sourceTitle": "NGC 4244",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4244"
+  },
+  "NGC 4245": {
+    "file": "NGC4245.png",
+    "sourceTitle": "NGC 4245",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4245"
+  },
+  "NGC 4261": {
+    "file": "NGC4261.png",
+    "sourceTitle": "NGC 4261",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4261"
+  },
+  "NGC 4293": {
+    "file": "NGC4293.png",
+    "sourceTitle": "NGC 4293",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4293"
+  },
+  "NGC 4298": {
+    "file": "NGC4298.jpg",
+    "sourceTitle": "NGC 4298",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4298"
+  },
+  "NGC 4349": {
+    "file": "NGC4349.png",
+    "sourceTitle": "NGC 4349",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4349"
+  },
+  "NGC 436": {
+    "file": "NGC436.png",
+    "sourceTitle": "NGC 436",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_436"
+  },
+  "NGC 4361": {
+    "file": "NGC4361.jpg",
+    "sourceTitle": "NGC 4361",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4361"
+  },
+  "NGC 4365": {
+    "file": "NGC4365.png",
+    "sourceTitle": "NGC 4365",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4365"
+  },
+  "NGC 4378": {
+    "file": "NGC4378.jpg",
+    "sourceTitle": "NGC 4378",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4378"
+  },
+  "NGC 4380": {
+    "file": "NGC4380.jpg",
+    "sourceTitle": "NGC 4380",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4380"
+  },
+  "NGC 4388": {
+    "file": "NGC4388.jpg",
+    "sourceTitle": "NGC 4388",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4388"
+  },
+  "NGC 4394": {
+    "file": "NGC4394.jpg",
+    "sourceTitle": "NGC 4394",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4394"
+  },
+  "NGC 4417": {
+    "file": "NGC4417.jpg",
+    "sourceTitle": "NGC 4417",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4417"
+  },
+  "NGC 4419": {
+    "file": "NGC4419.jpg",
+    "sourceTitle": "NGC 4419",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4419"
+  },
+  "NGC 4429": {
+    "file": "NGC4429.jpg",
+    "sourceTitle": "NGC 4429",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4429"
+  },
+  "NGC 4435": {
+    "file": "NGC4435.jpg",
+    "sourceTitle": "Eyes Galaxies",
+    "sourceURL": "https://en.wikipedia.org/wiki/Eyes_Galaxies"
+  },
+  "NGC 4438": {
+    "file": "NGC4438.jpg",
+    "sourceTitle": "Eyes Galaxies",
+    "sourceURL": "https://en.wikipedia.org/wiki/Eyes_Galaxies"
+  },
+  "NGC 4442": {
+    "file": "NGC4442.png",
+    "sourceTitle": "NGC 4442",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4442"
+  },
+  "NGC 4448": {
+    "file": "NGC4448.png",
+    "sourceTitle": "NGC 4448",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4448"
+  },
+  "NGC 4449": {
+    "file": "NGC4449.jpg",
+    "sourceTitle": "NGC 4449",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4449"
+  },
+  "NGC 4461": {
+    "file": "NGC4461.jpg",
+    "sourceTitle": "NGC 4461",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4461"
+  },
+  "NGC 4469": {
+    "file": "NGC4469.png",
+    "sourceTitle": "NGC 4469",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4469"
+  },
+  "NGC 4473": {
+    "file": "NGC4473.jpg",
+    "sourceTitle": "NGC 4473",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4473"
+  },
+  "NGC 4490": {
+    "file": "NGC4490.jpg",
+    "sourceTitle": "NGC 4490",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4490"
+  },
+  "NGC 4526": {
+    "file": "NGC4526.jpg",
+    "sourceTitle": "NGC 4526",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4526"
+  },
+  "NGC 4527": {
+    "file": "NGC4527.jpg",
+    "sourceTitle": "NGC 4527",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4527"
+  },
+  "NGC 4564": {
+    "file": "NGC4564.jpeg",
+    "sourceTitle": "NGC 4564",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4564"
+  },
   "NGC 4565": {
     "file": "NGC4565.jpg",
     "sourceTitle": "NGC 4565",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_4565"
+  },
+  "NGC 4567": {
+    "file": "NGC4567.png",
+    "sourceTitle": "NGC 4567 and NGC 4568",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4567_and_NGC_4568"
+  },
+  "NGC 4568": {
+    "file": "NGC4568.png",
+    "sourceTitle": "NGC 4567 and NGC 4568",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4567_and_NGC_4568"
+  },
+  "NGC 4570": {
+    "file": "NGC4570.jpg",
+    "sourceTitle": "NGC 4570",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4570"
+  },
+  "NGC 4571": {
+    "file": "NGC4571.jpg",
+    "sourceTitle": "NGC 4571",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4571"
+  },
+  "NGC 4578": {
+    "file": "NGC4578.jpg",
+    "sourceTitle": "NGC 4578",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4578"
+  },
+  "NGC 4608": {
+    "file": "NGC4608.jpg",
+    "sourceTitle": "NGC 4608",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4608"
+  },
+  "NGC 4643": {
+    "file": "NGC4643.jpg",
+    "sourceTitle": "NGC 4643",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4643"
+  },
+  "NGC 4651": {
+    "file": "NGC4651.jpg",
+    "sourceTitle": "NGC 4651",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4651"
+  },
+  "NGC 4664": {
+    "file": "NGC4664.png",
+    "sourceTitle": "NGC 4665",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4665"
+  },
+  "NGC 4689": {
+    "file": "NGC4689.jpg",
+    "sourceTitle": "NGC 4689",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4689"
+  },
+  "NGC 4697": {
+    "file": "NGC4697.png",
+    "sourceTitle": "NGC 4697",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4697"
+  },
+  "NGC 4698": {
+    "file": "NGC4698.jpg",
+    "sourceTitle": "NGC 4698",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4698"
+  },
+  "NGC 4709": {
+    "file": "NGC4709.jpg",
+    "sourceTitle": "NGC 4709",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4709"
+  },
+  "NGC 4725": {
+    "file": "NGC4725.jpg",
+    "sourceTitle": "NGC 4725",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4725"
+  },
+  "NGC 4731": {
+    "file": "NGC4731.jpg",
+    "sourceTitle": "NGC 4731",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4731"
+  },
+  "NGC 4762": {
+    "file": "NGC4762.jpg",
+    "sourceTitle": "NGC 4762",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4762"
+  },
+  "NGC 4772": {
+    "file": "NGC4772.jpg",
+    "sourceTitle": "NGC 4772",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4772"
+  },
+  "NGC 4781": {
+    "file": "NGC4781.png",
+    "sourceTitle": "NGC 4781",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4781"
+  },
+  "NGC 4815": {
+    "file": "NGC4815.jpg",
+    "sourceTitle": "NGC 4815",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4815"
+  },
+  "NGC 4818": {
+    "file": "NGC4818.png",
+    "sourceTitle": "NGC 4818",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4818"
+  },
+  "NGC 4833": {
+    "file": "NGC4833.jpg",
+    "sourceTitle": "NGC 4833",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4833"
+  },
+  "NGC 4856": {
+    "file": "NGC4856.jpg",
+    "sourceTitle": "NGC 4856",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4856"
+  },
+  "NGC 4866": {
+    "file": "NGC4866.jpg",
+    "sourceTitle": "NGC 4866",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4866"
+  },
+  "NGC 4902": {
+    "file": "NGC4902.jpg",
+    "sourceTitle": "NGC 4902",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4902"
+  },
+  "NGC 4976": {
+    "file": "NGC4976.jpg",
+    "sourceTitle": "NGC 4976",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4976"
+  },
+  "NGC 4981": {
+    "file": "NGC4981.jpg",
+    "sourceTitle": "NGC 4981",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4981"
+  },
+  "NGC 4984": {
+    "file": "NGC4984.jpg",
+    "sourceTitle": "NGC 4984",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4984"
+  },
+  "NGC 4995": {
+    "file": "NGC4995.jpg",
+    "sourceTitle": "NGC 4995",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_4995"
+  },
+  "NGC 5005": {
+    "file": "NGC5005.jpg",
+    "sourceTitle": "NGC 5005",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5005"
+  },
+  "NGC 5033": {
+    "file": "NGC5033.jpg",
+    "sourceTitle": "NGC 5033",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5033"
+  },
+  "NGC 5061": {
+    "file": "NGC5061.jpg",
+    "sourceTitle": "NGC 5061",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5061"
+  },
+  "NGC 5068": {
+    "file": "NGC5068.jpg",
+    "sourceTitle": "NGC 5068",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5068"
+  },
+  "NGC 5078": {
+    "file": "NGC5078.jpg",
+    "sourceTitle": "NGC 5078",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5078"
   },
   "NGC 5128": {
     "file": "NGC5128.jpg",
@@ -669,35 +1984,555 @@
     "sourceTitle": "Omega Centauri",
     "sourceURL": "https://en.wikipedia.org/wiki/Omega_Centauri"
   },
+  "NGC 5189": {
+    "file": "NGC5189.png",
+    "sourceTitle": "NGC 5189",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5189"
+  },
+  "NGC 5195": {
+    "file": "NGC5195.jpg",
+    "sourceTitle": "NGC 5195",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5195"
+  },
+  "NGC 5204": {
+    "file": "NGC5204.jpg",
+    "sourceTitle": "NGC 5204",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5204"
+  },
+  "NGC 5266": {
+    "file": "NGC5266.jpg",
+    "sourceTitle": "NGC 5266",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5266"
+  },
+  "NGC 5286": {
+    "file": "NGC5286.png",
+    "sourceTitle": "NGC 5286",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5286"
+  },
+  "NGC 5308": {
+    "file": "NGC5308.png",
+    "sourceTitle": "NGC 5308",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5308"
+  },
+  "NGC 5353": {
+    "file": "NGC5353.jpg",
+    "sourceTitle": "NGC 5353",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5353"
+  },
+  "NGC 5364": {
+    "file": "NGC5364.jpg",
+    "sourceTitle": "NGC 5364",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5364"
+  },
+  "NGC 5466": {
+    "file": "NGC5466.jpg",
+    "sourceTitle": "NGC 5466",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5466"
+  },
+  "NGC 5474": {
+    "file": "NGC5474.jpg",
+    "sourceTitle": "NGC 5474",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5474"
+  },
+  "NGC 5493": {
+    "file": "NGC5493.jpg",
+    "sourceTitle": "NGC 5493",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5493"
+  },
+  "NGC 55": {
+    "file": "NGC55.jpg",
+    "sourceTitle": "NGC 55",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_55"
+  },
+  "NGC 5557": {
+    "file": "NGC5557.jpg",
+    "sourceTitle": "NGC 5557",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5557"
+  },
+  "NGC 5566": {
+    "file": "NGC5566.jpg",
+    "sourceTitle": "NGC 5566",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5566"
+  },
+  "NGC 5585": {
+    "file": "NGC5585.jpg",
+    "sourceTitle": "NGC 5585",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5585"
+  },
+  "NGC 5606": {
+    "file": "NGC5606.jpg",
+    "sourceTitle": "NGC 5606",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5606"
+  },
+  "NGC 5634": {
+    "file": "NGC5634.jpg",
+    "sourceTitle": "NGC 5634",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5634"
+  },
+  "NGC 5713": {
+    "file": "NGC5713.jpg",
+    "sourceTitle": "NGC 5713",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5713"
+  },
+  "NGC 5749": {
+    "file": "NGC5749.jpg",
+    "sourceTitle": "NGC 5749",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5749"
+  },
+  "NGC 578": {
+    "file": "NGC578.jpg",
+    "sourceTitle": "NGC 578",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_578"
+  },
+  "NGC 5792": {
+    "file": "NGC5792.jpg",
+    "sourceTitle": "NGC 5792",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5792"
+  },
+  "NGC 5823": {
+    "file": "NGC5823.jpg",
+    "sourceTitle": "NGC 5823",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5823"
+  },
+  "NGC 5838": {
+    "file": "NGC5838.jpg",
+    "sourceTitle": "NGC 5838",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5838"
+  },
+  "NGC 5846": {
+    "file": "NGC5846.jpg",
+    "sourceTitle": "NGC 5846",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5846"
+  },
+  "NGC 5897": {
+    "file": "NGC5897.jpg",
+    "sourceTitle": "NGC 5897",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5897"
+  },
   "NGC 5907": {
     "file": "NGC5907.jpg",
     "sourceTitle": "NGC 5907",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_5907"
+  },
+  "NGC 5921": {
+    "file": "NGC5921.jpg",
+    "sourceTitle": "NGC 5921",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5921"
+  },
+  "NGC 5925": {
+    "file": "NGC5925.jpg",
+    "sourceTitle": "NGC 5925",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5925"
+  },
+  "NGC 5927": {
+    "file": "NGC5927.png",
+    "sourceTitle": "NGC 5927",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5927"
+  },
+  "NGC 5982": {
+    "file": "NGC5982.png",
+    "sourceTitle": "NGC 5982",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5982"
+  },
+  "NGC 5999": {
+    "file": "NGC5999.jpg",
+    "sourceTitle": "NGC 5999",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_5999"
+  },
+  "NGC 6025": {
+    "file": "NGC6025.jpg",
+    "sourceTitle": "NGC 6025",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6025"
+  },
+  "NGC 6031": {
+    "file": "NGC6031.jpg",
+    "sourceTitle": "NGC 6031",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6031"
+  },
+  "NGC 6101": {
+    "file": "NGC6101.jpg",
+    "sourceTitle": "NGC 6101",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6101"
+  },
+  "NGC 6134": {
+    "file": "NGC6134.jpg",
+    "sourceTitle": "NGC 6134",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6134"
+  },
+  "NGC 6152": {
+    "file": "NGC6152.jpg",
+    "sourceTitle": "NGC 6152",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6152"
+  },
+  "NGC 6153": {
+    "file": "NGC6153.jpg",
+    "sourceTitle": "NGC 6153",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6153"
+  },
+  "NGC 6200": {
+    "file": "NGC6200.png",
+    "sourceTitle": "NGC 6200",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6200"
+  },
+  "NGC 6204": {
+    "file": "NGC6204.jpg",
+    "sourceTitle": "NGC 6204",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6204"
+  },
+  "NGC 6208": {
+    "file": "NGC6208.png",
+    "sourceTitle": "NGC 6208",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6208"
+  },
+  "NGC 6221": {
+    "file": "NGC6221.png",
+    "sourceTitle": "NGC 6221",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6221"
+  },
+  "NGC 6229": {
+    "file": "NGC6229.png",
+    "sourceTitle": "NGC 6229",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6229"
+  },
+  "NGC 6231": {
+    "file": "NGC6231.jpg",
+    "sourceTitle": "NGC 6231",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6231"
+  },
+  "NGC 6284": {
+    "file": "NGC6284.jpg",
+    "sourceTitle": "NGC 6284",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6284"
+  },
+  "NGC 6293": {
+    "file": "NGC6293.png",
+    "sourceTitle": "NGC 6293",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6293"
   },
   "NGC 6302": {
     "file": "NGC6302.jpg",
     "sourceTitle": "NGC 6302",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_6302"
   },
+  "NGC 6304": {
+    "file": "NGC6304.jpg",
+    "sourceTitle": "NGC 6304",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6304"
+  },
+  "NGC 6316": {
+    "file": "NGC6316.jpg",
+    "sourceTitle": "NGC 6316",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6316"
+  },
   "NGC 6334": {
     "file": "NGC6334.jpg",
     "sourceTitle": "NGC 6334",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_6334"
+  },
+  "NGC 6340": {
+    "file": "NGC6340.jpg",
+    "sourceTitle": "NGC 6340",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6340"
+  },
+  "NGC 6342": {
+    "file": "NGC6342.png",
+    "sourceTitle": "NGC 6342",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6342"
+  },
+  "NGC 6352": {
+    "file": "NGC6352.jpg",
+    "sourceTitle": "NGC 6352",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6352"
+  },
+  "NGC 6355": {
+    "file": "NGC6355.jpg",
+    "sourceTitle": "NGC 6355",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6355"
+  },
+  "NGC 6356": {
+    "file": "NGC6356.jpg",
+    "sourceTitle": "NGC 6356",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6356"
+  },
+  "NGC 636": {
+    "file": "NGC636.jpg",
+    "sourceTitle": "NGC 636",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_636"
+  },
+  "NGC 6362": {
+    "file": "NGC6362.jpg",
+    "sourceTitle": "NGC 6362",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6362"
+  },
+  "NGC 6369": {
+    "file": "NGC6369.jpg",
+    "sourceTitle": "Little Ghost Nebula",
+    "sourceURL": "https://en.wikipedia.org/wiki/Little_Ghost_Nebula"
+  },
+  "NGC 637": {
+    "file": "NGC637.jpg",
+    "sourceTitle": "NGC 637",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_637"
+  },
+  "NGC 6384": {
+    "file": "NGC6384.jpg",
+    "sourceTitle": "NGC 6384",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6384"
+  },
+  "NGC 6388": {
+    "file": "NGC6388.jpg",
+    "sourceTitle": "NGC 6388",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6388"
+  },
+  "NGC 6397": {
+    "file": "NGC6397.jpg",
+    "sourceTitle": "NGC 6397",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6397"
+  },
+  "NGC 6400": {
+    "file": "NGC6400.jpg",
+    "sourceTitle": "NGC 6400",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6400"
+  },
+  "NGC 6401": {
+    "file": "NGC6401.jpg",
+    "sourceTitle": "NGC 6401",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6401"
+  },
+  "NGC 6441": {
+    "file": "NGC6441.png",
+    "sourceTitle": "NGC 6441",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6441"
+  },
+  "NGC 6520": {
+    "file": "NGC6520.jpg",
+    "sourceTitle": "NGC 6520",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6520"
+  },
+  "NGC 6522": {
+    "file": "NGC6522.jpg",
+    "sourceTitle": "NGC 6522",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6522"
+  },
+  "NGC 6528": {
+    "file": "NGC6528.png",
+    "sourceTitle": "NGC 6528",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6528"
+  },
+  "NGC 6530": {
+    "file": "NGC6530.jpg",
+    "sourceTitle": "NGC 6530",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6530"
+  },
+  "NGC 6535": {
+    "file": "NGC6535.jpg",
+    "sourceTitle": "NGC 6535",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6535"
+  },
+  "NGC 6541": {
+    "file": "NGC6541.jpg",
+    "sourceTitle": "NGC 6541",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6541"
   },
   "NGC 6543": {
     "file": "NGC6543.jpg",
     "sourceTitle": "Cat's Eye Nebula",
     "sourceURL": "https://en.wikipedia.org/wiki/Cat%27s_Eye_Nebula"
   },
+  "NGC 6553": {
+    "file": "NGC6553.jpg",
+    "sourceTitle": "NGC 6553",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6553"
+  },
+  "NGC 6558": {
+    "file": "NGC6558.jpg",
+    "sourceTitle": "NGC 6558",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6558"
+  },
+  "NGC 6569": {
+    "file": "NGC6569.jpg",
+    "sourceTitle": "NGC 6569",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6569"
+  },
+  "NGC 6572": {
+    "file": "NGC6572.jpg",
+    "sourceTitle": "NGC 6572",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6572"
+  },
+  "NGC 6584": {
+    "file": "NGC6584.jpg",
+    "sourceTitle": "NGC 6584",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6584"
+  },
+  "NGC 659": {
+    "file": "NGC659.jpg",
+    "sourceTitle": "NGC 659",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_659"
+  },
+  "NGC 6603": {
+    "file": "NGC6603.jpg",
+    "sourceTitle": "NGC 6603",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6603"
+  },
+  "NGC 6629": {
+    "file": "NGC6629.jpg",
+    "sourceTitle": "NGC 6629",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6629"
+  },
+  "NGC 6633": {
+    "file": "NGC6633.jpg",
+    "sourceTitle": "NGC 6633",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6633"
+  },
+  "NGC 6649": {
+    "file": "NGC6649.jpg",
+    "sourceTitle": "NGC 6649",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6649"
+  },
+  "NGC 6664": {
+    "file": "NGC6664.jpg",
+    "sourceTitle": "NGC 6664",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6664"
+  },
+  "NGC 6712": {
+    "file": "NGC6712.jpg",
+    "sourceTitle": "NGC 6712",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6712"
+  },
+  "NGC 6717": {
+    "file": "NGC6717.jpg",
+    "sourceTitle": "NGC 6717",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6717"
+  },
+  "NGC 672": {
+    "file": "NGC672.jpg",
+    "sourceTitle": "NGC 672",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_672"
+  },
+  "NGC 6744": {
+    "file": "NGC6744.jpg",
+    "sourceTitle": "NGC 6744",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6744"
+  },
+  "NGC 6755": {
+    "file": "NGC6755.png",
+    "sourceTitle": "NGC 6755",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6755"
+  },
+  "NGC 6756": {
+    "file": "NGC6756.jpg",
+    "sourceTitle": "NGC 6756",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6756"
+  },
+  "NGC 6781": {
+    "file": "NGC6781.jpg",
+    "sourceTitle": "NGC 6781",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6781"
+  },
+  "NGC 6790": {
+    "file": "NGC6790.png",
+    "sourceTitle": "NGC 6790",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6790"
+  },
+  "NGC 6810": {
+    "file": "NGC6810.png",
+    "sourceTitle": "NGC 6810",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6810"
+  },
+  "NGC 6814": {
+    "file": "NGC6814.jpg",
+    "sourceTitle": "NGC 6814",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6814"
+  },
+  "NGC 6818": {
+    "file": "NGC6818.jpg",
+    "sourceTitle": "NGC 6818",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6818"
+  },
+  "NGC 6819": {
+    "file": "NGC6819.jpg",
+    "sourceTitle": "NGC 6819",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6819"
+  },
   "NGC 6822": {
     "file": "NGC6822.jpg",
     "sourceTitle": "NGC 6822",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_6822"
   },
+  "NGC 6826": {
+    "file": "NGC6826.jpg",
+    "sourceTitle": "NGC 6826",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6826"
+  },
+  "NGC 6830": {
+    "file": "NGC6830.jpg",
+    "sourceTitle": "NGC 6830",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6830"
+  },
+  "NGC 6834": {
+    "file": "NGC6834.jpg",
+    "sourceTitle": "NGC 6834",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6834"
+  },
+  "NGC 6857": {
+    "file": "NGC6857.jpg",
+    "sourceTitle": "NGC 6857",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6857"
+  },
+  "NGC 6866": {
+    "file": "NGC6866.png",
+    "sourceTitle": "NGC 6866",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6866"
+  },
+  "NGC 6871": {
+    "file": "NGC6871.png",
+    "sourceTitle": "NGC 6871",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6871"
+  },
+  "NGC 6884": {
+    "file": "NGC6884.jpg",
+    "sourceTitle": "NGC 6884",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6884"
+  },
+  "NGC 6886": {
+    "file": "NGC6886.jpg",
+    "sourceTitle": "NGC 6886",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6886"
+  },
   "NGC 6888": {
     "file": "NGC6888.jpg",
     "sourceTitle": "Crescent Nebula",
     "sourceURL": "https://en.wikipedia.org/wiki/Crescent_Nebula"
+  },
+  "NGC 6891": {
+    "file": "NGC6891.jpg",
+    "sourceTitle": "NGC 6891",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6891"
+  },
+  "NGC 6905": {
+    "file": "NGC6905.png",
+    "sourceTitle": "NGC 6905",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6905"
+  },
+  "NGC 6910": {
+    "file": "NGC6910.png",
+    "sourceTitle": "NGC 6910",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6910"
+  },
+  "NGC 6925": {
+    "file": "NGC6925.jpg",
+    "sourceTitle": "NGC 6925",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6925"
+  },
+  "NGC 6939": {
+    "file": "NGC6939.png",
+    "sourceTitle": "NGC 6939",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6939"
+  },
+  "NGC 6943": {
+    "file": "NGC6943.jpg",
+    "sourceTitle": "NGC 6943",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_6943"
   },
   "NGC 6946": {
     "file": "NGC6946.jpg",
@@ -724,10 +2559,55 @@
     "sourceTitle": "Saturn Nebula",
     "sourceURL": "https://en.wikipedia.org/wiki/Saturn_Nebula"
   },
+  "NGC 7013": {
+    "file": "NGC7013.png",
+    "sourceTitle": "NGC 7013",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7013"
+  },
   "NGC 7023": {
     "file": "NGC7023.jpg",
     "sourceTitle": "Iris Nebula",
     "sourceURL": "https://en.wikipedia.org/wiki/Iris_Nebula"
+  },
+  "NGC 7026": {
+    "file": "NGC7026.jpg",
+    "sourceTitle": "NGC 7026",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7026"
+  },
+  "NGC 7027": {
+    "file": "NGC7027.png",
+    "sourceTitle": "NGC 7027",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7027"
+  },
+  "NGC 7031": {
+    "file": "NGC7031.jpg",
+    "sourceTitle": "NGC 7031",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7031"
+  },
+  "NGC 7041": {
+    "file": "NGC7041.jpg",
+    "sourceTitle": "NGC 7041",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7041"
+  },
+  "NGC 7142": {
+    "file": "NGC7142.jpg",
+    "sourceTitle": "NGC 7142",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7142"
+  },
+  "NGC 7177": {
+    "file": "NGC7177.jpg",
+    "sourceTitle": "NGC 7177",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7177"
+  },
+  "NGC 7184": {
+    "file": "NGC7184.jpg",
+    "sourceTitle": "NGC 7184",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7184"
+  },
+  "NGC 7209": {
+    "file": "NGC7209.jpg",
+    "sourceTitle": "NGC 7209",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7209"
   },
   "NGC 7293": {
     "file": "NGC7293.jpg",
@@ -739,25 +2619,165 @@
     "sourceTitle": "NGC 7331",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_7331"
   },
+  "NGC 7332": {
+    "file": "NGC7332.jpg",
+    "sourceTitle": "NGC 7332",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7332"
+  },
   "NGC 7380": {
     "file": "NGC7380.jpg",
     "sourceTitle": "NGC 7380",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_7380"
+  },
+  "NGC 741": {
+    "file": "NGC741.jpg",
+    "sourceTitle": "NGC 741",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_741"
+  },
+  "NGC 7412": {
+    "file": "NGC7412.jpg",
+    "sourceTitle": "NGC 7412",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7412"
+  },
+  "NGC 7418": {
+    "file": "NGC7418.png",
+    "sourceTitle": "NGC 7418",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7418"
+  },
+  "NGC 744": {
+    "file": "NGC744.jpg",
+    "sourceTitle": "NGC 744",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_744"
+  },
+  "NGC 7479": {
+    "file": "NGC7479.jpg",
+    "sourceTitle": "NGC 7479",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7479"
+  },
+  "NGC 7507": {
+    "file": "NGC7507.jpg",
+    "sourceTitle": "NGC 7507",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7507"
+  },
+  "NGC 7510": {
+    "file": "NGC7510.png",
+    "sourceTitle": "NGC 7510",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7510"
+  },
+  "NGC 7531": {
+    "file": "NGC7531.jpg",
+    "sourceTitle": "NGC 7531",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7531"
+  },
+  "NGC 7582": {
+    "file": "NGC7582.png",
+    "sourceTitle": "NGC 7582",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7582"
+  },
+  "NGC 7599": {
+    "file": "NGC7599.jpg",
+    "sourceTitle": "NGC 7599",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7599"
+  },
+  "NGC 7606": {
+    "file": "NGC7606.jpg",
+    "sourceTitle": "NGC 7606",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7606"
+  },
+  "NGC 7619": {
+    "file": "NGC7619.jpg",
+    "sourceTitle": "NGC 7619",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7619"
   },
   "NGC 7635": {
     "file": "NGC7635.jpg",
     "sourceTitle": "Bubble Nebula",
     "sourceURL": "https://en.wikipedia.org/wiki/Bubble_Nebula"
   },
+  "NGC 7640": {
+    "file": "NGC7640.jpg",
+    "sourceTitle": "NGC 7640",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7640"
+  },
+  "NGC 7662": {
+    "file": "NGC7662.jpg",
+    "sourceTitle": "NGC 7662",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7662"
+  },
+  "NGC 7689": {
+    "file": "NGC7689.jpg",
+    "sourceTitle": "NGC 7689",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7689"
+  },
+  "NGC 7723": {
+    "file": "NGC7723.jpg",
+    "sourceTitle": "NGC 7723",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7723"
+  },
+  "NGC 7727": {
+    "file": "NGC7727.jpg",
+    "sourceTitle": "NGC 7727",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7727"
+  },
+  "NGC 7790": {
+    "file": "NGC7790.png",
+    "sourceTitle": "NGC 7790",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7790"
+  },
+  "NGC 7793": {
+    "file": "NGC7793.jpg",
+    "sourceTitle": "NGC 7793",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7793"
+  },
+  "NGC 7814": {
+    "file": "NGC7814.jpg",
+    "sourceTitle": "NGC 7814",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_7814"
+  },
+  "NGC 821": {
+    "file": "NGC821.jpg",
+    "sourceTitle": "NGC 821",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_821"
+  },
+  "NGC 864": {
+    "file": "NGC864.jpg",
+    "sourceTitle": "NGC 864",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_864"
+  },
   "NGC 869": {
     "file": "NGC869.jpg",
     "sourceTitle": "Double Cluster",
     "sourceURL": "https://en.wikipedia.org/wiki/Double_Cluster"
   },
+  "NGC 884": {
+    "file": "NGC884.jpg",
+    "sourceTitle": "NGC 884",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_884"
+  },
   "NGC 891": {
     "file": "NGC891.jpg",
     "sourceTitle": "NGC 891",
     "sourceURL": "https://en.wikipedia.org/wiki/NGC_891"
+  },
+  "NGC 956": {
+    "file": "NGC956.jpg",
+    "sourceTitle": "NGC 956",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_956"
+  },
+  "NGC 957": {
+    "file": "NGC957.png",
+    "sourceTitle": "NGC 957",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_957"
+  },
+  "NGC 972": {
+    "file": "NGC972.jpg",
+    "sourceTitle": "NGC 972",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_972"
+  },
+  "NGC 986": {
+    "file": "NGC986.jpg",
+    "sourceTitle": "NGC 986",
+    "sourceURL": "https://en.wikipedia.org/wiki/NGC_986"
   },
   "Sh2-155": {
     "file": "Sh2155.jpg",

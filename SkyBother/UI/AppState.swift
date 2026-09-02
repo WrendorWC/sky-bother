@@ -52,6 +52,11 @@ final class AppState: ObservableObject {
         set { settings.rig = newValue }
     }
 
+    var customTargets: [Target] {
+        get { settings.customTargets }
+        set { settings.customTargets = newValue }
+    }
+
     var preferences: Preferences {
         get { settings.preferences }
         set { settings.preferences = newValue }
@@ -104,7 +109,7 @@ final class AppState: ObservableObject {
         let planner = Planner(site: site,
                               rig: rig,
                               preferences: preferences,
-                              catalog: BuiltInCatalog.all,
+                              catalog: BuiltInCatalog.all + customTargets,
                               forecast: forecast)
 
         isPlanning = true
@@ -230,6 +235,34 @@ final class AppState: ObservableObject {
 
     var isCurrentRigSaved: Bool {
         settings.savedRigs.contains { $0.id == rig.id }
+    }
+
+    // MARK: - Custom targets
+
+    /// Adds a new custom target, or — if its designation collides with an
+    /// existing custom target — updates that one in place, since `Target.id`
+    /// is the designation itself and a duplicate almost always means the
+    /// user is editing rather than genuinely adding a second object.
+    func addCustomTarget(_ target: Target) {
+        if let index = settings.customTargets.firstIndex(where: { $0.id == target.id }) {
+            settings.customTargets[index] = target
+        } else {
+            settings.customTargets.append(target)
+        }
+        Task { await rebuildPlans() }
+    }
+
+    /// Replaces an existing custom target, keyed by its original designation
+    /// so the edit still lands correctly even if the designation itself changed.
+    func updateCustomTarget(originalID: String, with target: Target) {
+        settings.customTargets.removeAll { $0.id == originalID }
+        settings.customTargets.append(target)
+        Task { await rebuildPlans() }
+    }
+
+    func removeCustomTarget(_ target: Target) {
+        settings.customTargets.removeAll { $0.id == target.id }
+        Task { await rebuildPlans() }
     }
 
     // MARK: - Persistence

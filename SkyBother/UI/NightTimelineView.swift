@@ -15,6 +15,22 @@ struct NightTimelineView: View {
     /// "why is this target best at this particular time?" without needing a
     /// second chart to compare against.
     var selectedTarget: TargetPlan? = nil
+    /// When set, this chart and whatever else holds the other end of this
+    /// binding (the sky view, currently) share one scrubbed time instead of
+    /// each keeping their own — dragging here moves it, and moves the sky
+    /// view with it. Nil for callers (the menu bar popover) that don't need
+    /// a scrub concept at all.
+    var scrubTime: Binding<Date>? = nil
+    /// True while the enclosing scroll view is actively moving. Content
+    /// scrolling under a *stationary* cursor still changes the cursor's
+    /// position relative to this view, which fires `onContinuousHover` the
+    /// same as a real mouse move would — flooding `hoverLocation` with
+    /// updates and fighting the scroll view's own momentum, which read as
+    /// jitter and a scroll that "got hung up" reversing direction. Ignoring
+    /// hover while scrolling is in flight fixes that; the readout wasn't
+    /// meaningful mid-scroll anyway, since it wasn't reflecting a
+    /// deliberate point of interest.
+    var isScrolling: Bool = false
 
     @State private var hoverLocation: CGPoint?
 
@@ -35,6 +51,9 @@ struct NightTimelineView: View {
                         drawHourTicks(context: context, size: size, axis: axis)
                     }
                     drawNowMarker(context: context, size: size, axis: axis)
+                    if let scrubTime {
+                        drawScrubMarker(context: context, size: size, axis: axis, time: scrubTime.wrappedValue)
+                    }
                 }
 
                 if let hoverLocation {
@@ -43,11 +62,23 @@ struct NightTimelineView: View {
             }
             .contentShape(Rectangle())
             .onContinuousHover { phase in
+                guard !isScrolling else { hoverLocation = nil; return }
                 switch phase {
                 case .active(let location): hoverLocation = location
                 case .ended: hoverLocation = nil
                 }
             }
+            .onChange(of: isScrolling) { _, scrolling in
+                if scrolling { hoverLocation = nil }
+            }
+            // Always attached, but a no-op via optional chaining when no
+            // scrubTime binding was supplied — a ternary between a real
+            // gesture and nil doesn't type-check, since Optional doesn't
+            // itself conform to Gesture.
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                    .onChanged { value in scrubTime?.wrappedValue = axis.date(for: value.location.x) }
+            )
         }
         .frame(height: height)
         .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -276,6 +307,20 @@ struct NightTimelineView: View {
         context.stroke(path, with: .color(Palette.skip.opacity(0.9)), lineWidth: 1.5)
         context.draw(Text("now").font(.system(size: 9, weight: .semibold)).foregroundColor(Palette.skip),
                      at: CGPoint(x: x + 15, y: size.height - 24))
+    }
+
+    /// The time shared with the sky view — drawn in the accent colour to
+    /// keep "this is the moment you're looking at" visually distinct from
+    /// the fixed red "now" line, using the same selection language as
+    /// everywhere else in the app.
+    private func drawScrubMarker(context: GraphicsContext, size: CGSize, axis: TimeAxis, time: Date) {
+        guard plan.chartWindow.contains(time) else { return }
+        let x = axis.x(for: time)
+        var path = Path()
+        path.move(to: CGPoint(x: x, y: 0))
+        path.addLine(to: CGPoint(x: x, y: size.height))
+        context.stroke(path, with: .color(Palette.accent.opacity(0.85)), lineWidth: 1.5)
+        context.fill(Path(ellipseIn: CGRect(x: x - 3, y: -3, width: 6, height: 6)), with: .color(Palette.accent))
     }
 
     // MARK: - Hover

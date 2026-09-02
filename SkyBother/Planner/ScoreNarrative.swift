@@ -39,7 +39,7 @@ func limitationPhrase(for factor: ScoreFactor) -> String {
     case "Conditions": return "dew or wind risk"
     case "Time on target": return "not up for long enough"
     case "Sky darkness": return "twilight or moonlit sky"
-    case "Clear sky": return "clouds during the window"
+    case "Cloud cover": return "intermittent clouds during the window"
     case "Altitude": return "stays low, heavy air mass"
     case "Framing": return "poor fit for your frame"
     case "Detectability": return "faint against your sky"

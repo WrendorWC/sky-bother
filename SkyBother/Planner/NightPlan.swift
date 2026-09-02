@@ -91,6 +91,13 @@ struct TargetPlan: Identifiable, Hashable, Sendable {
     var meanExtinction: Double
     var minimumMoonSeparation: Double
     var maximumFieldRotation: Double
+    /// Spans where the target is above the rig's zenith-avoidance altitude —
+    /// empty for any rig that doesn't rotate the field. Unlike
+    /// `maximumFieldRotation` (a single peak number) or the text warning
+    /// derived from it, this is real time windows, so the UI can mark the
+    /// risky portion of a path or a time window directly rather than only
+    /// explaining it in prose.
+    var zenithRiskWindows: [TimeWindow]
     var fit: RigFit
     var detectability: Double
     var score: Double
@@ -102,6 +109,13 @@ struct TargetPlan: Identifiable, Hashable, Sendable {
     var id: String { target.id }
     var verdict: Verdict { Verdict.forScore(score) }
     var bestWindow: TimeWindow? { windows.longest }
+
+    /// Where the best window overlaps a zenith-risk span, if at all — the
+    /// UI marks this directly rather than only mentioning it in a warning.
+    var bestWindowZenithRisk: TimeWindow? {
+        guard let bestWindow else { return nil }
+        return zenithRiskWindows.compactMap { bestWindow.intersection(with: $0) }.first
+    }
 
     var usableHoursText: String {
         let hours = Int(usableMinutes) / 60

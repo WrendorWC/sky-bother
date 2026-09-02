@@ -363,6 +363,12 @@ struct Planner: Sendable {
         var usableFlags: [Bool] = []
         usableFlags.reserveCapacity(contexts.count)
 
+        // Tracked unconditionally, like altitudeTrace — zenith risk is about
+        // mount physics (field rotation), not whether the sky happens to be
+        // clear and dark right then, so it isn't gated on `isUsable` below.
+        var zenithRiskFlags: [Bool] = []
+        zenithRiskFlags.reserveCapacity(contexts.count)
+
         var usableCount = 0
         var darknessSum = 0.0
         var extinctionSum = 0.0
@@ -399,6 +405,9 @@ struct Planner: Sendable {
                 transitTime = context.date
             }
             maximumAltitude = max(maximumAltitude, horizontal.altitude)
+            zenithRiskFlags.append(preferences.showsZenithRiskWarnings
+                                   && rig.mountType.rotatesField
+                                   && horizontal.altitude > rig.zenithAvoidanceAltitude)
 
             let sample = samples[index]
             let separation = SkyCoordinates.separation(target.coordinate, context.moonCoordinate)
@@ -455,7 +464,7 @@ struct Planner: Sendable {
         // Over the target's whole potential dark, above-floor window — not
         // just the usable subset — so a target that only squeaked out a few
         // clear minutes in an otherwise cloudy night scores accordingly,
-        // instead of Clear sky reporting the usable time was clear (it was,
+        // instead of Cloud cover reporting the usable time was clear (it was,
         // by definition) and missing how much of the night was not.
         let meanClear = potentialWindowCount > 0 ? clearPotentialSum / Double(potentialWindowCount) : 0
         let meanExtinction = extinctionSum / Double(usableCount)
@@ -471,6 +480,7 @@ struct Planner: Sendable {
                                                      integrationMinutes: usableMinutes)
 
         let targetWindows = makeWindows(from: usableFlags, contexts: contexts)
+        let zenithRiskWindows = makeWindows(from: zenithRiskFlags, contexts: contexts)
 
         let factors = targetFactors(usableMinutes: usableMinutes,
                                     meanDarkness: meanDarkness,
@@ -500,6 +510,7 @@ struct Planner: Sendable {
                           meanExtinction: meanExtinction,
                           minimumMoonSeparation: minimumSeparation,
                           maximumFieldRotation: maximumRotation,
+                          zenithRiskWindows: zenithRiskWindows,
                           fit: fit,
                           detectability: detectability,
                           score: weightedGeometricScore(factors),
@@ -549,7 +560,7 @@ struct Planner: Sendable {
                         value: meanDarkness,
                         weight: 0.18,
                         detail: "Twilight and moonlight, averaged over the window"),
-            ScoreFactor(name: "Clear sky",
+            ScoreFactor(name: "Cloud cover",
                         value: hasWeather ? meanClear : 0.6,
                         weight: 0.18,
                         detail: hasWeather ? "Cloud forecast over the window" : "Beyond the forecast — assumed average"),

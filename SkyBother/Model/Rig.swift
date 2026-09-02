@@ -9,9 +9,9 @@ enum MountType: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var displayName: String {
         switch self {
-        case .altAzimuth: return "Alt-azimuth"
-        case .equatorialTracked: return "Equatorial, unguided"
-        case .equatorialGuided: return "Equatorial, guided"
+        case .altAzimuth: return "Alt-Azimuth"
+        case .equatorialTracked: return "Equatorial, Unguided"
+        case .equatorialGuided: return "Equatorial, Guided"
         }
     }
 
@@ -131,6 +131,27 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                                 hasNarrowbandFilter: true, supportsMosaic: true,
                                 zenithAvoidanceAltitude: 80)
 
+    // The S50 Pro and S30 each also carry a second, wide-angle camera
+    // alongside their main imaging optics — used on the device for
+    // framing/context, and here for starscape/Milky Way planning, which
+    // wants a much shorter focal length than either main camera offers.
+    // ZWO doesn't publish detailed specs for these the way they do the
+    // main optics, so these numbers are a best estimate rather than a
+    // manufacturer figure — check them against your own unit.
+    static let seestarS50ProWide = Rig(name: "ZWO Seestar S50 Pro (wide)",
+                                       apertureMillimeters: 7, focalLengthMillimeters: 16,
+                                       sensorWidthMillimeters: 5.6, sensorHeightMillimeters: 3.2,
+                                       pixelSizeMicrons: 2.9, mountType: .altAzimuth,
+                                       hasNarrowbandFilter: false, supportsMosaic: false,
+                                       zenithAvoidanceAltitude: 80)
+
+    static let seestarS30Wide = Rig(name: "ZWO Seestar S30 (wide)",
+                                    apertureMillimeters: 7, focalLengthMillimeters: 16,
+                                    sensorWidthMillimeters: 5.6, sensorHeightMillimeters: 3.2,
+                                    pixelSizeMicrons: 2.9, mountType: .altAzimuth,
+                                    hasNarrowbandFilter: false, supportsMosaic: false,
+                                    zenithAvoidanceAltitude: 80)
+
     static let celestronOrigin = Rig(name: "Celestron Origin",
                                      apertureMillimeters: 152, focalLengthMillimeters: 335,
                                      sensorWidthMillimeters: 7.4, sensorHeightMillimeters: 5.0,
@@ -166,6 +187,30 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                                      hasNarrowbandFilter: false, supportsMosaic: false,
                                      zenithAvoidanceAltitude: 90)
 
+    // Wide-field starscape rigs — a Milky Way/landscape composition is just
+    // a very short, very fast "telescope" in this model, so these need no
+    // new equipment concept, only new numbers.
+    static let apsc10mm = Rig(name: "APS-C + 10mm lens",
+                              apertureMillimeters: 3.6, focalLengthMillimeters: 10,
+                              sensorWidthMillimeters: 23.5, sensorHeightMillimeters: 15.6,
+                              pixelSizeMicrons: 3.9, mountType: .equatorialTracked,
+                              hasNarrowbandFilter: false, supportsMosaic: false,
+                              zenithAvoidanceAltitude: 90)
+
+    static let apsc16mm = Rig(name: "APS-C + 16mm lens",
+                              apertureMillimeters: 5.7, focalLengthMillimeters: 16,
+                              sensorWidthMillimeters: 23.5, sensorHeightMillimeters: 15.6,
+                              pixelSizeMicrons: 3.9, mountType: .equatorialTracked,
+                              hasNarrowbandFilter: false, supportsMosaic: false,
+                              zenithAvoidanceAltitude: 90)
+
+    static let fullFrame24mm = Rig(name: "Full-frame + 24mm lens",
+                                   apertureMillimeters: 17.1, focalLengthMillimeters: 24,
+                                   sensorWidthMillimeters: 36, sensorHeightMillimeters: 24,
+                                   pixelSizeMicrons: 4.3, mountType: .equatorialTracked,
+                                   hasNarrowbandFilter: false, supportsMosaic: false,
+                                   zenithAvoidanceAltitude: 90)
+
     static let refractor80 = Rig(name: "80mm refractor + APS-C",
                                  apertureMillimeters: 80, focalLengthMillimeters: 480,
                                  sensorWidthMillimeters: 23.5, sensorHeightMillimeters: 15.7,
@@ -181,5 +226,7 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                           zenithAvoidanceAltitude: 90)
 
     static let presets: [Rig] = [seestarS50Pro, seestarS50, seestarS30, celestronOrigin, unistellarEVscope2,
-                                 vesperaII, dwarf3, cameraOnTracker, refractor80, sct8]
+                                 vesperaII, dwarf3, cameraOnTracker, refractor80, sct8,
+                                 apsc10mm, apsc16mm, fullFrame24mm,
+                                 seestarS50ProWide, seestarS30Wide]
 }

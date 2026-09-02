@@ -28,9 +28,19 @@ enum AutoPlanner {
     /// Below this, a window isn't worth suggesting a setup change for.
     static let minimumSlotMinutes: Double = 20
 
-    static func plan(for night: NightPlan, minimumScore: Double) -> [AutoPlanSlot] {
+    /// `restrictedTo`, when given, replaces the usual minimum-score filter
+    /// entirely rather than narrowing it further — these are targets the
+    /// user picked by hand, so the question is purely "what's the best
+    /// non-overlapping schedule among exactly these," not "and do they also
+    /// clear the usual bar."
+    static func plan(for night: NightPlan, minimumScore: Double, restrictedTo allowedTargetIDs: Set<String>? = nil) -> [AutoPlanSlot] {
         let candidates = night.targets
-            .filter { $0.score >= minimumScore }
+            .filter { targetPlan in
+                if let allowedTargetIDs {
+                    return allowedTargetIDs.contains(targetPlan.id)
+                }
+                return targetPlan.score >= minimumScore
+            }
             .compactMap { targetPlan -> (TargetPlan, TimeWindow)? in
                 guard let window = targetPlan.bestWindow, window.durationMinutes >= minimumSlotMinutes else {
                     return nil

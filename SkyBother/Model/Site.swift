@@ -40,15 +40,15 @@ struct Site: Codable, Hashable, Identifiable, Sendable {
 
     static func bortleDescription(for bortleClass: Int) -> String {
         switch bortleClass {
-        case 1: return "Excellent dark site"
-        case 2: return "Truly dark site"
-        case 3: return "Rural sky"
-        case 4: return "Rural/suburban transition"
-        case 5: return "Suburban sky"
-        case 6: return "Bright suburban sky"
-        case 7: return "Suburban/urban transition"
-        case 8: return "City sky"
-        default: return "Inner-city sky"
+        case 1: return "Excellent Dark Site"
+        case 2: return "Truly Dark Site"
+        case 3: return "Rural Sky"
+        case 4: return "Rural/Suburban Transition"
+        case 5: return "Suburban Sky"
+        case 6: return "Bright Suburban Sky"
+        case 7: return "Suburban/Urban Transition"
+        case 8: return "City Sky"
+        default: return "Inner-City Sky"
         }
     }
 

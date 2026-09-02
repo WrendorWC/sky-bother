@@ -16,7 +16,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // later — willFinishLaunching runs before SwiftUI creates the first
     // window, so the appearance is already set by the time that happens.
     func applicationWillFinishLaunching(_ notification: Notification) {
+        terminateIfAlreadyRunning()
         NSApp.appearance = NSAppearance(named: .darkAqua)
+    }
+
+    /// A second launch (double-clicking the built app while a debug build is
+    /// still running, or vice versa) hands you a confusing pair of
+    /// windows/menu-bar icons and, worse, a second process quietly holding
+    /// its own stale in-memory state. Checked before any window exists, so a
+    /// duplicate launch just hands off to the original and exits cleanly —
+    /// nothing to tear down yet.
+    private func terminateIfAlreadyRunning() {
+        guard let bundleID = Bundle.main.bundleIdentifier else { return }
+        let mine = ProcessInfo.processInfo.processIdentifier
+        let others = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+            .filter { $0.processIdentifier != mine }
+        guard let existing = others.first else { return }
+        existing.activate(options: [.activateAllWindows])
+        exit(0)
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -55,6 +72,7 @@ struct SkyBotherApp: App {
 
         WindowGroup(id: "catalog") {
             TargetCatalogView()
+                .environmentObject(state)
                 .tint(Palette.accent)
         }
         .defaultSize(width: 980, height: 720)
