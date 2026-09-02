@@ -43,7 +43,21 @@ struct StoredSettings: Codable, Hashable, Sendable {
         preferences = try container.decode(Preferences.self, forKey: .preferences)
         savedSites = try container.decode([Site].self, forKey: .savedSites)
         savedRigs = try container.decode([Rig].self, forKey: .savedRigs)
-        hasSetLocation = try container.decodeIfPresent(Bool.self, forKey: .hasSetLocation) ?? true
+        // A settings file written before this flag existed cannot be taken to
+        // imply the user ever chose a site. The file is rewritten on *any*
+        // settings change — a slider, a rig swap, a unit toggle — so it can
+        // perfectly well hold the hardcoded "Boston, MA" placeholder that
+        // shipped before onboarding existed. Defaulting those to true would
+        // leave exactly the people this feature is for stuck on Boston,
+        // never once asked where they are.
+        let looksLikeRetiredPlaceholder = site.name == "Boston, MA"
+            && abs(site.latitude - 42.3601) < 0.0005
+            && abs(site.longitude + 71.0589) < 0.0005
+        let looksUnconfigured = site.name.trimmingCharacters(in: .whitespaces).isEmpty
+            || (site.latitude == 0 && site.longitude == 0)
+
+        hasSetLocation = try container.decodeIfPresent(Bool.self, forKey: .hasSetLocation)
+            ?? !(looksLikeRetiredPlaceholder || looksUnconfigured)
     }
 }
 
