@@ -1,9 +1,19 @@
 import SwiftUI
 
-/// A browsable reference catalog — every northern-hemisphere-reachable target
-/// in the built-in list, with a photo, so you know what you're actually
-/// pointing at before you commit a night to it. Independent of any night's
-/// plan: this is "what's out there", not "what's up tonight".
+/// A browsable reference catalog — every target in the built-in list, with a
+/// photo, so you know what you're actually pointing at before you commit a
+/// night to it. Independent of any night's plan: this is "what's out
+/// there", not "what's up tonight" — and "what's out there" means the whole
+/// sky, not just the half of it visible from north of the tropics. This
+/// used to filter out anything below -55° declination (the reasoning being
+/// that a handful of deep-southern showpieces like the Magellanic Clouds
+/// never clear a northern horizon), which quietly excluded a real chunk of
+/// the catalogue once the ~1,000-object OpenNGC extension folded in
+/// hundreds more deep-southern targets — invisible from a northern site,
+/// but exactly what a southern-hemisphere observer would open this window
+/// looking for. The actual nightly plan was never filtered this way (it
+/// already only shows what genuinely clears your own horizon); the browse
+/// catalog shouldn't assume a hemisphere either.
 struct TargetCatalogView: View {
     @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
@@ -13,21 +23,13 @@ struct TargetCatalogView: View {
     @State private var editorContext: CustomTargetEditorContext?
     @State private var sortOption: CatalogSortOption = .alphabetical
 
-    /// Built-in targets that can plausibly rise for a northern-hemisphere
-    /// observer. Excludes the handful of deep-southern showpieces (Magellanic
-    /// Clouds, 47 Tucanae, Carina Nebula) that never clear the horizon north
-    /// of the tropics. Custom targets skip this filter entirely — the user
-    /// added them on purpose, wherever they are.
-    private static let northernReachable = BuiltInCatalog.all
-        .filter { $0.declination > -55 }
-
     private var customTargetIDs: Set<String> {
         Set(state.customTargets.map(\.id))
     }
 
     private var targets: [Target] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let all = Self.northernReachable + state.customTargets
+        let all = BuiltInCatalog.all + state.customTargets
         let filtered = all.filter { target in
             if !typeFilter.isEmpty && !typeFilter.contains(target.type) { return false }
             if !query.isEmpty && !target.searchText.contains(query) { return false }
