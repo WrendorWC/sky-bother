@@ -35,6 +35,13 @@ final class AppState: ObservableObject {
     /// window reopen, a setting that happens to call refresh) respects this;
     /// the sidebar's Refresh button and Cmd-R always bypass it.
     private static let minimumAutomaticFetchInterval: TimeInterval = 3600
+    private var lastCloudMapFetchAt: Date?
+    /// A much shorter gate than the weather forecast's — GOES imagery
+    /// itself only meaningfully changes every several minutes (see
+    /// CloudMapClient's own ~40-minute GIBS-latency note), so there's no
+    /// benefit to refetching more often than this, but no reason to tie it
+    /// to the forecast's full hour either; they're unrelated resources.
+    private static let minimumCloudMapFetchInterval: TimeInterval = 600
 
     init() {
         settings = SettingsStore.shared.load()
@@ -125,13 +132,23 @@ final class AppState: ObservableObject {
     /// for anything the user directly clicked (the Refresh button, Cmd-R) or
     /// that requires fresh data to make sense (picking a different site).
     func refresh(force: Bool = false) async {
+        // Its own gate, independent of the weather throttle below — every
+        // *other* call site already passes force: true (the Refresh button,
+        // a setting change, picking a new site), so the one non-forced call
+        // is app launch itself. Once the weather forecast started being
+        // restored from its own on-disk cache (see WeatherCacheStore),
+        // launch routinely took the throttled branch below and skipped this
+        // entirely, so the cloud map silently never appeared until
+        // something forced a real refresh — not what "cached, not skipped"
+        // was supposed to mean for a completely separate resource.
+        maybeRefreshCloudMap(force: force)
+
         if !force, let lastWeatherFetchAt,
            Date().timeIntervalSince(lastWeatherFetchAt) < Self.minimumAutomaticFetchInterval {
             await rebuildPlans()
             return
         }
         lastWeatherFetchAt = Date()
-        refreshCloudMap()
 
         isLoading = true
         weatherErrorMessage = nil
@@ -163,13 +180,23 @@ final class AppState: ObservableObject {
         await rebuildPlans()
     }
 
-    /// Fetches on the same cadence as the weather (`refresh` calls this, so
-    /// it inherits the once-an-hour throttle and the manual-refresh bypass).
-    /// Runs independently of the weather fetch's success or failure, and
-    /// fails silently — it's a decorative sidebar panel, not core planning
-    /// data, so a second error banner alongside the weather one would be
-    /// noise. Outside GOES-East's coverage, or if a network hiccup drops the
-    /// one request, the panel just doesn't appear.
+    /// Own gate (`minimumCloudMapFetchInterval`), independent of the weather
+    /// forecast's — see the note on `refresh` for why this can't just live
+    /// inside that throttle's non-cached branch. Runs independently of the
+    /// weather fetch's own success or failure either way, and fails
+    /// silently — it's a decorative sidebar panel, not core planning data,
+    /// so a second error banner alongside the weather one would be noise.
+    /// Outside GOES-East's coverage, or if a network hiccup drops the one
+    /// request, the panel just doesn't appear.
+    private func maybeRefreshCloudMap(force: Bool) {
+        if !force, let lastCloudMapFetchAt,
+           Date().timeIntervalSince(lastCloudMapFetchAt) < Self.minimumCloudMapFetchInterval {
+            return
+        }
+        lastCloudMapFetchAt = Date()
+        refreshCloudMap()
+    }
+
     private func refreshCloudMap() {
         let latitude = site.latitude
         let longitude = site.longitude
