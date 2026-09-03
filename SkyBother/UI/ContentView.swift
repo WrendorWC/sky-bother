@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var state: AppState
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         if state.needsLocationSetup {
@@ -45,6 +46,17 @@ struct ContentView: View {
             .toolbarTitleDisplayMode(.inline)
             .forcedToolbarBackground(Palette.spaceTop)
             .toolbar {
+                // A duplicate of the app menu's Settings item (and Cmd-,) —
+                // this is the one settings-adjacent thing that isn't already
+                // one click away from the main window otherwise.
+                ToolbarItem {
+                    Button {
+                        openSettings()
+                    } label: {
+                        Label("Settings", systemImage: "gearshape")
+                    }
+                    .help("Site, rig and planning preferences")
+                }
                 ToolbarItem {
                     Button {
                         openWindow(id: "catalog")

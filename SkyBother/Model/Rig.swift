@@ -1,21 +1,45 @@
 import Foundation
 
-enum MountType: String, Codable, CaseIterable, Identifiable, Sendable {
-    case altAzimuth        // smart telescopes, dobsonians — field rotates
-    case equatorialTracked // tracked but unguided
-    case equatorialGuided  // autoguided
+enum MountType: String, CaseIterable, Identifiable, Sendable {
+    case altAzimuth  // smart telescopes, dobsonians — field rotates
+    case equatorial  // tracked, guided or not — field doesn't rotate either way
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
         case .altAzimuth: return "Alt-Azimuth"
-        case .equatorialTracked: return "Equatorial, Unguided"
-        case .equatorialGuided: return "Equatorial, Guided"
+        case .equatorial: return "Equatorial"
         }
     }
 
     var rotatesField: Bool { self == .altAzimuth }
+}
+
+extension MountType: Codable {
+    /// Guided vs. unguided equatorial used to be two separate cases, kept
+    /// distinct on the theory that guiding might someday matter to the
+    /// score — it never ended up affecting anything (both only ever fed
+    /// `rotatesField`, identically false for either), so the distinction
+    /// was just a picker choice with no effect. Decoding both old raw
+    /// values into the merged `.equatorial` case means a settings.json
+    /// saved before this change still loads cleanly instead of failing to
+    /// decode.
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        switch raw {
+        case "altAzimuth": self = .altAzimuth
+        case "equatorial", "equatorialTracked", "equatorialGuided": self = .equatorial
+        default:
+            throw DecodingError.dataCorrupted(DecodingError.Context(
+                codingPath: decoder.codingPath, debugDescription: "Unknown MountType raw value: \(raw)"))
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 /// Everything about the imaging train that changes what is worth pointing at.
@@ -291,7 +315,7 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
     static let cameraOnTracker = Rig(name: "Camera + 135mm lens on tracker",
                                      apertureMillimeters: 48, focalLengthMillimeters: 135,
                                      sensorWidthMillimeters: 23.5, sensorHeightMillimeters: 15.6,
-                                     pixelSizeMicrons: 3.9, mountType: .equatorialTracked,
+                                     pixelSizeMicrons: 3.9, mountType: .equatorial,
                                      hasNarrowbandFilter: false, supportsMosaic: false,
                                      zenithAvoidanceAltitude: 90)
 
@@ -301,35 +325,35 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
     static let apsc10mm = Rig(name: "APS-C + 10mm lens",
                               apertureMillimeters: 3.6, focalLengthMillimeters: 10,
                               sensorWidthMillimeters: 23.5, sensorHeightMillimeters: 15.6,
-                              pixelSizeMicrons: 3.9, mountType: .equatorialTracked,
+                              pixelSizeMicrons: 3.9, mountType: .equatorial,
                               hasNarrowbandFilter: false, supportsMosaic: false,
                               zenithAvoidanceAltitude: 90)
 
     static let apsc16mm = Rig(name: "APS-C + 16mm lens",
                               apertureMillimeters: 5.7, focalLengthMillimeters: 16,
                               sensorWidthMillimeters: 23.5, sensorHeightMillimeters: 15.6,
-                              pixelSizeMicrons: 3.9, mountType: .equatorialTracked,
+                              pixelSizeMicrons: 3.9, mountType: .equatorial,
                               hasNarrowbandFilter: false, supportsMosaic: false,
                               zenithAvoidanceAltitude: 90)
 
     static let fullFrame24mm = Rig(name: "Full-frame + 24mm lens",
                                    apertureMillimeters: 17.1, focalLengthMillimeters: 24,
                                    sensorWidthMillimeters: 36, sensorHeightMillimeters: 24,
-                                   pixelSizeMicrons: 4.3, mountType: .equatorialTracked,
+                                   pixelSizeMicrons: 4.3, mountType: .equatorial,
                                    hasNarrowbandFilter: false, supportsMosaic: false,
                                    zenithAvoidanceAltitude: 90)
 
     static let refractor80 = Rig(name: "80mm refractor + APS-C",
                                  apertureMillimeters: 80, focalLengthMillimeters: 480,
                                  sensorWidthMillimeters: 23.5, sensorHeightMillimeters: 15.7,
-                                 pixelSizeMicrons: 3.76, mountType: .equatorialGuided,
+                                 pixelSizeMicrons: 3.76, mountType: .equatorial,
                                  hasNarrowbandFilter: true, supportsMosaic: false,
                                  zenithAvoidanceAltitude: 90)
 
     static let sct8 = Rig(name: "8\" SCT + cooled mono",
                           apertureMillimeters: 203, focalLengthMillimeters: 1280,
                           sensorWidthMillimeters: 11.3, sensorHeightMillimeters: 11.3,
-                          pixelSizeMicrons: 3.76, mountType: .equatorialGuided,
+                          pixelSizeMicrons: 3.76, mountType: .equatorial,
                           hasNarrowbandFilter: true, supportsMosaic: false,
                           zenithAvoidanceAltitude: 90)
 
