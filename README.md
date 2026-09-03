@@ -5,6 +5,10 @@
 A Mac app that answers exactly that: whether tonight is worth setting up for, and
 what to point at if it is.
 
+**[Download the latest beta →](https://github.com/WrendorWC/sky-bother/releases/latest)**
+Unzip, drag `SkyBother.app` into Applications, then right-click it and choose
+Open the first time (it isn't notarized yet, so macOS needs that one-time nudge).
+
 It combines four things that normally live in four different tabs:
 
 - **Weather** — hourly cloud cover split into low, mid and high layers, plus dew point, humidity, wind and gusts.
