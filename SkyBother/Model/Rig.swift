@@ -131,6 +131,16 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                                 hasNarrowbandFilter: true, supportsMosaic: true,
                                 zenithAvoidanceAltitude: 80)
 
+    /// 30mm f/5.3 telephoto unit, 160mm focal length, Sony IMX585 (2.9um,
+    /// 2160 x 3840 portrait — same sensor and orientation as the S50 Pro's
+    /// telephoto camera, just behind a shorter, smaller-aperture lens).
+    static let seestarS30Pro = Rig(name: "ZWO Seestar S30 Pro",
+                                   apertureMillimeters: 30, focalLengthMillimeters: 160,
+                                   sensorWidthMillimeters: 6.26, sensorHeightMillimeters: 11.14,
+                                   pixelSizeMicrons: 2.9, mountType: .altAzimuth,
+                                   hasNarrowbandFilter: true, supportsMosaic: true,
+                                   zenithAvoidanceAltitude: 80)
+
     // The S50 Pro and S30 each also carry a second, wide-angle camera
     // alongside their main imaging optics — used on the device for
     // framing/context, and here for starscape/Milky Way planning, which
@@ -152,12 +162,35 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                                     hasNarrowbandFilter: false, supportsMosaic: false,
                                     zenithAvoidanceAltitude: 80)
 
+    /// The S30 Pro's wide camera is a different sensor generation from the
+    /// other Seestars' wide cameras (Sony IMX586, 0.8um native pixels, a
+    /// 1/2" sensor — 8000 x 6000 native, physically 6.4 x 4.8mm) rather
+    /// than a rescaled copy of the main camera's sensor. Aperture and focal
+    /// ratio aren't published for this lens; the 6mm focal length is.
+    static let seestarS30ProWide = Rig(name: "ZWO Seestar S30 Pro (wide)",
+                                       apertureMillimeters: 7, focalLengthMillimeters: 6,
+                                       sensorWidthMillimeters: 6.4, sensorHeightMillimeters: 4.8,
+                                       pixelSizeMicrons: 0.8, mountType: .altAzimuth,
+                                       hasNarrowbandFilter: false, supportsMosaic: false,
+                                       zenithAvoidanceAltitude: 80)
+
     static let celestronOrigin = Rig(name: "Celestron Origin",
                                      apertureMillimeters: 152, focalLengthMillimeters: 335,
                                      sensorWidthMillimeters: 7.4, sensorHeightMillimeters: 5.0,
                                      pixelSizeMicrons: 2.4, mountType: .altAzimuth,
                                      hasNarrowbandFilter: false, supportsMosaic: false,
                                      zenithAvoidanceAltitude: 80)
+
+    /// Same 6" f/2.2 RASA optical tube as the original Origin — the Mark II
+    /// upgrade (announced March 2026) is a camera swap, Sony IMX178 to
+    /// IMX678 (Starvis 2, 2.0um, 3840 x 2160), for better sampling and
+    /// sensitivity.
+    static let celestronOriginMarkII = Rig(name: "Celestron Origin Mark II",
+                                           apertureMillimeters: 152, focalLengthMillimeters: 335,
+                                           sensorWidthMillimeters: 7.68, sensorHeightMillimeters: 4.32,
+                                           pixelSizeMicrons: 2.0, mountType: .altAzimuth,
+                                           hasNarrowbandFilter: false, supportsMosaic: false,
+                                           zenithAvoidanceAltitude: 80)
 
     static let unistellarEVscope2 = Rig(name: "Unistellar eVscope 2",
                                         apertureMillimeters: 114, focalLengthMillimeters: 450,
@@ -166,12 +199,69 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                                         hasNarrowbandFilter: false, supportsMosaic: false,
                                         zenithAvoidanceAltitude: 80)
 
+    /// Same 114mm f/4 optical tube as the eVscope 2, with a newer Sony
+    /// IMX347 sensor (2.9um, 2520 x 2520 — square).
+    static let unistellarEquinox2 = Rig(name: "Unistellar eQuinox 2",
+                                        apertureMillimeters: 114, focalLengthMillimeters: 450,
+                                        sensorWidthMillimeters: 7.31, sensorHeightMillimeters: 7.31,
+                                        pixelSizeMicrons: 2.9, mountType: .altAzimuth,
+                                        hasNarrowbandFilter: false, supportsMosaic: false,
+                                        zenithAvoidanceAltitude: 80)
+
+    /// 85mm f/3.9 reflector, 320mm focal length. Unistellar publishes a
+    /// 33.6 x 45 arcmin field of view rather than raw sensor dimensions —
+    /// these are worked back from that (pixel size, 1.45um, is the one
+    /// number they do publish directly). Odyssey and Odyssey Pro share
+    /// identical optics; Pro only adds a Nikon-made electronic eyepiece,
+    /// which doesn't change anything this app models.
+    static let unistellarOdyssey = Rig(name: "Unistellar Odyssey",
+                                       apertureMillimeters: 85, focalLengthMillimeters: 320,
+                                       sensorWidthMillimeters: 4.19, sensorHeightMillimeters: 3.13,
+                                       pixelSizeMicrons: 1.45, mountType: .altAzimuth,
+                                       hasNarrowbandFilter: false, supportsMosaic: false,
+                                       zenithAvoidanceAltitude: 80)
+
+    /// 50mm f/5 quadruplet APO, Sony IMX585 (2.9um, 3840 x 2160). The
+    /// sensor dimensions here were previously specified against the
+    /// smaller IMX462 the original Vespera used — Vespera II actually
+    /// ships with IMX585, which is physically larger (11.14 x 6.26mm, not
+    /// 8.4 x 4.7mm), giving a noticeably wider real field of view.
     static let vesperaII = Rig(name: "Vaonis Vespera II",
                                apertureMillimeters: 50, focalLengthMillimeters: 250,
-                               sensorWidthMillimeters: 8.4, sensorHeightMillimeters: 4.7,
+                               sensorWidthMillimeters: 11.14, sensorHeightMillimeters: 6.26,
                                pixelSizeMicrons: 2.9, mountType: .altAzimuth,
                                hasNarrowbandFilter: false, supportsMosaic: true,
                                zenithAvoidanceAltitude: 80)
+
+    /// 50mm f/4.9 quadruplet APO, same Sony IMX585 as the Vespera II but a
+    /// shorter 245mm focal length. Currently sold alongside the Vespera II
+    /// and Vespera Pro 2 as Vaonis's mid-tier model.
+    static let vespera3 = Rig(name: "Vaonis Vespera 3",
+                              apertureMillimeters: 50, focalLengthMillimeters: 245,
+                              sensorWidthMillimeters: 11.14, sensorHeightMillimeters: 6.26,
+                              pixelSizeMicrons: 2.9, mountType: .altAzimuth,
+                              hasNarrowbandFilter: false, supportsMosaic: true,
+                              zenithAvoidanceAltitude: 80)
+
+    /// 50mm f/4.9, Sony IMX676 (2.0um, 3536 x 3536 — square). Vaonis's
+    /// current top-tier Vespera, highest resolution of the line.
+    static let vesperaPro2 = Rig(name: "Vaonis Vespera Pro 2",
+                                 apertureMillimeters: 50, focalLengthMillimeters: 245,
+                                 sensorWidthMillimeters: 7.07, sensorHeightMillimeters: 7.07,
+                                 pixelSizeMicrons: 2.0, mountType: .altAzimuth,
+                                 hasNarrowbandFilter: false, supportsMosaic: true,
+                                 zenithAvoidanceAltitude: 80)
+
+    /// 80mm f/5 refractor-reflector (Nasmyth focus), Sony back-illuminated
+    /// CMOS at 2.4um, 3096 x 2080. Vaonis's original flagship, before the
+    /// Vespera line; still commonly owned even though Vaonis's own site
+    /// now lists it only as a past product.
+    static let stellina = Rig(name: "Vaonis Stellina",
+                              apertureMillimeters: 80, focalLengthMillimeters: 400,
+                              sensorWidthMillimeters: 7.43, sensorHeightMillimeters: 4.99,
+                              pixelSizeMicrons: 2.4, mountType: .altAzimuth,
+                              hasNarrowbandFilter: false, supportsMosaic: true,
+                              zenithAvoidanceAltitude: 80)
 
     static let dwarf3 = Rig(name: "DwarfLab Dwarf 3",
                             apertureMillimeters: 35, focalLengthMillimeters: 150,
@@ -179,6 +269,24 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                             pixelSizeMicrons: 2.0, mountType: .altAzimuth,
                             hasNarrowbandFilter: true, supportsMosaic: true,
                             zenithAvoidanceAltitude: 80)
+
+    /// 24mm f/4.2 telephoto lens, Sony IMX415 (1.45um, 3840 x 2160).
+    /// Replaced by the Dwarf 3 in late 2024 but still widely owned.
+    static let dwarf2 = Rig(name: "DwarfLab Dwarf II",
+                            apertureMillimeters: 24, focalLengthMillimeters: 100,
+                            sensorWidthMillimeters: 5.57, sensorHeightMillimeters: 3.13,
+                            pixelSizeMicrons: 1.45, mountType: .altAzimuth,
+                            hasNarrowbandFilter: true, supportsMosaic: false,
+                            zenithAvoidanceAltitude: 80)
+
+    /// 30mm f/5, Sony IMX662 (2.9um, 1920 x 1080). DwarfLab's smallest and
+    /// lightest model, at the same budget tier as the Seestar S30.
+    static let dwarfMini = Rig(name: "DwarfLab Dwarf Mini",
+                               apertureMillimeters: 30, focalLengthMillimeters: 150,
+                               sensorWidthMillimeters: 5.57, sensorHeightMillimeters: 3.13,
+                               pixelSizeMicrons: 2.9, mountType: .altAzimuth,
+                               hasNarrowbandFilter: true, supportsMosaic: false,
+                               zenithAvoidanceAltitude: 80)
 
     static let cameraOnTracker = Rig(name: "Camera + 135mm lens on tracker",
                                      apertureMillimeters: 48, focalLengthMillimeters: 135,
@@ -225,8 +333,19 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                           hasNarrowbandFilter: true, supportsMosaic: false,
                           zenithAvoidanceAltitude: 90)
 
-    static let presets: [Rig] = [seestarS50Pro, seestarS50, seestarS30, celestronOrigin, unistellarEVscope2,
-                                 vesperaII, dwarf3, cameraOnTracker, refractor80, sct8,
-                                 apsc10mm, apsc16mm, fullFrame24mm,
-                                 seestarS50ProWide, seestarS30Wide]
+    /// Sorted by name rather than hand-ordered, so a preset added here
+    /// later doesn't also need manually slotting into the right place —
+    /// `localizedStandardCompare` is Finder's own "natural" ordering,
+    /// which keeps "S30" before "S50" before "S30 Pro" reading the way a
+    /// person actually expects instead of raw character-code order.
+    static let presets: [Rig] = [
+        seestarS50Pro, seestarS50, seestarS30, seestarS30Pro,
+        celestronOrigin, celestronOriginMarkII,
+        unistellarEVscope2, unistellarEquinox2, unistellarOdyssey,
+        vesperaII, vespera3, vesperaPro2, stellina,
+        dwarf3, dwarf2, dwarfMini,
+        cameraOnTracker, refractor80, sct8,
+        apsc10mm, apsc16mm, fullFrame24mm,
+        seestarS50ProWide, seestarS30Wide, seestarS30ProWide
+    ].sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 }
