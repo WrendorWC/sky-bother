@@ -32,8 +32,6 @@ struct CloudMapClient {
     /// against a live blank frame (~2 KB) versus a real one (30–50 KB+).
     private static let minimumValidByteCount = 4000
 
-    var session: URLSession = .shared
-
     func isAvailable(longitude: Double) -> Bool {
         Self.coverageLongitudeRange.contains(longitude)
     }
@@ -74,9 +72,15 @@ struct CloudMapClient {
 
             var request = URLRequest(url: url)
             request.timeoutInterval = 12
-            request.cachePolicy = .reloadRevalidatingCacheData
+            // Same reasoning as the weather clients: never let a cache stand
+            // between a refresh and a genuine live answer.
+            request.cachePolicy = .reloadIgnoringLocalCacheData
             request.setValue(Self.userAgent, forHTTPHeaderField: "User-Agent")
 
+            // Fresh session per attempt — see OpenMeteoClient.fetch for why
+            // `.shared`'s indefinite connection reuse is a real problem here;
+            // it would apply equally within this retry loop.
+            let session = URLSession(configuration: .ephemeral)
             guard let (data, response) = try? await session.data(for: request),
                   let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode)
             else { continue }

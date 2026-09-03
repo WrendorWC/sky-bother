@@ -27,8 +27,6 @@ struct OpenMeteoClient {
         "wind_speed_10m", "wind_gusts_10m", "visibility", "precipitation_probability"
     ]
 
-    var session: URLSession = .shared
-
     func forecastURL(latitude: Double, longitude: Double, days: Int) -> URL? {
         var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")
         components?.queryItems = [
@@ -50,9 +48,28 @@ struct OpenMeteoClient {
         }
 
         var request = URLRequest(url: url)
-        request.timeoutInterval = 20
-        request.cachePolicy = .reloadRevalidatingCacheData
+        // A healthy Open-Meteo response comes back in well under a second —
+        // 20s only ever gets spent sitting on a connection that's stalled or
+        // dead, since there's a backup provider ready to try instead of
+        // waiting that long to find out. Short enough to fail over fast,
+        // long enough not to give up on a merely slow mobile/satellite link.
+        request.timeoutInterval = 8
+        // The URL is identical on every refresh (same site, same forecast
+        // window) — revalidating against a local cache risks getting pinned
+        // to a single bad response an overloaded backend served once, on
+        // every "refresh" after, regardless of how many times it's pressed.
+        // A live forecast should never come from a cache, full stop.
+        request.cachePolicy = .reloadIgnoringLocalCacheData
 
+        // A fresh session, not `.shared`: this client is created once and
+        // lives for the app's whole run, and `.shared` pools and reuses one
+        // HTTP/2 connection per host indefinitely. If the very first request
+        // ever landed on one of Open-Meteo's unhealthy backend nodes, every
+        // later refresh would keep getting silently pinned to that same bad
+        // connection no matter how many times it's pressed. A new session
+        // per call means every refresh gets its own independent attempt —
+        // fresh DNS, fresh connection, a real chance at a healthy backend.
+        let session = URLSession(configuration: .ephemeral)
         let (data, response) = try await session.data(for: request)
 
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {

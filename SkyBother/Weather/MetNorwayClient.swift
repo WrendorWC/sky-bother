@@ -15,8 +15,6 @@ struct MetNorwayClient {
 
     private static let userAgent = "SkyBotherApp/1.0 (https://github.com/WrendorWC/sky-bother; weather fallback)"
 
-    var session: URLSession = .shared
-
     func forecastURL(latitude: Double, longitude: Double) -> URL? {
         var components = URLComponents(string: "https://api.met.no/weatherapi/locationforecast/2.0/complete")
         components?.queryItems = [
@@ -33,9 +31,14 @@ struct MetNorwayClient {
 
         var request = URLRequest(url: url)
         request.timeoutInterval = 20
-        request.cachePolicy = .reloadRevalidatingCacheData
+        // Same identical-URL-on-every-refresh risk as OpenMeteoClient: a
+        // live forecast should never be served from a local cache.
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue(Self.userAgent, forHTTPHeaderField: "User-Agent")
 
+        // Fresh session per call — see OpenMeteoClient.fetch for why
+        // `.shared`'s indefinite connection reuse is a real problem here.
+        let session = URLSession(configuration: .ephemeral)
         let (data, response) = try await session.data(for: request)
 
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
