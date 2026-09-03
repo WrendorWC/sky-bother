@@ -116,7 +116,7 @@ struct TargetDetailView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(target.displayName)
                         .font(.scaled(.title2, scale: uiTextScale).weight(.semibold))
-                    Text("\(target.designation) · \(target.type.displayName) in \(target.constellation)")
+                    Text("\(target.designation) · \(target.type.displayName) in \(target.constellationName)")
                         .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 }

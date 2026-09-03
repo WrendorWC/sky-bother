@@ -103,6 +103,11 @@ struct Target: Codable, Hashable, Identifiable, Sendable {
         return designation
     }
 
+    /// "Andromeda", not the stored "And" — the catalogue keeps the IAU
+    /// three-letter abbreviation, which is the right thing to store but the
+    /// wrong thing to show someone.
+    var constellationName: String { Constellation.fullName(for: constellation) }
+
     var sizeSummary: String {
         if abs(majorAxisArcminutes - minorAxisArcminutes) < 0.05 {
             return String(format: "%g′", majorAxisArcminutes)
@@ -130,7 +135,7 @@ struct Target: Codable, Hashable, Identifiable, Sendable {
 
     /// Searchable text for the filter field.
     var searchText: String {
-        [designation, commonName ?? "", constellation, type.displayName]
+        [designation, commonName ?? "", constellation, constellationName, type.displayName]
             .joined(separator: " ")
             .lowercased()
     }

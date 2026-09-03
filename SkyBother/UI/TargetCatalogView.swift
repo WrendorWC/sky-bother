@@ -187,7 +187,7 @@ private struct TargetCatalogCell: View {
                             .foregroundStyle(Palette.accent)
                     }
                 }
-                Text("\(target.designation) · \(target.constellation)")
+                Text("\(target.designation) · \(target.constellationName)")
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -210,7 +210,7 @@ struct TargetCatalogDetail: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(target.displayName)
                         .font(.scaled(.title2, scale: uiTextScale).weight(.semibold))
-                    Text("\(target.designation) · \(target.type.displayName) in \(target.constellation)")
+                    Text("\(target.designation) · \(target.type.displayName) in \(target.constellationName)")
                         .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 }

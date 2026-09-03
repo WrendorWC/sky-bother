@@ -46,6 +46,7 @@
 		C221051609F08A0118E11DF4 /* NightPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040966302C52DB4A5DA521D9 /* NightPlan.swift */; };
 		C3A4367E1EFEE1E4CF11DDFD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A501A2931558AACCE565B244 /* Assets.xcassets */; };
 		C984A842B76C1B84D255E943 /* Rig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6BB733E25C9D2AEC6029E7 /* Rig.swift */; };
+		CA3E88DDD147614D983171AC /* Constellation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 907954043CD0C303D7D3E582 /* Constellation.swift */; };
 		D4DC22A589460DD493C8A218 /* JulianDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C79FBF03E53065D44D73BD96 /* JulianDate.swift */; };
 		DAFF390AE0C771A2456955F5 /* LocationOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA732CB649EBDFDCFAF95C77 /* LocationOnboardingView.swift */; };
 		E09DBCB7D2FFE8D1266E6E35 /* Site.swift in Sources */ = {isa = PBXBuildFile; fileRef = 460638789B415941DD7B42EF /* Site.swift */; };
@@ -88,6 +89,7 @@
 		89216F01CDADC4FD5ABB6250 /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
 		8A1994C1A48D1B45C4E8AC68 /* NightListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightListView.swift; sourceTree = "<group>"; };
 		8F6F76D10491E125AC07D893 /* TargetFacts.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = TargetFacts.json; sourceTree = "<group>"; };
+		907954043CD0C303D7D3E582 /* Constellation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constellation.swift; sourceTree = "<group>"; };
 		916944C4D5E50DC97D5F6E2C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		9DA0FBE41B05F9E38B31F059 /* SkyProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyProjection.swift; sourceTree = "<group>"; };
 		A03639BEF9F701145C4FBB6E /* Target.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Target.swift; sourceTree = "<group>"; };
@@ -191,6 +193,7 @@
 		AFF22AD3A8556AAC279986CB /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				907954043CD0C303D7D3E582 /* Constellation.swift */,
 				7C4CA9733B69096DE77FF78E /* Preferences.swift */,
 				3C6BB733E25C9D2AEC6029E7 /* Rig.swift */,
 				460638789B415941DD7B42EF /* Site.swift */,
@@ -318,6 +321,7 @@
 				FBA7E1EA6EC4AF6FC330CB4F /* CameraFrame.swift in Sources */,
 				018C10723C100C10C27FFFA8 /* CloudMapClient.swift in Sources */,
 				7B97B9D4B095C723A9C77CE4 /* Components.swift in Sources */,
+				CA3E88DDD147614D983171AC /* Constellation.swift in Sources */,
 				E7E81802BB4469198C880D09 /* ContentView.swift in Sources */,
 				F8355B8854989ED06666701F /* Ephemeris.swift in Sources */,
 				018C5DA610E416E337A61A9A /* Formatting.swift in Sources */,
