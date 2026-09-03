@@ -408,11 +408,22 @@ struct SkyView: View {
     /// clipping against the horizon circle, not worth it for a planning
     /// overlay; the readout below explains why nothing's shown instead.
     private func drawCameraFrame(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
+        // An alt-az mount holds the frame's "up" fixed to the zenith, which
+        // is exactly why it visibly rotates relative to the stars over a
+        // session — real field rotation, not a rendering quirk. A polar-
+        // aligned equatorial mount holds up fixed to the celestial pole
+        // instead, so its frame keeps one orientation relative to the star
+        // field all night; this is the one thing that actually needs to
+        // know which kind of mount is pointing it.
+        let upReference: CameraFrame.UpReference = framingRig.mountType.rotatesField
+            ? .zenith
+            : .celestialPole(latitude: state.site.latitude)
         let footprint = CameraFrame.footprint(centerAltitude: cameraFrameCenter.altitude,
                                               centerAzimuth: cameraFrameCenter.azimuth,
                                               fieldOfViewWidthDegrees: framingRig.fieldOfViewWidthDegrees,
                                               fieldOfViewHeightDegrees: framingRig.fieldOfViewHeightDegrees,
-                                              rollDegrees: cameraRollDegrees)
+                                              rollDegrees: cameraRollDegrees,
+                                              upReference: upReference)
         guard !footprint.isEmpty, footprint.allSatisfy({ $0.altitude > 0 }) else { return }
         let points = footprint.map { screenPoint(for: $0, center: center, radius: radius) }
         var path = Path.smoothLine(through: points)
