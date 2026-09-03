@@ -83,6 +83,33 @@ struct SkyView: View {
         return HorizontalCoordinate(altitude: 90, azimuth: 0)
     }
 
+    /// This view draws the whole sky as a flat disc with the zenith at its
+    /// exact centre — azimuth becomes angle around that centre, so *every*
+    /// azimuth collapses onto the same point right at the zenith. A target
+    /// passing near or through it genuinely does swing azimuth by close to
+    /// 180° (confirmed numerically, not a bug: real geometry, the same
+    /// reason a straight line through the North Pole looks like it reverses
+    /// on a flat polar map). The frame's actual 3D orientation never
+    /// wavers — only the disc renders it as an apparent flip — so rather
+    /// than show that confusing artifact, the frame just isn't drawn this
+    /// close in, the same call already made for dipping below the horizon.
+    private static let nearZenithThreshold: Double = 88
+
+    private var isCameraFrameTooCloseToZenith: Bool {
+        cameraFrameCenter.altitude > Self.nearZenithThreshold
+    }
+
+    private var cameraFrameCenterText: String {
+        let frameCenter = cameraFrameCenter
+        if frameCenter.altitude <= 0 {
+            return "below the horizon"
+        } else if isCameraFrameTooCloseToZenith {
+            return "too near the zenith to draw meaningfully on this flat view"
+        } else {
+            return "\(Int(frameCenter.azimuth.rounded()))° \(frameCenter.compassPoint) · \(Format.degrees(frameCenter.altitude))"
+        }
+    }
+
     private var selectedTargetPlan: TargetPlan? {
         guard let selectedID = state.selectedTargetID else { return nil }
         return plan.targets.first { $0.id == selectedID }
@@ -403,10 +430,12 @@ struct SkyView: View {
         flush()
     }
 
-    /// Only drawn when the whole frame clears the horizon — partially
-    /// clipping a frame that dips below it would need real polygon
-    /// clipping against the horizon circle, not worth it for a planning
-    /// overlay; the readout below explains why nothing's shown instead.
+    /// Not drawn when the whole frame doesn't clear the horizon (partially
+    /// clipping one that dips below it would need real polygon clipping
+    /// against the horizon circle, not worth it for a planning overlay) or
+    /// when it's too close to the zenith to draw meaningfully on this flat
+    /// projection (see `isCameraFrameTooCloseToZenith`) — the readout below
+    /// explains which, when nothing's shown.
     private func drawCameraFrame(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
         // An alt-az mount holds the frame's "up" fixed to the zenith, which
         // is exactly why it visibly rotates relative to the stars over a
@@ -424,7 +453,8 @@ struct SkyView: View {
                                               fieldOfViewHeightDegrees: framingRig.fieldOfViewHeightDegrees,
                                               rollDegrees: cameraRollDegrees,
                                               upReference: upReference)
-        guard !footprint.isEmpty, footprint.allSatisfy({ $0.altitude > 0 }) else { return }
+        guard !isCameraFrameTooCloseToZenith,
+              !footprint.isEmpty, footprint.allSatisfy({ $0.altitude > 0 }) else { return }
         let points = footprint.map { screenPoint(for: $0, center: center, radius: radius) }
         var path = Path.smoothLine(through: points)
         path.closeSubpath()
@@ -577,11 +607,7 @@ struct SkyView: View {
             }
 
             if showsCameraFrame {
-                let frameCenter = cameraFrameCenter
-                let centerText = frameCenter.altitude > 0
-                    ? "\(Int(frameCenter.azimuth.rounded()))° \(frameCenter.compassPoint) · \(Format.degrees(frameCenter.altitude))"
-                    : "below the horizon"
-                Text("Camera Frame · \(framingRig.fieldOfViewSummary) · \(centerText)")
+                Text("Camera Frame · \(framingRig.fieldOfViewSummary) · \(cameraFrameCenterText)")
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(Palette.cameraFrame)
                     .lineLimit(1)
