@@ -33,9 +33,26 @@ struct SkyView: View {
     /// Only targets actually visible from this site right now — above the
     /// *blocked* horizon (trees/houses/hills), not just the geometric one,
     /// since the circle itself is cropped to that same boundary below and
-    /// nothing outside it should be selectable either.
+    /// nothing outside it should be selectable either. Also, as of this
+    /// filter, only targets that actually clear the main list's own
+    /// minimum-score/type/search filters — this used to draw every
+    /// catalogue object above the horizon regardless, which on a typical
+    /// night meant several hundred dots, most of them below the score
+    /// you'd bothered to set as a floor. The selected target is the one
+    /// exception: it never simply vanishes just because it doesn't clear
+    /// the filter, since you're looking right at it.
     private var targetPlacements: [Placement] {
-        plan.targets.compactMap { targetPlan in
+        let visible = state.visibleTargets(for: plan)
+        let selectedButFiltered = plan.targets.first { candidate in
+            candidate.id == state.selectedTargetID && !visible.contains { $0.id == candidate.id }
+        }
+        // Worst-scoring first, so a better/more relevant target always ends
+        // up drawn on top when two dots genuinely overlap on screen, rather
+        // than z-order being arbitrary catalogue order.
+        let candidates = (selectedButFiltered.map { visible + [$0] } ?? visible)
+            .sorted { $0.score < $1.score }
+
+        return candidates.compactMap { targetPlan in
             let horizontal = horizontal(of: targetPlan.target.coordinate)
             guard horizontal.altitude > plan.site.horizonAltitude else { return nil }
             return Placement(id: targetPlan.id,
@@ -385,8 +402,16 @@ struct SkyView: View {
             let size = targetDotDiameter(majorAxisArcminutes: placement.majorAxisArcminutes,
                                          isSelected: placement.isSelected)
             let color = placement.isSelected ? Palette.accent : placement.color
+            // Unselected dots get real transparency, not just a slightly
+            // muted fill — where two genuinely overlap (the Milky Way band
+            // is the worst of it) the overlap reads as visibly denser
+            // rather than one dot silently hiding behind another. Full
+            // opacity for the selected one: it already carries a halo and
+            // the one accent colour, and burying it under that same
+            // transparency would undercut the point of both.
+            let opacity = placement.isSelected ? 1.0 : 0.72
             context.fill(Path(ellipseIn: CGRect(x: screen.x - size / 2, y: screen.y - size / 2, width: size, height: size)),
-                        with: .color(color))
+                        with: .color(color.opacity(opacity)))
             if placement.isSelected {
                 let haloSize = size + 5
                 context.stroke(Path(ellipseIn: CGRect(x: screen.x - haloSize / 2, y: screen.y - haloSize / 2,
@@ -493,8 +518,8 @@ struct SkyView: View {
     private func targetDotDiameter(majorAxisArcminutes: Double, isSelected: Bool) -> CGFloat {
         let minArcmin = 0.5
         let maxArcmin = 200.0
-        let minDiameter: CGFloat = 5
-        let maxDiameter: CGFloat = 26
+        let minDiameter: CGFloat = 4
+        let maxDiameter: CGFloat = 22
 
         let clamped = clamp(majorAxisArcminutes, minArcmin, maxArcmin)
         let t = (log(clamped) - log(minArcmin)) / (log(maxArcmin) - log(minArcmin))
