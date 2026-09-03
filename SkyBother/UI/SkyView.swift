@@ -383,7 +383,7 @@ struct SkyView: View {
             let screen = CGPoint(x: center.x + CGFloat(placement.point.x) * radius,
                                  y: center.y + CGFloat(placement.point.y) * radius)
             let size = targetDotDiameter(majorAxisArcminutes: placement.majorAxisArcminutes,
-                                         isSelected: placement.isSelected, radius: radius)
+                                         isSelected: placement.isSelected)
             let color = placement.isSelected ? Palette.accent : placement.color
             context.fill(Path(ellipseIn: CGRect(x: screen.x - size / 2, y: screen.y - size / 2, width: size, height: size)),
                         with: .color(color))
@@ -479,11 +479,27 @@ struct SkyView: View {
     /// straight to a screen size. Floored so small objects stay visible and
     /// clickable, and capped so a genuinely huge target (the Veil, M31)
     /// doesn't swallow its neighbours.
-    private func targetDotDiameter(majorAxisArcminutes: Double, isSelected: Bool, radius: CGFloat) -> CGFloat {
-        let pointsPerDegree = radius / 90
-        let realDiameter = CGFloat(majorAxisArcminutes / 60) * pointsPerDegree
-        let floor: CGFloat = isSelected ? 10 : 6
-        return min(max(realDiameter, floor), 30)
+    /// Real catalogue sizes span more than four orders of magnitude — 0.03′
+    /// to 645′, and the middle 90% alone still runs from about 1′ to 14′ —
+    /// so a linear points-per-arcminute scale left nearly everything but a
+    /// handful of giant showpieces pinned to the same floor size; only M31,
+    /// the Veil and a few others ever cleared it. Logarithmic instead:
+    /// clamp into the range most of the catalogue actually falls in and
+    /// interpolate log-linearly across it, so a 2′ galaxy reads visibly
+    /// smaller than an 8′ one instead of both just being "the minimum dot."
+    /// Fixed point sizes rather than scaled by the view's own radius —
+    /// deliberately decoupled from true physical scale, since physical
+    /// scale is exactly what caused the uniform-dot problem.
+    private func targetDotDiameter(majorAxisArcminutes: Double, isSelected: Bool) -> CGFloat {
+        let minArcmin = 0.5
+        let maxArcmin = 200.0
+        let minDiameter: CGFloat = 5
+        let maxDiameter: CGFloat = 26
+
+        let clamped = clamp(majorAxisArcminutes, minArcmin, maxArcmin)
+        let t = (log(clamped) - log(minArcmin)) / (log(maxArcmin) - log(minArcmin))
+        let diameter = (minDiameter + CGFloat(t) * (maxDiameter - minDiameter)) * uiTextScale
+        return isSelected ? max(diameter, 10 * uiTextScale) : diameter
     }
 
     /// Same real-size-to-screen-size conversion as `targetDotDiameter`, for
