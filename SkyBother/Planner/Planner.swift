@@ -42,9 +42,28 @@ struct Planner: Sendable {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = site.timeZone
 
-        // Before local noon we are still inside last night, so anchor there.
-        let hour = calendar.component(.hour, from: referenceDate)
-        let anchor = hour < 12 ? referenceDate.addingTimeInterval(-86400) : referenceDate
+        // "Still inside last night" means before its actual sunrise, not
+        // before some fixed clock hour — a flat noon cutoff kept calling a
+        // plan opened well into a bright morning "tonight: yesterday" for
+        // hours after the night it refers to had already fully ended.
+        // Anchored to the real sunrise so the moment dawn breaks, "tonight"
+        // rolls straight over to the night ahead.
+        let midnight = calendar.startOfDay(for: referenceDate)
+        let sunAltitude: (Date) -> Double = { date in
+            Sun.altitude(daysSinceJ2000: date.daysSinceJ2000, latitude: site.latitude, longitude: site.longitude)
+        }
+        // Capped at noon, same as the cutoff this replaces — wide enough for
+        // any realistic sunrise, narrow enough that it can't also run past
+        // that day's sunset (which would hand back tomorrow's sunrise
+        // instead) even on a short midwinter day at a high-latitude site.
+        let morningSearchWindow = TimeWindow(start: midnight, end: midnight.addingTimeInterval(12 * 3600))
+        let (_, thisMorningSunrise) = duskAndDawn(threshold: Sun.Event.sunset.altitude,
+                                                   in: morningSearchWindow, altitude: sunAltitude)
+        // No clean sunrise in that window (polar day/night, or any other
+        // edge case) falls back to the old flat cutoff rather than guessing.
+        let stillInLastNight = thisMorningSunrise.map { referenceDate < $0 }
+            ?? (calendar.component(.hour, from: referenceDate) < 12)
+        let anchor = stillInLastNight ? referenceDate.addingTimeInterval(-86400) : referenceDate
 
         let nightCount = max(1, min(16, preferences.forecastNights))
         var plans: [NightPlan] = []

@@ -1,13 +1,14 @@
 import SwiftUI
 
 struct NightListView: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 2) {
                 Text(state.site.name)
-                    .font(.caption.weight(.semibold))
+                    .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 14)
                     .padding(.top, 12)
@@ -23,6 +24,10 @@ struct NightListView: View {
                 }
 
                 cloudMapPanel
+                    .padding(.horizontal, 14)
+                    .padding(.top, 10)
+
+                textSizeControl
                     .padding(.horizontal, 14)
                     .padding(.top, 10)
 
@@ -57,7 +62,7 @@ struct NightListView: View {
         if let image = state.cloudMapImage {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Sky Overhead")
-                    .font(.caption.weight(.semibold))
+                    .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
                     .foregroundStyle(.secondary)
                 Link(destination: URL(string: "https://www.star.nesdis.noaa.gov/GOES/conus_band.php?sat=G16&band=GEOCOLOR&length=12")!) {
                     Image(nsImage: image)
@@ -72,10 +77,21 @@ struct NightListView: View {
                 .hoverTooltip("Open the live GOES-East loop on NOAA's site")
                 if let age = state.cloudMapAgeDescription {
                     Text("GOES-East satellite · \(age)")
-                        .font(.caption2)
+                        .font(.scaled(.caption2, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 }
             }
+        }
+    }
+
+    private var textSizeControl: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Slider(value: $state.preferences.textScale, in: 0.85...1.5, step: 0.05) {
+                Text("UI Scale")
+            }
+            Text("\(Int((state.preferences.textScale * 100).rounded()))%")
+                .font(.scaled(.caption2, scale: uiTextScale))
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -84,24 +100,25 @@ struct NightListView: View {
         VStack(alignment: .leading, spacing: 5) {
             if let message = state.weatherErrorMessage {
                 Label(message, systemImage: "wifi.exclamationmark")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(Palette.marginal)
                     .fixedSize(horizontal: false, vertical: true)
             } else if let age = state.forecastAgeDescription {
                 Text(state.isUsingBackupWeather
                      ? "Forecast updated \(age) · backup source"
                      : "Forecast updated \(age)")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             }
             Text("Bortle \(state.site.bortleClass) · \(state.rig.name)")
-                .font(.caption)
+                .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.secondary)
         }
     }
 }
 
 private struct NightRow: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     var plan: NightPlan
     var isTonight: Bool
     var isSelected: Bool
@@ -115,9 +132,9 @@ private struct NightRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(isTonight ? "Tonight" : Format.weekday(plan.date, in: plan.timeZone))
-                        .font(.body.weight(.semibold))
+                        .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
                     Text(Format.dayAndMonth(plan.date, in: plan.timeZone))
-                        .font(.body)
+                        .font(.scaled(.body, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 }
 
@@ -143,14 +160,14 @@ private struct NightRow: View {
                         }
                     }
                 }
-                .font(.caption)
+                .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.secondary)
                 .labelStyle(.titleAndIcon)
             }
             Spacer(minLength: 0)
             if isExceptional {
                 Image(systemName: "sparkle")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(Palette.exceptional)
                     .transition(.scale.combined(with: .opacity))
             }

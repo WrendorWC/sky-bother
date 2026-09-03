@@ -74,15 +74,17 @@ struct EmptyStateView: View {
     var message: String
     var systemImage: String
 
+    @Environment(\.uiTextScale) private var uiTextScale
+
     var body: some View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
-                .font(.system(size: 44))
+                .font(.system(size: 44 * uiTextScale))
                 .foregroundStyle(Palette.accent.opacity(0.7))
             Text(title)
-                .font(.title3.weight(.semibold))
+                .font(.scaled(.title3, scale: uiTextScale).weight(.semibold))
             Text(message)
-                .font(.body)
+                .font(.scaled(.body, scale: uiTextScale))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 320)

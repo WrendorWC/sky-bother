@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct TargetDetailView: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
     var targetPlan: TargetPlan
@@ -83,21 +84,21 @@ struct TargetDetailView: View {
         HStack(spacing: 9) {
             ScoreBadge(score: targetPlan.score, size: 26)
             Text(target.displayName)
-                .font(.callout.weight(.semibold))
+                .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
                 .lineLimit(1)
             if target.commonName != nil {
                 Text("·").foregroundStyle(.tertiary)
                 Text(target.designation)
-                    .font(.callout)
+                    .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             }
             Text("·").foregroundStyle(.tertiary)
             Text("\(Int(targetPlan.score.rounded()))")
-                .font(.callout.monospacedDigit().weight(.semibold))
+                .font(.scaled(.callout, scale: uiTextScale).monospacedDigit().weight(.semibold))
                 .foregroundStyle(Palette.score(targetPlan.score))
             Text("·").foregroundStyle(.tertiary)
             Text(targetPlan.verdict.rawValue)
-                .font(.callout.weight(.semibold))
+                .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
                 .foregroundStyle(Palette.verdict(targetPlan.verdict))
             Spacer(minLength: 0)
         }
@@ -114,9 +115,9 @@ struct TargetDetailView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(target.displayName)
-                        .font(.title2.weight(.semibold))
+                        .font(.scaled(.title2, scale: uiTextScale).weight(.semibold))
                     Text("\(target.designation) · \(target.type.displayName) in \(target.constellation)")
-                        .font(.callout)
+                        .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -125,7 +126,7 @@ struct TargetDetailView: View {
             HStack(spacing: 9) {
                 VerdictTag(verdict: targetPlan.verdict)
                 Text(recommendation)
-                    .font(.body)
+                    .font(.scaled(.body, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -157,21 +158,21 @@ struct TargetDetailView: View {
             FramingPreview(target: target, rig: state.rig)
                 .frame(height: 250)
             Text(targetPlan.fit.framingNote)
-                .font(.callout)
+                .font(.scaled(.callout, scale: uiTextScale))
             if let sampling = targetPlan.fit.samplingNote {
                 Text(sampling)
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             }
             Text("\(state.rig.name) · \(state.rig.fieldOfViewSummary) · \(state.rig.opticalSummary)")
-                .font(.caption)
+                .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
             if let info = TargetImageCatalog.info(for: target.designation), let url = URL(string: info.sourceURL) {
                 Link(destination: url) {
                     Label("Photo: \(info.sourceTitle) via Wikipedia", systemImage: "link")
                 }
-                .font(.caption)
+                .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(Palette.accent)
             }
         }
@@ -182,7 +183,7 @@ struct TargetDetailView: View {
             SectionHeader("Through the night")
             if let transit = targetPlan.transitTime {
                 Text("Highest at \(Format.time(transit, in: plan.timeZone)) · \(Format.degrees(targetPlan.maximumAltitude))")
-                    .font(.callout)
+                    .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             }
             if let best = targetPlan.bestWindow, !best.isEmpty {
@@ -190,12 +191,12 @@ struct TargetDetailView: View {
                     ZenithRiskWindowBar(window: best, risk: risk, timeZone: plan.timeZone)
                 } else {
                     Text("Best window \(Format.time(best.start, in: plan.timeZone))–\(Format.time(best.end, in: plan.timeZone))")
-                        .font(.callout)
+                        .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 }
             }
             Text("Traced live on tonight's main timeline — this target is selected there too.")
-                .font(.caption)
+                .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.tertiary)
         }
     }
@@ -211,7 +212,7 @@ struct TargetDetailView: View {
             HStack(spacing: 5) {
                 SectionHeader("Why this score")
                 Image(systemName: "info.circle")
-                    .font(.caption2)
+                    .font(.scaled(.caption2, scale: uiTextScale))
                     .foregroundStyle(.tertiary)
                     .hoverTooltip("Each impact is the real model re-run with that one factor made perfect — how many points you'd gain, not an invented share of the total.")
             }
@@ -222,7 +223,7 @@ struct TargetDetailView: View {
                 } icon: {
                     Image(systemName: "arrow.down.circle.fill")
                 }
-                .font(.callout.weight(.medium))
+                .font(.scaled(.callout, scale: uiTextScale).weight(.medium))
                 .foregroundStyle(Palette.marginal)
             }
 
@@ -232,7 +233,7 @@ struct TargetDetailView: View {
                 }
             }
             Text("Impact shows how many score points this factor costs under tonight's conditions.")
-                .font(.caption)
+                .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -286,7 +287,7 @@ struct TargetDetailView: View {
         VStack(alignment: .leading, spacing: 7) {
             SectionHeader("About")
             Text(text)
-                .font(.callout)
+                .font(.scaled(.callout, scale: uiTextScale))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -295,22 +296,23 @@ struct TargetDetailView: View {
     private func factRow(_ label: String, _ value: String) -> some View {
         HStack {
             Text(label)
-                .font(.callout)
+                .font(.scaled(.callout, scale: uiTextScale))
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.callout.monospacedDigit())
+                .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
         }
     }
 }
 
 struct SectionHeader: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     var title: String
     init(_ title: String) { self.title = title }
 
     var body: some View {
         Text(title.uppercased())
-            .font(.caption.weight(.semibold))
+            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
             .foregroundStyle(Palette.accent)
             .kerning(0.7)
     }
@@ -321,6 +323,8 @@ struct SectionHeader: View {
 struct FramingPreview: View {
     var target: Target
     var rig: Rig
+
+    @Environment(\.uiTextScale) private var uiTextScale
 
     private var frameWidth: Double { rig.fieldOfViewWidthArcminutes }
     private var frameHeight: Double { rig.fieldOfViewHeightArcminutes }
@@ -390,7 +394,7 @@ struct FramingPreview: View {
                            style: StrokeStyle(lineWidth: 2, dash: fits ? [] : [5, 4]))
 
             context.draw(Text(target.sizeSummary)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(size: 14 * uiTextScale, weight: .semibold, design: .rounded))
                             .foregroundColor(.white),
                          at: CGPoint(x: centre.x, y: min(size.height - 11, objectRect.maxY + 13)),
                          anchor: .center)
@@ -399,11 +403,19 @@ struct FramingPreview: View {
             .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.panelBorder, lineWidth: 1.5))
 
             // Pinned to the panel corner rather than the (scaled, variable-position)
-            // frame rectangle, so it can never land on top of the frame border.
+            // frame rectangle, but a wide field of view can still put the
+            // frame's own top-left corner right underneath this label — and a
+            // bigger Text Size setting only makes that more likely, since the
+            // label itself grows while the frame geometry doesn't. A solid
+            // backing (the same chip style as the timeline's hover readout)
+            // keeps it legible regardless of what the frame line does behind it.
             if frameWidth > 0, frameHeight > 0 {
                 Text(String(format: "%.2f° × %.2f°", frameWidth / 60, frameHeight / 60))
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(.system(size: 14 * uiTextScale, weight: .medium, design: .rounded))
                     .foregroundColor(fits ? Palette.go : Palette.marginal)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 6))
                     .padding(8)
             }
         }

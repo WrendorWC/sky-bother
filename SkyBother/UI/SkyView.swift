@@ -6,6 +6,7 @@ import SwiftUI
 /// selection, and now the same scrubbed time as the rest of the night view,
 /// just answering "where," not only "when."
 struct SkyView: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
     @Binding var scrubTime: Date
@@ -227,7 +228,7 @@ struct SkyView: View {
             showsMilkyWay.toggle()
         } label: {
             Label("Milky Way", systemImage: showsMilkyWay ? "checkmark.circle.fill" : "circle")
-                .font(.caption.weight(.semibold))
+                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 10)
@@ -242,7 +243,7 @@ struct SkyView: View {
             showsCameraFrame.toggle()
         } label: {
             Label("Camera Frame", systemImage: showsCameraFrame ? "checkmark.circle.fill" : "circle")
-                .font(.caption.weight(.semibold))
+                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 10)
@@ -270,19 +271,19 @@ struct SkyView: View {
                 }
             } label: {
                 Label(framingRig.name, systemImage: "camera.aperture")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
 
             HStack(spacing: 6) {
                 Text("Roll")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                 Slider(value: $cameraRollDegrees, in: 0...359)
                     .frame(width: 120)
                 Text("\(Int(cameraRollDegrees))°")
-                    .font(.caption.monospacedDigit())
+                    .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
                     .foregroundStyle(.secondary)
                     .frame(width: 32, alignment: .trailing)
             }
@@ -498,7 +499,7 @@ struct SkyView: View {
         return ForEach(points, id: \.0) { label, azimuth in
             let point = SkyProjection.project(HorizontalCoordinate(altitude: 0, azimuth: azimuth))
             Text(label)
-                .font(.caption.weight(.semibold))
+                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
                 .foregroundStyle(.secondary)
                 .position(x: center.x + CGFloat(point.x) * (radius + 14),
                          y: center.y + CGFloat(point.y) * (radius + 14))
@@ -534,18 +535,18 @@ struct SkyView: View {
             Slider(value: fraction, in: 0...1)
             HStack(spacing: 8) {
                 Text(Format.time(scrubTime, in: plan.timeZone))
-                    .font(.callout.monospacedDigit().weight(.semibold))
+                    .font(.scaled(.callout, scale: uiTextScale).monospacedDigit().weight(.semibold))
                 if let selectedID = state.selectedTargetID,
                    let targetPlan = plan.targets.first(where: { $0.id == selectedID }) {
                     let position = horizontal(of: targetPlan.target.coordinate)
                     Text("\(targetPlan.target.displayName) · \(position.altitude > 0 ? "\(Format.degrees(position.altitude)) \(position.compassPoint)" : "below the horizon")")
-                        .font(.caption)
+                        .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
                 Spacer()
                 Text("\(Format.time(window.start, in: plan.timeZone))–\(Format.time(window.end, in: plan.timeZone))")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.tertiary)
             }
 
@@ -555,11 +556,11 @@ struct SkyView: View {
                     ? "\(Int(core.azimuth.rounded()))° \(core.compassPoint) · \(Format.degrees(core.altitude))"
                     : "below the horizon"
                 Text("Galactic Core · \(Format.time(scrubTime, in: plan.timeZone)) · \(position)")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(Palette.accentWarm)
                     .lineLimit(1)
                 Text(galacticCoreSummary)
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -570,12 +571,12 @@ struct SkyView: View {
                     ? "\(Int(frameCenter.azimuth.rounded()))° \(frameCenter.compassPoint) · \(Format.degrees(frameCenter.altitude))"
                     : "below the horizon"
                 Text("Camera Frame · \(framingRig.fieldOfViewSummary) · \(centerText)")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(Palette.cameraFrame)
                     .lineLimit(1)
                 if showsMilkyWay {
                     Text(coreFitSummary)
-                        .font(.caption)
+                        .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }

@@ -157,6 +157,7 @@ struct HelpView: View {
 }
 
 private struct HelpTopicView: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     var topic: HelpTopic
 
     var body: some View {
@@ -164,21 +165,21 @@ private struct HelpTopicView: View {
             VStack(alignment: .leading, spacing: 20) {
                 HStack(spacing: 10) {
                     Image(systemName: topic.systemImage)
-                        .font(.title.weight(.semibold))
+                        .font(.scaled(.title, scale: uiTextScale).weight(.semibold))
                         .foregroundStyle(Palette.accent)
                     Text(topic.title)
-                        .font(.title.weight(.semibold))
+                        .font(.scaled(.title, scale: uiTextScale).weight(.semibold))
                 }
 
                 ForEach(topic.sections) { section in
                     VStack(alignment: .leading, spacing: 8) {
                         if let heading = section.heading {
                             Text(heading)
-                                .font(.title3.weight(.semibold))
+                                .font(.scaled(.title3, scale: uiTextScale).weight(.semibold))
                         }
                         if !section.body.isEmpty {
                             Text(section.body)
-                                .font(.body)
+                                .font(.scaled(.body, scale: uiTextScale))
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -192,7 +193,7 @@ private struct HelpTopicView: View {
                                             .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color.primary.opacity(0.2)))
                                             .padding(.top, 2)
                                         Text(swatch.label)
-                                            .font(.callout)
+                                            .font(.scaled(.callout, scale: uiTextScale))
                                             .foregroundStyle(.secondary)
                                             .fixedSize(horizontal: false, vertical: true)
                                     }

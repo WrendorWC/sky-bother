@@ -51,6 +51,7 @@ struct SkyBotherApp: App {
             ContentView()
                 .environmentObject(state)
                 .tint(Palette.accent)
+                .appTextScale(state.preferences.textScale)
                 .frame(minWidth: 1120, minHeight: 720)
                 .background(TitleBarZoomAndDragFix())
         }
@@ -74,12 +75,14 @@ struct SkyBotherApp: App {
             TargetCatalogView()
                 .environmentObject(state)
                 .tint(Palette.accent)
+                .appTextScale(state.preferences.textScale)
         }
         .defaultSize(width: 980, height: 720)
 
         WindowGroup(id: "help") {
             HelpView()
                 .tint(Palette.accent)
+                .appTextScale(state.preferences.textScale)
         }
         .defaultSize(width: 900, height: 700)
 
@@ -87,12 +90,14 @@ struct SkyBotherApp: App {
             SettingsView()
                 .environmentObject(state)
                 .tint(Palette.accent)
+                .appTextScale(state.preferences.textScale)
         }
 
         MenuBarExtra {
             MenuBarSummaryView()
                 .environmentObject(state)
                 .tint(Palette.accent)
+                .appTextScale(state.preferences.textScale)
         } label: {
             MenuBarScoreIcon()
                 .environmentObject(state)
@@ -154,7 +159,9 @@ private struct MenuBarScoreIcon: View {
 
 private struct MenuBarBadge: View {
     var score: Double
+    @Environment(\.uiTextScale) private var uiTextScale
     private var color: Color { Palette.score(score) }
+    private var size: CGFloat { 18 * uiTextScale }
 
     var body: some View {
         ZStack {
@@ -165,15 +172,16 @@ private struct MenuBarBadge: View {
                 .stroke(color, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(Int(score.rounded()))")
-                .font(.system(size: 9, weight: .bold, design: .rounded))
+                .font(.system(size: 9 * uiTextScale, weight: .bold, design: .rounded))
                 .foregroundStyle(color)
         }
-        .frame(width: 18, height: 18)
+        .frame(width: size, height: size)
     }
 }
 
 /// The glanceable answer: is tonight worth it, and what would you point at?
 struct MenuBarSummaryView: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
     @Environment(\.openWindow) private var openWindow
 
@@ -184,13 +192,13 @@ struct MenuBarSummaryView: View {
                     ScoreBadge(score: plan.score, size: 44)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Tonight")
-                            .font(.title3.weight(.semibold))
+                            .font(.scaled(.title3, scale: uiTextScale).weight(.semibold))
                         // Stacked rather than inline with the title — the verdict
                         // text can run long ("You should be outside tonight"),
                         // and this popup is only 340pt wide.
                         VerdictTag(verdict: plan.verdict)
                         Text(plan.headline)
-                            .font(.callout)
+                            .font(.scaled(.callout, scale: uiTextScale))
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -201,12 +209,12 @@ struct MenuBarSummaryView: View {
                 let picks = Array(state.visibleTargets(for: plan).prefix(3))
                 if picks.isEmpty {
                     Text("Nothing clears your thresholds tonight.")
-                        .font(.callout)
+                        .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 } else {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Best bets")
-                            .font(.caption.weight(.semibold))
+                            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
                             .foregroundStyle(.secondary)
                         ForEach(picks) { pick in
                             HStack(spacing: 8) {
@@ -214,10 +222,10 @@ struct MenuBarSummaryView: View {
                                     .fill(Palette.score(pick.score))
                                     .frame(width: 8, height: 8)
                                 Text(pick.target.displayName)
-                                    .font(.callout)
+                                    .font(.scaled(.callout, scale: uiTextScale))
                                 Spacer(minLength: 6)
                                 Text(pick.usableHoursText)
-                                    .font(.callout.monospacedDigit())
+                                    .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -227,7 +235,7 @@ struct MenuBarSummaryView: View {
                 HStack(spacing: 8) {
                     if state.isLoading { ProgressView().controlSize(.small) }
                     Text(state.isLoading ? "Loading forecast…" : "No plan yet.")
-                        .font(.body)
+                        .font(.scaled(.body, scale: uiTextScale))
                 }
             }
 
@@ -245,7 +253,7 @@ struct MenuBarSummaryView: View {
                 Button("Quit") { NSApplication.shared.terminate(nil) }
             }
             .buttonStyle(.borderless)
-            .font(.body)
+            .font(.scaled(.body, scale: uiTextScale))
         }
         .padding(14)
         .frame(width: 340)

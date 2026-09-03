@@ -39,6 +39,11 @@ struct Preferences: Codable, Hashable, Sendable {
     /// computes a zenith-risk window for an alt-az rig in the first place —
     /// this is for turning it off even on one, if it's just noise to you.
     var showsZenithRiskWarnings: Bool = true
+    /// Multiplies every font size in the app, 1.0 being what it's always
+    /// been. Exists for high-resolution displays where the default point
+    /// sizes read as genuinely small — a "more space" scaled 4K/5K display
+    /// being the common case, not an unusual one.
+    var textScale: Double = 1.0
 
     static let `default` = Preferences()
 }

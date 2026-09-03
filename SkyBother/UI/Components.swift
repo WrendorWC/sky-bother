@@ -1,6 +1,62 @@
 import SwiftUI
 import AppKit
 
+/// Threaded from `Preferences.textScale` at the root of every scene.
+/// SwiftUI's own Dynamic Type (`.dynamicTypeSize`) was tried first as the
+/// mechanism for scaling semantic-style text (`.title2`, `.callout`,
+/// `.caption`…) but proved not to reliably grow this app's text in practice —
+/// verified by hand against a running build, not just in theory — so every
+/// font in the app, semantic styles included, is scaled explicitly through
+/// this one multiplier instead. `Font.scaled(_:scale:)` below is the
+/// semantic-style half of that; a `.font(.system(size: 11 * uiTextScale))`
+/// read directly is the fixed-point half, for chart labels, badges and
+/// hand-drawn Canvas text that were never expressed as a style to begin with.
+private struct UITextScaleKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 1.0
+}
+
+extension EnvironmentValues {
+    var uiTextScale: CGFloat {
+        get { self[UITextScaleKey.self] }
+        set { self[UITextScaleKey.self] = newValue }
+    }
+}
+
+extension View {
+    func appTextScale(_ scale: Double) -> some View {
+        self.environment(\.uiTextScale, CGFloat(scale))
+    }
+}
+
+extension Font {
+    /// A semantic style's usual macOS point size, multiplied by the app's
+    /// text-size preference. Callers keep chaining `.weight(...)`,
+    /// `.monospacedDigit()` and the like onto the result exactly as they did
+    /// onto the bare style before — only the base size changed, e.g.
+    /// `.callout.weight(.semibold)` becomes
+    /// `.scaled(.callout, scale: uiTextScale).weight(.semibold)`.
+    static func scaled(_ style: TextStyle, scale: CGFloat) -> Font {
+        .system(size: basePointSize(for: style) * scale)
+    }
+
+    private static func basePointSize(for style: TextStyle) -> CGFloat {
+        switch style {
+        case .largeTitle: return 26
+        case .title: return 22
+        case .title2: return 17
+        case .title3: return 15
+        case .headline: return 13
+        case .body: return 13
+        case .callout: return 12
+        case .subheadline: return 11
+        case .footnote: return 10
+        case .caption: return 10
+        case .caption2: return 10
+        @unknown default: return 13
+        }
+    }
+}
+
 /// The app's colour vocabulary. Everything is tuned for a dark room: the chart
 /// backgrounds go genuinely black at astronomical darkness so the timeline reads
 /// the way the night actually looks.
@@ -234,6 +290,7 @@ extension Path {
 private struct HoverTooltip: ViewModifier {
     var text: String
     @State private var isHovering = false
+    @Environment(\.uiTextScale) private var uiTextScale
 
     func body(content: Content) -> some View {
         content
@@ -242,7 +299,7 @@ private struct HoverTooltip: ViewModifier {
             .overlay(alignment: .top) {
                 if isHovering {
                     Text(text)
-                        .font(.caption)
+                        .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 5)
@@ -328,28 +385,35 @@ struct ScoreBadge: View {
     var score: Double
     var size: CGFloat = 40
 
+    @Environment(\.uiTextScale) private var uiTextScale
+
     private var color: Color { Palette.score(score) }
     private var isExceptional: Bool { Verdict.forScore(score) == .exceptional }
+    // Scaled as a whole, not just the number inside it — a badge is a fixed
+    // pixel size, not text SwiftUI can reflow on its own, so Dynamic Type
+    // alone would leave the ring the old size around a bigger digit.
+    private var scaledSize: CGFloat { size * uiTextScale }
 
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.primary.opacity(0.09), lineWidth: max(2, size * 0.1))
+                .stroke(Color.primary.opacity(0.09), lineWidth: max(2, scaledSize * 0.1))
             Circle()
                 .trim(from: 0, to: max(0.015, min(1, score / 100)))
-                .stroke(color, style: StrokeStyle(lineWidth: max(2, size * 0.1), lineCap: .round))
+                .stroke(color, style: StrokeStyle(lineWidth: max(2, scaledSize * 0.1), lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(Int(score.rounded()))")
-                .font(.system(size: size * 0.36, weight: .bold, design: .rounded))
+                .font(.system(size: scaledSize * 0.36, weight: .bold, design: .rounded))
                 .foregroundStyle(color)
         }
-        .frame(width: size, height: size)
-        .shadow(color: isExceptional ? color.opacity(0.75) : .clear, radius: isExceptional ? size * 0.2 : 0)
+        .frame(width: scaledSize, height: scaledSize)
+        .shadow(color: isExceptional ? color.opacity(0.75) : .clear, radius: isExceptional ? scaledSize * 0.2 : 0)
         .animation(.easeInOut(duration: 0.35), value: score)
     }
 }
 
 struct VerdictTag: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     var verdict: Verdict
 
     private var color: Color { Palette.verdict(verdict) }
@@ -357,7 +421,7 @@ struct VerdictTag: View {
 
     var body: some View {
         Text(verdict.rawValue)
-            .font(.callout.weight(.semibold))
+            .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
             .background(color.opacity(isExceptional ? 0.32 : 0.2), in: Capsule())
@@ -370,6 +434,7 @@ struct VerdictTag: View {
 
 /// A labelled 0-100% bar, used for score factors and conditions.
 struct FactorBar: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     var factor: ScoreFactor
     /// Points the overall score would gain if this factor were perfect. See
     /// `scoreImpact(of:in:actualScore:)` — this is always the real
@@ -399,15 +464,15 @@ struct FactorBar: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
                 Text(factor.name)
-                    .font(.callout)
+                    .font(.scaled(.callout, scale: uiTextScale))
                 Text(factorVerdict.rawValue)
-                    .font(.caption2.weight(.semibold))
+                    .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
                     .foregroundStyle(color)
                 Spacer()
                 // The impact number is the thing worth scanning for — bigger
                 // and bolder than the bar itself, not a footnote next to it.
                 Text(roundedImpact >= 1 ? "−\(roundedImpact)" : "0")
-                    .font(.callout.monospacedDigit().weight(roundedImpact >= 3 ? .bold : .semibold))
+                    .font(.scaled(.callout, scale: uiTextScale).monospacedDigit().weight(roundedImpact >= 3 ? .bold : .semibold))
                     .foregroundStyle(impactColor)
             }
             GeometryReader { geometry in
@@ -421,13 +486,14 @@ struct FactorBar: View {
             }
             .frame(height: 5)
             Text(factor.detail)
-                .font(.caption2)
+                .font(.scaled(.caption2, scale: uiTextScale))
                 .foregroundStyle(.secondary)
         }
     }
 }
 
 struct LabelledValue: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     var label: String
     var value: String
     var systemImage: String?
@@ -437,11 +503,11 @@ struct LabelledValue: View {
             HStack(spacing: 4) {
                 if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.caption)
+                        .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(Palette.accent)
                 }
                 Text(label)
-                    .font(.callout)
+                    .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -454,7 +520,7 @@ struct LabelledValue: View {
             // ellipsis rather than growing further, with the untruncated
             // text one hover away instead of just being lost.
             Text(value)
-                .font(.title3.weight(.medium))
+                .font(.scaled(.title3, scale: uiTextScale).weight(.medium))
                 .monospacedDigit()
                 .lineLimit(2, reservesSpace: true)
                 .hoverTooltip(value)
@@ -466,6 +532,7 @@ struct LabelledValue: View {
 /// than the risk living only in a warning string elsewhere — a segmented bar
 /// plus inline labels, e.g. "21:18 ━━━ ⚠ Zenith risk 23:15 ━━━━━ 03:53".
 struct ZenithRiskWindowBar: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     var window: TimeWindow
     var risk: TimeWindow
     var timeZone: TimeZone
@@ -507,21 +574,22 @@ struct ZenithRiskWindowBar: View {
                 Text(Format.time(window.end, in: timeZone))
                     .foregroundStyle(.secondary)
             }
-            .font(.caption.monospacedDigit())
+            .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
         }
     }
 }
 
 struct WarningRow: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     var text: String
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 7) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.caption)
+                .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(Palette.marginal)
             Text(text)
-                .font(.callout)
+                .font(.scaled(.callout, scale: uiTextScale))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -633,6 +701,7 @@ func drawStarfield(context: GraphicsContext, size: CGSize, seed: String) {
 /// the ~1000 extended-catalog objects don't have a Wikipedia photo to draw
 /// from, so this is the common case, not a rare edge case.
 struct TargetThumbnail: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     var designation: String
     var contentMode: ContentMode = .fill
 
@@ -650,14 +719,14 @@ struct TargetThumbnail: View {
                     }
                     VStack(spacing: 5) {
                         Image(systemName: "sparkles")
-                            .font(.title3)
+                            .font(.scaled(.title3, scale: uiTextScale))
                             .foregroundStyle(.tertiary)
                         // Only worth the label where there's room to read it —
                         // this same view renders at everything from a 56pt row
                         // icon up to a 300pt detail sheet.
                         if geometry.size.height > 90 {
                             Text("No Photo Available")
-                                .font(.caption2.weight(.medium))
+                                .font(.scaled(.caption2, scale: uiTextScale).weight(.medium))
                                 .foregroundStyle(.tertiary)
                         }
                     }

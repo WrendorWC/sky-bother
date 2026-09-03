@@ -22,6 +22,7 @@ struct SettingsView: View {
 // MARK: - Location
 
 private struct LocationSettings: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
     @State private var query = ""
     @State private var results: [GeocodingResult] = []
@@ -40,7 +41,7 @@ private struct LocationSettings: View {
                 }
                 if let searchError {
                     Text(searchError)
-                        .font(.caption)
+                        .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(Palette.skip)
                 }
                 ForEach(results) { result in
@@ -52,7 +53,7 @@ private struct LocationSettings: View {
                         VStack(alignment: .leading, spacing: 1) {
                             Text(result.name)
                             Text(result.subtitle)
-                                .font(.caption)
+                                .font(.scaled(.caption, scale: uiTextScale))
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -83,7 +84,7 @@ private struct LocationSettings: View {
                     }
                 }
                 Text("Bortle class decides whether galaxies are realistic from here. If you do not know yours, look your site up on a light pollution map — it is the single most useful number in this app.")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
 
                 VStack(alignment: .leading) {
@@ -91,7 +92,7 @@ private struct LocationSettings: View {
                         Text("Blocked horizon")
                     }
                     Text("Trees, houses and hills block the sky below \(Format.degrees(state.site.horizonAltitude)). Targets are ignored under this.")
-                        .font(.caption)
+                        .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 }
 
@@ -107,13 +108,13 @@ private struct LocationSettings: View {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(saved.name)
                                 Text("\(saved.coordinateSummary) · Bortle \(saved.bortleClass)")
-                                    .font(.caption)
+                                    .font(.scaled(.caption, scale: uiTextScale))
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
                             if saved.id == state.site.id {
                                 Text("in use")
-                                    .font(.caption)
+                                    .font(.scaled(.caption, scale: uiTextScale))
                                     .foregroundStyle(.secondary)
                             } else {
                                 Button("Use") {
@@ -154,6 +155,7 @@ private struct LocationSettings: View {
 // MARK: - Equipment
 
 private struct EquipmentSettings: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
 
     var body: some View {
@@ -165,14 +167,14 @@ private struct EquipmentSettings: View {
                     }
                 }
                 Text("Presets use published optical specs and the standard dimensions of each model's sensor. Check them against your own unit — everything below is editable.")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             }
 
             Section("Your rigs") {
                 if state.settings.savedRigs.isEmpty {
                     Text("Enter your numbers below, then save the rig here to switch back to it later. This is how you add an instrument that has no built-in preset.")
-                        .font(.caption)
+                        .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 }
                 ForEach(state.settings.savedRigs) { saved in
@@ -180,13 +182,13 @@ private struct EquipmentSettings: View {
                         VStack(alignment: .leading, spacing: 1) {
                             Text(saved.name)
                             Text(saved.opticalSummary)
-                                .font(.caption)
+                                .font(.scaled(.caption, scale: uiTextScale))
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
                         if saved.id == state.rig.id {
                             Text("in use")
-                                .font(.caption)
+                                .font(.scaled(.caption, scale: uiTextScale))
                                 .foregroundStyle(.secondary)
                         } else {
                             Button("Use") { state.useSavedRig(saved) }
@@ -232,7 +234,7 @@ private struct EquipmentSettings: View {
                                 Text("Warn above")
                             }
                             Text("Alt-az mounts rotate the field fastest overhead, and many smart telescopes stall near the zenith. Targets passing above \(Format.degrees(state.rig.zenithAvoidanceAltitude)) get a warning.")
-                                .font(.caption)
+                                .font(.scaled(.caption, scale: uiTextScale))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -254,6 +256,7 @@ private struct EquipmentSettings: View {
 // MARK: - Planning
 
 private struct PlanningSettings: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
 
     var body: some View {
@@ -289,13 +292,14 @@ private struct PlanningSettings: View {
                 Stepper("Plan \(state.preferences.forecastNights) nights ahead",
                         value: $state.preferences.forecastNights, in: 1...14)
                 Text("Open-Meteo forecasts further out than this, but cloud cover past about a week is not worth acting on.")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
 
                 Toggle("Include star clusters", isOn: $state.preferences.includeStarClusters)
                 Toggle("Include targets larger than the frame", isOn: $state.preferences.includeOversizedTargets)
                 Toggle("Use Fahrenheit and mph", isOn: $state.preferences.usesImperialUnits)
             }
+
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
@@ -317,7 +321,7 @@ private struct PlanningSettings: View {
         VStack(alignment: .leading, spacing: 2) {
             Slider(value: value, in: range, step: step) { Text(title) }
             Text(caption)
-                .font(.caption)
+                .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

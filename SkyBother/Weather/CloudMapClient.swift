@@ -25,12 +25,17 @@ enum CloudMapError: LocalizedError {
 struct CloudMapClient {
 
     private static let userAgent = "SkyBotherApp/1.0 (https://github.com/WrendorWC/sky-bother; cloud map)"
-    private static let layer = "GOES-East_ABI_GeoColor"
+    // GIBS composites layers server-side in the order given. Reference_Features
+    // adds coastlines and state/county boundary lines on top of the imagery —
+    // a real orientation aid on a night thick enough to hide the land itself.
+    private static let layers = "GOES-East_ABI_GeoColor,Reference_Features"
     private static let coverageLongitudeRange = -155.0...(-5.0)
-    /// GIBS returns a real (but tiny, near-empty) JPEG rather than an error
-    /// for a timestamp that hasn't been ingested yet — verified empirically
-    /// against a live blank frame (~2 KB) versus a real one (30–50 KB+).
-    private static let minimumValidByteCount = 4000
+    /// GIBS returns a real (but near-empty) JPEG rather than an error for a
+    /// timestamp that hasn't been ingested yet. With Reference_Features
+    /// always composited in, even a blank imagery frame carries real bytes
+    /// now — verified empirically at ~17 KB blank (boundary lines on black)
+    /// versus ~35 KB for an actual GOES frame, at the default 480×480.
+    private static let minimumValidByteCount = 24000
 
     func isAvailable(longitude: Double) -> Bool {
         Self.coverageLongitudeRange.contains(longitude)
@@ -48,7 +53,7 @@ struct CloudMapClient {
         var components = URLComponents(string: "https://wvs.earthdata.nasa.gov/api/v1/snapshot")
         components?.queryItems = [
             URLQueryItem(name: "REQUEST", value: "GetSnapshot"),
-            URLQueryItem(name: "LAYERS", value: Self.layer),
+            URLQueryItem(name: "LAYERS", value: Self.layers),
             URLQueryItem(name: "CRS", value: "EPSG:4326"),
             URLQueryItem(name: "TIME", value: formatter.string(from: time)),
             URLQueryItem(name: "BBOX", value: "\(latitude - latSpan),\(longitude - lonSpan),\(latitude + latSpan),\(longitude + lonSpan)"),
@@ -62,7 +67,11 @@ struct CloudMapClient {
     /// GOES imagery lands in GIBS a little behind real time and not on a
     /// perfectly predictable cadence, so this steps back from now in 10-minute
     /// increments until it finds a frame that isn't the blank placeholder.
-    func fetchLatestSnapshot(latitude: Double, longitude: Double, pixelSize: Int = 360) async throws -> (data: Data, capturedAt: Date) {
+    // The boundary lines Reference_Features adds are thin enough that they
+    // can wash out once downscaled to the sidebar panel's display size — a
+    // bigger source image survives that downscale with more of the line
+    // detail intact.
+    func fetchLatestSnapshot(latitude: Double, longitude: Double, pixelSize: Int = 480) async throws -> (data: Data, capturedAt: Date) {
         guard isAvailable(longitude: longitude) else { throw CloudMapError.outOfCoverage }
 
         let now = Date()

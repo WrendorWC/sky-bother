@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct NightDetailView: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
 
@@ -117,16 +118,16 @@ struct NightDetailView: View {
         HStack(spacing: 9) {
             ScoreBadge(score: plan.score, size: 26)
             Text(Format.longDate(plan.date, in: plan.timeZone))
-                .font(.callout.weight(.semibold))
+                .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
                 .lineLimit(1)
             Text("·").foregroundStyle(.tertiary)
             Text(plan.verdict.rawValue)
-                .font(.callout.weight(.semibold))
+                .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
                 .foregroundStyle(Palette.verdict(plan.verdict))
             if let best = plan.bestTarget {
                 Text("·").foregroundStyle(.tertiary)
                 Text("Best: \(best.target.displayName) · \(Int(best.score.rounded()))")
-                    .font(.callout)
+                    .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -236,7 +237,22 @@ struct NightDetailView: View {
     private var autoPlan: [AutoPlanSlot] {
         AutoPlanner.plan(for: plan, minimumScore: state.preferences.minimumScore,
                          restrictedTo: isCustomPlanMode ? customPlanTargetIDs : nil,
-                         sessionCapMinutes: state.preferences.integrationGoalMinutes)
+                         sessionCapMinutes: customSessionCapMinutes)
+    }
+
+    /// A fixed cap of the Integration Goal, however many targets are
+    /// checked, only has room for as many of them as the night is long — a
+    /// 4th 120-minute slot fits an 8-hour night, a 5th doesn't, and any
+    /// target beyond that silently drops out of the plan even though
+    /// "Plan My Own" exists specifically to fit everything checked. Shrinking
+    /// the cap to a fair share of the night's total darkness as more targets
+    /// are added keeps every one of them in the plan, just with shorter
+    /// sessions, rather than hard-stopping once fixed-size chunks run out.
+    private var customSessionCapMinutes: Double {
+        let goal = state.preferences.integrationGoalMinutes
+        guard isCustomPlanMode, customPlanTargetIDs.count > 1 else { return goal }
+        let fairShare = plan.darkWindows.totalMinutes / Double(customPlanTargetIDs.count)
+        return min(goal, max(AutoPlanner.minimumSlotMinutes, fairShare))
     }
 
     private var autoPlanSection: some View {
@@ -247,14 +263,14 @@ struct NightDetailView: View {
                 Spacer()
                 if !slots.isEmpty {
                     Text("\(slots.count) target\(slots.count == 1 ? "" : "s") · \(Format.hours(slots.reduce(0) { $0 + $1.window.durationHours }))")
-                        .font(.caption)
+                        .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 }
                 if isCustomPlanMode && !customPlanTargetIDs.isEmpty {
                     Button("Clear") { customPlanTargetIDs.removeAll() }
                         .buttonStyle(.plain)
                         .foregroundStyle(Palette.accent)
-                        .font(.caption.weight(.semibold))
+                        .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
                 }
                 Button {
                     isCustomPlanMode.toggle()
@@ -263,18 +279,18 @@ struct NightDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Palette.accent)
-                .font(.caption.weight(.semibold))
+                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
             }
 
             if isCustomPlanMode && customPlanTargetIDs.isEmpty {
                 Text("Check targets in the list below to build a plan from exactly the ones you want — this replaces the usual minimum-score cutoff entirely.")
-                    .font(.callout)
+                    .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             } else if slots.isEmpty {
                 Text(isCustomPlanMode
                      ? "None of your selected targets have a usable window tonight that clears each other."
                      : "Nothing tonight clears your minimum score for long enough to build a session around.")
-                    .font(.callout)
+                    .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             } else {
                 AutoPlanStripView(plan: plan, slots: slots)
@@ -299,15 +315,15 @@ struct NightDetailView: View {
             ScoreBadge(score: slot.targetPlan.score, size: 30)
             VStack(alignment: .leading, spacing: 2) {
                 Text(slot.targetPlan.target.displayName)
-                    .font(.callout.weight(.semibold))
+                    .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
                 Text(slot.targetPlan.fit.framingNote)
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
             Text("\(Format.time(slot.window.start, in: plan.timeZone))–\(Format.time(slot.window.end, in: plan.timeZone))")
-                .font(.callout.monospacedDigit())
+                .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 12)
@@ -333,7 +349,7 @@ struct NightDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 9) {
                     Text(Format.longDate(plan.date, in: plan.timeZone))
-                        .font(.title2.weight(.bold))
+                        .font(.scaled(.title2, scale: uiTextScale).weight(.bold))
                     VerdictTag(verdict: plan.verdict)
                 }
                 // Capped at 2 lines with that height always reserved, rather
@@ -346,7 +362,7 @@ struct NightDetailView: View {
                 // reserving the space up front keeps the card the same
                 // height regardless of which night is selected.
                 Text(operationalSummaryLine)
-                    .font(.callout)
+                    .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .lineLimit(2, reservesSpace: true)
                     .hoverTooltip(operationalSummaryLine)
@@ -354,10 +370,10 @@ struct NightDetailView: View {
                     let bestTargetLine = "\(best.target.displayName) · \(Int(best.score.rounded()))"
                     HStack(spacing: 6) {
                         Text("Best target")
-                            .font(.caption.weight(.semibold))
+                            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
                             .foregroundStyle(Palette.accent)
                         Text(bestTargetLine)
-                            .font(.callout.weight(.medium))
+                            .font(.scaled(.callout, scale: uiTextScale).weight(.medium))
                             .lineLimit(1)
                     }
                     .hoverTooltip(bestTargetLine)
@@ -365,7 +381,7 @@ struct NightDetailView: View {
                 if let limitation = nightLimitationPhrase(for: plan) {
                     let limitationLine = "Main limitation: \(limitation)"
                     Text(limitationLine)
-                        .font(.caption)
+                        .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(.tertiary)
                         .lineLimit(1)
                         .hoverTooltip(limitationLine)
@@ -383,10 +399,10 @@ struct NightDetailView: View {
             if plan.isCloudedOut {
                 VStack(spacing: 2) {
                     Image(systemName: "cloud.rain.fill")
-                        .font(.title)
+                        .font(.scaled(.title, scale: uiTextScale))
                         .foregroundStyle(Palette.marginal)
                     Text("Clouded Out")
-                        .font(.caption2.weight(.semibold))
+                        .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
                         .foregroundStyle(Palette.marginal)
                 }
                 .hoverTooltip("The forecast writes this night off. The list below shows what would have been up if it clears.")
@@ -456,11 +472,11 @@ struct NightDetailView: View {
             Spacer()
             if let dewWarning = dewWarning {
                 Label(dewWarning, systemImage: "drop.fill")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(Palette.marginal)
             }
         }
-        .font(.caption)
+        .font(.scaled(.caption, scale: uiTextScale))
         .foregroundStyle(.secondary)
     }
 
@@ -540,7 +556,7 @@ struct NightDetailView: View {
                 ProgressView().controlSize(.small)
             }
             Text("\(targets.count) targets meet criteria")
-                .font(.callout)
+                .font(.scaled(.callout, scale: uiTextScale))
                 .foregroundStyle(.secondary)
         }
     }
@@ -560,7 +576,7 @@ struct NightDetailView: View {
                     if isCustomPlanMode {
                         let isChecked = customPlanTargetIDs.contains(targetPlan.id)
                         Image(systemName: isChecked ? "checkmark.square.fill" : "square")
-                            .font(.title3)
+                            .font(.scaled(.title3, scale: uiTextScale))
                             .foregroundStyle(isChecked ? Palette.accent : .secondary)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -603,6 +619,7 @@ enum TargetSortOption: String, CaseIterable, Identifiable {
 }
 
 struct TargetRowView: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
     var targetPlan: TargetPlan
@@ -622,17 +639,17 @@ struct TargetRowView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 7) {
                     Text(targetPlan.target.displayName)
-                        .font(.body.weight(.semibold))
+                        .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
                     if targetPlan.target.commonName != nil {
                         Text(targetPlan.target.designation)
-                            .font(.callout)
+                            .font(.scaled(.callout, scale: uiTextScale))
                             .foregroundStyle(.secondary)
                     }
                     Image(systemName: targetPlan.target.type.symbolName)
-                        .font(.caption)
+                        .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(Palette.accent)
                     Text(targetPlan.target.type.shortName)
-                        .font(.caption)
+                        .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(.tertiary)
                     Spacer(minLength: 0)
                 }
@@ -641,12 +658,12 @@ struct TargetRowView: View {
 
                 HStack(spacing: 5) {
                     Text(summary)
-                        .font(.callout.monospacedDigit())
+                        .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                     if let risk = targetPlan.bestWindowZenithRisk {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.caption)
+                            .font(.scaled(.caption, scale: uiTextScale))
                             .foregroundStyle(Palette.marginal)
                             .hoverTooltip("Zenith risk from \(Format.time(risk.start, in: plan.timeZone)) — field rotation peaks near the zenith and some alt-az mounts stall there.")
                     }
@@ -688,6 +705,7 @@ struct TargetRowView: View {
 /// timeline's time axis so it lines up with everything above it.
 private struct AutoPlanStripView: View {
     @EnvironmentObject private var state: AppState
+    @Environment(\.uiTextScale) private var uiTextScale
     var plan: NightPlan
     var slots: [AutoPlanSlot]
 
@@ -695,10 +713,22 @@ private struct AutoPlanStripView: View {
         GeometryReader { geometry in
             let axis = TimeAxis(window: plan.chartWindow, width: geometry.size.width)
             Canvas { context, size in
+                // A dark track first, so the gap between segments below reads
+                // clearly no matter what sits behind this view.
+                context.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 6),
+                             with: .color(Palette.spaceTop))
+
+                // Two consecutive targets often land within a point or two of
+                // each other on the score-color scale, so a shared edge alone
+                // can vanish entirely. A real gap reads as a boundary no
+                // matter how close the colours are, which a same-colour
+                // stroke never reliably does.
+                let gap: CGFloat = 3
                 for slot in slots {
                     let startX = axis.x(for: slot.window.start)
                     let endX = axis.x(for: slot.window.end)
-                    let rect = CGRect(x: startX, y: 0, width: max(2, endX - startX), height: size.height)
+                    let rect = CGRect(x: startX + gap / 2, y: 0,
+                                      width: max(2, (endX - startX) - gap), height: size.height)
                     let color = Palette.score(slot.targetPlan.score)
                     let isSelected = state.selectedTargetID == slot.targetPlan.id
                     // Selection outline uses the app's one accent colour
@@ -712,7 +742,7 @@ private struct AutoPlanStripView: View {
 
                     if rect.width > 50 {
                         context.draw(Text(slot.targetPlan.target.displayName)
-                                        .font(.system(size: 11, weight: .semibold))
+                                        .font(.system(size: 11 * uiTextScale, weight: .semibold))
                                         .foregroundColor(.white),
                                      at: CGPoint(x: rect.midX, y: rect.midY),
                                      anchor: .center)

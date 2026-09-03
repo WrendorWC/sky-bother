@@ -5,6 +5,7 @@ import SwiftUI
 /// pointing at before you commit a night to it. Independent of any night's
 /// plan: this is "what's out there", not "what's up tonight".
 struct TargetCatalogView: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
     @State private var searchText = ""
     @State private var typeFilter: Set<TargetType> = []
@@ -123,7 +124,7 @@ struct TargetCatalogView: View {
             Spacer()
 
             Text("\(targets.count) targets")
-                .font(.callout)
+                .font(.scaled(.callout, scale: uiTextScale))
                 .foregroundStyle(.secondary)
 
             Button {
@@ -156,6 +157,7 @@ private struct CustomTargetEditorContext: Identifiable {
 }
 
 private struct TargetCatalogCell: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     var target: Target
     var isCustom: Bool = false
 
@@ -169,14 +171,14 @@ private struct TargetCatalogCell: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 5) {
                     Image(systemName: target.type.symbolName)
-                        .font(.caption)
+                        .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(Palette.accent)
                     Text(target.displayName)
-                        .font(.callout.weight(.semibold))
+                        .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
                         .lineLimit(1)
                     if isCustom {
                         Text("Custom")
-                            .font(.caption2.weight(.semibold))
+                            .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
                             .background(Palette.accent.opacity(0.22), in: Capsule())
@@ -184,7 +186,7 @@ private struct TargetCatalogCell: View {
                     }
                 }
                 Text("\(target.designation) · \(target.constellation)")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -196,6 +198,7 @@ private struct TargetCatalogCell: View {
 }
 
 struct TargetCatalogDetail: View {
+    @Environment(\.uiTextScale) private var uiTextScale
     @Environment(\.dismiss) private var dismiss
     var target: Target
 
@@ -204,9 +207,9 @@ struct TargetCatalogDetail: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(target.displayName)
-                        .font(.title2.weight(.semibold))
+                        .font(.scaled(.title2, scale: uiTextScale).weight(.semibold))
                     Text("\(target.designation) · \(target.type.displayName) in \(target.constellation)")
-                        .font(.callout)
+                        .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -240,7 +243,7 @@ struct TargetCatalogDetail: View {
 
                 if let fact = TargetFactCatalog.fact(for: target.designation) {
                     Text(fact)
-                        .font(.callout)
+                        .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(10)
@@ -253,7 +256,7 @@ struct TargetCatalogDetail: View {
                     Link(destination: url) {
                         Label("Photo: \(info.sourceTitle) via Wikipedia", systemImage: "link")
                     }
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(Palette.accent)
                 }
             }
@@ -266,11 +269,11 @@ struct TargetCatalogDetail: View {
     private func factRow(_ label: String, _ value: String) -> some View {
         HStack {
             Text(label)
-                .font(.callout)
+                .font(.scaled(.callout, scale: uiTextScale))
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.callout.monospacedDigit())
+                .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
         }
     }
 }

@@ -5,6 +5,7 @@ import SwiftUI
 /// so nothing here falls back to an invented default.
 struct LocationOnboardingView: View {
     @EnvironmentObject private var state: AppState
+    @Environment(\.uiTextScale) private var uiTextScale
 
     @State private var query = ""
     @State private var results: [GeocodingResult] = []
@@ -21,12 +22,12 @@ struct LocationOnboardingView: View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 7) {
                 Image(systemName: "moon.stars.fill")
-                    .font(.system(size: 36))
+                    .font(.system(size: 36 * uiTextScale))
                     .foregroundStyle(Palette.accent)
                 Text("Where are you observing from?")
-                    .font(.title.weight(.semibold))
+                    .font(.scaled(.title, scale: uiTextScale).weight(.semibold))
                 Text("Twilight times, the moon's position and tonight's weather all depend on exactly where you are. Search for your town, or enter coordinates directly.")
-                    .font(.body)
+                    .font(.scaled(.body, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -44,7 +45,7 @@ struct LocationOnboardingView: View {
 
                     if let searchError {
                         Text(searchError)
-                            .font(.caption)
+                            .font(.scaled(.caption, scale: uiTextScale))
                             .foregroundStyle(Palette.skip)
                     }
 
@@ -57,7 +58,7 @@ struct LocationOnboardingView: View {
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(result.name)
                                         Text(result.subtitle)
-                                            .font(.caption)
+                                            .font(.scaled(.caption, scale: uiTextScale))
                                             .foregroundStyle(.secondary)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -72,7 +73,7 @@ struct LocationOnboardingView: View {
 
                     Button("Enter coordinates manually instead") { showsManualEntry = true }
                         .buttonStyle(.link)
-                        .font(.callout)
+                        .font(.scaled(.callout, scale: uiTextScale))
                 }
             } else {
                 VStack(alignment: .leading, spacing: 10) {
@@ -91,7 +92,7 @@ struct LocationOnboardingView: View {
                     }
                     if let manualError {
                         Text(manualError)
-                            .font(.caption)
+                            .font(.scaled(.caption, scale: uiTextScale))
                             .foregroundStyle(Palette.skip)
                     }
                     HStack {
@@ -106,7 +107,7 @@ struct LocationOnboardingView: View {
             Spacer(minLength: 0)
 
             Text("You can fine-tune light pollution, blocked horizon and equipment afterward in Settings (⌘,).")
-                .font(.caption)
+                .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.tertiary)
         }
         .padding(34)

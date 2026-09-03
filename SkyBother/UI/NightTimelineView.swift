@@ -6,6 +6,7 @@ import SwiftUI
 /// shares the same time axis, so you can read straight down a column.
 struct NightTimelineView: View {
     @EnvironmentObject private var state: AppState
+    @Environment(\.uiTextScale) private var uiTextScale
 
     var plan: NightPlan
     var height: CGFloat = 152
@@ -250,7 +251,7 @@ struct NightTimelineView: View {
             mark.addLine(to: CGPoint(x: x, y: size.height))
             context.stroke(mark, with: .color(color), lineWidth: 1.5)
             context.draw(Text(target.target.displayName)
-                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                            .font(.system(size: 10 * uiTextScale, weight: .semibold, design: .rounded))
                             .foregroundColor(.white),
                          at: CGPoint(x: min(size.width - 6, x + 6), y: 12),
                          anchor: .topLeading)
@@ -270,7 +271,7 @@ struct NightTimelineView: View {
             path.move(to: CGPoint(x: x, y: 0))
             path.addLine(to: CGPoint(x: x, y: size.height))
             context.stroke(path, with: .color(.white.opacity(0.42)), style: style)
-            context.draw(Text(label).font(.system(size: 9)).foregroundColor(.white.opacity(0.7)),
+            context.draw(Text(label).font(.system(size: 9 * uiTextScale)).foregroundColor(.white.opacity(0.7)),
                          at: CGPoint(x: x + 15, y: 10))
         }
     }
@@ -291,7 +292,7 @@ struct NightTimelineView: View {
 
             guard index % step == 0 else { continue }
             context.draw(Text(Format.time(tick, in: plan.timeZone))
-                            .font(.system(size: 9, design: .rounded))
+                            .font(.system(size: 9 * uiTextScale, design: .rounded))
                             .foregroundColor(.white.opacity(0.75)),
                          at: CGPoint(x: x, y: size.height - 5))
         }
@@ -305,7 +306,7 @@ struct NightTimelineView: View {
         path.move(to: CGPoint(x: x, y: 0))
         path.addLine(to: CGPoint(x: x, y: size.height))
         context.stroke(path, with: .color(Palette.skip.opacity(0.9)), lineWidth: 1.5)
-        context.draw(Text("now").font(.system(size: 9, weight: .semibold)).foregroundColor(Palette.skip),
+        context.draw(Text("now").font(.system(size: 9 * uiTextScale, weight: .semibold)).foregroundColor(Palette.skip),
                      at: CGPoint(x: x + 15, y: size.height - 24))
     }
 
@@ -346,16 +347,16 @@ struct NightTimelineView: View {
     private func readoutCard(sample: NightSample) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(Format.time(sample.date, in: plan.timeZone))
-                .font(.callout.weight(.semibold).monospacedDigit())
+                .font(.scaled(.callout, scale: uiTextScale).weight(.semibold).monospacedDigit())
             if sample.hasWeather {
                 Text("\(Int(sample.cloudCover))% cloud · \(Format.temperature(celsius: sample.temperature, imperial: state.preferences.usesImperialUnits))")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
             }
             Text("darkness \(Int(sample.darkness * 100))%")
-                .font(.caption)
+                .font(.scaled(.caption, scale: uiTextScale))
             if sample.moonAltitude > 0 {
                 Text("moon \(Format.degrees(sample.moonAltitude)) up")
-                    .font(.caption)
+                    .font(.scaled(.caption, scale: uiTextScale))
             }
         }
         .foregroundStyle(.white)
