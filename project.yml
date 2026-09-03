@@ -35,6 +35,18 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.skybother.SkyBother
         GENERATE_INFOPLIST_FILE: YES
+        # PRODUCT_NAME, not just a CFBundleDisplayName override, because
+        # Xcode's auto-generated Info.plist hardcodes CFBundleName to
+        # $(PRODUCT_NAME) regardless of any INFOPLIST_KEY_CFBundleName
+        # setting — and CFBundleName, not CFBundleDisplayName, is what the
+        # About panel and the bold app-menu title actually read (confirmed:
+        # a CFBundleDisplayName-only attempt fixed Finder/Dock but left
+        # those two still showing "SkyBother"). The built .app is therefore
+        # literally "Sky Bother?.app" — valid on macOS (only ":" and "/" are
+        # actually reserved), it just needs quoting in build/zip/codesign
+        # commands the way the parent folder's own space already requires.
+        PRODUCT_NAME: "Sky Bother?"
+        INFOPLIST_KEY_CFBundleDisplayName: "Sky Bother?"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_HARDENED_RUNTIME: YES

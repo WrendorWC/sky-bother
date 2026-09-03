@@ -114,3 +114,55 @@ struct SettingsStore: Sendable {
         }
     }
 }
+
+private struct CachedForecast: Codable {
+    var forecast: WeatherForecast
+    var latitude: Double
+    var longitude: Double
+}
+
+/// A separate small JSON file — not a field on `StoredSettings`, which is
+/// rewritten on every preference change and would otherwise write a whole
+/// multi-day forecast back out just because a slider moved — purely so the
+/// once-an-hour weather throttle (see `AppState.minimumAutomaticFetchInterval`)
+/// survives an app relaunch. The timestamp it depends on is in-memory only;
+/// without a cache to restore it from, every relaunch looked like the first
+/// launch ever, silently defeating the throttle. Cloud cover in particular
+/// moves a lot between successive forecast-model runs, so those extra
+/// fetches didn't just spend an unnecessary request — they could visibly
+/// reshuffle Tonight's Plan with nothing actually different on the ground.
+struct WeatherCacheStore: Sendable {
+    static let shared = WeatherCacheStore()
+
+    private var fileURL: URL? {
+        guard let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        return base.appendingPathComponent("SkyBother", isDirectory: true).appendingPathComponent("weathercache.json")
+    }
+
+    /// Nil unless the cache is for essentially this same site — a fetch from
+    /// a previous, different location isn't a valid stand-in for a fresh one
+    /// just because it happens to still be within the hour.
+    func load(nearLatitude latitude: Double, longitude: Double) -> WeatherForecast? {
+        guard let fileURL, let data = try? Data(contentsOf: fileURL) else { return nil }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        guard let cached = try? decoder.decode(CachedForecast.self, from: data) else { return nil }
+        guard abs(cached.latitude - latitude) < 0.01, abs(cached.longitude - longitude) < 0.01 else { return nil }
+        return cached.forecast
+    }
+
+    func save(_ forecast: WeatherForecast, latitude: Double, longitude: Double) {
+        guard let fileURL else { return }
+        do {
+            try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(CachedForecast(forecast: forecast, latitude: latitude, longitude: longitude))
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            NSLog("Sky Bother: could not cache weather — \(error.localizedDescription)")
+        }
+    }
+}

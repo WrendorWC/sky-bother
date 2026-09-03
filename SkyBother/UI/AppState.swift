@@ -38,6 +38,17 @@ final class AppState: ObservableObject {
 
     init() {
         settings = SettingsStore.shared.load()
+        // Restores both the data and the timestamp the once-an-hour throttle
+        // above depends on — without this, `lastWeatherFetchAt` starts every
+        // single launch as nil, so the throttle it's supposed to enforce
+        // never actually held across a relaunch, only within one running
+        // session. `retrievedAt` older than the throttle window is left
+        // alone; the first `refresh()` call fetches fresh data as normal.
+        if let cached = WeatherCacheStore.shared.load(nearLatitude: settings.site.latitude, longitude: settings.site.longitude),
+           Date().timeIntervalSince(cached.retrievedAt) < Self.minimumAutomaticFetchInterval {
+            forecast = cached
+            lastWeatherFetchAt = cached.retrievedAt
+        }
     }
 
     // MARK: - Convenience accessors
@@ -140,6 +151,12 @@ final class AppState: ObservableObject {
                 forecast = .empty
                 weatherErrorMessage = error.localizedDescription
             }
+        }
+        // Only a real result — an empty one is a failed fetch, not a fresh
+        // one, and would otherwise overwrite a still-usable cache from
+        // whatever the last successful fetch was with something useless.
+        if !forecast.isEmpty {
+            WeatherCacheStore.shared.save(forecast, latitude: site.latitude, longitude: site.longitude)
         }
 
         isLoading = false

@@ -49,29 +49,36 @@ enum AutoPlanner {
     /// at fitting it in somewhere, rather than one silently vanishing the
     /// moment a higher-scoring pick wants the same part of the night.
     ///
-    /// `sessionCapMinutes`, when given, additionally caps how much of the
-    /// night any single target can claim on its first pass — without it, two
-    /// picks whose windows are each most of the night (common: a lot of
-    /// targets peak around the same time) can exhaust the whole thing
-    /// between them, leaving nothing behind for anyone else to trim into, no
-    /// matter how many windows they're each tried against. Only meaningful
-    /// alongside `restrictedTo`: the usual score-ranked plan is deliberately
-    /// allowed to give its best target as much of the night as it can use.
+    /// `sessionCapMinutes`, when given, caps how much of the night any single
+    /// target can claim on its first pass — without it, one target whose
+    /// window happens to be most of the night (common: plenty of catalogued
+    /// objects are above the altitude floor for hours, not just at their own
+    /// single best moment) claims the entire thing outright, and every other
+    /// candidate's own window gets subtracted down to nothing before it ever
+    /// gets a turn — not because it lost to something better scheduled at the
+    /// same time, but because the best target was simply handed more of the
+    /// night than any one session actually needs. This always runs capped
+    /// against the caller's own per-target integration goal, custom plan or
+    /// not, in two passes:
     ///
-    /// With `restrictedTo` set, this runs in two passes:
-    ///
-    /// 1. **Coverage**, most-constrained target first (least total available
-    ///    time across all its windows) rather than best score first. A
-    ///    target with one narrow window is only ever going to fit there;
-    ///    scheduling it before a flexible target — which has other options
-    ///    regardless of what happens here — claims that narrow opportunity
-    ///    while it still exists, instead of letting a more flexible target
-    ///    take it just because it happened to score higher.
+    /// 1. **Claim.** With `restrictedTo` set, most-constrained target first
+    ///    (least total available time across all its windows) rather than
+    ///    best score first — a target with one narrow window is only ever
+    ///    going to fit there, so scheduling it before a flexible target
+    ///    (which has other options regardless of what happens here) claims
+    ///    that narrow opportunity while it still exists, instead of letting
+    ///    the flexible target take it just because it scored higher. Without
+    ///    `restrictedTo`, best score first, same as always — the ordinary
+    ///    plan still hands its best target the first pick of the night, just
+    ///    not an unbounded one.
     /// 2. **Fill**, best score first: once everyone who fits has an initial
     ///    (session-capped) slot, extend each one into whatever's still
     ///    genuinely unclaimed immediately next to it — real usable darkness
     ///    that nothing else in the plan needs shouldn't sit idle just
-    ///    because the first pass was conservative about handing it out.
+    ///    because the first pass was conservative about handing it out. A
+    ///    night with only one real target still gets to keep the whole
+    ///    thing — this pass is exactly what hands the leftover back once
+    ///    nothing else wants it.
     static func plan(for night: NightPlan, minimumScore: Double, restrictedTo allowedTargetIDs: Set<String>? = nil,
                      sessionCapMinutes: Double? = nil) -> [AutoPlanSlot] {
         let isCustom = allowedTargetIDs != nil
@@ -95,13 +102,13 @@ enum AutoPlanner {
                 .compactMap { largestFreeFragment(of: $0, avoiding: claimed) }
                 .max { $0.duration < $1.duration }
             guard var slot = bestAvailableSlot, slot.durationMinutes >= minimumSlotMinutes else { continue }
-            if isCustom, let cap = sessionCapMinutes, slot.durationMinutes > cap {
+            if let cap = sessionCapMinutes, slot.durationMinutes > cap {
                 slot = capped(slot, toMinutes: cap, centeredOn: targetPlan.bestTime)
             }
             chosen.append((targetPlan, slot))
         }
 
-        if isCustom {
+        if sessionCapMinutes != nil {
             chosen = fillLeftoverTime(chosen)
         }
 

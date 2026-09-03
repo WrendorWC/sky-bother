@@ -20,7 +20,16 @@ struct ContentView: View {
                 // (or target, below) got selected instead of staying put.
                 Group {
                     if let plan = state.selectedPlan {
+                        // Without an explicit identity, switching nights
+                        // updates the same NightDetailView instance in place
+                        // rather than creating a new one — so its @State
+                        // (scrubTime chief among them) carries over from
+                        // whichever night was open before instead of
+                        // resetting for the one just selected. Keying on the
+                        // date makes each night's detail view, and its whole
+                        // state tree, genuinely its own.
                         NightDetailView(plan: plan)
+                            .id(plan.id)
                     } else {
                         EmptyStateView(title: "No nights planned",
                                        message: "Set a location in Settings, then refresh.",

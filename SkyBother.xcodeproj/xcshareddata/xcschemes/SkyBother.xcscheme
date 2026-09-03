@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "19CB57DDEADCFD559E93E4FB"
-               BuildableName = "SkyBother.app"
+               BuildableName = "Sky Bother?.app"
                BlueprintName = "SkyBother"
                ReferencedContainer = "container:SkyBother.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "19CB57DDEADCFD559E93E4FB"
-            BuildableName = "SkyBother.app"
+            BuildableName = "Sky Bother?.app"
             BlueprintName = "SkyBother"
             ReferencedContainer = "container:SkyBother.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "19CB57DDEADCFD559E93E4FB"
-            BuildableName = "SkyBother.app"
+            BuildableName = "Sky Bother?.app"
             BlueprintName = "SkyBother"
             ReferencedContainer = "container:SkyBother.xcodeproj">
          </BuildableReference>

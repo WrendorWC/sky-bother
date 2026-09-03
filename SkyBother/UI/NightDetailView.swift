@@ -41,17 +41,12 @@ struct NightDetailView: View {
 
     init(plan: NightPlan) {
         self.plan = plan
-        let window = plan.chartWindow
-        let now = Date()
-        let initialScrubTime: Date
-        if window.contains(now) {
-            initialScrubTime = now
-        } else if let dusk = plan.astronomicalDusk, let dawn = plan.astronomicalDawn {
-            initialScrubTime = dusk.addingTimeInterval(dawn.timeIntervalSince(dusk) / 2)
-        } else {
-            initialScrubTime = window.start.addingTimeInterval(window.duration / 2)
-        }
-        _scrubTime = State(initialValue: initialScrubTime)
+        // Sunset — the start of the chart window itself — every time,
+        // tonight included, rather than jumping to the live clock whenever
+        // tonight happens to already be underway: opening a night should
+        // consistently land at the start of the session, not sometimes at
+        // its beginning and sometimes wherever "now" happens to fall.
+        _scrubTime = State(initialValue: plan.chartWindow.start)
     }
 
     /// Identifies the very top of the scroll content, so the compact header
@@ -220,7 +215,7 @@ struct NightDetailView: View {
     /// people who just want the deep-sky planner.
     private var skySection: some View {
         DisclosureGroup(isExpanded: $isSkyViewExpanded) {
-            SkyView(plan: plan, scrubTime: $scrubTime)
+            SkyView(plan: plan, scrubTime: $scrubTime, autoPlanSlots: autoPlan)
                 .padding(.top, 12)
         } label: {
             SectionHeader("Sky view")
@@ -237,18 +232,21 @@ struct NightDetailView: View {
     private var autoPlan: [AutoPlanSlot] {
         AutoPlanner.plan(for: plan, minimumScore: state.preferences.minimumScore,
                          restrictedTo: isCustomPlanMode ? customPlanTargetIDs : nil,
-                         sessionCapMinutes: customSessionCapMinutes)
+                         sessionCapMinutes: sessionCapMinutes)
     }
 
-    /// A fixed cap of the Integration Goal, however many targets are
-    /// checked, only has room for as many of them as the night is long — a
-    /// 4th 120-minute slot fits an 8-hour night, a 5th doesn't, and any
-    /// target beyond that silently drops out of the plan even though
-    /// "Plan My Own" exists specifically to fit everything checked. Shrinking
-    /// the cap to a fair share of the night's total darkness as more targets
-    /// are added keeps every one of them in the plan, just with shorter
-    /// sessions, rather than hard-stopping once fixed-size chunks run out.
-    private var customSessionCapMinutes: Double {
+    /// The Integration Goal, as-is, for the ordinary plan — one target
+    /// shouldn't claim more of the night than a full session actually needs,
+    /// which is exactly what that preference already means. In "Plan My Own"
+    /// mode, a fixed cap regardless of how many targets are checked only has
+    /// room for as many of them as the night is long — a 4th 120-minute slot
+    /// fits an 8-hour night, a 5th doesn't, and any target beyond that
+    /// silently drops out of the plan even though "Plan My Own" exists
+    /// specifically to fit everything checked. Shrinking the cap to a fair
+    /// share of the night's total darkness as more targets are added keeps
+    /// every one of them in the plan, just with shorter sessions, rather than
+    /// hard-stopping once fixed-size chunks run out.
+    private var sessionCapMinutes: Double {
         let goal = state.preferences.integrationGoalMinutes
         guard isCustomPlanMode, customPlanTargetIDs.count > 1 else { return goal }
         let fairShare = plan.darkWindows.totalMinutes / Double(customPlanTargetIDs.count)

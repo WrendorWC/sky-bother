@@ -10,6 +10,11 @@ struct SkyView: View {
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
     @Binding var scrubTime: Date
+    /// Tonight's suggested schedule, handed down from `NightDetailView`
+    /// (which already computes it for its own "Tonight's Plan" section)
+    /// rather than recomputed here — same slots, same source of truth,
+    /// just also consulted while playback cycles through them.
+    var autoPlanSlots: [AutoPlanSlot] = []
 
     /// Not persisted to Preferences — a per-viewing toggle for one layer,
     /// not a setting worth growing the stored-settings surface for yet.
@@ -20,7 +25,115 @@ struct SkyView: View {
     @State private var framingRigOverride: Rig?
     @State private var cameraRollDegrees: Double = 0
 
+    @State private var isPlaying = false
+    @State private var playbackMode: PlaybackMode = .cycleThroughPlan
+
+    /// A `static let` rather than an instance property: SwiftUI recomputes
+    /// `body` (and therefore reinitialises every stored property of this
+    /// struct) on every scrub, up to 30 times a second while playing — an
+    /// instance-level `Timer.publish(...).autoconnect()` would spin up a
+    /// fresh, independently-ticking Combine timer on each of those, not one
+    /// steady clock. Scoped to the type instead, it's created once for the
+    /// life of the process no matter how often the view itself is rebuilt.
+    private static let frameInterval: TimeInterval = 1.0 / 30.0
+    private static let playbackTimer = Timer.publish(every: frameInterval, on: .main, in: .common).autoconnect()
+    /// Real seconds for a full sunset-to-sunrise playthrough, one flat rate
+    /// the whole way — the readable pace an object was already moving at
+    /// while in view. A separate, faster rate for the dead twilight outside
+    /// Tonight's Plan's own span made object-switching keep pace with the
+    /// plan bar better, but the two-rate boundary kept producing exactly the
+    /// kind of subtle timing bug it was trying to fix, tick after tick — not
+    /// worth it for what's ultimately just a nice-to-have.
+    private static let playbackRealSeconds: Double = 25
+
+    private enum PlaybackMode: String, CaseIterable, Identifiable {
+        case trackSelected
+        case cycleThroughPlan
+
+        var id: String { rawValue }
+
+        var label: String {
+            switch self {
+            case .trackSelected: return "Track Selected"
+            case .cycleThroughPlan: return "Cycle Plan"
+            }
+        }
+    }
+
+    /// Re-picks a sensible default every time the selection itself changes,
+    /// rather than leaving whichever mode was last set to quietly stop
+    /// making sense: something picked from outside tonight's plan has
+    /// nothing to cycle through *to*, so playback would just ignore it the
+    /// next time it started, jumping back to a plan object regardless. A
+    /// plan object — or nothing at all, the common starting case — has no
+    /// such mismatch, so cycling stays the default. Still just a default:
+    /// the chips below remain free to override it until the next change.
+    private func updatePlaybackModeForSelection() {
+        guard let selectedID = state.selectedTargetID else {
+            playbackMode = .cycleThroughPlan
+            return
+        }
+        playbackMode = autoPlanSlots.contains { $0.targetPlan.id == selectedID } ? .cycleThroughPlan : .trackSelected
+    }
+
     private var daysSinceJ2000: Double { scrubTime.daysSinceJ2000 }
+
+    /// Wall-clock time and `scrubTime` at the moment Play was last pressed —
+    /// what every tick projects forward from. See `advancePlayback` for why
+    /// this replaced accumulating a per-tick delta.
+    @State private var playbackAnchorWallClock: Date?
+    @State private var playbackAnchorScrubTime: Date?
+
+    /// Ticking `scrubTime` forward by a fixed per-tick delta each time this
+    /// fires seemed straightforward, but it's an accumulator — any error
+    /// compounds and never self-corrects. Projecting `scrubTime` directly
+    /// from *elapsed real time since Play was pressed* instead has no
+    /// accumulator to drift: every tick recomputes the exact answer for
+    /// however much real time has actually passed, so a slow frame, a late
+    /// timer firing, or anything else that makes ticks land unevenly just
+    /// changes how many recomputations happen — never the answer itself.
+    private func advancePlayback() {
+        guard isPlaying, let anchorWallClock = playbackAnchorWallClock, let anchorScrubTime = playbackAnchorScrubTime else { return }
+        let window = plan.chartWindow
+        guard window.duration > 0 else {
+            isPlaying = false
+            return
+        }
+        let elapsedReal = Date().timeIntervalSince(anchorWallClock)
+        let simulatedSecondsPerRealSecond = window.duration / Self.playbackRealSeconds
+        let projected = anchorScrubTime.addingTimeInterval(elapsedReal * simulatedSecondsPerRealSecond)
+        if projected >= window.end {
+            scrubTime = window.end
+            isPlaying = false
+        } else {
+            scrubTime = projected
+        }
+        if playbackMode == .cycleThroughPlan {
+            syncSelectionToPlayback()
+        }
+    }
+
+    /// Slots never overlap (that's `AutoPlanner`'s whole job), so at most one
+    /// ever contains `scrubTime` — nothing to disambiguate between.
+    /// Consecutive slots aren't always back-to-back — a stretch between two
+    /// scheduled targets that nothing's own usable window actually covers
+    /// reads as a real gap, not a bug. Waiting for the *next* slot's window
+    /// to open before switching left the previous target selected through
+    /// that whole gap, which on the Tonight's Plan strip (spanning the same
+    /// timeline) looked like the switch was firing late — sometimes right on
+    /// the boundary, sometimes only once the next slot's own span began.
+    /// Switching the instant the current slot's window *ends* instead —
+    /// to whatever's coming up next, not only what's already open — keeps
+    /// the two in step regardless of whether the slots actually touch.
+    private func syncSelectionToPlayback() {
+        let sorted = autoPlanSlots.sorted { $0.window.start < $1.window.start }
+        guard let first = sorted.first, let last = sorted.last,
+              scrubTime >= first.window.start, scrubTime < last.window.end else { return }
+        guard let upcoming = sorted.first(where: { $0.window.end > scrubTime }) else { return }
+        if state.selectedTargetID != upcoming.targetPlan.id {
+            state.selectedTargetID = upcoming.targetPlan.id
+        }
+    }
 
     private struct Placement {
         var id: String
@@ -132,9 +245,15 @@ struct SkyView: View {
         return plan.targets.first { $0.id == selectedID }
     }
 
-    /// One sample every 6 minutes across the whole chart window — dense
-    /// enough for a smooth arc, cheap enough to recompute on every scrub
-    /// (it's only evaluated for the one selected target, not all of them).
+    /// One sample every 6 minutes across a full day centred on tonight —
+    /// dense enough for a smooth arc, cheap enough to recompute on every
+    /// scrub (it's only evaluated for the one selected target, not all of
+    /// them). A fixed-coordinate target genuinely traces one full closed
+    /// loop around the pole every day; sampling only the plotted dusk-to-
+    /// dawn window used to cut that loop off at both ends, so the path
+    /// looked like it simply began and ended at nightfall rather than the
+    /// same real circle the target is on all day, most of it just not up
+    /// (or not dark) right now.
     private struct PathSample {
         var point: SkyProjection.UnitPoint
         var isVisible: Bool
@@ -142,8 +261,11 @@ struct SkyView: View {
     }
 
     private func pathSamples(for targetPlan: TargetPlan) -> [PathSample] {
-        stride(from: plan.chartWindow.start.timeIntervalSince1970,
-               through: plan.chartWindow.end.timeIntervalSince1970,
+        let center = plan.chartWindow.midpoint
+        let start = center.addingTimeInterval(-12 * 3600)
+        let end = center.addingTimeInterval(12 * 3600)
+        return stride(from: start.timeIntervalSince1970,
+               through: end.timeIntervalSince1970,
                by: 360).map { epoch in
             let date = Date(timeIntervalSince1970: epoch)
             let position = SkyCoordinates.horizontal(targetPlan.target.coordinate,
@@ -261,6 +383,9 @@ struct SkyView: View {
 
             timeScrubber
         }
+        .onAppear { updatePlaybackModeForSelection() }
+        .onChange(of: state.selectedTargetID) { _, _ in updatePlaybackModeForSelection() }
+        .onDisappear { isPlaying = false }
     }
 
     /// `.toggleStyle(.button)` alone doesn't give a clear at-a-glance
@@ -432,24 +557,54 @@ struct SkyView: View {
     /// target passes close enough to the zenith to risk field rotation or an
     /// alt-az stall gets its own warning-coloured stroke instead of that
     /// risk living only in a warning string elsewhere.
+    /// Above the horizon and in zenith risk, above the horizon and clear of
+    /// it, or below the horizon entirely — the loop is drawn in full either
+    /// way, this only decides how boldly each stretch of it reads, so the
+    /// below-horizon portion still completes the ring rather than vanishing.
+    private enum PathStyle: Equatable {
+        case zenithRisk
+        case aboveHorizon
+        case belowHorizon
+
+        init(_ sample: PathSample) {
+            if !sample.isVisible { self = .belowHorizon }
+            else { self = sample.isZenithRisk ? .zenithRisk : .aboveHorizon }
+        }
+
+        var color: Color {
+            switch self {
+            case .zenithRisk: return Palette.marginal.opacity(0.55)
+            case .aboveHorizon: return Palette.accent.opacity(0.55)
+            case .belowHorizon: return Palette.accent.opacity(0.16)
+            }
+        }
+
+        var lineWidth: CGFloat {
+            switch self {
+            case .zenithRisk: return 2.5
+            case .aboveHorizon: return 2
+            case .belowHorizon: return 1.25
+            }
+        }
+    }
+
     private func drawSelectedTargetPath(context: GraphicsContext, center: CGPoint, radius: CGFloat, targetPlan: TargetPlan) {
         let samples = pathSamples(for: targetPlan)
         guard samples.count > 1 else { return }
 
         var runPoints: [CGPoint] = []
-        var runIsRisk = false
+        var runStyle: PathStyle = .belowHorizon
 
         func flush() {
             guard runPoints.count > 1 else { runPoints = []; return }
-            let color = runIsRisk ? Palette.marginal : Palette.accent
-            context.stroke(Path.smoothLine(through: runPoints), with: .color(color.opacity(0.55)), lineWidth: runIsRisk ? 2.5 : 2)
+            context.stroke(Path.smoothLine(through: runPoints), with: .color(runStyle.color), lineWidth: runStyle.lineWidth)
             runPoints = []
         }
 
         for sample in samples {
-            guard sample.isVisible else { flush(); continue }
-            if !runPoints.isEmpty && sample.isZenithRisk != runIsRisk { flush() }
-            runIsRisk = sample.isZenithRisk
+            let style = PathStyle(sample)
+            if !runPoints.isEmpty && style != runStyle { flush() }
+            runStyle = style
             runPoints.append(screenPoint(for: sample.point, center: center, radius: radius))
         }
         flush()
@@ -594,6 +749,9 @@ struct SkyView: View {
                                               y: Double((location.y - center.y) / radius))
         if let nearest = targetPlacements.min(by: { distance($0.point, tapUnit) < distance($1.point, tapUnit) }),
            distance(nearest.point, tapUnit) < 0.08 {
+            // A deliberate pick overrides whatever playback would have
+            // chosen next — same as dragging the scrubber by hand.
+            isPlaying = false
             state.selectedTargetID = nearest.id
         }
     }
@@ -611,11 +769,19 @@ struct SkyView: View {
         let duration = max(1, window.duration)
         let fraction = Binding<Double>(
             get: { clamp(scrubTime.timeIntervalSince(window.start) / duration, 0, 1) },
-            set: { scrubTime = window.start.addingTimeInterval($0 * duration) }
+            set: { newFraction in
+                isPlaying = false
+                scrubTime = window.start.addingTimeInterval(newFraction * duration)
+            }
         )
         return VStack(alignment: .leading, spacing: 4) {
-            Slider(value: fraction, in: 0...1)
+            // `scrubTrack` on its own row, full width: sharing a row with a
+            // `GeometryReader`-based sibling was leaving the button no space
+            // at all, not just crowding it — worth its own row rather than
+            // fighting that layout further.
+            scrubTrack(fraction: fraction)
             HStack(spacing: 8) {
+                playPauseButton
                 Text(Format.time(scrubTime, in: plan.timeZone))
                     .font(.scaled(.callout, scale: uiTextScale).monospacedDigit().weight(.semibold))
                 if let selectedID = state.selectedTargetID,
@@ -627,6 +793,9 @@ struct SkyView: View {
                         .lineLimit(1)
                 }
                 Spacer()
+                if !autoPlanSlots.isEmpty {
+                    playbackModeToggle
+                }
                 Text("\(Format.time(window.start, in: plan.timeZone))–\(Format.time(window.end, in: plan.timeZone))")
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.tertiary)
@@ -660,6 +829,123 @@ struct SkyView: View {
                 }
             }
         }
+        .onReceive(Self.playbackTimer) { _ in advancePlayback() }
+    }
+
+    /// A plain `Slider` looked right but didn't line up with the same
+    /// scrubbed time's marker on the main timeline above — `NSSlider`'s
+    /// thumb has its own built-in end padding, so a given fraction lands at
+    /// a different pixel than the timeline's marker, which maps fraction to
+    /// position with nothing but `fraction * width` (see `TimeAxis.x`). This
+    /// draws the same bare linear mapping by hand instead, so the same
+    /// `scrubTime` reads as visually the same position in both places.
+    private func scrubTrack(fraction: Binding<Double>) -> some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            // The line/fill use `x` unclamped — that's the exact mapping
+            // the top graph's marker uses, and it's the whole point of this
+            // view over a plain Slider. But the thumb is a wide (13pt) disc,
+            // not a 1.5pt line: centering it on an unclamped `x` at either
+            // extreme lets half of it bleed outside the track entirely — at
+            // the very start of a night (the default position now), right
+            // into the play button sitting next to it, the two same-colour
+            // circles overlapping into what read as one missing button.
+            let x = CGFloat(fraction.wrappedValue) * width
+            let thumbX = min(max(x, 6.5), max(6.5, width - 6.5))
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.white.opacity(0.15))
+                    .frame(height: 4)
+                Capsule()
+                    .fill(Palette.accent.opacity(0.85))
+                    .frame(width: max(4, x), height: 4)
+                Circle()
+                    .fill(Palette.accent)
+                    .frame(width: 13, height: 13)
+                    .offset(x: thumbX - 6.5)
+            }
+            .frame(maxHeight: .infinity, alignment: .center)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                    .onChanged { value in
+                        fraction.wrappedValue = clamp(Double(value.location.x / max(1, width)), 0, 1)
+                    }
+            )
+        }
+        .frame(height: 20)
+    }
+
+    private var playPauseButton: some View {
+        Button {
+            if isPlaying {
+                isPlaying = false
+            } else {
+                // Starting from outside tonight's own window at all — not
+                // just past its end — snaps back to the start first. The
+                // fraction below is clamped to 0...1 against this window, so
+                // a `scrubTime` sitting outside it (run off the end, or left
+                // over from whatever night was last open) would otherwise
+                // read back as a slider pinned at one end while the actual
+                // clock quietly ticks toward — or already past — the window
+                // it's supposedly scrubbing.
+                if !plan.chartWindow.contains(scrubTime) {
+                    scrubTime = plan.chartWindow.start
+                }
+                // Every tick projects forward from this pair rather than
+                // from wherever the last tick happened to land, so it has
+                // to be recaptured on each fresh start — resuming after a
+                // pause is exactly that, a fresh start from the paused spot.
+                playbackAnchorWallClock = Date()
+                playbackAnchorScrubTime = scrubTime
+                isPlaying = true
+            }
+        } label: {
+            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                .frame(width: 22, height: 22)
+                // Without this, only the glyph's own opaque pixels are
+                // tappable — the surrounding filled circle is purely a
+                // `.background`, not part of the button's hit-test region,
+                // so most of a visually "big enough" button did nothing.
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white)
+        .background(Palette.accent, in: Circle())
+        // The Slider beside it is the one genuinely flexible view in this
+        // row — without this, a narrow window can let the HStack compress
+        // this fixed-size button down toward nothing to give the slider
+        // more room, rather than shrinking the slider (which has plenty of
+        // room to give) first.
+        .fixedSize()
+    }
+
+    /// "Track Selected" holds the current selection fixed while time scrubs;
+    /// "Cycle Plan" hands selection off from one planned target to the next
+    /// as playback crosses into each slot's own window, so the detail pane
+    /// follows the plan rather than staring at one object all night.
+    private var playbackModeToggle: some View {
+        HStack(spacing: 6) {
+            playbackModeChip(.trackSelected)
+            playbackModeChip(.cycleThroughPlan)
+        }
+    }
+
+    private func playbackModeChip(_ mode: PlaybackMode) -> some View {
+        let isActive = playbackMode == mode
+        return Button {
+            playbackMode = mode
+        } label: {
+            Text(mode.label)
+                .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(isActive ? Palette.accent.opacity(0.22) : Color.clear, in: Capsule())
+        .overlay(Capsule().strokeBorder(Palette.accent.opacity(isActive ? 0.55 : 0.3)))
+        .foregroundStyle(isActive ? Palette.accent : .secondary)
     }
 
     /// A rough check, not a real point-in-polygon test against the actual

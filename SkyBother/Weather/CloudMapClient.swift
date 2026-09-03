@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 enum CloudMapError: LocalizedError {
@@ -31,11 +32,23 @@ struct CloudMapClient {
     private static let layers = "GOES-East_ABI_GeoColor,Reference_Features"
     private static let coverageLongitudeRange = -155.0...(-5.0)
     /// GIBS returns a real (but near-empty) JPEG rather than an error for a
-    /// timestamp that hasn't been ingested yet. With Reference_Features
-    /// always composited in, even a blank imagery frame carries real bytes
-    /// now — verified empirically at ~17 KB blank (boundary lines on black)
-    /// versus ~35 KB for an actual GOES frame, at the default 480×480.
-    private static let minimumValidByteCount = 24000
+    /// timestamp that hasn't been ingested yet — Reference_Features' roads
+    /// and boundaries still composite onto solid black, so even a blank
+    /// frame carries real, non-trivial bytes. A byte-count floor to catch
+    /// that used to work — verified at the time against Wesley Chapel,
+    /// where a blank frame ran ~17 KB versus ~35 KB real — right up until a
+    /// dense-highway metro proved the premise wrong: a genuinely blank
+    /// frame centred on New York, with nothing to draw but its own much
+    /// busier road network, ran ~31 KB on its own — comfortably past that
+    /// floor with zero actual satellite content, so New York was reliably
+    /// showing this exact black-with-roads placeholder as if it were live
+    /// imagery. Blank-detection now decodes the frame and samples actual
+    /// pixels instead — see `isBlankPlaceholder` — since how much vector
+    /// linework a region happens to have was never a reliable proxy for
+    /// whether the photo underneath it is real.
+    private static let darkSampleGridSize = 16
+    private static let darkPixelThreshold: UInt8 = 20
+    private static let blankDarkFraction = 0.7
 
     func isAvailable(longitude: Double) -> Bool {
         Self.coverageLongitudeRange.contains(longitude)
@@ -64,9 +77,24 @@ struct CloudMapClient {
         return components?.url
     }
 
-    /// GOES imagery lands in GIBS a little behind real time and not on a
-    /// perfectly predictable cadence, so this steps back from now in 10-minute
-    /// increments until it finds a frame that isn't the blank placeholder.
+    /// GOES-East's GeoColor product reaches GIBS roughly 40 minutes behind
+    /// real time even when everything's working normally (per NASA's own
+    /// Earthdata documentation) — not "a little behind," and not something
+    /// that shows up as an error: GIBS's snapshot API always snaps a TIME
+    /// request to its nearest *available* frame rather than failing, so
+    /// asking for `now` doesn't get something fresh, it just gets that same
+    /// ~40-minute-old frame back, unlabelled as such. Starting the search
+    /// there instead of at `now` means the very first successful attempt
+    /// already carries an honest `capturedAt`, rather than routinely
+    /// "succeeding" on the first try against content that's actually 40
+    /// minutes older than the timestamp it got credited with. Stepping
+    /// further back in the same 10-minute increments still covers a
+    /// genuine gap beyond the normal case — a satellite recalibration, a
+    /// GIBS ingest hiccup — up to `maximumLookbackMinutes`.
+    private static let typicalLatencyMinutes = 40
+    private static let maximumLookbackMinutes = 240
+    private static let stepMinutes = 10
+
     // The boundary lines Reference_Features adds are thin enough that they
     // can wash out once downscaled to the sidebar panel's display size — a
     // bigger source image survives that downscale with more of the line
@@ -75,8 +103,10 @@ struct CloudMapClient {
         guard isAvailable(longitude: longitude) else { throw CloudMapError.outOfCoverage }
 
         let now = Date()
-        for stepsBack in 0..<6 {
-            let candidateTime = now.addingTimeInterval(TimeInterval(-stepsBack * 600))
+        var minutesBack = Self.typicalLatencyMinutes
+        while minutesBack <= Self.maximumLookbackMinutes {
+            defer { minutesBack += Self.stepMinutes }
+            let candidateTime = now.addingTimeInterval(TimeInterval(-minutesBack * 60))
             guard let url = snapshotURL(latitude: latitude, longitude: longitude, time: candidateTime, pixelSize: pixelSize) else { continue }
 
             var request = URLRequest(url: url)
@@ -94,10 +124,44 @@ struct CloudMapClient {
                   let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode)
             else { continue }
 
-            if data.count >= Self.minimumValidByteCount {
+            if !isBlankPlaceholder(data) {
                 return (data, candidateTime)
             }
         }
         throw CloudMapError.noRecentImagery
+    }
+
+    /// True content check rather than a byte-count proxy: decodes the frame
+    /// and samples a grid of pixels across it, since a genuinely blank
+    /// placeholder — nothing composited but Reference_Features' lines on
+    /// solid black — is overwhelmingly near-black regardless of how much
+    /// linework inflates its file size, while any real GeoColor frame
+    /// (ocean, land, night lights, cloud) isn't. Verified empirically: real
+    /// frames sampled at 0% near-black, blank ones at 93–97%, so
+    /// `blankDarkFraction` has wide margin either way.
+    private func isBlankPlaceholder(_ data: Data) -> Bool {
+        guard let bitmap = NSBitmapImageRep(data: data) else { return true }
+        let width = bitmap.pixelsWide
+        let height = bitmap.pixelsHigh
+        guard width > 0, height > 0 else { return true }
+
+        var sampled = 0
+        var dark = 0
+        for column in 0..<Self.darkSampleGridSize {
+            for row in 0..<Self.darkSampleGridSize {
+                let x = Int((Double(column) + 0.5) * Double(width) / Double(Self.darkSampleGridSize))
+                let y = Int((Double(row) + 0.5) * Double(height) / Double(Self.darkSampleGridSize))
+                guard let color = bitmap.colorAt(x: x, y: y) else { continue }
+                sampled += 1
+                let r = UInt8(clamp(Double(color.redComponent) * 255, 0, 255))
+                let g = UInt8(clamp(Double(color.greenComponent) * 255, 0, 255))
+                let b = UInt8(clamp(Double(color.blueComponent) * 255, 0, 255))
+                if r < Self.darkPixelThreshold, g < Self.darkPixelThreshold, b < Self.darkPixelThreshold {
+                    dark += 1
+                }
+            }
+        }
+        guard sampled > 0 else { return true }
+        return Double(dark) / Double(sampled) >= Self.blankDarkFraction
     }
 }
