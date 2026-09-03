@@ -42,7 +42,7 @@ struct TargetDetailView: View {
             scoring
             if !targetPlan.warnings.isEmpty { warnings }
             facts
-            if let fact = TargetFactCatalog.fact(for: target.designation) { funFact(fact) }
+            if let info = TargetFactCatalog.info(for: target.designation) { funFact(info) }
         }
         .padding(20)
     }
@@ -283,13 +283,20 @@ struct TargetDetailView: View {
     /// just a row of numbers — real, Wikipedia-sourced trivia (discovery
     /// history, what it's notable for) where it exists. Most targets, and
     /// especially most of the extended catalogue, don't have one.
-    private func funFact(_ text: String) -> some View {
+    private func funFact(_ info: TargetFactInfo) -> some View {
         VStack(alignment: .leading, spacing: 7) {
             SectionHeader("About")
-            Text(text)
+            Text(info.fact)
                 .font(.scaled(.callout, scale: uiTextScale))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            if let url = URL(string: info.sourceURL) {
+                Link(destination: url) {
+                    Label("\(info.sourceTitle) via Wikipedia", systemImage: "link")
+                }
+                .font(.scaled(.caption, scale: uiTextScale))
+                .foregroundStyle(Palette.accent)
+            }
         }
     }
 

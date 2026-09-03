@@ -194,3 +194,9 @@ SkyBother/
 
 Settings live in `~/Library/Application Support/SkyBother/settings.json`.
 Deleting that file resets the app.
+
+## License
+
+The app's own code is [MIT licensed](LICENSE). Bundled catalog data and
+Wikipedia-sourced facts/photos keep their own licenses (mostly CC BY-SA 4.0)
+— see the LICENSE file for the breakdown.

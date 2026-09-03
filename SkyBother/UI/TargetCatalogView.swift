@@ -241,15 +241,24 @@ struct TargetCatalogDetail: View {
                     }
                 }
 
-                if let fact = TargetFactCatalog.fact(for: target.designation) {
-                    Text(fact)
-                        .font(.scaled(.callout, scale: uiTextScale))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Palette.panel, in: RoundedRectangle(cornerRadius: 8))
-                        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.panelBorder))
+                if let factInfo = TargetFactCatalog.info(for: target.designation) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(factInfo.fact)
+                            .font(.scaled(.callout, scale: uiTextScale))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if let url = URL(string: factInfo.sourceURL) {
+                            Link(destination: url) {
+                                Label("\(factInfo.sourceTitle) via Wikipedia", systemImage: "link")
+                            }
+                            .font(.scaled(.caption2, scale: uiTextScale))
+                            .foregroundStyle(Palette.accent)
+                        }
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Palette.panel, in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.panelBorder))
                 }
 
                 if let info = TargetImageCatalog.info(for: target.designation), let url = URL(string: info.sourceURL) {

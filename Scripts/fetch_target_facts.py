@@ -7,11 +7,18 @@ Scripts/fetch_extended_photos.py already uses for photos. Not written from
 memory: if a target has no Wikipedia article, it simply gets no fact, same
 as it gets no photo.
 
+Each entry also carries the source article's title and URL, exactly like
+TargetImages.json already does for photos — CC-BY-SA-4.0 (Wikipedia's
+content license) requires attribution back to the article when its text is
+reused, and a bare designation-to-string mapping had no way to show one.
+
 Covers the full catalog — the 159 hardcoded Messier/showpiece entries in
 BuiltInCatalog.swift as well as the ~1,000 in ExtendedCatalog.json — writing
-results into SkyBother/Catalog/TargetFacts.json (designation -> fact text),
-loaded at runtime by TargetFactCatalog.swift. Safe to re-run: existing
-entries are left untouched and skipped.
+results into SkyBother/Catalog/TargetFacts.json (designation -> {fact,
+sourceTitle, sourceURL}), loaded at runtime by TargetFactCatalog.swift. Safe
+to re-run: entries that already carry all three fields are left untouched
+and skipped; anything else (including facts fetched before this script
+tracked attribution) is treated as needing a fetch.
 
 Run from the repo root:
     python3 Scripts/fetch_target_facts.py
@@ -96,18 +103,18 @@ def clean_extract(extract: str):
     return truncated.rsplit(" ", 1)[0] + "…"
 
 
+def needs_fetch(entry) -> bool:
+    return not (isinstance(entry, dict) and entry.get("fact") and entry.get("sourceURL"))
+
+
 def main():
     targets = hardcoded_targets() + extended_targets()
-    # A handful of designations (LMC, SMC, Markarian's Chain) exist in both
-    # halves of the catalogue's own bookkeeping or aren't real NGC/IC/Messier
-    # numbers; duplicates are harmless here since the dict just gets
-    # overwritten with the same lookup.
     facts = json.loads(FACTS_JSON.read_text()) if FACTS_JSON.exists() else {}
 
     added = 0
     checked = 0
     for designation, common_name in targets:
-        if designation in facts:
+        if designation in facts and not needs_fetch(facts[designation]):
             continue
         checked += 1
 
@@ -135,14 +142,19 @@ def main():
         if not fact:
             continue
 
-        facts[designation] = fact
+        source_url = summary.get("content_urls", {}).get("desktop", {}).get("page")
+        source_title = summary.get("title")
+        if not source_url or not source_title:
+            continue
+
+        facts[designation] = {"fact": fact, "sourceTitle": source_title, "sourceURL": source_url}
         added += 1
         if added % 25 == 0:
-            print(f"...{added} facts found so far ({checked} checked)")
+            print(f"...{added} facts fetched so far ({checked} checked)")
             FACTS_JSON.write_text(json.dumps(facts, indent=2, ensure_ascii=False, sort_keys=True) + "\n")
 
     FACTS_JSON.write_text(json.dumps(facts, indent=2, ensure_ascii=False, sort_keys=True) + "\n")
-    print(f"Done: {added} new facts added out of {checked} targets checked ({len(facts)} total in TargetFacts.json).")
+    print(f"Done: {added} facts fetched out of {checked} targets checked ({len(facts)} total in TargetFacts.json).")
 
 
 if __name__ == "__main__":
