@@ -96,7 +96,7 @@ private struct LocationSettings: View {
                 }
 
                 Button("Refresh forecast for this site") {
-                    Task { await state.refresh() }
+                    Task { await state.refresh(force: true) }
                 }
             }
 
@@ -118,7 +118,7 @@ private struct LocationSettings: View {
                             } else {
                                 Button("Use") {
                                     state.site = saved
-                                    Task { await state.refresh() }
+                                    Task { await state.refresh(force: true) }
                                 }
                             }
                             Button {

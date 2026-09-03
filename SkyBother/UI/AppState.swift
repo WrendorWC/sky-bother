@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import SwiftUI
 
@@ -13,6 +14,8 @@ final class AppState: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var isPlanning = false
     @Published var weatherErrorMessage: String?
+    @Published private(set) var cloudMapImage: NSImage?
+    @Published private(set) var cloudMapCapturedAt: Date?
 
     @Published var selectedNightID: Date?
     @Published var selectedTargetID: String?
@@ -20,9 +23,18 @@ final class AppState: ObservableObject {
     @Published var typeFilter: Set<TargetType> = []
 
     private let weatherClient = OpenMeteoClient()
+    private let backupWeatherClient = MetNorwayClient()
+    private let cloudMapClient = CloudMapClient()
     private let store = SettingsStore.shared
     private var saveTask: Task<Void, Never>?
     private var planTask: Task<Void, Never>?
+    private var lastWeatherFetchAt: Date?
+    /// Open-Meteo asks for good citizenship, not a hard quota, but there's no
+    /// reason to hit it more than once an hour outside of someone deliberately
+    /// asking for the latest data — every automatic refresh (app launch,
+    /// window reopen, a setting that happens to call refresh) respects this;
+    /// the sidebar's Refresh button and Cmd-R always bypass it.
+    private static let minimumAutomaticFetchInterval: TimeInterval = 3600
 
     init() {
         settings = SettingsStore.shared.load()
@@ -81,10 +93,35 @@ final class AppState: ObservableObject {
         return formatter.localizedString(for: forecast.retrievedAt, relativeTo: Date())
     }
 
+    /// True once Open-Meteo has failed and the app has quietly switched to
+    /// MET Norway. Surfaced in the sidebar so a lower-fidelity forecast is
+    /// never mistaken for the primary source.
+    var isUsingBackupWeather: Bool {
+        !forecast.isEmpty && forecast.source != "Open-Meteo"
+    }
+
+    var cloudMapAgeDescription: String? {
+        guard let cloudMapCapturedAt else { return nil }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: cloudMapCapturedAt, relativeTo: Date())
+    }
+
     // MARK: - Loading
 
     /// Fetches the forecast then rebuilds the plans. Safe to call repeatedly.
-    func refresh() async {
+    /// `force` skips the once-an-hour throttle on automatic calls — pass it
+    /// for anything the user directly clicked (the Refresh button, Cmd-R) or
+    /// that requires fresh data to make sense (picking a different site).
+    func refresh(force: Bool = false) async {
+        if !force, let lastWeatherFetchAt,
+           Date().timeIntervalSince(lastWeatherFetchAt) < Self.minimumAutomaticFetchInterval {
+            await rebuildPlans()
+            return
+        }
+        lastWeatherFetchAt = Date()
+        refreshCloudMap()
+
         isLoading = true
         weatherErrorMessage = nil
 
@@ -93,12 +130,43 @@ final class AppState: ObservableObject {
                                                      longitude: site.longitude,
                                                      days: min(16, max(2, preferences.forecastNights + 1)))
         } catch {
-            forecast = .empty
-            weatherErrorMessage = error.localizedDescription
+            // Open-Meteo down or unreachable — try the backup provider before
+            // giving up. A silent trade to a lower-fidelity source beats an
+            // empty plan, but the sidebar footer flags it via forecast.source
+            // so it's never mistaken for the primary data.
+            do {
+                forecast = try await backupWeatherClient.fetch(latitude: site.latitude, longitude: site.longitude)
+            } catch {
+                forecast = .empty
+                weatherErrorMessage = error.localizedDescription
+            }
         }
 
         isLoading = false
         await rebuildPlans()
+    }
+
+    /// Fetches on the same cadence as the weather (`refresh` calls this, so
+    /// it inherits the once-an-hour throttle and the manual-refresh bypass).
+    /// Runs independently of the weather fetch's success or failure, and
+    /// fails silently — it's a decorative sidebar panel, not core planning
+    /// data, so a second error banner alongside the weather one would be
+    /// noise. Outside GOES-East's coverage, or if a network hiccup drops the
+    /// one request, the panel just doesn't appear.
+    private func refreshCloudMap() {
+        let latitude = site.latitude
+        let longitude = site.longitude
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let (data, capturedAt) = try await self.cloudMapClient.fetchLatestSnapshot(latitude: latitude, longitude: longitude)
+                self.cloudMapImage = NSImage(data: data)
+                self.cloudMapCapturedAt = capturedAt
+            } catch {
+                self.cloudMapImage = nil
+                self.cloudMapCapturedAt = nil
+            }
+        }
     }
 
     /// Recomputes plans from the forecast already in hand. Called whenever a
@@ -174,7 +242,7 @@ final class AppState: ObservableObject {
         if !settings.savedSites.contains(where: { $0.id == newSite.id }) {
             settings.savedSites.append(newSite)
         }
-        Task { await refresh() }
+        Task { await refresh(force: true) }
     }
 
     /// Completes first-run onboarding for someone entering coordinates by hand
@@ -191,7 +259,7 @@ final class AppState: ObservableObject {
         if !settings.savedSites.contains(where: { $0.id == newSite.id }) {
             settings.savedSites.append(newSite)
         }
-        Task { await refresh() }
+        Task { await refresh(force: true) }
     }
 
     func saveCurrentSite() {

@@ -41,6 +41,7 @@ struct TargetDetailView: View {
             scoring
             if !targetPlan.warnings.isEmpty { warnings }
             facts
+            if let fact = TargetFactCatalog.fact(for: target.designation) { funFact(fact) }
         }
         .padding(20)
     }
@@ -274,6 +275,20 @@ struct TargetDetailView: View {
                 factRow("Longest window",
                         "\(Format.time(window.start, in: plan.timeZone))–\(Format.time(window.end, in: plan.timeZone))")
             }
+        }
+    }
+
+    /// A little of what makes this an actual object out there rather than
+    /// just a row of numbers — real, Wikipedia-sourced trivia (discovery
+    /// history, what it's notable for) where it exists. Most targets, and
+    /// especially most of the extended catalogue, don't have one.
+    private func funFact(_ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            SectionHeader("About")
+            Text(text)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

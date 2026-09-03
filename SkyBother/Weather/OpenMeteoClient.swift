@@ -154,7 +154,8 @@ struct OpenMeteoClient {
             return WeatherForecast(hours: hours.sorted { $0.date < $1.date },
                                    timeZoneIdentifier: timezone ?? "UTC",
                                    elevationMeters: elevation ?? 0,
-                                   retrievedAt: Date())
+                                   retrievedAt: Date(),
+                                   source: "Open-Meteo")
         }
     }
 }

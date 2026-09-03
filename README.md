@@ -132,8 +132,19 @@ Some deliberate modelling choices worth knowing about:
 ## Where the data comes from
 
 - **Weather**: [Open-Meteo](https://open-meteo.com) — free, no API key, no
-  account. One request per location per refresh.
+  account. One request per location per refresh. If Open-Meteo fails, the app
+  falls back to [MET Norway](https://api.met.no) (CC BY 4.0), also free and
+  keyless; the sidebar footer says "backup source" when this happens.
+  Automatic refreshes (app launch, a changed setting) are throttled to once an
+  hour so a stuck launch loop can't hammer either service; the Refresh button
+  and Cmd-R always fetch immediately.
 - **Place search**: Open-Meteo's geocoding API, same terms.
+- **Sky Overhead panel**: a regional satellite image centred on your site, from
+  NASA's GIBS Worldview Snapshot service — free, no API key, no account. Layer
+  is GOES-East's GeoColor product, so it stays useful after dark (infrared
+  cloud texture and city lights, not just a daylight photo). Fetched on the
+  same cadence and throttle as the weather. Covers the Americas only (GOES-East's
+  footprint); the panel just doesn't appear outside it.
 - **Astronomy**: computed locally, no network. Solar position uses the standard
   low-precision Meeus series (accurate to about 0.01°); the moon uses a truncated
   ELP series good to a few arcminutes in position and about a quarter hour in
@@ -171,7 +182,7 @@ SkyBother/
   Core/       Angles, Julian dates, coordinates, Sun, Moon, event solving
   Model/      Site, Rig, Target, Preferences
   Catalog/    The 1,159-target built-in catalogue (plus custom targets, saved in Settings)
-  Weather/    Open-Meteo forecast and geocoding clients
+  Weather/    Open-Meteo forecast and geocoding clients, MET Norway backup
   Planner/    Sky quality, equipment fit, and the planner that ties it together
   UI/         SwiftUI views, charts and app state
   Support/    Formatting and settings persistence

@@ -195,12 +195,12 @@ private struct TargetCatalogCell: View {
     }
 }
 
-private struct TargetCatalogDetail: View {
+struct TargetCatalogDetail: View {
     @Environment(\.dismiss) private var dismiss
     var target: Target
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(target.displayName)
@@ -213,34 +213,53 @@ private struct TargetCatalogDetail: View {
                 Button("Done") { dismiss() }
                     .keyboardShortcut(.cancelAction)
             }
+            .padding(24)
+            .padding(.bottom, 0)
 
-            TargetThumbnail(designation: target.designation, contentMode: .fit)
-                .frame(maxWidth: .infinity)
-                .frame(height: 300)
-                .background(Palette.spaceTop, in: RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.panelBorder))
+            // No ScrollView, no fixed height: fact text length varies a lot
+            // (many targets have none at all, some have a full paragraph),
+            // and the fetch script already caps a fact at 320 characters, so
+            // the tallest this content ever gets is bounded. Letting the
+            // VStack's own intrinsic size drive the sheet means it's exactly
+            // as tall as this particular target needs, never more.
+            VStack(alignment: .leading, spacing: 16) {
+                TargetThumbnail(designation: target.designation, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 300)
+                    .background(Palette.spaceTop, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.panelBorder))
 
-            VStack(alignment: .leading, spacing: 8) {
-                factRow("Magnitude", String(format: "%.1f", target.magnitude))
-                factRow("Apparent size", target.sizeSummary)
-                factRow("Coordinates", Format.coordinates(target.coordinate))
-                if !target.type.isStarField {
-                    factRow("Surface brightness", String(format: "%.1f mag/arcsec²", target.surfaceBrightness))
+                VStack(alignment: .leading, spacing: 8) {
+                    factRow("Magnitude", String(format: "%.1f", target.magnitude))
+                    factRow("Apparent size", target.sizeSummary)
+                    factRow("Coordinates", Format.coordinates(target.coordinate))
+                    if !target.type.isStarField {
+                        factRow("Surface brightness", String(format: "%.1f mag/arcsec²", target.surfaceBrightness))
+                    }
+                }
+
+                if let fact = TargetFactCatalog.fact(for: target.designation) {
+                    Text(fact)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Palette.panel, in: RoundedRectangle(cornerRadius: 8))
+                        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.panelBorder))
+                }
+
+                if let info = TargetImageCatalog.info(for: target.designation), let url = URL(string: info.sourceURL) {
+                    Link(destination: url) {
+                        Label("Photo: \(info.sourceTitle) via Wikipedia", systemImage: "link")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(Palette.accent)
                 }
             }
-
-            if let info = TargetImageCatalog.info(for: target.designation), let url = URL(string: info.sourceURL) {
-                Link(destination: url) {
-                    Label("Photo: \(info.sourceTitle) via Wikipedia", systemImage: "link")
-                }
-                .font(.caption)
-                .foregroundStyle(Palette.accent)
-            }
-
-            Spacer(minLength: 0)
+            .padding(24)
         }
-        .padding(24)
-        .frame(width: 440, height: 560)
+        .frame(minWidth: 440, idealWidth: 460, maxWidth: 520)
         .spaceBackground()
     }
 

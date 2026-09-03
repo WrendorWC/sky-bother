@@ -60,6 +60,9 @@ struct WeatherForecast: Codable, Hashable, Sendable {
     var timeZoneIdentifier: String
     var elevationMeters: Double
     var retrievedAt: Date
+    /// Which provider this came from — "Open-Meteo" normally, "MET Norway"
+    /// when the primary source was unavailable and the app fell back.
+    var source: String = "Open-Meteo"
 
     static let empty = WeatherForecast(hours: [], timeZoneIdentifier: TimeZone.current.identifier,
                                        elevationMeters: 0, retrievedAt: .distantPast)

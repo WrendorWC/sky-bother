@@ -58,7 +58,7 @@ struct SkyBotherApp: App {
         .commands {
             CommandGroup(after: .newItem) {
                 Button("Refresh Forecast") {
-                    Task { await state.refresh() }
+                    Task { await state.refresh(force: true) }
                 }
                 .keyboardShortcut("r", modifiers: .command)
             }
@@ -237,7 +237,7 @@ struct MenuBarSummaryView: View {
                 Button("Open main window") { openWindow(id: "main") }
                 Spacer()
                 Button {
-                    Task { await state.refresh() }
+                    Task { await state.refresh(force: true) }
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }

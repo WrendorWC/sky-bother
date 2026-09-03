@@ -143,14 +143,29 @@ struct TitleBarZoomAndDragFix: NSViewRepresentable {
         let markerID = NSUserInterfaceItemIdentifier("com.skybother.titlebarZoomFix")
         guard !container.subviews.contains(where: { $0.identifier == markerID }) else { return }
 
-        let catcher = ZoomAndDragCatcherView(frame: container.bounds)
+        // Pinned with real constraints, not a frame + autoresizingMask: at
+        // the moment this runs, the toolbar hasn't necessarily finished
+        // laying out yet (the sidebar toggle, title, and buttons further
+        // right can all still be arriving), and this container manages its
+        // own children with Auto Layout — a legacy autoresizing mask on a
+        // sibling doesn't track that. A fixed frame captured this early
+        // only ever covered whatever narrow width existed at that instant,
+        // which is exactly why double-click/drag only worked in the sliver
+        // near the traffic lights and stopped dead at the refresh button.
+        let catcher = ZoomAndDragCatcherView(frame: .zero)
         catcher.identifier = markerID
-        catcher.autoresizingMask = [.width, .height]
+        catcher.translatesAutoresizingMaskIntoConstraints = false
         if let frontmost = container.subviews.first {
             container.addSubview(catcher, positioned: .below, relativeTo: frontmost)
         } else {
             container.addSubview(catcher)
         }
+        NSLayoutConstraint.activate([
+            catcher.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            catcher.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            catcher.topAnchor.constraint(equalTo: container.topAnchor),
+            catcher.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
     }
 
     /// The traffic lights' immediate superview is the classic title bar

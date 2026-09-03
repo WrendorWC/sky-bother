@@ -35,6 +35,22 @@ struct TimeWindow: Codable, Hashable, Identifiable, Sendable {
     func overlapMinutes(with others: [TimeWindow]) -> Double {
         others.compactMap { intersection(with: $0)?.durationMinutes }.reduce(0, +)
     }
+
+    /// This window with any portion overlapping `other` cut out — zero
+    /// fragments if `other` covers it entirely, one if `other` overlaps just
+    /// one end (or not at all, in which case that fragment is just `self`
+    /// unchanged), two if `other` sits inside it and splits it in half.
+    func subtracting(_ other: TimeWindow) -> [TimeWindow] {
+        guard let overlap = intersection(with: other) else { return [self] }
+        var remaining: [TimeWindow] = []
+        if overlap.start > start {
+            remaining.append(TimeWindow(start: start, end: overlap.start))
+        }
+        if overlap.end < end {
+            remaining.append(TimeWindow(start: overlap.end, end: end))
+        }
+        return remaining
+    }
 }
 
 extension Array where Element == TimeWindow {

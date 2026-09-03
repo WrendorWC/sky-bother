@@ -235,7 +235,8 @@ struct NightDetailView: View {
 
     private var autoPlan: [AutoPlanSlot] {
         AutoPlanner.plan(for: plan, minimumScore: state.preferences.minimumScore,
-                         restrictedTo: isCustomPlanMode ? customPlanTargetIDs : nil)
+                         restrictedTo: isCustomPlanMode ? customPlanTargetIDs : nil,
+                         sessionCapMinutes: state.preferences.integrationGoalMinutes)
     }
 
     private var autoPlanSection: some View {
@@ -275,12 +276,6 @@ struct NightDetailView: View {
                      : "Nothing tonight clears your minimum score for long enough to build a session around.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
-            } else if let only = slots.first, slots.count == 1 {
-                // A single target doesn't need the same target shown three
-                // times running (timeline block, plan row, ranked result) —
-                // the graphical strip only earns its place once there's more
-                // than one thing to show relative order between.
-                singleSlotSummary(only)
             } else {
                 AutoPlanStripView(plan: plan, slots: slots)
                     .frame(height: 34)
@@ -296,42 +291,6 @@ struct NightDetailView: View {
                 .panelStyle()
             }
         }
-    }
-
-    private func singleSlotSummary(_ slot: AutoPlanSlot) -> some View {
-        let isSelected = state.selectedTargetID == slot.targetPlan.id
-        return HStack(spacing: 8) {
-            ScoreBadge(score: slot.targetPlan.score, size: 26)
-            Text(slot.targetPlan.target.displayName)
-                .font(.callout.weight(.semibold))
-            Text("·")
-                .foregroundStyle(.tertiary)
-            Text("\(Format.time(slot.window.start, in: plan.timeZone))–\(Format.time(slot.window.end, in: plan.timeZone))")
-                .font(.callout.monospacedDigit())
-                .foregroundStyle(.secondary)
-            Text("·")
-                .foregroundStyle(.tertiary)
-            Text(Format.hours(slot.window.durationHours))
-                .font(.callout.monospacedDigit())
-                .foregroundStyle(.secondary)
-            if let risk = slot.targetPlan.zenithRiskWindows.compactMap({ slot.window.intersection(with: $0) }).first {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(Palette.marginal)
-                    .hoverTooltip("Zenith risk from \(Format.time(risk.start, in: plan.timeZone)) — field rotation peaks near the zenith and some alt-az mounts stall there.")
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        // Tint applied before panelStyle, so it layers on top of the opaque
-        // panel fill (a plain .background after panelStyle would land behind
-        // it and never show).
-        .background(isSelected ? Palette.accent.opacity(0.18) : Color.clear)
-        .panelStyle()
-        .animation(.easeInOut(duration: 0.18), value: isSelected)
-        .contentShape(Rectangle())
-        .onTapGesture { state.selectedTargetID = slot.targetPlan.id }
     }
 
     private func autoPlanRow(_ slot: AutoPlanSlot) -> some View {
@@ -649,6 +608,13 @@ struct TargetRowView: View {
     var targetPlan: TargetPlan
     var isSelected: Bool = false
 
+    /// Tapping the thumbnail opens the same reference-catalog card the
+    /// Target Catalog window uses (photo, facts, discovery trivia when
+    /// there is any) — a quick look at what you're actually pointing at,
+    /// without leaving tonight's plan. The rest of the row keeps its own
+    /// tap behaviour (selecting it in the inspector on the right).
+    @State private var isShowingCatalogDetail = false
+
     var body: some View {
         HStack(alignment: .top, spacing: 13) {
             ScoreBadge(score: targetPlan.score, size: 40)
@@ -682,7 +648,7 @@ struct TargetRowView: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.caption)
                             .foregroundStyle(Palette.marginal)
-                            .help("Zenith risk from \(Format.time(risk.start, in: plan.timeZone)) — field rotation peaks near the zenith and some alt-az mounts stall there.")
+                            .hoverTooltip("Zenith risk from \(Format.time(risk.start, in: plan.timeZone)) — field rotation peaks near the zenith and some alt-az mounts stall there.")
                     }
                 }
             }
@@ -691,11 +657,16 @@ struct TargetRowView: View {
                 .frame(width: 56, height: 56)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.panelBorder))
+                .contentShape(Rectangle())
+                .onTapGesture { isShowingCatalogDetail = true }
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
         .background(isSelected ? Palette.accent.opacity(0.18) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
         .animation(.easeInOut(duration: 0.18), value: isSelected)
+        .sheet(isPresented: $isShowingCatalogDetail) {
+            TargetCatalogDetail(target: targetPlan.target)
+        }
     }
 
     /// Fixed-order, fixed-format fields rather than prose — so scanning

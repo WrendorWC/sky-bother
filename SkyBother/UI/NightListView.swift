@@ -22,6 +22,10 @@ struct NightListView: View {
                         .onTapGesture { state.selectedNightID = plan.id }
                 }
 
+                cloudMapPanel
+                    .padding(.horizontal, 14)
+                    .padding(.top, 10)
+
                 footer
                     .padding(.horizontal, 14)
                     .padding(.top, 6)
@@ -38,12 +42,39 @@ struct NightListView: View {
         .toolbar {
             ToolbarItem {
                 Button {
-                    Task { await state.refresh() }
+                    Task { await state.refresh(force: true) }
                 } label: {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
                 .disabled(state.isLoading)
                 .help("Fetch the latest forecast")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var cloudMapPanel: some View {
+        if let image = state.cloudMapImage {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Sky Overhead")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Link(destination: URL(string: "https://www.star.nesdis.noaa.gov/GOES/conus_band.php?sat=G16&band=GEOCOLOR&length=12")!) {
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 150)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.panelBorder))
+                }
+                .buttonStyle(.plain)
+                .hoverTooltip("Open the live GOES-East loop on NOAA's site")
+                if let age = state.cloudMapAgeDescription {
+                    Text("GOES-East satellite · \(age)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }
@@ -57,7 +88,9 @@ struct NightListView: View {
                     .foregroundStyle(Palette.marginal)
                     .fixedSize(horizontal: false, vertical: true)
             } else if let age = state.forecastAgeDescription {
-                Text("Forecast updated \(age)")
+                Text(state.isUsingBackupWeather
+                     ? "Forecast updated \(age) · backup source"
+                     : "Forecast updated \(age)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
