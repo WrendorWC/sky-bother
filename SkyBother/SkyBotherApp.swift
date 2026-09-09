@@ -242,7 +242,10 @@ struct MenuBarSummaryView: View {
             Divider()
 
             HStack {
-                Button("Open main window") { openWindow(id: "main") }
+                Button("Open main window") {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openWindow(id: "main")
+                }
                 Spacer()
                 Button {
                     Task { await state.refresh(force: true) }
