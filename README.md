@@ -168,6 +168,15 @@ Some deliberate modelling choices worth knowing about:
   estimate, the panel says so and offers to update it. Candidate places come
   from Apple Maps search (MapKit, no API key). It can't know whether a park is
   open at night or safe.
+- **Better Spot Nearby — park hours**: Apple Maps gives apps no opening hours,
+  so posted hours come from [OpenStreetMap](https://www.openstreetmap.org/copyright)
+  (© OpenStreetMap contributors, ODbL) via the public Overpass API, matched to
+  each suggested spot by name within 400 m. Only about one park in eight
+  around Tampa Bay has hours mapped, and only simple every-day hours are used
+  ("24/7", "sunrise-sunset", "08:00-22:00") — anything that varies by day is
+  treated as unknown. A label appears only when hours are known; otherwise
+  there's just a **Check hours** link to the place's website when Apple Maps or
+  OpenStreetMap has one. Most parks close at dusk.
 - **Better Spot Nearby — open horizon**: [ESA WorldCover
   2021](https://esa-worldcover.org) 10 m land cover (© ESA WorldCover project
   2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA

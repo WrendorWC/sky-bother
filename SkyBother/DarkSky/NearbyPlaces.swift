@@ -6,6 +6,9 @@ struct NearbyPlace: Sendable {
     var name: String
     var latitude: Double
     var longitude: Double
+    /// The place's own website, when Apple Maps has one — usually where posted
+    /// hours live.
+    var website: URL?
 }
 
 /// Apple Maps search for public outdoor places — somewhere you can actually
@@ -57,7 +60,7 @@ enum NearbyPlaceSearch {
             }
             guard !unsuitableNameFragments.contains(where: { lowercasedName.contains($0) }) else { return nil }
             let coordinate = item.placemark.coordinate
-            return NearbyPlace(name: name, latitude: coordinate.latitude, longitude: coordinate.longitude)
+            return NearbyPlace(name: name, latitude: coordinate.latitude, longitude: coordinate.longitude, website: item.url)
         }
     }
 

@@ -243,6 +243,8 @@ struct NearbySpotPanel: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            ParkHoursLine(spot: spot)
+
             switch result.goal {
             case .darkerSky:
                 ComparisonLine(spot: spot)
@@ -340,6 +342,77 @@ struct NearbySpotPanel: View {
         let value = usesMiles ? kilometers * 0.621371 : kilometers
         let unit = usesMiles ? "mi" : "km"
         return value < 10 ? String(format: "%.1f %@", value, unit) : String(format: "%.0f %@", value, unit)
+    }
+}
+
+/// Posted hours, when they're actually known, and a link to check them.
+///
+/// Apple Maps gives apps no opening hours at all, and OpenStreetMap has them
+/// for only a minority of parks, so most spots show just the link — or
+/// nothing, leaving the panel's "check it's open after dark" note to do the
+/// job. A label only ever appears when the hours are mapped, never as a guess.
+private struct ParkHoursLine: View {
+    @Environment(\.uiTextScale) private var uiTextScale
+    @EnvironmentObject private var state: AppState
+    var spot: NearbySpot
+    @State private var info: ParkInfo?
+
+    /// Closing this long after astronomical dusk leaves time to set up, align
+    /// and actually image; anything less is effectively "closes at dark".
+    private static let usefulDarkMinutes = 90.0
+
+    var body: some View {
+        let website = spot.website ?? info?.website
+        HStack(spacing: 8) {
+            if let hours = info?.hours {
+                let (text, good) = describe(hours)
+                Label(text, systemImage: good ? "moon.stars" : "clock")
+                    .foregroundStyle(good ? Palette.go : Palette.marginal)
+                    .hoverTooltip("Posted hours: \(hours.raw) — from OpenStreetMap")
+            }
+            if let website {
+                Link("Check hours", destination: website)
+                    .hoverTooltip("Open this place's website")
+            }
+        }
+        .font(.scaled(.caption, scale: uiTextScale))
+        .fixedSize(horizontal: false, vertical: true)
+        .task(id: spot.id) {
+            info = nil
+            let found = await state.parkInfo(for: spot)
+            guard !Task.isCancelled else { return }
+            info = found
+        }
+    }
+
+    /// The label, and whether it leaves real observing time tonight.
+    private func describe(_ hours: PostedHours) -> (String, Bool) {
+        switch hours.closing {
+        case .never:
+            return ("Open 24 hours", true)
+        case .sunset:
+            return ("Closes at sunset", false)
+        case .time(let hour, let minute, let crossesMidnight):
+            var components = DateComponents()
+            components.hour = hour
+            components.minute = minute
+            let formatter = DateFormatter()
+            formatter.timeZone = state.site.timeZone
+            formatter.setLocalizedDateFormatFromTemplate(minute == 0 ? "j" : "j:mm")
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = state.site.timeZone
+            let closingText = calendar.date(from: components).map { formatter.string(from: $0) } ?? String(format: "%02d:%02d", hour, minute)
+
+            guard !crossesMidnight else { return ("Open until \(closingText)", true) }
+            // Judge against tonight's actual darkness, which moves by hours
+            // across the year: 10 PM is well after dark in December and barely
+            // dark at all in June.
+            guard let dusk = state.tonight?.astronomicalDusk,
+                  let closing = calendar.date(bySettingHour: hour, minute: minute, second: 0, of: dusk)
+            else { return ("Closes at \(closingText)", false) }
+            let darkMinutes = closing.timeIntervalSince(dusk) / 60
+            return ("Closes at \(closingText)", darkMinutes >= Self.usefulDarkMinutes)
+        }
     }
 }
 

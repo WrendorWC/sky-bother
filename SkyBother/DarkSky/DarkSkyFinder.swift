@@ -138,7 +138,8 @@ struct DarkSkyFinder: Sendable {
                               direction: DarkSkyGeometry.compassDirection(fromLatitude: site.latitude, longitude: site.longitude,
                                                                           toLatitude: place.latitude, longitude: place.longitude),
                               zenithBrightness: point.zenithBrightness,
-                              estimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: point.zenithBrightness))
+                              estimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: point.zenithBrightness),
+                              website: place.website)
         }
     }
 }

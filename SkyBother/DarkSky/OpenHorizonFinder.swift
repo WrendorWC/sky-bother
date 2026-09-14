@@ -111,7 +111,8 @@ struct OpenHorizonFinder: Sendable {
                               zenithBrightness: brightness,
                               estimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: brightness),
                               horizonAltitude: best.horizon,
-                              clearestDirection: best.clearestDirection)
+                              clearestDirection: best.clearestDirection,
+                              website: place.website)
         }
     }
 

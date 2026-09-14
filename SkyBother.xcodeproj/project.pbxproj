@@ -54,6 +54,7 @@
 		C3A4367E1EFEE1E4CF11DDFD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A501A2931558AACCE565B244 /* Assets.xcassets */; };
 		C984A842B76C1B84D255E943 /* Rig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6BB733E25C9D2AEC6029E7 /* Rig.swift */; };
 		CA3E88DDD147614D983171AC /* Constellation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 907954043CD0C303D7D3E582 /* Constellation.swift */; };
+		CA5EF8580BC1BC01906137AA /* ParkHours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B29E97C5F533FF8DAFAA2B4 /* ParkHours.swift */; };
 		CB9E6C5F22ED9AD7DC87757A /* DarkSkyFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A248B14A8FBB175A31D3EB /* DarkSkyFinder.swift */; };
 		D4DC22A589460DD493C8A218 /* JulianDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C79FBF03E53065D44D73BD96 /* JulianDate.swift */; };
 		D70E975F3A6B6B4C2567F9AC /* SkyGlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE3702C19A7134A7E3312CE /* SkyGlow.swift */; };
@@ -73,6 +74,7 @@
 		06609FAAB2A7F0C05A258C7D /* RigFit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RigFit.swift; sourceTree = "<group>"; };
 		0676B078C685FB1C8DCA19EB /* OpenMeteoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenMeteoClient.swift; sourceTree = "<group>"; };
 		0867EA4E9C35E7C5BA67DC75 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		0B29E97C5F533FF8DAFAA2B4 /* ParkHours.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParkHours.swift; sourceTree = "<group>"; };
 		0D92198AFA083369F3D169C3 /* NearbySpotPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbySpotPanel.swift; sourceTree = "<group>"; };
 		121F6312FBA6A6551B7E5A5C /* NightTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightTimelineView.swift; sourceTree = "<group>"; };
 		1C9EEDCDA3EC7A04EB4FED6A /* CameraFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraFrame.swift; sourceTree = "<group>"; };
@@ -270,6 +272,7 @@
 				E126116CAD84EF2B606A71C9 /* NearbySpotSelection.swift */,
 				58BDA77DF11F11A3366FDE78 /* NightLightsClient.swift */,
 				B5D2166015F26A2F9C352297 /* OpenHorizonFinder.swift */,
+				0B29E97C5F533FF8DAFAA2B4 /* ParkHours.swift */,
 				3BE3702C19A7134A7E3312CE /* SkyGlow.swift */,
 			);
 			path = DarkSky;
@@ -380,6 +383,7 @@
 				12CDB847CB679DCE28B904A7 /* NightTimelineView.swift in Sources */,
 				8459D357ADF5D2E3FC97A089 /* OpenHorizonFinder.swift in Sources */,
 				58873061F3C8F87E2DE745C5 /* OpenMeteoClient.swift in Sources */,
+				CA5EF8580BC1BC01906137AA /* ParkHours.swift in Sources */,
 				77C6F6B8E60F2B26573F83E9 /* Persistence.swift in Sources */,
 				1C9668B63C6B1E72213A48C6 /* Planner.swift in Sources */,
 				25516C64919C89F5DF964622 /* Preferences.swift in Sources */,

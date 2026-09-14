@@ -41,6 +41,8 @@ struct NearbySpot: Identifiable, Hashable, Sendable {
     var horizonAltitude: Double?
     /// The most open 90° of sky from here, e.g. "S", when land cover was checked.
     var clearestDirection: String?
+    /// The place's own website, from Apple Maps.
+    var website: URL?
 
     var id: String { String(format: "%@|%.4f|%.4f", name, latitude, longitude) }
 

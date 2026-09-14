@@ -31,6 +31,7 @@ final class AppState: ObservableObject {
     private let cloudMapClient = CloudMapClient()
     private let darkSkyFinder = DarkSkyFinder()
     private let openHorizonFinder = OpenHorizonFinder(landCover: LandCoverClient())
+    private let parkHoursClient = ParkHoursClient()
     private var nearbySpotTask: Task<Void, Never>?
     /// Finished searches for this session, so flicking between goals and
     /// distances doesn't re-run Apple Maps searches — which MapKit throttles.
@@ -328,6 +329,11 @@ final class AppState: ObservableObject {
                                   targetsThere: fromThere.count,
                                   isCloudedOut: fromHere.cloudedOut)
         }.value
+    }
+
+    /// Posted hours and a website for a spot, where OpenStreetMap has them.
+    func parkInfo(for spot: NearbySpot) async -> ParkInfo? {
+        await parkHoursClient.info(for: spot)
     }
 
     /// Adopts the satellite estimate as the current site's Bortle class, keeping
