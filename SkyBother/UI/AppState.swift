@@ -16,6 +16,10 @@ final class AppState: ObservableObject {
     @Published var weatherErrorMessage: String?
     @Published private(set) var cloudMapImage: NSImage?
     @Published private(set) var cloudMapCapturedAt: Date?
+    @Published private(set) var darkSky: DarkSkyState = .idle
+    /// Where "Use This Spot" switched away from, so the sidebar can offer the
+    /// way back while that spot is still the site in use.
+    @Published private(set) var darkSpotDetour: (from: Site, toSiteID: UUID)?
 
     @Published var selectedNightID: Date?
     @Published var selectedTargetID: String?
@@ -25,6 +29,17 @@ final class AppState: ObservableObject {
     private let weatherClient = OpenMeteoClient()
     private let backupWeatherClient = MetNorwayClient()
     private let cloudMapClient = CloudMapClient()
+    private let darkSkyFinder = DarkSkyFinder()
+    private var darkSkyTask: Task<Void, Never>?
+    /// Finished searches for this session, so flicking between distances
+    /// doesn't re-run Apple Maps searches — which MapKit throttles.
+    private var darkSkyResults: [DarkSkySearchKey: DarkSkySearchResult] = [:]
+
+    private struct DarkSkySearchKey: Hashable {
+        var latitude: Double
+        var longitude: Double
+        var radiusKilometers: Double
+    }
     private let store = SettingsStore.shared
     private var saveTask: Task<Void, Never>?
     private var planTask: Task<Void, Never>?
@@ -211,6 +226,138 @@ final class AppState: ObservableObject {
                 self.cloudMapCapturedAt = nil
             }
         }
+    }
+
+    // MARK: - Darker sky nearby
+
+    /// Searches for darker places within `radiusKilometers` of the current
+    /// site. A repeat call for the same site and distance is a no-op, so the
+    /// sidebar can call this every time it appears. Like the cloud map, a
+    /// failure here stays inside its own panel rather than raising an alert.
+    func findDarkerSky(radiusKilometers: Double) {
+        let anchor = site
+        let key = DarkSkySearchKey(latitude: anchor.latitude, longitude: anchor.longitude, radiusKilometers: radiusKilometers)
+        if let cached = darkSkyResults[key] {
+            darkSkyTask?.cancel()
+            darkSky = .found(cached)
+            return
+        }
+        if case .searching(let searchingRadius, let searchingSite) = darkSky,
+           searchingRadius == radiusKilometers,
+           searchingSite.latitude == anchor.latitude, searchingSite.longitude == anchor.longitude {
+            return
+        }
+
+        darkSkyTask?.cancel()
+        darkSky = .searching(radiusKilometers: radiusKilometers, site: anchor)
+        darkSkyTask = Task { [weak self, darkSkyFinder] in
+            do {
+                let result = try await darkSkyFinder.search(around: anchor, radiusKilometers: radiusKilometers)
+                guard !Task.isCancelled else { return }
+                self?.darkSkyResults[key] = result
+                self?.darkSky = .found(result)
+            } catch {
+                guard !Task.isCancelled, !(error is CancellationError) else { return }
+                self?.darkSky = .failed(error.localizedDescription)
+            }
+        }
+    }
+
+    func retryDarkerSky(radiusKilometers: Double) {
+        darkSky = .idle
+        findDarkerSky(radiusKilometers: radiusKilometers)
+    }
+
+    /// Plans tonight from a spot and from the current site, with the same rig,
+    /// preferences and forecast, and counts the good targets from each — "Good"
+    /// or better, a score of 60 up. That's the level sky darkness visibly moves:
+    /// the everything-above-the-filter count barely changes between Bortle 7 and
+    /// Bortle 3, while this one nearly doubles.
+    ///
+    /// The spot differs only in its estimated Bortle class and coordinates — its
+    /// horizon is assumed to be the same as the current site's, since nothing
+    /// here can know what trees or hills are actually there.
+    func tonightComparison(for spot: DarkSpot) async -> DarkSpotComparison {
+        let here = site
+        let there = makeSite(for: spot, from: here)
+        var tonightOnly = preferences
+        tonightOnly.forecastNights = 1
+        let catalog = BuiltInCatalog.all + customTargets
+        let rig = rig
+        let forecast = forecast
+        let goodScore = 60.0
+
+        return await Task.detached(priority: .utility) {
+            func goodTargets(from site: Site) -> (count: Int, cloudedOut: Bool) {
+                guard let night = Planner(site: site, rig: rig, preferences: tonightOnly,
+                                          catalog: catalog, forecast: forecast).plan().first
+                else { return (0, false) }
+                let count = night.targets.filter { $0.usableMinutes > 0 && $0.score >= goodScore }.count
+                return (count, night.isCloudedOut)
+            }
+            let fromHere = goodTargets(from: here)
+            let fromThere = goodTargets(from: there)
+            return DarkSpotComparison(targetsHere: fromHere.count,
+                                      targetsThere: fromThere.count,
+                                      isCloudedOut: fromHere.cloudedOut)
+        }.value
+    }
+
+    /// Adopts the satellite estimate as the current site's Bortle class, keeping
+    /// its saved copy in step so switching away and back doesn't undo it.
+    func useEstimatedBortleClass(_ bortleClass: Int) {
+        site.bortleClass = bortleClass
+        if settings.savedSites.contains(where: { $0.id == site.id }) {
+            saveCurrentSite()
+        }
+        requestReplan()
+    }
+
+    /// Switches planning to a dark spot, saving it alongside the site it came
+    /// from so either is one click away in Settings → Saved sites.
+    func useDarkSpot(_ spot: DarkSpot) {
+        let previous = site
+        if !settings.savedSites.contains(where: { $0.id == previous.id }) {
+            settings.savedSites.append(previous)
+        }
+        // Picking the same place twice reuses the saved entry, including any
+        // Bortle class or horizon the user has since corrected by hand.
+        let newSite = settings.savedSites.first {
+            abs($0.latitude - spot.latitude) < 0.01 && abs($0.longitude - spot.longitude) < 0.01
+        } ?? makeSite(for: spot, from: previous)
+        if !settings.savedSites.contains(where: { $0.id == newSite.id }) {
+            settings.savedSites.append(newSite)
+        }
+        darkSpotDetour = (previous, newSite.id)
+        settings.site = newSite
+        settings.hasSetLocation = true
+        Task { await refresh(force: true) }
+    }
+
+    /// The site "Back" returns to, while a dark spot chosen from the sidebar is
+    /// still the site in use.
+    var darkSpotReturnSite: Site? {
+        guard let darkSpotDetour, darkSpotDetour.toSiteID == site.id else { return nil }
+        return settings.savedSites.first { $0.id == darkSpotDetour.from.id } ?? darkSpotDetour.from
+    }
+
+    func returnFromDarkSpot() {
+        guard let destination = darkSpotReturnSite else { return }
+        darkSpotDetour = nil
+        settings.site = destination
+        Task { await refresh(force: true) }
+    }
+
+    private func makeSite(for spot: DarkSpot, from base: Site) -> Site {
+        Site(name: spot.name,
+             latitude: spot.latitude,
+             longitude: spot.longitude,
+             // Within a few tens of kilometres, the current site's elevation and
+             // time zone are close enough; both are editable in Settings.
+             elevationMeters: base.elevationMeters,
+             timeZoneIdentifier: base.timeZoneIdentifier,
+             bortleClass: spot.estimatedBortleClass,
+             horizonAltitude: base.horizonAltitude)
     }
 
     /// Recomputes plans from the forecast already in hand. Called whenever a

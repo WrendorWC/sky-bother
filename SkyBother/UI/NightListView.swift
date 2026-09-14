@@ -23,6 +23,10 @@ struct NightListView: View {
                         .onTapGesture { state.selectedNightID = plan.id }
                 }
 
+                DarkerSkyPanel()
+                    .padding(.horizontal, 14)
+                    .padding(.top, 10)
+
                 cloudMapPanel
                     .padding(.horizontal, 14)
                     .padding(.top, 10)

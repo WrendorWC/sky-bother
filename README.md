@@ -80,7 +80,11 @@ signing setup, but on your own Mac it just works.
 **Then read the main window.**
 
 - The **left column** is the next week of nights, each with a score, its clear
-  dark hours, moon phase and mean cloud.
+  dark hours, moon phase and mean cloud. Under the nights, **Darker Sky Nearby**
+  suggests a real park, campground or beach within the distance you pick with
+  less light pollution than your site, and how many more targets would score
+  Good or better from there tonight. **Use This Spot** switches planning to it (and
+  saves it); **Back to…** returns you home.
 - The **middle column** is one night. The chart is the heart of it: background
   darkness is the real sky darkness through the night, cloud comes down from the
   top, moonlight washes the background and its altitude is traced along the
@@ -143,6 +147,20 @@ Some deliberate modelling choices worth knowing about:
   hour so a stuck launch loop can't hammer either service; the Refresh button
   and Cmd-R always fetch immediately.
 - **Place search**: Open-Meteo's geocoding API, same terms.
+- **Darker Sky Nearby panel**: NASA's Black Marble nightly radiance (VIIRS
+  Day/Night Band, VNP46A2 — moonlight-corrected and public domain), fetched as
+  images from the same GIBS snapshot service and decoded back to radiance via
+  GIBS's published colour map. Six dates across the past year are
+  median-combined, then cached for 60 days. Sky glow at each candidate spot is
+  modelled with Walker's law (glow ∝ distance^-2.5, softened inside ~2 km)
+  summed over every lit pixel within ~140 km. The one scale factor that turns
+  that into sky brightness was fitted against David Lorenz's 2024 Light
+  Pollution Atlas at 18 reference points around Tampa, Denver and Anchorage
+  (correlation 0.99, ~0.17 mag scatter); nothing from the atlas is fetched or
+  shipped. If your site's own Bortle setting is two or more classes off the
+  estimate, the panel says so and offers to update it. Candidate places come
+  from Apple Maps search (MapKit, no API key). It can't know whether a park is
+  open at night, safe, or has an open horizon.
 - **Sky Overhead panel**: a regional satellite image centred on your site, from
   NASA's GIBS Worldview Snapshot service — free, no API key, no account. Layer
   is GOES-East's GeoColor product, so it stays useful after dark (infrared
@@ -174,7 +192,10 @@ Stated plainly so you are not left looking for it:
   piece of work and the moon is treated purely as a nuisance light source.
 - **No real seeing forecast.** The app shows a rough proxy derived from surface
   gusts. Actual seeing depends on the jet stream, which no free API exposes.
-- **No automatic light pollution lookup.** You set the Bortle class by hand.
+- **No measured light pollution.** You set your site's Bortle class by hand.
+  Darker Sky Nearby's satellite estimate is a model, good to roughly half a
+  Bortle class — useful as a check on that setting, not a replacement for an
+  SQM reading.
 - **No "use my current location" button.** Location Services on an ad-hoc signed
   app is unreliable; search for your site instead, it is a one-time step.
 - **No connection to your telescope.** This plans the session; it does not run it.
@@ -187,6 +208,7 @@ SkyBother/
   Model/      Site, Rig, Target, Preferences
   Catalog/    The 1,159-target built-in catalogue (plus custom targets, saved in Settings)
   Weather/    Open-Meteo forecast and geocoding clients, MET Norway backup
+  DarkSky/    NASA night-lights client, sky-glow model, darker-spot finder
   Planner/    Sky quality, equipment fit, and the planner that ties it together
   UI/         SwiftUI views, charts and app state
   Support/    Formatting and settings persistence
