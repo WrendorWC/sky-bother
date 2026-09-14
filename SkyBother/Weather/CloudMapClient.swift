@@ -55,6 +55,10 @@ struct CloudMapClient {
     }
 
     func snapshotURL(latitude: Double, longitude: Double, time: Date, pixelSize: Int) -> URL? {
+        snapshotURL(layers: Self.layers, format: "image/jpeg", latitude: latitude, longitude: longitude, time: time, pixelSize: pixelSize)
+    }
+
+    private func snapshotURL(layers: String, format: String, latitude: Double, longitude: Double, time: Date, pixelSize: Int) -> URL? {
         let latSpan = 1.75
         // Longitude degrees shrink toward the poles; widening the box by
         // 1/cos(latitude) keeps the frame roughly square on the ground
@@ -66,11 +70,11 @@ struct CloudMapClient {
         var components = URLComponents(string: "https://wvs.earthdata.nasa.gov/api/v1/snapshot")
         components?.queryItems = [
             URLQueryItem(name: "REQUEST", value: "GetSnapshot"),
-            URLQueryItem(name: "LAYERS", value: Self.layers),
+            URLQueryItem(name: "LAYERS", value: layers),
             URLQueryItem(name: "CRS", value: "EPSG:4326"),
             URLQueryItem(name: "TIME", value: formatter.string(from: time)),
             URLQueryItem(name: "BBOX", value: "\(latitude - latSpan),\(longitude - lonSpan),\(latitude + latSpan),\(longitude + lonSpan)"),
-            URLQueryItem(name: "FORMAT", value: "image/jpeg"),
+            URLQueryItem(name: "FORMAT", value: format),
             URLQueryItem(name: "WIDTH", value: String(pixelSize)),
             URLQueryItem(name: "HEIGHT", value: String(pixelSize))
         ]
@@ -107,21 +111,17 @@ struct CloudMapClient {
         while minutesBack <= Self.maximumLookbackMinutes {
             defer { minutesBack += Self.stepMinutes }
             let candidateTime = now.addingTimeInterval(TimeInterval(-minutesBack * 60))
-            guard let url = snapshotURL(latitude: latitude, longitude: longitude, time: candidateTime, pixelSize: pixelSize) else { continue }
 
-            var request = URLRequest(url: url)
-            request.timeoutInterval = 12
-            // Same reasoning as the weather clients: never let a cache stand
-            // between a refresh and a genuine live answer.
-            request.cachePolicy = .reloadIgnoringLocalCacheData
-            request.setValue(Self.userAgent, forHTTPHeaderField: "User-Agent")
+            // Cheap probe first: is there any GOES imagery at all for this time?
+            guard let probeURL = snapshotURL(layers: Self.imageryLayer, format: "image/png",
+                                             latitude: latitude, longitude: longitude,
+                                             time: candidateTime, pixelSize: Self.probePixelSize),
+                  let probe = await Self.get(probeURL),
+                  Self.hasImagery(probe)
+            else { continue }
 
-            // Fresh session per attempt — see OpenMeteoClient.fetch for why
-            // `.shared`'s indefinite connection reuse is a real problem here;
-            // it would apply equally within this retry loop.
-            let session = URLSession(configuration: .ephemeral)
-            guard let (data, response) = try? await session.data(for: request),
-                  let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode)
+            guard let url = snapshotURL(latitude: latitude, longitude: longitude, time: candidateTime, pixelSize: pixelSize),
+                  let data = await Self.get(url)
             else { continue }
 
             if !isBlankPlaceholder(data) {
@@ -129,6 +129,84 @@ struct CloudMapClient {
             }
         }
         throw CloudMapError.noRecentImagery
+    }
+
+    /// The imagery layer on its own, without Reference_Features on top.
+    private static let imageryLayer = "GOES-East_ABI_GeoColor"
+    private static let probePixelSize = 64
+    private static let minimumOpaqueFraction = 0.5
+    /// A frame where nearly every pixel is the same colour is a fill, not a photo.
+    private static let maximumUniformFraction = 0.97
+    private static let uniformTolerance = 4
+
+    /// Whether a probe frame of the imagery layer alone actually has a picture in it.
+    ///
+    /// For a time GIBS has no imagery for, the layer doesn't come back as an
+    /// error, and not reliably in one form either. It used to composite onto
+    /// solid black (what `isBlankPlaceholder` catches); it now comes back either
+    /// fully transparent or as a solid opaque white fill — both seen within the
+    /// same half hour — and in the composite JPEG either one becomes an empty
+    /// white map under the boundary lines, which sailed straight past the black
+    /// check and showed as live imagery. Colour alone can't tell a fill from a
+    /// photo in general (a heavily overcast daytime frame is mostly white too),
+    /// but a real GeoColor frame always has texture — cloud, land, water, city
+    /// lights — while a fill is one flat value. So: mostly transparent, or
+    /// almost perfectly uniform, means no imagery. A 64-pixel PNG of the
+    /// imagery layer alone costs a few hundred bytes.
+    private static func hasImagery(_ data: Data) -> Bool {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+        else { return false }
+
+        let width = image.width
+        let height = image.height
+        guard width > 0, height > 0 else { return false }
+        var rgba = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn: Bool = rgba.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height,
+                                          bitsPerComponent: 8, bytesPerRow: width * 4,
+                                          space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return false }
+
+        let pixelCount = width * height
+        var opaque = 0
+        var uniform = 0
+        let first = (Int(rgba[0]), Int(rgba[1]), Int(rgba[2]))
+        for index in 0..<pixelCount {
+            let offset = index * 4
+            guard rgba[offset + 3] > 127 else { continue }
+            opaque += 1
+            if abs(Int(rgba[offset]) - first.0) <= uniformTolerance,
+               abs(Int(rgba[offset + 1]) - first.1) <= uniformTolerance,
+               abs(Int(rgba[offset + 2]) - first.2) <= uniformTolerance {
+                uniform += 1
+            }
+        }
+        guard Double(opaque) / Double(pixelCount) >= minimumOpaqueFraction else { return false }
+        return Double(uniform) / Double(opaque) < maximumUniformFraction
+    }
+
+    private static func get(_ url: URL) async -> Data? {
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 12
+        // Same reasoning as the weather clients: never let a cache stand
+        // between a refresh and a genuine live answer.
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+
+        // Fresh session per attempt — see OpenMeteoClient.fetch for why
+        // `.shared`'s indefinite connection reuse is a real problem here;
+        // it would apply equally within this retry loop.
+        let session = URLSession(configuration: .ephemeral)
+        guard let (data, response) = try? await session.data(for: request),
+              let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode)
+        else { return nil }
+        return data
     }
 
     /// True content check rather than a byte-count proxy: decodes the frame
