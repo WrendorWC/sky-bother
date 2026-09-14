@@ -86,7 +86,10 @@ signing setup, but on your own Mac it just works.
   picks what to improve: **Darker sky** (less light pollution, with how many
   more targets would score Good or better from there tonight) or **Open
   horizon** (for when the problem is trees — the most open ground nearby, how
-  low its horizon is, and which way is clearest). **Use This Spot** switches
+  low its horizon is, and which way is clearest). It never suggests a further
+  spot than it needs to: if somewhere closer is nearly as good (within 0.3
+  mag, or 3° of horizon), that's the suggestion at every distance, and wider
+  searches fold in what the narrower ones found. **Use This Spot** switches
   planning to it (and saves it, with its estimated horizon); **Back to…**
   returns you home.
 - The **middle column** is one night. The chart is the heart of it: background

@@ -18,12 +18,12 @@ struct DarkSkyFinder: Sendable {
     /// scatters about 0.17 magnitudes against the reference atlas, so anything
     /// much smaller could just be noise.
     static let minimumImprovement = 0.35
-    /// A preference for closer places among near-equals: a 50 km drive has to
-    /// buy about 0.4 magnitudes more than one next door. The distance picker
-    /// already sets how far someone is willing to go; this only breaks ties.
+    /// Only steers which dark patches get searched for places, toward closer
+    /// ones among near-equals. Which places are actually suggested is decided
+    /// by `NearbySpotSelection`, which never prefers a further spot that isn't
+    /// clearly better.
     private static let distancePenaltyPerKilometer = 0.008
     private static let maximumPatches = 5
-    private static let maximumSpots = 3
 
     @MainActor
     func search(around site: Site, radiusKilometers: Double) async throws -> NearbySpotSearchResult {
@@ -37,11 +37,11 @@ struct DarkSkyFinder: Sendable {
                                                  radiusKilometers: radiusKilometers))
         }.value
         try Task.checkCancellation()
-        func result(_ spots: [NearbySpot]) -> NearbySpotSearchResult {
+        func result(_ candidates: [NearbySpot]) -> NearbySpotSearchResult {
             NearbySpotSearchResult(goal: .darkerSky, anchor: site, radiusKilometers: radiusKilometers,
                                    siteZenithBrightness: homeBrightness,
                                    siteEstimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: homeBrightness),
-                                   spots: spots)
+                                   candidates: candidates)
         }
         guard !patches.isEmpty else { return result([]) }
 
@@ -55,11 +55,11 @@ struct DarkSkyFinder: Sendable {
         searches.append((.parks, site.latitude, site.longitude, min(radiusKilometers * 2000, 16000)))
         let places = try await NearbyPlaceSearch.places(for: searches)
 
-        let spots = await Task.detached(priority: .userInitiated) {
-            Self.rankedSpots(places: places, field: field, site: site, homeBrightness: homeBrightness,
-                             radiusKilometers: radiusKilometers)
+        let candidates = await Task.detached(priority: .userInitiated) {
+            Self.candidateSpots(places: places, field: field, site: site, homeBrightness: homeBrightness,
+                                radiusKilometers: radiusKilometers)
         }.value
-        return result(spots)
+        return result(candidates)
     }
 
     // MARK: - Stage one: dark patches
@@ -118,9 +118,11 @@ struct DarkSkyFinder: Sendable {
 
     // MARK: - Stage two: real places
 
-    private static func rankedSpots(places: [NearbyPlace], field: SkyGlowField, site: Site,
-                                    homeBrightness: Double, radiusKilometers: Double) -> [NearbySpot] {
-        let scored: [(NearbySpot, Double)] = places.compactMap { place in
+    /// Every place that's noticeably darker than the site; which of them to
+    /// suggest is `NearbySpotSelection`'s call.
+    private static func candidateSpots(places: [NearbyPlace], field: SkyGlowField, site: Site,
+                                       homeBrightness: Double, radiusKilometers: Double) -> [NearbySpot] {
+        places.compactMap { place in
             let distance = DarkSkyGeometry.distanceKilometers(fromLatitude: site.latitude, longitude: site.longitude,
                                                              toLatitude: place.latitude, longitude: place.longitude)
             guard distance <= radiusKilometers,
@@ -129,24 +131,14 @@ struct DarkSkyFinder: Sendable {
             let point = score(latitude: place.latitude, longitude: place.longitude, distance: distance, field: field)
             guard point.zenithBrightness - homeBrightness >= minimumImprovement else { return nil }
 
-            let spot = NearbySpot(name: place.name,
-                                  latitude: place.latitude,
-                                  longitude: place.longitude,
-                                  distanceKilometers: distance,
-                                  direction: DarkSkyGeometry.compassDirection(fromLatitude: site.latitude, longitude: site.longitude,
-                                                                              toLatitude: place.latitude, longitude: place.longitude),
-                                  zenithBrightness: point.zenithBrightness,
-                                  estimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: point.zenithBrightness))
-            return (spot, point.rank)
+            return NearbySpot(name: place.name,
+                              latitude: place.latitude,
+                              longitude: place.longitude,
+                              distanceKilometers: distance,
+                              direction: DarkSkyGeometry.compassDirection(fromLatitude: site.latitude, longitude: site.longitude,
+                                                                          toLatitude: place.latitude, longitude: place.longitude),
+                              zenithBrightness: point.zenithBrightness,
+                              estimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: point.zenithBrightness))
         }
-
-        var spots: [NearbySpot] = []
-        for (spot, _) in scored.sorted(by: { $0.1 > $1.1 }) {
-            // The same park often appears once per entrance or section.
-            guard !spots.contains(where: { $0.name == spot.name }) else { continue }
-            spots.append(spot)
-            if spots.count == maximumSpots { break }
-        }
-        return spots
     }
 }

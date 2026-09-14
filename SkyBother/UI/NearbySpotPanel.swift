@@ -109,7 +109,7 @@ struct NearbySpotPanel: View {
                                       longitude: state.site.longitude,
                                       radiusKilometers: selectedDistance.kilometers)) {
             selectedSpotID = nil
-            state.findNearbySpots(goal: goal, radiusKilometers: selectedDistance.kilometers)
+            state.findNearbySpots(goal: goal, radiusKilometers: selectedDistance.kilometers, shorterRadii: distanceOptions.map(\.kilometers))
         }
     }
 
@@ -154,7 +154,7 @@ struct NearbySpotPanel: View {
                     .foregroundStyle(Palette.marginal)
                     .fixedSize(horizontal: false, vertical: true)
                 Button("Try Again") {
-                    state.retryNearbySpots(goal: goal, radiusKilometers: selectedDistance.kilometers)
+                    state.retryNearbySpots(goal: goal, radiusKilometers: selectedDistance.kilometers, shorterRadii: distanceOptions.map(\.kilometers))
                 }
                 .buttonStyle(.link)
                 .font(.scaled(.caption, scale: uiTextScale))
@@ -164,8 +164,19 @@ struct NearbySpotPanel: View {
             if result.goal == .darkerSky { settingHint(result) }
             if let featured = result.spots.first(where: { $0.id == selectedSpotID }) ?? result.spots.first {
                 spotCard(featured, result: result)
-                ForEach(result.spots.filter { $0.id != featured.id }) { alternate in
-                    alternateRow(alternate, goal: result.goal)
+                let alternates = result.spots.filter { $0.id != featured.id }
+                if !alternates.isEmpty {
+                    // Alternates are always closer and not as good — anything
+                    // further and no better never gets suggested at all.
+                    Text(featured.id == result.spots.first?.id
+                         ? (result.goal == .darkerSky ? "Closer, not as dark" : "Closer, not as open")
+                         : "Other options")
+                        .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 2)
+                    ForEach(alternates) { alternate in
+                        alternateRow(alternate, goal: result.goal)
+                    }
                 }
                 Text(result.goal == .darkerSky
                      ? "Bortle classes are estimated from NASA satellite night lights. Check it's open and safe after dark."

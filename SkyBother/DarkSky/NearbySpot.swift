@@ -63,6 +63,30 @@ struct NearbySpotSearchResult: Sendable {
     /// of the Bortle class set for it by hand.
     var siteZenithBrightness: Double
     var siteEstimatedBortleClass: Int
-    /// Best first. Empty means nothing within range is noticeably better.
+    /// Every place found that's noticeably better than the site, unranked.
+    var candidates: [NearbySpot]
+    /// What to suggest, per `NearbySpotSelection`: best first, then closer
+    /// alternatives. Empty means nothing within range is noticeably better.
     var spots: [NearbySpot]
+
+    init(goal: SpotGoal, anchor: Site, radiusKilometers: Double, siteZenithBrightness: Double,
+         siteEstimatedBortleClass: Int, candidates: [NearbySpot]) {
+        self.goal = goal
+        self.anchor = anchor
+        self.radiusKilometers = radiusKilometers
+        self.siteZenithBrightness = siteZenithBrightness
+        self.siteEstimatedBortleClass = siteEstimatedBortleClass
+        self.candidates = candidates
+        self.spots = NearbySpotSelection.recommend(candidates, goal: goal)
+    }
+
+    /// The same search widened to also consider what shorter searches found,
+    /// so a longer distance never passes over a closer spot that's just as good.
+    func including(_ others: [NearbySpotSearchResult]) -> NearbySpotSearchResult {
+        let extra = others.flatMap(\.candidates).filter { $0.distanceKilometers <= radiusKilometers }
+        return NearbySpotSearchResult(goal: goal, anchor: anchor, radiusKilometers: radiusKilometers,
+                                      siteZenithBrightness: siteZenithBrightness,
+                                      siteEstimatedBortleClass: siteEstimatedBortleClass,
+                                      candidates: candidates + extra)
+    }
 }

@@ -35,7 +35,6 @@ struct OpenHorizonFinder: Sendable {
     static let minimumImprovementDegrees = 5.0
     private static let eyeHeightMeters = 1.5
     private static let directions = 36
-    private static let maximumSpots = 3
 
     /// Assumed height of whatever a land-cover class represents. Built-up is
     /// low because WorldCover files roads and car parks under it along with
@@ -75,56 +74,45 @@ struct OpenHorizonFinder: Sendable {
         return await Task.detached(priority: .userInitiated) {
             let field = SkyGlowField(grid: nightGrid)
             let homeBrightness = DarkSkyEstimate.zenithBrightness(glow: field.glow(latitude: site.latitude, longitude: site.longitude))
-            let spots = Self.rankedSpots(places: places, cover: cover, field: field, site: site,
-                                         homeBrightness: homeBrightness, radiusKilometers: radiusKilometers)
+            let candidates = Self.candidateSpots(places: places, cover: cover, field: field, site: site,
+                                                 radiusKilometers: radiusKilometers)
             return NearbySpotSearchResult(goal: .openHorizon, anchor: site, radiusKilometers: radiusKilometers,
                                           siteZenithBrightness: homeBrightness,
                                           siteEstimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: homeBrightness),
-                                          spots: spots)
+                                          candidates: candidates)
         }.value
     }
 
-    // MARK: - Ranking
+    // MARK: - Candidates
 
-    private static func rankedSpots(places: [NearbyPlace], cover: LandCoverGrid, field: SkyGlowField, site: Site,
-                                    homeBrightness: Double, radiusKilometers: Double) -> [NearbySpot] {
-        var scored: [(spot: NearbySpot, rank: Double)] = []
-        for place in places {
+    /// Every place with a horizon noticeably more open than the site's; which
+    /// of them to suggest is `NearbySpotSelection`'s call.
+    private static func candidateSpots(places: [NearbyPlace], cover: LandCoverGrid, field: SkyGlowField, site: Site,
+                                       radiusKilometers: Double) -> [NearbySpot] {
+        places.compactMap { place in
             let placeDistance = DarkSkyGeometry.distanceKilometers(fromLatitude: site.latitude, longitude: site.longitude,
                                                                   toLatitude: place.latitude, longitude: place.longitude)
             guard placeDistance <= radiusKilometers + searchAroundPlaceMeters / 1000,
-                  let best = bestStandingPoint(near: place, cover: cover)
-            else { continue }
-            guard best.horizon <= site.horizonAltitude - minimumImprovementDegrees else { continue }
+                  let best = bestStandingPoint(near: place, cover: cover),
+                  best.horizon <= site.horizonAltitude - minimumImprovementDegrees
+            else { return nil }
 
             let distance = DarkSkyGeometry.distanceKilometers(fromLatitude: site.latitude, longitude: site.longitude,
                                                              toLatitude: best.latitude, longitude: best.longitude)
-            guard distance <= radiusKilometers else { continue }
+            guard distance <= radiusKilometers else { return nil }
             let brightness = DarkSkyEstimate.zenithBrightness(glow: field.glow(latitude: best.latitude, longitude: best.longitude))
 
-            let spot = NearbySpot(name: place.name,
-                                  latitude: best.latitude,
-                                  longitude: best.longitude,
-                                  distanceKilometers: distance,
-                                  direction: DarkSkyGeometry.compassDirection(fromLatitude: site.latitude, longitude: site.longitude,
-                                                                              toLatitude: best.latitude, longitude: best.longitude),
-                                  zenithBrightness: brightness,
-                                  estimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: brightness),
-                                  horizonAltitude: best.horizon,
-                                  clearestDirection: best.clearestDirection)
-            // Horizon first. A mile costs about as much as 1.5° of horizon, and
-            // a darker sky is a small bonus on top — this mode is about the view.
-            let rank = best.horizon + 1.5 * distance * 0.621371 - 3 * max(0, brightness - homeBrightness)
-            scored.append((spot, rank))
+            return NearbySpot(name: place.name,
+                              latitude: best.latitude,
+                              longitude: best.longitude,
+                              distanceKilometers: distance,
+                              direction: DarkSkyGeometry.compassDirection(fromLatitude: site.latitude, longitude: site.longitude,
+                                                                          toLatitude: best.latitude, longitude: best.longitude),
+                              zenithBrightness: brightness,
+                              estimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: brightness),
+                              horizonAltitude: best.horizon,
+                              clearestDirection: best.clearestDirection)
         }
-
-        var spots: [NearbySpot] = []
-        for candidate in scored.sorted(by: { $0.rank < $1.rank }) {
-            guard !spots.contains(where: { $0.name == candidate.spot.name }) else { continue }
-            spots.append(candidate.spot)
-            if spots.count == maximumSpots { break }
-        }
-        return spots
     }
 
     private struct StandingPoint {

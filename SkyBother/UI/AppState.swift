@@ -230,13 +230,25 @@ final class AppState: ObservableObject {
     /// repeat call for the same site, goal and distance is a no-op, so the
     /// sidebar can call this every time it appears. Like the cloud map, a
     /// failure here stays inside its own panel rather than raising an alert.
-    func findNearbySpots(goal: SpotGoal, radiusKilometers: Double) {
+    ///
+    /// `shorterRadii` are the panel's smaller distance choices. Their searches
+    /// run (or come from cache) first and their candidates are folded in, so
+    /// what's suggested at 30 miles is never a further spot than what 15 miles
+    /// would suggest unless it's clearly better — each search only ever sees
+    /// its own handful of Apple Maps results, and a wider one can miss a close
+    /// place a narrower one found.
+    func findNearbySpots(goal: SpotGoal, radiusKilometers: Double, shorterRadii: [Double]) {
         let anchor = site
         let key = NearbySpotSearchKey(goal: goal, latitude: anchor.latitude, longitude: anchor.longitude,
                                       radiusKilometers: radiusKilometers)
-        if let cached = nearbySpotResults[key] {
+        let radii = (shorterRadii.filter { $0 < radiusKilometers } + [radiusKilometers]).sorted()
+        func keyFor(_ radius: Double) -> NearbySpotSearchKey {
+            NearbySpotSearchKey(goal: goal, latitude: anchor.latitude, longitude: anchor.longitude, radiusKilometers: radius)
+        }
+
+        if let combined = combinedResult(for: radii.map(keyFor)) {
             nearbySpotTask?.cancel()
-            nearbySpots = .found(cached)
+            nearbySpots = .found(combined)
             return
         }
         if case .searching(let searchingKey) = nearbySpots, searchingKey == key {
@@ -247,16 +259,22 @@ final class AppState: ObservableObject {
         nearbySpots = .searching(key)
         nearbySpotTask = Task { [weak self, darkSkyFinder, openHorizonFinder] in
             do {
-                let result: NearbySpotSearchResult
-                switch goal {
-                case .darkerSky:
-                    result = try await darkSkyFinder.search(around: anchor, radiusKilometers: radiusKilometers)
-                case .openHorizon:
-                    result = try await openHorizonFinder.search(around: anchor, radiusKilometers: radiusKilometers)
+                for radius in radii {
+                    guard let self else { return }
+                    let radiusKey = keyFor(radius)
+                    guard self.nearbySpotResults[radiusKey] == nil else { continue }
+                    let result: NearbySpotSearchResult
+                    switch goal {
+                    case .darkerSky:
+                        result = try await darkSkyFinder.search(around: anchor, radiusKilometers: radius)
+                    case .openHorizon:
+                        result = try await openHorizonFinder.search(around: anchor, radiusKilometers: radius)
+                    }
+                    guard !Task.isCancelled else { return }
+                    self.nearbySpotResults[radiusKey] = result
                 }
-                guard !Task.isCancelled else { return }
-                self?.nearbySpotResults[key] = result
-                self?.nearbySpots = .found(result)
+                guard let self, !Task.isCancelled, let combined = self.combinedResult(for: radii.map(keyFor)) else { return }
+                self.nearbySpots = .found(combined)
             } catch {
                 guard !Task.isCancelled, !(error is CancellationError) else { return }
                 self?.nearbySpots = .failed(error.localizedDescription)
@@ -264,9 +282,17 @@ final class AppState: ObservableObject {
         }
     }
 
-    func retryNearbySpots(goal: SpotGoal, radiusKilometers: Double) {
+    /// The widest search's result with every shorter search's candidates
+    /// folded in, or nil until all of them are cached.
+    private func combinedResult(for keys: [NearbySpotSearchKey]) -> NearbySpotSearchResult? {
+        let results = keys.compactMap { nearbySpotResults[$0] }
+        guard results.count == keys.count, let widest = results.last else { return nil }
+        return widest.including(results.dropLast())
+    }
+
+    func retryNearbySpots(goal: SpotGoal, radiusKilometers: Double, shorterRadii: [Double]) {
         nearbySpots = .idle
-        findNearbySpots(goal: goal, radiusKilometers: radiusKilometers)
+        findNearbySpots(goal: goal, radiusKilometers: radiusKilometers, shorterRadii: shorterRadii)
     }
 
     /// Plans tonight from a spot and from the current site, with the same rig,
