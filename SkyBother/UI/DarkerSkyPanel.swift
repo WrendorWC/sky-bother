@@ -33,8 +33,16 @@ struct DarkerSkyPanel: View {
         var kilometers: Double
     }
 
+    /// Driving distance follows the Mac's region, not the app's Fahrenheit/mph
+    /// setting — plenty of US astronomers keep temperatures in Celsius but
+    /// still think about a drive in miles. The UK counts road distance in
+    /// miles too, despite being otherwise metric.
+    private var usesMiles: Bool {
+        Locale.current.measurementSystem != .metric
+    }
+
     private var distanceOptions: [DistanceOption] {
-        if state.preferences.usesImperialUnits {
+        if usesMiles {
             return [DistanceOption(label: "5 mi", kilometers: 8.05),
                     DistanceOption(label: "15 mi", kilometers: 24.1),
                     DistanceOption(label: "30 mi", kilometers: 48.3)]
@@ -219,8 +227,8 @@ struct DarkerSkyPanel: View {
     }
 
     private func distanceText(_ kilometers: Double) -> String {
-        let value = state.preferences.usesImperialUnits ? kilometers * 0.621371 : kilometers
-        let unit = state.preferences.usesImperialUnits ? "mi" : "km"
+        let value = usesMiles ? kilometers * 0.621371 : kilometers
+        let unit = usesMiles ? "mi" : "km"
         return value < 10 ? String(format: "%.1f %@", value, unit) : String(format: "%.0f %@", value, unit)
     }
 }
