@@ -1,64 +1,15 @@
 import Foundation
-import MapKit
 
-enum DarkSkyFinderError: LocalizedError {
-    case placeSearchUnavailable
-
-    var errorDescription: String? {
-        switch self {
-        case .placeSearchUnavailable: return "Apple Maps place search isn't answering right now. Try again in a minute."
-        }
-    }
-}
-
-/// A real, named place nearby that should have a noticeably darker sky.
-struct DarkSpot: Identifiable, Hashable, Sendable {
-    var name: String
-    var latitude: Double
-    var longitude: Double
-    var distanceKilometers: Double
-    /// Compass direction from the site searched around, e.g. "NE".
-    var direction: String
-    var zenithBrightness: Double
-    var estimatedBortleClass: Int
-
-    var id: String { String(format: "%@|%.4f|%.4f", name, latitude, longitude) }
-
-    var mapsURL: URL? {
-        var components = URLComponents(string: "https://maps.apple.com/")
-        components?.queryItems = [
-            URLQueryItem(name: "ll", value: String(format: "%.5f,%.5f", latitude, longitude)),
-            URLQueryItem(name: "q", value: name)
-        ]
-        return components?.url
-    }
-}
-
-struct DarkSkySearchResult: Sendable {
-    /// The site searched around, as it was when the search ran.
-    var anchor: Site
-    var radiusKilometers: Double
-    /// The model's own estimate for the site searched around, independent of
-    /// the Bortle class set for it by hand.
-    var siteZenithBrightness: Double
-    var siteEstimatedBortleClass: Int
-    /// Best first. Empty means nothing within range is noticeably darker.
-    var spots: [DarkSpot]
-}
-
-/// Finds the best places to go stargazing within a given distance of a site.
+/// Finds places within a given distance of a site with a noticeably darker sky.
 ///
 /// Two stages, because sky glow and somewhere you can actually stand are
 /// different questions. First the sky-glow model (`SkyGlowField`) scores a
 /// lattice of points across the whole search area and picks a handful of the
 /// darkest, well-separated patches. Then Apple Maps is searched around each of
-/// those patches for public outdoor places — parks, campgrounds, beaches,
-/// marinas — and each place found is scored again at its own exact location,
-/// so a floodlit ballpark inside an otherwise dark patch still ranks poorly.
-/// MapKit's search needs no API key, but returns only a couple of dozen results
-/// per request, favouring the best-known places — so a single search of the
-/// whole area would miss exactly the quiet places this is looking for, and the
-/// searches are aimed at the dark patches instead.
+/// those patches for public outdoor places, and each place found is scored again
+/// at its own exact location, so a floodlit ballpark inside an otherwise dark
+/// patch still ranks poorly. A single search of the whole area would return only
+/// its best-known places and miss exactly the quiet ones this is looking for.
 struct DarkSkyFinder: Sendable {
 
     private let nightLights = NightLightsClient()
@@ -73,14 +24,9 @@ struct DarkSkyFinder: Sendable {
     private static let distancePenaltyPerKilometer = 0.008
     private static let maximumPatches = 5
     private static let maximumSpots = 3
-    private static let placeCategories: [MKPointOfInterestCategory] = [.park, .nationalPark, .campground, .beach, .marina]
-    /// Apple Maps files these under "park", but they're small, usually lit,
-    /// and rarely somewhere you can set up a tripod after dark.
-    private static let unsuitableNameFragments = ["dog park", "playground", "skate", "splash", "water park",
-                                                  "rv park", "ballpark", "sports complex", "athletic"]
 
     @MainActor
-    func search(around site: Site, radiusKilometers: Double) async throws -> DarkSkySearchResult {
+    func search(around site: Site, radiusKilometers: Double) async throws -> NearbySpotSearchResult {
         let grid = try await nightLights.grid(latitude: site.latitude, longitude: site.longitude)
         try Task.checkCancellation()
 
@@ -91,11 +37,11 @@ struct DarkSkyFinder: Sendable {
                                                  radiusKilometers: radiusKilometers))
         }.value
         try Task.checkCancellation()
-        func result(_ spots: [DarkSpot]) -> DarkSkySearchResult {
-            DarkSkySearchResult(anchor: site, radiusKilometers: radiusKilometers,
-                                siteZenithBrightness: homeBrightness,
-                                siteEstimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: homeBrightness),
-                                spots: spots)
+        func result(_ spots: [NearbySpot]) -> NearbySpotSearchResult {
+            NearbySpotSearchResult(goal: .darkerSky, anchor: site, radiusKilometers: radiusKilometers,
+                                   siteZenithBrightness: homeBrightness,
+                                   siteEstimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: homeBrightness),
+                                   spots: spots)
         }
         guard !patches.isEmpty else { return result([]) }
 
@@ -104,31 +50,10 @@ struct DarkSkyFinder: Sendable {
         // the whole area (its best-known parks, wherever they are) and the
         // site's own surroundings (the closest ones, which the whole-area search
         // tends to crowd out).
-        var searchAreas = patches.map { (latitude: $0.latitude, longitude: $0.longitude, span: 8000.0) }
-        searchAreas.append((site.latitude, site.longitude, radiusKilometers * 2000))
-        searchAreas.append((site.latitude, site.longitude, min(radiusKilometers * 2000, 16000)))
-
-        var places: [(name: String, latitude: Double, longitude: Double)] = []
-        var failedSearches = 0
-        for area in searchAreas {
-            try Task.checkCancellation()
-            // One failed lookup shouldn't sink the others — but if every one
-            // fails (MapKit throttles an app that searches too often), that
-            // must not read as "nothing darker nearby".
-            let found: [(name: String, latitude: Double, longitude: Double)]
-            do {
-                found = try await Self.outdoorPlaces(near: area.latitude, area.longitude, spanMeters: area.span)
-            } catch {
-                failedSearches += 1
-                continue
-            }
-            for place in found where !places.contains(where: { $0.name == place.name
-                && abs($0.latitude - place.latitude) < 0.01 && abs($0.longitude - place.longitude) < 0.01 }) {
-                places.append(place)
-            }
-        }
-
-        if failedSearches == searchAreas.count { throw DarkSkyFinderError.placeSearchUnavailable }
+        var searches = patches.map { (query: NearbyPlaceSearch.Query.parks, latitude: $0.latitude, longitude: $0.longitude, spanMeters: 8000.0) }
+        searches.append((.parks, site.latitude, site.longitude, radiusKilometers * 2000))
+        searches.append((.parks, site.latitude, site.longitude, min(radiusKilometers * 2000, 16000)))
+        let places = try await NearbyPlaceSearch.places(for: searches)
 
         let spots = await Task.detached(priority: .userInitiated) {
             Self.rankedSpots(places: places, field: field, site: site, homeBrightness: homeBrightness,
@@ -193,29 +118,9 @@ struct DarkSkyFinder: Sendable {
 
     // MARK: - Stage two: real places
 
-    @MainActor
-    private static func outdoorPlaces(near latitude: Double, _ longitude: Double, spanMeters: Double) async throws -> [(name: String, latitude: Double, longitude: Double)] {
-        let request = MKLocalSearch.Request()
-        request.naturalLanguageQuery = "park"
-        request.resultTypes = .pointOfInterest
-        request.pointOfInterestFilter = MKPointOfInterestFilter(including: placeCategories)
-        request.region = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
-                                            latitudinalMeters: spanMeters, longitudinalMeters: spanMeters)
-        let response = try await MKLocalSearch(request: request).start()
-        return response.mapItems.compactMap { item in
-            guard let name = item.name, let category = item.pointOfInterestCategory,
-                  placeCategories.contains(category) else { return nil }
-            let lowercasedName = name.lowercased()
-            guard !unsuitableNameFragments.contains(where: { lowercasedName.contains($0) }) else { return nil }
-            let coordinate = item.placemark.coordinate
-            return (name, coordinate.latitude, coordinate.longitude)
-        }
-    }
-
-    private static func rankedSpots(places: [(name: String, latitude: Double, longitude: Double)],
-                                    field: SkyGlowField, site: Site, homeBrightness: Double,
-                                    radiusKilometers: Double) -> [DarkSpot] {
-        let scored: [(DarkSpot, Double)] = places.compactMap { place in
+    private static func rankedSpots(places: [NearbyPlace], field: SkyGlowField, site: Site,
+                                    homeBrightness: Double, radiusKilometers: Double) -> [NearbySpot] {
+        let scored: [(NearbySpot, Double)] = places.compactMap { place in
             let distance = DarkSkyGeometry.distanceKilometers(fromLatitude: site.latitude, longitude: site.longitude,
                                                              toLatitude: place.latitude, longitude: place.longitude)
             guard distance <= radiusKilometers,
@@ -224,18 +129,18 @@ struct DarkSkyFinder: Sendable {
             let point = score(latitude: place.latitude, longitude: place.longitude, distance: distance, field: field)
             guard point.zenithBrightness - homeBrightness >= minimumImprovement else { return nil }
 
-            let spot = DarkSpot(name: place.name,
-                                latitude: place.latitude,
-                                longitude: place.longitude,
-                                distanceKilometers: distance,
-                                direction: DarkSkyGeometry.compassDirection(fromLatitude: site.latitude, longitude: site.longitude,
-                                                                            toLatitude: place.latitude, longitude: place.longitude),
-                                zenithBrightness: point.zenithBrightness,
-                                estimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: point.zenithBrightness))
+            let spot = NearbySpot(name: place.name,
+                                  latitude: place.latitude,
+                                  longitude: place.longitude,
+                                  distanceKilometers: distance,
+                                  direction: DarkSkyGeometry.compassDirection(fromLatitude: site.latitude, longitude: site.longitude,
+                                                                              toLatitude: place.latitude, longitude: place.longitude),
+                                  zenithBrightness: point.zenithBrightness,
+                                  estimatedBortleClass: DarkSkyEstimate.bortleClass(forZenithBrightness: point.zenithBrightness))
             return (spot, point.rank)
         }
 
-        var spots: [DarkSpot] = []
+        var spots: [NearbySpot] = []
         for (spot, _) in scored.sorted(by: { $0.1 > $1.1 }) {
             // The same park often appears once per entrance or section.
             guard !spots.contains(where: { $0.name == spot.name }) else { continue }

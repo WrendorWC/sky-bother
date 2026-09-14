@@ -6,40 +6,51 @@ struct NightListView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(state.site.name)
-                    .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 14)
-                    .padding(.top, 12)
-                    .padding(.bottom, 4)
+            // Each section gets the same accent header the middle column uses,
+            // with a hairline between sections — without them the night list,
+            // the spot finder and the satellite image ran together as one
+            // undifferentiated column of small grey text.
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .firstTextBaseline) {
+                    SectionHeader("Nights")
+                    Spacer(minLength: 4)
+                    Text(state.site.name)
+                        .font(.scaled(.caption, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 14)
+                .padding(.top, 12)
+                .padding(.bottom, 6)
 
-                ForEach(state.plans) { plan in
-                    NightRow(plan: plan,
-                            isTonight: plan.id == state.plans.first?.id,
-                            isSelected: state.selectedNightID == plan.id)
-                        .padding(.horizontal, 8)
-                        .contentShape(Rectangle())
-                        .onTapGesture { state.selectedNightID = plan.id }
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(state.plans) { plan in
+                        NightRow(plan: plan,
+                                isTonight: plan.id == state.plans.first?.id,
+                                isSelected: state.selectedNightID == plan.id)
+                            .padding(.horizontal, 8)
+                            .contentShape(Rectangle())
+                            .onTapGesture { state.selectedNightID = plan.id }
+                    }
                 }
 
-                DarkerSkyPanel()
-                    .padding(.horizontal, 14)
-                    .padding(.top, 10)
+                SidebarDivider()
 
-                cloudMapPanel
+                NearbySpotPanel()
                     .padding(.horizontal, 14)
-                    .padding(.top, 10)
 
-                textSizeControl
-                    .padding(.horizontal, 14)
-                    .padding(.top, 10)
+                if state.cloudMapImage != nil {
+                    SidebarDivider()
+                    cloudMapPanel
+                        .padding(.horizontal, 14)
+                }
+
+                SidebarDivider()
 
                 footer
                     .padding(.horizontal, 14)
-                    .padding(.top, 6)
             }
-            .padding(.bottom, 12)
+            .padding(.bottom, 14)
         }
         .background(Palette.spaceBackground)
         .overlay {
@@ -64,10 +75,8 @@ struct NightListView: View {
     @ViewBuilder
     private var cloudMapPanel: some View {
         if let image = state.cloudMapImage {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Sky Overhead")
-                    .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 8) {
+                SectionHeader("Sky overhead")
                 Link(destination: URL(string: "https://www.star.nesdis.noaa.gov/GOES/conus_band.php?sat=G16&band=GEOCOLOR&length=12")!) {
                     Image(nsImage: image)
                         .resizable()
@@ -89,19 +98,24 @@ struct NightListView: View {
     }
 
     private var textSizeControl: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Slider(value: $state.preferences.textScale, in: 0.85...1.5, step: 0.05) {
-                Text("UI Scale")
-            }
+        HStack(spacing: 8) {
+            Text("UI Scale")
+            Slider(value: $state.preferences.textScale, in: 0.85...1.5, step: 0.05)
+                .controlSize(.small)
             Text("\(Int((state.preferences.textScale * 100).rounded()))%")
-                .font(.scaled(.caption2, scale: uiTextScale))
-                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .frame(minWidth: 34, alignment: .trailing)
         }
+        .font(.scaled(.caption, scale: uiTextScale))
+        .foregroundStyle(.secondary)
     }
 
+    /// Status and housekeeping, deliberately quieter than the sections above.
     @ViewBuilder
     private var footer: some View {
         VStack(alignment: .leading, spacing: 5) {
+            textSizeControl
+                .padding(.bottom, 4)
             if let message = state.weatherErrorMessage {
                 Label(message, systemImage: "wifi.exclamationmark")
                     .font(.scaled(.caption, scale: uiTextScale))
@@ -118,6 +132,17 @@ struct NightListView: View {
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.secondary)
         }
+    }
+}
+
+/// A hairline between sidebar sections, in the same faint violet as panel borders.
+private struct SidebarDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(Palette.panelBorder)
+            .frame(height: 1)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
     }
 }
 

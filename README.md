@@ -80,11 +80,15 @@ signing setup, but on your own Mac it just works.
 **Then read the main window.**
 
 - The **left column** is the next week of nights, each with a score, its clear
-  dark hours, moon phase and mean cloud. Under the nights, **Darker Sky Nearby**
-  suggests a real park, campground or beach within the distance you pick with
-  less light pollution than your site, and how many more targets would score
-  Good or better from there tonight. **Use This Spot** switches planning to it (and
-  saves it); **Back to…** returns you home.
+  dark hours, moon phase and mean cloud. Under the nights, **Better Spot
+  Nearby** suggests a real park, campground, beach or boat ramp within the
+  distance you pick that's better to observe from than your site. Its menu
+  picks what to improve: **Darker sky** (less light pollution, with how many
+  more targets would score Good or better from there tonight) or **Open
+  horizon** (for when the problem is trees — the most open ground nearby, how
+  low its horizon is, and which way is clearest). **Use This Spot** switches
+  planning to it (and saves it, with its estimated horizon); **Back to…**
+  returns you home.
 - The **middle column** is one night. The chart is the heart of it: background
   darkness is the real sky darkness through the night, cloud comes down from the
   top, moonlight washes the background and its altitude is traced along the
@@ -147,7 +151,7 @@ Some deliberate modelling choices worth knowing about:
   hour so a stuck launch loop can't hammer either service; the Refresh button
   and Cmd-R always fetch immediately.
 - **Place search**: Open-Meteo's geocoding API, same terms.
-- **Darker Sky Nearby panel**: NASA's Black Marble nightly radiance (VIIRS
+- **Better Spot Nearby — darker sky**: NASA's Black Marble nightly radiance (VIIRS
   Day/Night Band, VNP46A2 — moonlight-corrected and public domain), fetched as
   images from the same GIBS snapshot service and decoded back to radiance via
   GIBS's published colour map. Six dates across the past year are
@@ -160,7 +164,18 @@ Some deliberate modelling choices worth knowing about:
   shipped. If your site's own Bortle setting is two or more classes off the
   estimate, the panel says so and offers to update it. Candidate places come
   from Apple Maps search (MapKit, no API key). It can't know whether a park is
-  open at night, safe, or has an open horizon.
+  open at night or safe.
+- **Better Spot Nearby — open horizon**: [ESA WorldCover
+  2021](https://esa-worldcover.org) 10 m land cover (© ESA WorldCover project
+  2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA
+  WorldCover consortium; CC BY 4.0), read from its public cloud-optimised
+  GeoTIFFs on AWS with HTTP range requests — only the few internal tiles around
+  your site, at the ~20 m overview level. Around each park or boat ramp Apple
+  Maps finds, every patch of open ground within 200 m is tried as a standing
+  point, with sight lines cast in 36 directions out to 600 m. Land cover says
+  what's there, not how tall it is, so trees are assumed to be 15 m, mangroves
+  6 m, buildings and paving 4 m and shrubs 2 m; the reported horizon is the
+  altitude that clears three quarters of all directions.
 - **Sky Overhead panel**: a regional satellite image centred on your site, from
   NASA's GIBS Worldview Snapshot service — free, no API key, no account. Layer
   is GOES-East's GeoColor product, so it stays useful after dark (infrared
@@ -193,7 +208,7 @@ Stated plainly so you are not left looking for it:
 - **No real seeing forecast.** The app shows a rough proxy derived from surface
   gusts. Actual seeing depends on the jet stream, which no free API exposes.
 - **No measured light pollution.** You set your site's Bortle class by hand.
-  Darker Sky Nearby's satellite estimate is a model, good to roughly half a
+  Better Spot Nearby's satellite estimate is a model, good to roughly half a
   Bortle class — useful as a check on that setting, not a replacement for an
   SQM reading.
 - **No "use my current location" button.** Location Services on an ad-hoc signed
@@ -208,7 +223,7 @@ SkyBother/
   Model/      Site, Rig, Target, Preferences
   Catalog/    The 1,159-target built-in catalogue (plus custom targets, saved in Settings)
   Weather/    Open-Meteo forecast and geocoding clients, MET Norway backup
-  DarkSky/    NASA night-lights client, sky-glow model, darker-spot finder
+  DarkSky/    Night-lights and land-cover clients, sky-glow model, nearby-spot finders
   Planner/    Sky quality, equipment fit, and the planner that ties it together
   UI/         SwiftUI views, charts and app state
   Support/    Formatting and settings persistence
