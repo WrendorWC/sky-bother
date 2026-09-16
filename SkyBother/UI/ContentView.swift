@@ -5,6 +5,20 @@ struct ContentView: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
 
+    // Column minimums, shared with the window's own minimum width in
+    // SkyBotherApp. If the window can get narrower than these add up to,
+    // the split view squeezes the sidebar and detail columns below their
+    // minimums anyway while their content still lays out at full width —
+    // the sidebar gets clipped on its left edge and the detail column loses
+    // its right margin off the edge of the window.
+    // 270 rather than 250: with scroll bars set to always show, 250 left the
+    // night rows' stats no room to sit on one line.
+    static let sidebarMinWidth: CGFloat = 270
+    static let contentMinWidth: CGFloat = 540
+    static let detailMinWidth: CGFloat = 360
+    /// Room for the two column dividers on top of the columns themselves.
+    static let minWindowWidth = sidebarMinWidth + contentMinWidth + detailMinWidth + 10
+
     var body: some View {
         if state.needsLocationSetup {
             LocationOnboardingView()
@@ -12,7 +26,7 @@ struct ContentView: View {
         } else {
             NavigationSplitView {
                 NightListView()
-                    .navigationSplitViewColumnWidth(min: 250, ideal: 290, max: 380)
+                    .navigationSplitViewColumnWidth(min: Self.sidebarMinWidth, ideal: 290, max: 380)
             } content: {
                 // The width constraint has to apply regardless of which
                 // branch renders — it was only on the "has a plan" branch,
@@ -36,7 +50,7 @@ struct ContentView: View {
                                        systemImage: "moon.stars")
                     }
                 }
-                .navigationSplitViewColumnWidth(min: 540, ideal: 720)
+                .navigationSplitViewColumnWidth(min: Self.contentMinWidth, ideal: 720)
             } detail: {
                 Group {
                     if let plan = state.selectedPlan,
@@ -49,7 +63,7 @@ struct ContentView: View {
                                        systemImage: "scope")
                     }
                 }
-                .navigationSplitViewColumnWidth(min: 360, ideal: 440, max: 560)
+                .navigationSplitViewColumnWidth(min: Self.detailMinWidth, ideal: 440, max: 560)
             }
             .navigationTitle("Sky Bother?")
             .toolbarTitleDisplayMode(.inline)

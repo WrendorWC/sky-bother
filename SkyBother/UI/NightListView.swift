@@ -167,7 +167,11 @@ private struct NightRow: View {
                         .foregroundStyle(.secondary)
                 }
 
-                HStack(spacing: 10) {
+                // One line: squeezed, each stat wrapped mid-value ("1h" over
+                // "50m", "35" over "%"). The sidebar's minimum width is set so
+                // these fit at normal UI scales; past that they truncate
+                // rather than pushing the whole column wider than the sidebar.
+                HStack(spacing: 8) {
                     Label {
                         Text(Format.hours(plan.clearDarkHours))
                     } icon: {
@@ -189,6 +193,7 @@ private struct NightRow: View {
                         }
                     }
                 }
+                .lineLimit(1)
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.secondary)
                 .labelStyle(.titleAndIcon)

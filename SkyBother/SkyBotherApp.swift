@@ -38,7 +38,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.appearance = NSAppearance(named: .darkAqua)
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(windowWillClose(_:)),
+            name: NSWindow.willCloseNotification, object: nil
+        )
     }
+
+    /// With no windows open the app is effectively a menu bar utility, so the
+    /// Dock icon goes away too. `.accessory` keeps the menu bar extra working;
+    /// `MenuBarSummaryView` flips back to `.regular` when it reopens a window.
+    @objc private func windowWillClose(_ notification: Notification) {
+        guard let closing = notification.object as? NSWindow, closing.isAppWindow else { return }
+        // willClose fires while the window is still on screen, so wait a turn
+        // for it to actually be gone before counting what's left.
+        DispatchQueue.main.async {
+            let anyLeft = NSApp.windows.contains {
+                $0 !== closing && $0.isAppWindow && ($0.isVisible || $0.isMiniaturized)
+            }
+            if !anyLeft { NSApp.setActivationPolicy(.accessory) }
+        }
+    }
+
+    /// The menu bar readout is meant to stay glanceable all night, so closing
+    /// the main window shouldn't take it down with it. The window comes back
+    /// from the Dock icon or the menu bar popup's "Open main window"; Quit
+    /// (⌘Q or the popup's button) still exits for real.
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+}
+
+private extension NSWindow {
+    /// A real document-style window (main, catalog, help, settings) — not the
+    /// menu bar extra's popup panel or the status item's own window.
+    var isAppWindow: Bool { styleMask.contains(.titled) && !(self is NSPanel) }
 }
 
 @main
@@ -52,7 +85,7 @@ struct SkyBotherApp: App {
                 .environmentObject(state)
                 .tint(Palette.accent)
                 .appTextScale(state.preferences.textScale)
-                .frame(minWidth: 1120, minHeight: 720)
+                .frame(minWidth: ContentView.minWindowWidth, minHeight: 720)
                 .background(TitleBarZoomAndDragFix())
         }
         .defaultSize(width: 1500, height: 920)
@@ -243,6 +276,9 @@ struct MenuBarSummaryView: View {
 
             HStack {
                 Button("Open main window") {
+                    // Back to a normal Dock app before activating, so the app's
+                    // menu bar menus come back along with the window.
+                    NSApp.setActivationPolicy(.regular)
                     NSApp.activate(ignoringOtherApps: true)
                     openWindow(id: "main")
                 }

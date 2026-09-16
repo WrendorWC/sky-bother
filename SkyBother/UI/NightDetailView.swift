@@ -553,9 +553,17 @@ struct NightDetailView: View {
             if state.isPlanning {
                 ProgressView().controlSize(.small)
             }
-            Text("\(targets.count) targets meet criteria")
-                .font(.scaled(.callout, scale: uiTextScale))
-                .foregroundStyle(.secondary)
+            // One line only: unconstrained, a narrow center column squeezes
+            // this down to a single character per line and the whole bar
+            // grows hundreds of points tall. Short form when the long one
+            // doesn't fit.
+            ViewThatFits(in: .horizontal) {
+                Text("\(targets.count) targets meet criteria")
+                Text("\(targets.count) targets")
+            }
+            .lineLimit(1)
+            .font(.scaled(.callout, scale: uiTextScale))
+            .foregroundStyle(.secondary)
         }
     }
 
