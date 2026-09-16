@@ -5,14 +5,26 @@ set -euo pipefail
 
 CONFIGURATION="${1:-Release}"
 
+# Build outside the project folder, then copy the finished app back. If the
+# project lives somewhere iCloud syncs (Desktop/Documents), iCloud tags files
+# there with extended attributes, and codesign refuses to sign a bundle
+# carrying them ("resource fork, Finder information, or similar detritus not
+# allowed"). Once signed, the app can live anywhere.
+WORK_DIR="$HOME/Library/Developer/Xcode/DerivedData/SkyBother-build"
+
 xcodebuild \
   -project SkyBother.xcodeproj \
   -scheme SkyBother \
   -configuration "$CONFIGURATION" \
-  -derivedDataPath build/DerivedData \
-  CONFIGURATION_BUILD_DIR="$PWD/build" \
+  -derivedDataPath "$WORK_DIR" \
+  CONFIGURATION_BUILD_DIR="$WORK_DIR/Products" \
   build
 
-echo
-echo "Built: $PWD/build/SkyBother.app"
-echo "Run it with:  open build/SkyBother.app"
+mkdir -p build
+for app in "$WORK_DIR/Products"/*.app; do
+  rm -rf "build/$(basename "$app")"
+  ditto "$app" "build/$(basename "$app")"
+  echo
+  echo "Built: $PWD/build/$(basename "$app")"
+  echo "Run it with:  open \"build/$(basename "$app")\""
+done
