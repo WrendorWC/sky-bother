@@ -88,7 +88,7 @@ private struct LocationSettings: View {
                     .foregroundStyle(.secondary)
 
                 VStack(alignment: .leading) {
-                    Slider(value: $state.site.horizonAltitude, in: 0...45, step: 1) {
+                    Slider(value: $state.site.horizonAltitude, in: 0...60, step: 1) {
                         Text("Blocked horizon")
                     }
                     Text("Trees, houses and hills block the sky below \(Format.degrees(state.site.horizonAltitude)). Targets are ignored under this.")
