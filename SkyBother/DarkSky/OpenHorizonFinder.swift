@@ -94,7 +94,7 @@ struct OpenHorizonFinder: Sendable {
                                                                   toLatitude: place.latitude, longitude: place.longitude)
             guard placeDistance <= radiusKilometers + searchAroundPlaceMeters / 1000,
                   let best = bestStandingPoint(near: place, cover: cover),
-                  best.horizon <= site.horizonAltitude - minimumImprovementDegrees
+                  best.horizon <= site.typicalHorizonAltitude - minimumImprovementDegrees
             else { return nil }
 
             let distance = DarkSkyGeometry.distanceKilometers(fromLatitude: site.latitude, longitude: site.longitude,

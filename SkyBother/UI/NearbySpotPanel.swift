@@ -197,7 +197,7 @@ struct NearbySpotPanel: View {
         case .darkerSky:
             return "Nothing noticeably darker within \(selectedDistance.label). Try a longer drive — or just an open spot away from direct lights."
         case .openHorizon:
-            return "No public spot within \(selectedDistance.label) looks at least 5° more open than your \(Format.degrees(result.anchor.horizonAltitude)) horizon. Try a longer distance."
+            return "No public spot within \(selectedDistance.label) looks at least 5° more open than your \(Format.degrees(result.anchor.typicalHorizonAltitude)) horizon. Try a longer distance."
         }
     }
 
@@ -250,7 +250,7 @@ struct NearbySpotPanel: View {
                 ComparisonLine(spot: spot)
             case .openHorizon:
                 if let horizon = spot.horizonAltitude {
-                    skyGainLine(spotHorizon: horizon, siteHorizon: result.anchor.horizonAltitude)
+                    skyGainLine(spotHorizon: horizon, siteHorizon: result.anchor.typicalHorizonAltitude)
                 }
             }
 
@@ -307,7 +307,7 @@ struct NearbySpotPanel: View {
         case .openHorizon:
             var parts = [whereItIs]
             if let horizon = spot.horizonAltitude {
-                parts.append("open above \(Format.degrees(horizon)) (yours: \(Format.degrees(result.anchor.horizonAltitude)))")
+                parts.append("open above \(Format.degrees(horizon)) (yours: \(Format.degrees(result.anchor.typicalHorizonAltitude)))")
             }
             if let clearest = spot.clearestDirection {
                 parts.append("clearest to the \(clearest)")

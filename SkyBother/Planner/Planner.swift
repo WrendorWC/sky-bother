@@ -343,19 +343,23 @@ struct Planner: Sendable {
                                  clearThreshold: Double,
                                  hasWeather: Bool,
                                  ignoreCloud: Bool) -> [TargetPlan] {
-        let altitudeFloor = max(site.horizonAltitude, preferences.minimumUsefulAltitude)
+        // The cheap rejection below only gets the site's *most open* direction,
+        // since a target's peak altitude says nothing about which way it will
+        // be when it gets there. Anything that survives it is then checked
+        // sample by sample against the horizon in the direction it is actually
+        // sitting — see `makeTargetPlan`.
+        let bestCaseFloor = max(site.horizonAltitude, preferences.minimumUsefulAltitude)
         var plans: [TargetPlan] = []
         plans.reserveCapacity(catalog.count)
 
         for target in catalog {
             if target.type.isStarField && !preferences.includeStarClusters { continue }
             // Cheap rejection before doing any per-sample work.
-            guard target.isEverVisible(latitude: site.latitude, aboveAltitude: altitudeFloor) else { continue }
+            guard target.isEverVisible(latitude: site.latitude, aboveAltitude: bestCaseFloor) else { continue }
 
             if let plan = makeTargetPlan(target: target,
                                          contexts: contexts,
                                          samples: samples,
-                                         altitudeFloor: altitudeFloor,
                                          clearThreshold: clearThreshold,
                                          hasWeather: hasWeather,
                                          ignoreCloud: ignoreCloud) {
@@ -369,7 +373,6 @@ struct Planner: Sendable {
     private func makeTargetPlan(target: Target,
                                 contexts: [SampleContext],
                                 samples: [NightSample],
-                                altitudeFloor: Double,
                                 clearThreshold: Double,
                                 hasWeather: Bool,
                                 ignoreCloud: Bool) -> TargetPlan? {
@@ -411,6 +414,11 @@ struct Planner: Sendable {
         var minimumSeparation = 180.0
         var maximumRotation = 0.0
         var effectiveMoonSum = 0.0
+        // Time this target loses purely to something on the ground being in
+        // the way, counted only where the sky itself was fine — so the warning
+        // below can name the tree as the culprit and be right about it.
+        var obstructedCount = 0
+        var obstructedDirections: Set<Int> = []
 
         for (index, context) in contexts.enumerated() {
             let horizontal = SkyCoordinates.horizontal(target.coordinate,
@@ -430,7 +438,15 @@ struct Planner: Sendable {
 
             let sample = samples[index]
             let separation = SkyCoordinates.separation(target.coordinate, context.moonCoordinate)
-            let aboveFloor = horizontal.altitude >= altitudeFloor
+            // The floor is the worse of your useful-altitude preference and
+            // whatever blocks the horizon *in the direction the target is
+            // currently in* — so a target that spends the first half of the
+            // night behind the tree to the south and the rest of it clear to
+            // the west keeps the half it can actually be shot in, instead of
+            // the whole night being written off or wrongly counted.
+            let floor = max(site.blockedAltitude(azimuth: horizontal.azimuth),
+                            preferences.minimumUsefulAltitude)
+            let aboveFloor = horizontal.altitude >= floor
 
             let effectiveMoon = SkyQuality.effectiveMoonBrightness(
                 moonBrightness: context.moonBrightness,
@@ -449,6 +465,12 @@ struct Planner: Sendable {
             let clearEnough = ignoreCloud || !hasWeather || sample.clearFactor >= clearThreshold
             let isUsable = aboveFloor && darkEnough && clearEnough
             usableFlags.append(isUsable)
+
+            if !aboveFloor && darkEnough && clearEnough
+                && horizontal.altitude >= preferences.minimumUsefulAltitude {
+                obstructedCount += 1
+                obstructedDirections.insert(Site.horizonDirectionIndex(azimuth: horizontal.azimuth))
+            }
 
             guard isUsable else { continue }
 
@@ -514,7 +536,9 @@ struct Planner: Sendable {
                                       maximumAltitude: maximumAltitude,
                                       minimumSeparation: minimumSeparation,
                                       maximumRotation: maximumRotation,
-                                      meanDarkness: meanDarkness)
+                                      meanDarkness: meanDarkness,
+                                      obstructedMinutes: Double(obstructedCount) * sampleStepMinutes,
+                                      obstructedDirections: obstructedDirections)
 
         return TargetPlan(target: target,
                           windows: targetWindows,
@@ -649,8 +673,22 @@ struct Planner: Sendable {
                                 maximumAltitude: Double,
                                 minimumSeparation: Double,
                                 maximumRotation: Double,
-                                meanDarkness: Double) -> [String] {
+                                meanDarkness: Double,
+                                obstructedMinutes: Double,
+                                obstructedDirections: Set<Int>) -> [String] {
         var warnings: [String] = []
+
+        // Only worth saying when the horizon is uneven: with a flat horizon
+        // this would fire on nearly every target in the list, which is just
+        // restating the setting back at you. Half an hour is the floor —
+        // below that it is noise, not a reason to plan differently.
+        if site.hasDirectionalHorizon && obstructedMinutes >= 30 && !obstructedDirections.isEmpty {
+            let named = obstructedDirections
+                .sorted()
+                .map { Site.horizonDirections[$0] }
+                .joined(separator: "/")
+            warnings.append("\(Format.duration(minutes: obstructedMinutes)) of otherwise good sky lost behind your blocked horizon to the \(named)")
+        }
 
         if maximumAltitude < 35 {
             warnings.append(String(format: "Never rises above %.0f° — you are shooting through %.1f air masses at best",

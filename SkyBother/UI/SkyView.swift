@@ -167,7 +167,7 @@ struct SkyView: View {
 
         return candidates.compactMap { targetPlan in
             let horizontal = horizontal(of: targetPlan.target.coordinate)
-            guard horizontal.altitude > plan.site.horizonAltitude else { return nil }
+            guard horizontal.altitude > plan.site.blockedAltitude(azimuth: horizontal.azimuth) else { return nil }
             return Placement(id: targetPlan.id,
                              point: SkyProjection.project(horizontal),
                              color: Palette.score(targetPlan.score),
@@ -274,7 +274,7 @@ struct SkyView: View {
                                                       longitude: plan.site.longitude)
             let isRisk = targetPlan.zenithRiskWindows.contains { $0.contains(date) }
             return PathSample(point: SkyProjection.project(position),
-                              isVisible: position.altitude > plan.site.horizonAltitude,
+                              isVisible: position.altitude > plan.site.blockedAltitude(azimuth: position.azimuth),
                               isZenithRisk: isRisk)
         }
     }
@@ -369,7 +369,7 @@ struct SkyView: View {
                     Canvas { context, _ in
                         draw(context: context, center: center, radius: radius)
                     }
-                    compassLabels(center: center, radius: visibleRadius(radius))
+                    compassLabels(center: center, radius: radius)
                 }
                 .contentShape(Rectangle())
                 .gesture(
@@ -463,25 +463,49 @@ struct SkyView: View {
 
     // MARK: - Drawing
 
-    /// The radius of the sky actually visible from this site — the full
-    /// 90° hemisphere shrunk to whatever altitude trees/houses/hills allow,
-    /// the same single blocked-altitude value used everywhere else in the
-    /// app. This *is* the drawn circle's boundary, not a dimmed overlay on
-    /// top of the full hemisphere — anything below it isn't visible from
-    /// here, so it isn't shown.
-    private func visibleRadius(_ radius: CGFloat) -> CGFloat {
-        radius * CGFloat(clamp((90 - plan.site.horizonAltitude) / 90, 0, 1))
+    /// The radius of the sky actually visible from this site looking one
+    /// particular way — the full 90° hemisphere shrunk to whatever altitude
+    /// trees/houses/hills allow in that direction, the same blocked-altitude
+    /// values used everywhere else in the app. This *is* the drawn shape's
+    /// boundary, not a dimmed overlay on top of the full hemisphere —
+    /// anything below it isn't visible from here, so it isn't shown.
+    private func visibleRadius(_ radius: CGFloat, azimuth: Double) -> CGFloat {
+        radius * CGFloat(clamp((90 - plan.site.blockedAltitude(azimuth: azimuth)) / 90, 0, 1))
+    }
+
+    /// The rim of the visible sky. A circle when the horizon is flat; when
+    /// one direction is blocked worse than the rest, the sector that direction
+    /// owns steps inward, so the tree to the south reads as a bite taken out
+    /// of the dome rather than as the whole sky being smaller.
+    ///
+    /// Each 45° sector is sampled rather than drawn as a true arc: the flat
+    /// case then costs a 72-sided polygon whose deviation from a circle is a
+    /// fraction of a pixel at any size this is drawn at, and there is one code
+    /// path instead of two.
+    private func horizonPath(center: CGPoint, radius: CGFloat) -> Path {
+        var path = Path()
+        for sector in Site.horizonDirections.indices {
+            let sectorAzimuth = Double(sector) * 45
+            let sectorRadius = visibleRadius(radius, azimuth: sectorAzimuth)
+            for step in 0...9 {
+                let azimuth = sectorAzimuth - 22.5 + Double(step) * 5
+                let point = SkyProjection.project(HorizontalCoordinate(altitude: 0, azimuth: azimuth))
+                let screen = CGPoint(x: center.x + CGFloat(point.x) * sectorRadius,
+                                     y: center.y + CGFloat(point.y) * sectorRadius)
+                if path.isEmpty { path.move(to: screen) } else { path.addLine(to: screen) }
+            }
+        }
+        path.closeSubpath()
+        return path
     }
 
     private func draw(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
         guard radius > 0 else { return }
         var context = context
-        let visible = visibleRadius(radius)
-        let visibleRect = CGRect(x: center.x - visible, y: center.y - visible, width: visible * 2, height: visible * 2)
-        let horizonPath = Path(ellipseIn: visibleRect)
+        let rim = horizonPath(center: center, radius: radius)
 
-        context.fill(horizonPath, with: .color(Palette.sky(sunAltitude: sunAltitude)))
-        context.stroke(horizonPath, with: .color(Palette.panelBorder), lineWidth: 1)
+        context.fill(rim, with: .color(Palette.sky(sunAltitude: sunAltitude)))
+        context.stroke(rim, with: .color(Palette.panelBorder), lineWidth: 1)
 
         // Everything from here down is confined to the visible dome —
         // altitude rings, the Milky Way, targets, the Moon, the camera
@@ -490,7 +514,7 @@ struct SkyView: View {
         // clears it is honestly truncated right at the rim instead of
         // either vanishing entirely or spilling out past a boundary that's
         // supposed to mean "can't see past here."
-        context.clip(to: horizonPath)
+        context.clip(to: rim)
 
         for altitude in [30.0, 60.0] {
             let r = radius * CGFloat(clamp((90 - altitude) / 90, 0, 1))
@@ -731,15 +755,19 @@ struct SkyView: View {
         context.stroke(path, with: .color(color), lineWidth: 1.5)
     }
 
+    /// Each label sits just outside the rim *in its own direction*, so on an
+    /// uneven horizon S tracks the bite the tree takes rather than floating
+    /// out where the sky would have ended without it.
     private func compassLabels(center: CGPoint, radius: CGFloat) -> some View {
         let points: [(String, Double)] = [("N", 0), ("E", 90), ("S", 180), ("W", 270)]
         return ForEach(points, id: \.0) { label, azimuth in
             let point = SkyProjection.project(HorizontalCoordinate(altitude: 0, azimuth: azimuth))
+            let labelRadius = visibleRadius(radius, azimuth: azimuth) + 14
             Text(label)
                 .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
                 .foregroundStyle(.secondary)
-                .position(x: center.x + CGFloat(point.x) * (radius + 14),
-                         y: center.y + CGFloat(point.y) * (radius + 14))
+                .position(x: center.x + CGFloat(point.x) * labelRadius,
+                         y: center.y + CGFloat(point.y) * labelRadius)
         }
     }
 

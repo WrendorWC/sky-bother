@@ -28,6 +28,7 @@ private struct LocationSettings: View {
     @State private var results: [GeocodingResult] = []
     @State private var isSearching = false
     @State private var searchError: String?
+    @State private var showsHorizonProfile = false
 
     var body: some View {
         Form {
@@ -87,14 +88,7 @@ private struct LocationSettings: View {
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
 
-                VStack(alignment: .leading) {
-                    Slider(value: $state.site.horizonAltitude, in: 0...60, step: 1) {
-                        Text("Blocked horizon")
-                    }
-                    Text("Trees, houses and hills block the sky below \(Format.degrees(state.site.horizonAltitude)). Targets are ignored under this.")
-                        .font(.scaled(.caption, scale: uiTextScale))
-                        .foregroundStyle(.secondary)
-                }
+                horizonControls
 
                 Button("Refresh forecast for this site") {
                     Task { await state.refresh(force: true) }
@@ -137,6 +131,75 @@ private struct LocationSettings: View {
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .background(Palette.spaceBackground)
+    }
+
+    // MARK: - Horizon
+
+    /// The baseline slider sets every direction at once; the disclosure below
+    /// it is for the one tree that ruins the rest. That order matters — almost
+    /// every site is "about this open all round, except over there", and
+    /// asking for eight numbers up front to express that would be eight times
+    /// the work for the same answer.
+    @ViewBuilder
+    private var horizonControls: some View {
+        VStack(alignment: .leading) {
+            Slider(value: baselineHorizon, in: 0...60, step: 1) {
+                Text("Blocked horizon")
+            }
+            Text(baselineHorizonCaption)
+                .font(.scaled(.caption, scale: uiTextScale))
+                .foregroundStyle(.secondary)
+        }
+
+        DisclosureGroup(isExpanded: $showsHorizonProfile) {
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(Site.horizonDirections.indices, id: \.self) { index in
+                    HStack(spacing: 8) {
+                        Text(Site.horizonDirections[index])
+                            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold).monospaced())
+                            .foregroundStyle(.secondary)
+                            .frame(width: 26, alignment: .leading)
+                        Slider(value: horizonBinding(forDirectionAt: index), in: 0...60, step: 1)
+                        Text(Format.degrees(state.site.horizonByDirection[index]))
+                            .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .frame(width: 34, alignment: .trailing)
+                    }
+                }
+                Text("Each direction covers the 45° of sky centred on it, so S also covers SSE through SSW. A target is ignored while it sits below the line for whichever direction it is in — it keeps the rest of its night.")
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 2)
+            }
+            .padding(.top, 4)
+        } label: {
+            Text("One direction is worse")
+        }
+        // Opened for you when this site already has a tree recorded, so it
+        // isn't hidden behind a triangle you have no reason to click.
+        .task(id: state.site.id) { showsHorizonProfile = state.site.hasDirectionalHorizon }
+    }
+
+    /// Flattens the horizon on every change: this is the "set them all at
+    /// once" control, so it deliberately discards per-direction detail rather
+    /// than trying to shift eight values while preserving their spacing, which
+    /// falls apart the moment one of them hits an end of the range.
+    private var baselineHorizon: Binding<Double> {
+        Binding(get: { state.site.horizonAltitude },
+                set: { state.site.setHorizonEverywhere(to: $0) })
+    }
+
+    private func horizonBinding(forDirectionAt index: Int) -> Binding<Double> {
+        Binding(get: { state.site.horizonByDirection[index] },
+                set: { state.site.setHorizon(to: $0, forDirectionAt: index) })
+    }
+
+    private var baselineHorizonCaption: String {
+        let baseline = Format.degrees(state.site.horizonAltitude)
+        guard state.site.hasDirectionalHorizon else {
+            return "Trees, houses and hills block the sky below \(baseline) all the way round. Targets are ignored under this."
+        }
+        return "Your most open direction is \(baseline); the worst is \(Format.degrees(state.site.worstHorizonAltitude)). Dragging this levels every direction back to one number."
     }
 
     private func search() async {
