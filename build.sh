@@ -24,6 +24,16 @@ mkdir -p build
 for app in "$WORK_DIR/Products"/*.app; do
   rm -rf "build/$(basename "$app")"
   ditto "$app" "build/$(basename "$app")"
+
+  # macOS attaches com.apple.provenance to executables on its own — not an
+  # iCloud artefact, and present on the DerivedData copy too, so building
+  # outside iCloud doesn't avoid it. It doesn't break the signature, but
+  # `codesign --verify --deep --strict` rejects the bundle for carrying it
+  # ("resource fork, Finder information, or similar detritus not allowed"),
+  # which looks exactly like a signing failure. Strip it so a strict verify
+  # passes. Anything that copies the app later can pick it up again.
+  xattr -cr "build/$(basename "$app")"
+
   echo
   echo "Built: $PWD/build/$(basename "$app")"
   echo "Run it with:  open \"build/$(basename "$app")\""
