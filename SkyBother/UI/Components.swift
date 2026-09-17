@@ -28,6 +28,27 @@ extension View {
     }
 }
 
+/// How tall the night-detail pane actually is on screen — the scroll
+/// viewport, which tracks the window, not the scrolled content, which does
+/// not. Sky View is the only thing that needs it: it is square and lives in a
+/// vertically scrolling column, where height is unbounded and a square view
+/// can only ever size itself from its width. Without this it would either
+/// stop growing at some arbitrary cap or grow so tall on a wide window that
+/// you had to scroll to see the bottom of the sky.
+///
+/// Zero means nobody has measured it, which is the honest default: readers
+/// fall back to sizing on width alone rather than collapsing to nothing.
+private struct DetailViewportHeightKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+extension EnvironmentValues {
+    var detailViewportHeight: CGFloat {
+        get { self[DetailViewportHeightKey.self] }
+        set { self[DetailViewportHeightKey.self] = newValue }
+    }
+}
+
 extension Font {
     /// A semantic style's usual macOS point size, multiplied by the app's
     /// text-size preference. Callers keep chaining `.weight(...)`,

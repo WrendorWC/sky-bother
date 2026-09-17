@@ -53,6 +53,10 @@ struct NightDetailView: View {
     /// can scroll back to it on tap.
     private let topAnchorID = "nightDetailTop"
 
+    /// The pane's own height on screen, republished down the tree for Sky
+    /// View — see `EnvironmentValues.detailViewportHeight`.
+    @State private var viewportHeight: CGFloat = 0
+
     var body: some View {
         ScrollViewReader { proxy in
             ZStack(alignment: .top) {
@@ -84,6 +88,17 @@ struct NightDetailView: View {
             }
         }
         .animation(.easeInOut(duration: 0.16), value: isHeaderCollapsed)
+        // Measured on the pane itself rather than on the scrolled content:
+        // this is the size of the window's hole, which is what a square view
+        // inside an unbounded scrolling column has no other way to learn.
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear { viewportHeight = geometry.size.height }
+                    .onChange(of: geometry.size.height) { _, height in viewportHeight = height }
+            }
+        )
+        .environment(\.detailViewportHeight, viewportHeight)
         // The hero card below already owns the selected night's identity
         // (date, verdict, best target) in a much bigger typeface — repeating
         // the date here just gave the same fact two competing headings. The

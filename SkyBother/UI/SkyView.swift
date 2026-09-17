@@ -7,6 +7,7 @@ import SwiftUI
 /// just answering "where," not only "when."
 struct SkyView: View {
     @Environment(\.uiTextScale) private var uiTextScale
+    @Environment(\.detailViewportHeight) private var viewportHeight
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
     @Binding var scrubTime: Date
@@ -349,6 +350,45 @@ struct SkyView: View {
                                   longitude: plan.site.longitude)
     }
 
+    /// Room outside the drawn rim for the N/E/S/W labels, which sit 14pt past
+    /// it and are centred on that point, so about half a line of text again.
+    private static let compassLabelInset: CGFloat = 26
+
+    /// The radius of a *full* 90° hemisphere — the scale of the projection,
+    /// in points per 90° of altitude, which is what every drawing helper here
+    /// wants.
+    ///
+    /// It is deliberately larger than the space available, because the sky
+    /// below your blocked horizon is never drawn: with a 20° horizon the rim
+    /// sits at 78% of this, and sizing the projection to the square directly
+    /// would leave that missing 22% as dead margin on all four sides — the
+    /// disc floating in the middle of a box far bigger than itself. Scaling by
+    /// the most open direction instead puts the widest part of the rim right
+    /// at the edge of the space, so the sky fills the view and a blocked
+    /// sector reads as a bite out of it rather than as the whole sky shrinking.
+    private func projectionRadius(forSide side: CGFloat) -> CGFloat {
+        let available = max(side / 2 - SkyView.compassLabelInset, 1)
+        // The most open direction, which is what `horizonAltitude` holds.
+        let openness = clamp((90 - plan.site.horizonAltitude) / 90, 0.1, 1)
+        return available / CGFloat(openness)
+    }
+
+    /// How big the sky disc is allowed to get. It is square and lives in a
+    /// vertically scrolling column, so left alone it can only size itself from
+    /// the available width — it would grow with a wider window and ignore a
+    /// taller one entirely, and on a wide display it would run past the bottom
+    /// of the pane and have to be scrolled to be seen whole.
+    ///
+    /// So it is capped by the pane's actual height instead, less the room the
+    /// toggles above and the scrubber below need, which makes the disc as big
+    /// as the window really allows and no bigger. The old fixed 840pt ceiling
+    /// survives only as the floor of that cap: on a short window the disc may
+    /// overflow and be scrolled to, which beats shrinking it to a coaster.
+    private var maximumSkySide: CGFloat {
+        let chrome: CGFloat = showsCameraFrame ? 150 : 110
+        return max(840, viewportHeight - chrome)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
@@ -362,7 +402,7 @@ struct SkyView: View {
 
             GeometryReader { geometry in
                 let side = min(geometry.size.width, geometry.size.height)
-                let radius = side / 2 - 20
+                let radius = projectionRadius(forSide: side)
                 let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
 
                 ZStack {
@@ -378,7 +418,7 @@ struct SkyView: View {
                 )
             }
             .aspectRatio(1, contentMode: .fit)
-            .frame(maxWidth: 840)
+            .frame(maxWidth: maximumSkySide)
             .frame(maxWidth: .infinity, alignment: .center)
 
             timeScrubber
