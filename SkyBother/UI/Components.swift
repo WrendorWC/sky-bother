@@ -176,46 +176,53 @@ extension View {
 
 }
 
-/// SwiftUI's toolbar content claims nearly the full height of the title bar
-/// for hit-testing on this app's layout — the custom sidebar-toggle and
-/// refresh buttons, and the inline title item, are all sized to the toolbar's
-/// full height — which leaves only the sliver right next to the traffic
-/// lights as the OS's native double-click-to-zoom/drag territory. This
-/// installs an invisible view behind everything else already in the window's
-/// title bar container, so double-clicking or dragging any part of the header
-/// that isn't literally on top of a button reaches the window the same way it
-/// would with a plain, chrome-only title bar.
+/// SwiftUI's inline toolbar title is an `NSToolbarTitleView` that spans the
+/// whole strip between the leading toolbar buttons and the trailing ones, at
+/// the full height of the header, and it swallows mouse-downs instead of
+/// letting them reach the window. That left the sliver between the traffic
+/// lights and the first toolbar button as the only part of the header that
+/// still dragged or double-clicked like a title bar — everything from the
+/// site name across to the buttons on the right was dead.
+///
+/// This puts a transparent catcher in front of the entire header that drags
+/// and zooms the window itself, and hit-tests itself out of the way wherever
+/// something real lives: a toolbar item, a traffic light, or the sidebar's
+/// draggable split separator.
 struct TitleBarZoomAndDragFix: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView {
-        let probe = NSView(frame: .zero)
-        DispatchQueue.main.async { install(from: probe) }
-        return probe
+    func makeNSView(context: Context) -> NSView { TitleBarFixProbe(frame: .zero) }
+
+    /// Re-checked on updates as well as on the way into a window: leaving
+    /// and returning from full screen rebuilds the title bar's view tree,
+    /// and the catcher has to be put back when it does.
+    func updateNSView(_ nsView: NSView, context: Context) {
+        (nsView as? TitleBarFixProbe)?.installIfNeeded()
+    }
+}
+
+/// A zero-sized view living in the window's content, there only to get a
+/// handle on the window so the catcher can be installed in its title bar.
+private final class TitleBarFixProbe: NSView {
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        installIfNeeded()
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {}
+    func installIfNeeded() {
+        // The traffic lights' immediate superview is the classic title bar
+        // strip; its superview is the container that also holds the toolbar,
+        // spanning the full height of what reads on screen as "the header".
+        guard let container = window?.standardWindowButton(.closeButton)?.superview?.superview,
+              !container.subviews.contains(where: { $0 is TitleBarDragCatcherView }) else { return }
 
-    private func install(from probe: NSView) {
-        guard let window = probe.window, let container = titlebarContainer(in: window) else { return }
-        let markerID = NSUserInterfaceItemIdentifier("com.skybother.titlebarZoomFix")
-        guard !container.subviews.contains(where: { $0.identifier == markerID }) else { return }
-
-        // Pinned with real constraints, not a frame + autoresizingMask: at
-        // the moment this runs, the toolbar hasn't necessarily finished
-        // laying out yet (the sidebar toggle, title, and buttons further
-        // right can all still be arriving), and this container manages its
-        // own children with Auto Layout — a legacy autoresizing mask on a
-        // sibling doesn't track that. A fixed frame captured this early
-        // only ever covered whatever narrow width existed at that instant,
-        // which is exactly why double-click/drag only worked in the sliver
-        // near the traffic lights and stopped dead at the refresh button.
-        let catcher = ZoomAndDragCatcherView(frame: .zero)
-        catcher.identifier = markerID
+        // In front of everything, not behind it: the views that eat the
+        // mouse-down (the title view chief among them) are themselves in
+        // front of anything a sibling could be slipped behind. Pinned with
+        // real constraints rather than a frame, because this container lays
+        // its children out with Auto Layout and the toolbar hasn't
+        // necessarily finished arriving when this runs.
+        let catcher = TitleBarDragCatcherView(frame: .zero)
         catcher.translatesAutoresizingMaskIntoConstraints = false
-        if let frontmost = container.subviews.first {
-            container.addSubview(catcher, positioned: .below, relativeTo: frontmost)
-        } else {
-            container.addSubview(catcher)
-        }
+        container.addSubview(catcher, positioned: .above, relativeTo: nil)
         NSLayoutConstraint.activate([
             catcher.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             catcher.trailingAnchor.constraint(equalTo: container.trailingAnchor),
@@ -223,29 +230,84 @@ struct TitleBarZoomAndDragFix: NSViewRepresentable {
             catcher.bottomAnchor.constraint(equalTo: container.bottomAnchor)
         ])
     }
-
-    /// The traffic lights' immediate superview is the classic title bar
-    /// strip; its superview is the container that also holds the toolbar,
-    /// spanning the full height of what reads on screen as "the header".
-    private func titlebarContainer(in window: NSWindow) -> NSView? {
-        window.standardWindowButton(.closeButton)?.superview?.superview
-    }
 }
 
-private final class ZoomAndDragCatcherView: NSView {
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        window?.isMovableByWindowBackground = true
-        let doubleClick = NSClickGestureRecognizer(target: self, action: #selector(handleDoubleClick))
-        doubleClick.numberOfClicksRequired = 2
-        addGestureRecognizer(doubleClick)
+private final class TitleBarDragCatcherView: NSView {
+    /// Room around each control that still belongs to the control rather
+    /// than to the bar, so a click just off a button's edge doesn't start
+    /// dragging the window out from under it.
+    private static let passthroughSlop: CGFloat = 4
+
+    /// We want the mouse-down ourselves rather than having AppKit move the
+    /// window for us, so that a double click can be told apart from the
+    /// start of a drag. `performDrag(with:)` then does exactly what a
+    /// background drag would have done anyway.
+    override var mouseDownCanMoveWindow: Bool { false }
+
+    /// So an inactive window can be dragged with a single click, the way a
+    /// plain title bar can.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let superview, let window else { return nil }
+        let local = convert(point, from: superview)
+        guard bounds.contains(local) else { return nil }
+        let inWindow = convert(local, to: nil)
+
+        for view in passthroughViews(in: window) {
+            let rect = view.convert(view.bounds, to: nil)
+                .insetBy(dx: -Self.passthroughSlop, dy: -Self.passthroughSlop)
+            if rect.contains(inWindow) { return nil }
+        }
+        return self
     }
 
-    @objc private func handleDoubleClick() {
-        window?.performZoom(nil)
+    override func mouseDown(with event: NSEvent) {
+        guard let window else { return super.mouseDown(with: event) }
+        if event.clickCount == 2 {
+            performDoubleClickAction(on: window)
+        } else {
+            window.performDrag(with: event)
+        }
     }
 
-    override var mouseDownCanMoveWindow: Bool { true }
+    /// What a double click on a title bar does is a System Settings choice,
+    /// not always "zoom" — honour it rather than hard-coding one of them.
+    private func performDoubleClickAction(on window: NSWindow) {
+        switch UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
+        case "Minimize": window.performMiniaturize(nil)
+        case "None": break
+        default: window.performZoom(nil)
+        }
+    }
+
+    /// Everything in the header the catcher must stay out of the way of.
+    /// `visibleItems` covers the toolbar buttons, whose own views report
+    /// that they'd happily move the window; the walk covers the traffic
+    /// lights and the sidebar's split separator, which instead announce
+    /// themselves by refusing to. Anything unrecognised is left alone
+    /// rather than claimed, so a future AppKit layout at worst brings back
+    /// the dead strip instead of swallowing clicks on a real control.
+    private func passthroughViews(in window: NSWindow) -> [NSView] {
+        var result = (window.toolbar?.visibleItems ?? []).compactMap(\.view)
+        guard let container = superview else { return result }
+
+        func collect(_ view: NSView) {
+            guard view !== self else { return }
+            if isInteractive(view) { result.append(view) }
+            view.subviews.forEach(collect)
+        }
+        container.subviews.forEach(collect)
+        return result
+    }
+
+    private func isInteractive(_ view: NSView) -> Bool {
+        // The inline title is an `NSTextField`, and a window has always been
+        // draggable by its own title — so a label that can't be typed in or
+        // selected is part of the bar, not something to stay clear of.
+        if let field = view as? NSTextField { return field.isEditable || field.isSelectable }
+        return view is NSControl || !view.mouseDownCanMoveWindow
+    }
 }
 
 extension Path {
