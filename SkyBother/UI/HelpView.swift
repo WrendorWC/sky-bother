@@ -46,7 +46,7 @@ enum HelpContent {
                 HelpSwatch(color: Palette.moonlight, label: "Pale wash over the background, together with the traced line near the bottom — moonlight and the moon's altitude throughout the night")
             ]),
             HelpSection(heading: "The Dotted Lines and the Red Line", body: "The two dotted vertical lines mark astronomical dusk and dawn — the boundary this app treats as genuine darkness. The thin red line marks the current time, when you're looking at tonight's plan."),
-            HelpSection(heading: "Hovering", body: "Hold the pointer over any point on the chart for an exact readout: time, cloud percentage, temperature, how dark it is (as a percentage), and the moon's altitude, if it's above the horizon."),
+            HelpSection(heading: "Hovering", body: "Hold the pointer over any point on the chart for an exact readout: time, cloud percentage, temperature, how dark it is (as a percentage), and the moon\u{2019}s altitude, if it\u{2019}s above the horizon. With a target selected, its own altitude at that moment is shown too, in the accent colour \u{2014} and if it\u{2019}s up but still behind your blocked horizon in the direction it\u{2019}s currently in, the readout says so and names the direction, which is the difference between waiting an hour and giving up on it."),
             HelpSection(heading: "When a Target Is Selected", body: "Selecting a target from the list overlays its altitude curve, usable windows and single best window onto the sky and cloud layers, all in the app's one accent colour so a selection reads the same here as everywhere else. You can read the best window, and the reasoning behind it, off one chart without switching views.")
         ]),
 

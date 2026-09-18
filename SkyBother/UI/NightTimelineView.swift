@@ -358,11 +358,47 @@ struct NightTimelineView: View {
                 Text("moon \(Format.degrees(sample.moonAltitude)) up")
                     .font(.scaled(.caption, scale: uiTextScale))
             }
+            if let selectedTarget {
+                let position = horizontal(of: selectedTarget.target, at: sample.date)
+                Text(selectedTargetLine(selectedTarget, position: position))
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    // The one line here that isn't about the night in general
+                    // but about the thing you actually picked, so it reads as
+                    // the answer rather than another condition.
+                    .foregroundStyle(Palette.accent)
+            }
         }
         .foregroundStyle(.white)
         .padding(8)
         .background(Color.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 6))
         .frame(width: 170, alignment: .leading)
+    }
+
+    /// Computed from the ephemeris at the moment the card is reporting rather
+    /// than read out of `altitudeTrace` by nearest index. The trace is sampled
+    /// every few minutes and drawn as an interpolated line, so a nearest-index
+    /// lookup would disagree with the curve the cursor is sitting on by up to
+    /// half a step. This also yields the azimuth, which is what decides
+    /// whether the target is behind the blocked horizon in that direction.
+    private func horizontal(of target: Target, at date: Date) -> HorizontalCoordinate {
+        SkyCoordinates.horizontal(target.coordinate,
+                                  daysSinceJ2000: date.daysSinceJ2000,
+                                  latitude: plan.site.latitude,
+                                  longitude: plan.site.longitude)
+    }
+
+    /// Altitude is the point, but it means something different depending on
+    /// what is in the way, so the line says which: genuinely below the
+    /// horizon, up but behind the trees in the direction it's currently in,
+    /// or simply up.
+    private func selectedTargetLine(_ targetPlan: TargetPlan, position: HorizontalCoordinate) -> String {
+        let name = targetPlan.target.displayName
+        guard position.altitude > 0 else { return "\(name) below the horizon" }
+        let blocked = plan.site.blockedAltitude(azimuth: position.azimuth)
+        if position.altitude <= blocked {
+            return "\(name) \(Format.degrees(position.altitude)) · blocked to the \(Site.horizonDirectionName(azimuth: position.azimuth))"
+        }
+        return "\(name) \(Format.degrees(position.altitude)) up"
     }
 
     private func nearestSample(to date: Date) -> NightSample? {
