@@ -25,13 +25,14 @@ for app in "$WORK_DIR/Products"/*.app; do
   rm -rf "build/$(basename "$app")"
   ditto "$app" "build/$(basename "$app")"
 
-  # macOS attaches com.apple.provenance to executables on its own — not an
-  # iCloud artefact, and present on the DerivedData copy too, so building
-  # outside iCloud doesn't avoid it. It doesn't break the signature, but
-  # `codesign --verify --deep --strict` rejects the bundle for carrying it
-  # ("resource fork, Finder information, or similar detritus not allowed"),
-  # which looks exactly like a signing failure. Strip it so a strict verify
-  # passes. Anything that copies the app later can pick it up again.
+  # Clears extended attributes off the copy. Worth doing for the iCloud tags
+  # the note above is about, which is what actually blocks signing.
+  #
+  # It does NOT durably clear com.apple.provenance: macOS attaches that to
+  # executables by itself, re-applies it on copy and again on launch, and it
+  # is on the DerivedData build too, so building outside iCloud doesn't avoid
+  # it either. It's harmless — the bundle verifies, strictly and deeply, with
+  # it present — so nothing here needs to chase it.
   xattr -cr "build/$(basename "$app")"
 
   echo
