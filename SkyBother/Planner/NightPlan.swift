@@ -7,6 +7,11 @@ struct ScoreFactor: Identifiable, Hashable, Sendable {
     var value: Double      // 0...1
     var weight: Double
     var detail: String
+    /// How far this factor is allowed to drag the geometric mean down. The
+    /// default exists so one bad hour of cloud can't zero an otherwise decent
+    /// night outright; a factor that genuinely *should* be able to veto a
+    /// target sets its own, much lower.
+    var floor: Double = 0.02
 
     var id: String { name }
     var percentage: Int { Int((value * 100).rounded()) }
@@ -19,7 +24,7 @@ func weightedGeometricScore(_ factors: [ScoreFactor]) -> Double {
     let totalWeight = factors.reduce(0) { $0 + $1.weight }
     guard totalWeight > 0 else { return 0 }
     let sum = factors.reduce(0.0) { partial, factor in
-        partial + factor.weight * log(max(factor.value, 0.02))
+        partial + factor.weight * log(max(factor.value, factor.floor))
     }
     return clamp(exp(sum / totalWeight) * 100, 0, 100)
 }

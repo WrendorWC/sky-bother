@@ -538,7 +538,8 @@ struct Planner: Sendable {
                                       maximumRotation: maximumRotation,
                                       meanDarkness: meanDarkness,
                                       obstructedMinutes: Double(obstructedCount) * sampleStepMinutes,
-                                      obstructedDirections: obstructedDirections)
+                                      obstructedDirections: obstructedDirections,
+                                      detectability: detectability)
 
         return TargetPlan(target: target,
                           windows: targetWindows,
@@ -615,10 +616,21 @@ struct Planner: Sendable {
                         value: framing,
                         weight: 0.15,
                         detail: "How the target sits in this rig's field of view"),
+            // Weighted heavier than the other quality factors, and floored two
+            // orders of magnitude lower, because it is the only one that can
+            // be *fatal*: an hour of cloud or an awkward framing costs you
+            // some of a night, but a target fainter than the sky it sits on
+            // returns nothing at all, however long you leave the shutter open.
+            // At the old 0.14 and the shared 0.02 floor, a completely
+            // undetectable target still scored around 40 on a typical night
+            // and 58 on a perfect one — comfortably past the default minimum
+            // score, and presented as Marginal or Good. It now lands in Poor,
+            // which is what it is.
             ScoreFactor(name: "Detectability",
                         value: detectability,
-                        weight: 0.14,
-                        detail: "Surface brightness against the sky background")
+                        weight: 0.22,
+                        detail: "Surface brightness against the sky background",
+                        floor: 0.001)
         ]
     }
 
@@ -675,8 +687,23 @@ struct Planner: Sendable {
                                 maximumRotation: Double,
                                 meanDarkness: Double,
                                 obstructedMinutes: Double,
-                                obstructedDirections: Set<Int>) -> [String] {
+                                obstructedDirections: Set<Int>,
+                                detectability: Double) -> [String] {
         var warnings: [String] = []
+
+        // The score alone can't carry this. A geometric mean over six factors
+        // still reads as a middling number when five of them are fine, and
+        // nothing about "48" tells you the problem is unfixable by waiting for
+        // a better night — which is exactly what it is. So it gets said.
+        if detectability < 0.12 {
+            let sky = "your Bortle \(site.bortleClass) sky"
+            if target.type.isStarField {
+                warnings.append("At magnitude \(String(format: "%.1f", target.magnitude)) this is faint for \(sky) — expect few stars to come through")
+            } else {
+                warnings.append(String(format: "Surface brightness %.1f mag/arcsec² against %.1f for %@ — expect little or nothing, however long you integrate",
+                                       target.surfaceBrightness, site.zenithSkyBrightness, sky))
+            }
+        }
 
         // Only worth saying when the horizon is uneven: with a flat horizon
         // this would fire on nearly every target in the list, which is just
