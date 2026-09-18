@@ -283,23 +283,19 @@ private final class TitleBarDragCatcherView: NSView {
         return self
     }
 
+    /// Every click goes to `performDrag(with:)`, including the second of a
+    /// double click, because it already implements the whole standard title
+    /// bar gesture — the drag *and* the System Settings double-click action.
+    ///
+    /// This used to intercept `clickCount == 2` and perform that action
+    /// itself. The first click's `performDrag` went on to recognise the very
+    /// same double click and act on it too, so a double click zoomed the
+    /// window and immediately un-zoomed it. Letting AppKit own the gesture
+    /// end to end is what keeps it happening exactly once, and honours the
+    /// Minimize/None/Zoom preference without this having to read it.
     override func mouseDown(with event: NSEvent) {
         guard let window else { return super.mouseDown(with: event) }
-        if event.clickCount == 2 {
-            performDoubleClickAction(on: window)
-        } else {
-            window.performDrag(with: event)
-        }
-    }
-
-    /// What a double click on a title bar does is a System Settings choice,
-    /// not always "zoom" — honour it rather than hard-coding one of them.
-    private func performDoubleClickAction(on window: NSWindow) {
-        switch UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
-        case "Minimize": window.performMiniaturize(nil)
-        case "None": break
-        default: window.performZoom(nil)
-        }
+        window.performDrag(with: event)
     }
 
     /// Everything in the header the catcher must stay out of the way of.
