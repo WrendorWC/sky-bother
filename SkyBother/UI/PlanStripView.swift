@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// The session as a Gantt strip on the night timeline's own time axis, and —
 /// when editing — the surface you build it on: drag a block along the night,
@@ -31,10 +32,17 @@ struct PlanStripView: View {
         var original: [PlanSegment]
     }
 
+    /// What the pointer is currently over, so the cursor can say which of the
+    /// two gestures a press would start before you commit to one. Tracked as
+    /// a case rather than an `NSCursor` so "unchanged" is a value comparison
+    /// and the cursor is only actually set when it really changes.
+    private enum Hover: Equatable { case none, body, edge, dragging }
+
     @State private var drag: Drag?
     /// The plan as it looks mid-gesture. Kept separate from the stored one so
     /// an in-flight drag is never what gets persisted.
     @State private var preview: [PlanSegment]?
+    @State private var hover: Hover = .none
 
     private var displayed: [PlanSegment] { (preview ?? segments).chronological }
 
@@ -46,9 +54,51 @@ struct PlanStripView: View {
             }
             .contentShape(Rectangle())
             .gesture(gesture(axis: axis))
+            .onContinuousHover(coordinateSpace: .local) { phase in
+                guard isEditing else { return }
+                switch phase {
+                case .active(let location): apply(hover: hover(at: location, axis: axis))
+                case .ended: apply(hover: .none)
+                }
+            }
         }
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.panelBorder))
+        // Leaving edit mode with the pointer still over a block would
+        // otherwise strand whichever cursor was last set.
+        .onChange(of: isEditing) { _, editing in if !editing { apply(hover: .none) } }
+        .onDisappear { apply(hover: .none) }
+    }
+
+    // MARK: - Cursor
+
+    /// Which gesture the pointer is currently in range of. A drag in progress
+    /// outranks position: once you have hold of a block the cursor shouldn't
+    /// flicker back to the arrow just because the pointer ran ahead of where
+    /// the block is allowed to go.
+    private func hover(at location: CGPoint, axis: TimeAxis) -> Hover {
+        if let drag { return drag.grip == .move ? .dragging : .edge }
+        guard let hit = segment(at: location.x, axis: axis) else { return .none }
+        let startX = axis.x(for: hit.window.start)
+        let endX = axis.x(for: hit.window.end)
+        let atEdge = location.x - startX <= Self.edgeGrabWidth || endX - location.x <= Self.edgeGrabWidth
+        return atEdge ? .edge : .body
+    }
+
+    private func apply(hover newValue: Hover) {
+        guard newValue != hover else { return }
+        hover = newValue
+        switch newValue {
+        // Both ends of a block resize along one axis, and a block only ever
+        // travels along that axis too, so the standard horizontal-resize
+        // cursor is the honest one for an edge.
+        case .edge: NSCursor.resizeLeftRight.set()
+        // The open/closed hand pair is what macOS uses for picking something
+        // up and moving it, which is exactly what dragging a block's body is.
+        case .body: NSCursor.openHand.set()
+        case .dragging: NSCursor.closedHand.set()
+        case .none: NSCursor.arrow.set()
+        }
     }
 
     // MARK: - Drawing
@@ -139,12 +189,23 @@ struct PlanStripView: View {
     private func gesture(axis: TimeAxis) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .local)
             .onChanged { value in
-                if drag == nil { drag = beginDrag(at: value.startLocation, axis: axis) }
+                if drag == nil {
+                    drag = beginDrag(at: value.startLocation, axis: axis)
+                    // Set from the gesture rather than waiting for the next
+                    // hover event, so the hand closes on the press itself.
+                    if let drag { apply(hover: drag.grip == .move ? .dragging : .edge) }
+                }
                 guard let drag, isEditing else { return }
                 preview = applying(translation: value.translation.width, drag: drag, axis: axis)
             }
             .onEnded { value in
-                defer { self.drag = nil; self.preview = nil }
+                defer {
+                    self.drag = nil
+                    self.preview = nil
+                    // Dropped: back to whatever the pointer is now over,
+                    // which the next hover event decides.
+                    apply(hover: .none)
+                }
                 // A press that never really moved is a selection, not an edit.
                 if abs(value.translation.width) < 3 {
                     if let hit = segment(at: value.location.x, axis: axis) {
