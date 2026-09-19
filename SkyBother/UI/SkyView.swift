@@ -8,6 +8,7 @@ import SwiftUI
 struct SkyView: View {
     @Environment(\.uiTextScale) private var uiTextScale
     @Environment(\.detailViewportHeight) private var viewportHeight
+    @Environment(\.skyViewReservedBelow) private var viewportReservedBelow
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
     @Binding var scrubTime: Date
@@ -380,13 +381,28 @@ struct SkyView: View {
     /// of the pane and have to be scrolled to be seen whole.
     ///
     /// So it is capped by the pane's actual height instead, less the room the
-    /// toggles above and the scrubber below need, which makes the disc as big
-    /// as the window really allows and no bigger. The old fixed 840pt ceiling
-    /// survives only as the floor of that cap: on a short window the disc may
-    /// overflow and be scrolled to, which beats shrinking it to a coaster.
+    /// toggles above and the scrubber below need — and less whatever has to
+    /// stay visible underneath it, which is Tonight's Plan. Filling the pane
+    /// with the disc pushed the plan off the bottom, and that is worst exactly
+    /// where it matters most: playback's Cycle Plan mode hands the selection
+    /// from one planned block to the next, which you cannot watch against a
+    /// plan you have to scroll to reach.
+    ///
+    /// The floor is deliberately low. It used to be the old fixed 840pt
+    /// ceiling, on the grounds that overflowing a short window beat shrinking
+    /// the disc to a coaster — but that reasoning assumed nothing else was
+    /// competing for the space. Now something is, and a disc that swallows the
+    /// plan is the worse outcome, so the floor only guards against the disc
+    /// becoming genuinely unreadable.
     private var maximumSkySide: CGFloat {
         let chrome: CGFloat = showsCameraFrame ? 150 : 110
-        return max(840, viewportHeight - chrome)
+        // Scrolling far enough for the disc to reach the top of the pane is
+        // also far enough to bring out the compact header, which floats over
+        // the content rather than scrolling with it and so quietly costs the
+        // viewport a row it never gets back. Without allowing for it the plan
+        // below lands about a row short of fitting.
+        let collapsedHeader: CGFloat = 44
+        return max(400, viewportHeight - chrome - collapsedHeader - viewportReservedBelow)
     }
 
     var body: some View {

@@ -55,6 +55,9 @@ struct NightDetailView: View {
     /// The pane's own height on screen, republished down the tree for Sky
     /// View — see `EnvironmentValues.detailViewportHeight`.
     @State private var viewportHeight: CGFloat = 0
+    /// Measured so Sky View can leave room for it rather than pushing it off
+    /// the bottom of the pane — see `EnvironmentValues.skyViewReservedBelow`.
+    @State private var planSectionHeight: CGFloat = 0
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -98,6 +101,7 @@ struct NightDetailView: View {
             }
         )
         .environment(\.detailViewportHeight, viewportHeight)
+        .environment(\.skyViewReservedBelow, planSectionHeight)
         // The hero card below already owns the selected night's identity
         // (date, verdict, best target) in a much bigger typeface — repeating
         // the date here just gave the same fact two competing headings. The
@@ -219,6 +223,13 @@ struct NightDetailView: View {
             skySection
 
             autoPlanSection
+                .background(
+                    GeometryReader { geometry in
+                        Color.clear
+                            .onAppear { planSectionHeight = geometry.size.height }
+                            .onChange(of: geometry.size.height) { _, height in planSectionHeight = height }
+                    }
+                )
         }
     }
 

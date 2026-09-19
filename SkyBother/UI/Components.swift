@@ -42,10 +42,30 @@ private struct DetailViewportHeightKey: EnvironmentKey {
     static let defaultValue: CGFloat = 0
 }
 
+/// How much of the pane, in points, has to stay visible *below* Sky View —
+/// Tonight's Plan, in practice.
+///
+/// Sky View sits above the plan in one scrolling column, so sizing it to fill
+/// the pane pushes the plan off the bottom. That is worst exactly when it
+/// matters most: playback's Cycle Plan mode walks the selection from one
+/// planned block to the next, and you cannot watch it do that against a plan
+/// you have to scroll to see.
+///
+/// Zero means nobody has measured it, and Sky View then sizes as though
+/// nothing needed the room.
+private struct SkyViewReservedBelowKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
 extension EnvironmentValues {
     var detailViewportHeight: CGFloat {
         get { self[DetailViewportHeightKey.self] }
         set { self[DetailViewportHeightKey.self] = newValue }
+    }
+
+    var skyViewReservedBelow: CGFloat {
+        get { self[SkyViewReservedBelowKey.self] }
+        set { self[SkyViewReservedBelowKey.self] = newValue }
     }
 }
 
