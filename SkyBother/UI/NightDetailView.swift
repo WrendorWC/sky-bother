@@ -279,17 +279,9 @@ struct NightDetailView: View {
         }
     }
 
-    /// The Integration Goal, as-is: one target shouldn't claim more of the
-    /// night than a full session actually needs, which is exactly what that
-    /// preference already means.
-    ///
-    /// This used to shrink to a fair share of the night when "Plan My Own" had
-    /// several targets checked, so that everything checked still fitted
-    /// somewhere. Hand-editing replaced the checkbox pool entirely — the
-    /// suggestion is now only ever a starting point you drag from, and a block
-    /// that wants to be shorter gets dragged shorter — so there is nothing
-    /// left for a variable cap to rescue.
-    private var sessionCapMinutes: Double { state.preferences.integrationGoalMinutes }
+    /// See `Preferences.sessionCapMinutes` — the Integration Goal, or half of
+    /// it when the plan is asked to favour more targets over longer ones.
+    private var sessionCapMinutes: Double { state.preferences.sessionCapMinutes }
 
     private var autoPlanSection: some View {
         let segments = planSegments.chronological

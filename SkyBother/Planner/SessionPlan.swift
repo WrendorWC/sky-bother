@@ -69,6 +69,23 @@ enum SessionPlanRules {
         return Date(timeIntervalSince1970: (date.timeIntervalSince1970 / step).rounded() * step)
     }
 
+    /// Both ends on the grid. Blocks arrive from the scheduler at whatever
+    /// times the ephemeris and the forecast produced — 06:23:09 — and only
+    /// ever got tidied if you happened to drag them. A plan you read off a
+    /// screen at the telescope should be on round numbers from the start.
+    ///
+    /// Adjacent blocks share a boundary date exactly, so rounding them
+    /// independently still leaves them flush: no gap appears and no overlap
+    /// can be created.
+    static func snapped(_ window: TimeWindow) -> TimeWindow {
+        let start = snapped(window.start)
+        var end = snapped(window.end)
+        // Only bites on a block already shorter than the grid, which the
+        // scheduler won't produce but a stored plan could.
+        if end <= start { end = start.addingTimeInterval(snapMinutes * 60) }
+        return TimeWindow(start: start, end: end)
+    }
+
     /// Moves a block bodily, keeping its length, bounded only by the night
     /// itself. What happens where it lands is `resolve`'s problem — a block is
     /// free to be dragged over its neighbours, and stopping it dead at the
@@ -203,11 +220,13 @@ enum SessionPlanRules {
         else { return nil }
 
         let length = min(stretch.duration, max(preferredMinutes, minimumMinutes) * 60)
+        // Snapped here rather than by the caller so every way a block comes
+        // into being — seeded, added by hand, dragged — lands on the grid.
         // Anchored to the start of the gap rather than centred on the target's
         // best moment: a hand-built plan is a running order, and a new block
         // that lands flush against the one before it is what someone filling a
         // night actually wants. Dragging it elsewhere is one gesture away.
-        return TimeWindow(start: stretch.start, end: stretch.start.addingTimeInterval(length))
+        return snapped(TimeWindow(start: stretch.start, end: stretch.start.addingTimeInterval(length)))
     }
 
     /// The closest place a block of a given length fits, starting from

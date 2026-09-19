@@ -59,7 +59,18 @@ struct StoredSettings: Codable, Hashable, Sendable {
         savedSites = try container.decode([Site].self, forKey: .savedSites)
         savedRigs = try container.decode([Rig].self, forKey: .savedRigs)
         customTargets = try container.decodeIfPresent([Target].self, forKey: .customTargets) ?? []
-        sessionPlans = try container.decodeIfPresent([String: [PlanSegment]].self, forKey: .sessionPlans) ?? [:]
+        // Snapped on the way in, so plans saved before blocks were put on a
+        // five-minute grid stop reading 02:00:39. Only ever moves a boundary
+        // by under three minutes, and adjacent blocks share their boundary
+        // date exactly, so they stay flush rather than developing gaps.
+        sessionPlans = (try container.decodeIfPresent([String: [PlanSegment]].self, forKey: .sessionPlans) ?? [:])
+            .mapValues { segments in
+                segments.map { segment in
+                    var snapped = segment
+                    snapped.window = SessionPlanRules.snapped(segment.window)
+                    return snapped
+                }
+            }
 
         // A settings file written before this flag existed cannot be taken to
         // imply the user ever chose a site. The file is rewritten on *any*

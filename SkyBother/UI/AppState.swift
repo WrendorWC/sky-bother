@@ -475,7 +475,7 @@ final class AppState: ObservableObject {
         settings.sessionPlans[night.planKey] = slots.map {
             PlanSegment(targetID: $0.targetPlan.id,
                         targetName: $0.targetPlan.target.displayName,
-                        window: $0.window)
+                        window: SessionPlanRules.snapped($0.window))
         }
     }
 

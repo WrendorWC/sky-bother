@@ -45,7 +45,71 @@ struct Preferences: Codable, Hashable, Sendable {
     /// being the common case, not an unusual one.
     var textScale: Double = 1.0
 
+    /// What the suggested plan does with a night that can't give every target
+    /// a full session. It only shapes the suggestion — a plan you've edited by
+    /// hand is yours, and nothing here rearranges it.
+    var planEmphasis: PlanEmphasis = .longerIntegration
+
     static let `default` = Preferences()
+}
+
+/// Which way the suggested plan leans when the night is shorter than the
+/// targets that want it.
+enum PlanEmphasis: String, Codable, CaseIterable, Hashable, Sendable {
+    /// Each target gets up to the full Integration Goal.
+    case longerIntegration
+    /// Each gets up to half of it, so roughly twice as many fit.
+    case moreTargets
+
+    var title: String {
+        switch self {
+        case .longerIntegration: return "Longer integration"
+        case .moreTargets: return "More targets"
+        }
+    }
+}
+
+extension Preferences {
+    /// The most of a night any one target may claim on the suggested plan's
+    /// first pass. Whatever is left over afterwards still gets handed back to
+    /// whoever can use it, so this caps the opening bid rather than the final
+    /// session: a night with only one real target keeps the whole thing
+    /// either way.
+    var sessionCapMinutes: Double {
+        switch planEmphasis {
+        case .longerIntegration: return integrationGoalMinutes
+        case .moreTargets: return max(20, integrationGoalMinutes / 2)
+        }
+    }
+}
+
+extension Preferences {
+    // Every field decoded leniently, falling back to its own declared
+    // default. Without this, adding any preference makes today's settings
+    // file un-decodable, and `SettingsStore.load` answers that by discarding
+    // the whole file — site, saved sites, rigs, custom targets, session plans
+    // and all — and starting from scratch. Decoding must never be the reason
+    // someone loses their setup.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let fallback = Preferences()
+        func value<T: Decodable>(_ key: CodingKeys, _ defaultValue: T) -> T {
+            (try? container.decodeIfPresent(T.self, forKey: key)) .flatMap { $0 } ?? defaultValue
+        }
+        maximumCloudCover = value(.maximumCloudCover, fallback.maximumCloudCover)
+        integrationGoalMinutes = value(.integrationGoalMinutes, fallback.integrationGoalMinutes)
+        minimumDarkness = value(.minimumDarkness, fallback.minimumDarkness)
+        forecastNights = value(.forecastNights, fallback.forecastNights)
+        minimumScore = value(.minimumScore, fallback.minimumScore)
+        minimumUsefulAltitude = value(.minimumUsefulAltitude, fallback.minimumUsefulAltitude)
+        includeOversizedTargets = value(.includeOversizedTargets, fallback.includeOversizedTargets)
+        includeStarClusters = value(.includeStarClusters, fallback.includeStarClusters)
+        dewWarningSpread = value(.dewWarningSpread, fallback.dewWarningSpread)
+        usesImperialUnits = value(.usesImperialUnits, fallback.usesImperialUnits)
+        showsZenithRiskWarnings = value(.showsZenithRiskWarnings, fallback.showsZenithRiskWarnings)
+        textScale = value(.textScale, fallback.textScale)
+        planEmphasis = value(.planEmphasis, fallback.planEmphasis)
+    }
 }
 
 extension Preferences {

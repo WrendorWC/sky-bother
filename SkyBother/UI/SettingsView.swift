@@ -366,6 +366,18 @@ private struct PlanningSettings: View {
                           value: $state.preferences.integrationGoalMinutes,
                           range: 30...480, step: 15,
                           caption: "A target scores full marks for time once it offers \(Format.duration(minutes: state.preferences.integrationGoalMinutes)).")
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Picker("Suggested plan favours", selection: $state.preferences.planEmphasis) {
+                        ForEach(PlanEmphasis.allCases, id: \.self) { emphasis in
+                            Text(emphasis.title).tag(emphasis)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    Text(planEmphasisCaption)
+                        .font(.scaled(.caption, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section("What to show") {
@@ -389,6 +401,16 @@ private struct PlanningSettings: View {
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .background(Palette.spaceBackground)
+    }
+
+    private var planEmphasisCaption: String {
+        let cap = Format.duration(minutes: state.preferences.sessionCapMinutes)
+        switch state.preferences.planEmphasis {
+        case .longerIntegration:
+            return "No target is handed more than \(cap) of a night before the others get a turn. Whatever nobody else wants is still given back afterwards, so a quiet night isn't left half empty."
+        case .moreTargets:
+            return "Half your Integration goal — \(cap) — so roughly twice as many targets fit. Only changes what the app suggests; a plan you've edited is left alone."
+        }
     }
 
     private var darknessCaption: String {
