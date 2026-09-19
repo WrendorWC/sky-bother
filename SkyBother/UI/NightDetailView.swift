@@ -244,8 +244,15 @@ struct NightDetailView: View {
     // MARK: - Auto-plan
 
     private var autoPlan: [AutoPlanSlot] {
-        AutoPlanner.plan(for: plan, minimumScore: state.preferences.minimumScore,
-                         sessionCapMinutes: sessionCapMinutes)
+        // Nothing to suggest for a night that's clouded out. `Planner` keeps a
+        // target list for such a night on purpose — re-planned ignoring cloud,
+        // so the list can say "this is what you'd have had" rather than look
+        // broken — but a running order built out of those is a schedule for a
+        // night that isn't happening, and reads as though the app hasn't
+        // noticed the forecast.
+        guard !plan.isCloudedOut else { return [] }
+        return AutoPlanner.plan(for: plan, minimumScore: state.preferences.minimumScore,
+                                sessionCapMinutes: sessionCapMinutes)
     }
 
     /// What the strip actually shows: your own plan once you have one, and the
@@ -311,17 +318,18 @@ struct NightDetailView: View {
             }
 
             if segments.isEmpty {
-                Text(isEditingPlan
-                     ? "Nothing planned. Press + beside any target below to drop it into the night, then drag it where you want it."
-                     : "Nothing tonight clears your minimum score for long enough to build a session around.")
+                Text(emptyPlanMessage)
                     .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             } else {
                 PlanStripView(plan: plan, segments: segments, isEditing: isEditingPlan) { edited in
                     state.setPlan(edited, for: plan)
                 }
-                .frame(height: isEditingPlan ? 46 : 34)
-                .animation(.easeInOut(duration: 0.18), value: isEditingPlan)
+                // One height in both modes. Growing on entering edit mode
+                // shoved everything below it down the page at the exact moment
+                // you were reaching for a block, so the thing you were aiming
+                // at moved. Edit mode announces itself by its outline instead.
+                .frame(height: 38)
 
                 if isEditingPlan {
                     Text("Drag a block to move it, or either end to change how long you spend there. The same target can take as many blocks of the night as you like. Hatched means the target isn't up, dark or clear then — allowed, just flagged.")
@@ -340,6 +348,16 @@ struct NightDetailView: View {
                 .panelStyle()
             }
         }
+    }
+
+    private var emptyPlanMessage: String {
+        if plan.isCloudedOut {
+            return "Clouded out — nothing to plan. The target list below shows what would have been up if it clears."
+        }
+        if isEditingPlan {
+            return "Nothing planned. Press + beside any target below to drop it into the night, then drag it where you want it."
+        }
+        return "Nothing tonight clears your minimum score for long enough to build a session around."
     }
 
     private func planSummary(_ segments: [PlanSegment]) -> String {

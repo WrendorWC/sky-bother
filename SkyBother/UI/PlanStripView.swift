@@ -43,6 +43,8 @@ struct PlanStripView: View {
     /// an in-flight drag is never what gets persisted.
     @State private var preview: [PlanSegment]?
     @State private var hover: Hover = .none
+    /// The most recent layout this drag produced that was actually legal.
+    @State private var lastValid: [PlanSegment]?
 
     private var displayed: [PlanSegment] { (preview ?? segments).chronological }
 
@@ -63,7 +65,14 @@ struct PlanStripView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.panelBorder))
+        // The strip is the same height in both modes, so this border is the
+        // only thing saying whether the blocks under the pointer are live.
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .strokeBorder(isEditing ? Palette.accent : Palette.panelBorder,
+                              lineWidth: isEditing ? 2 : 1)
+        )
+        .animation(.easeInOut(duration: 0.18), value: isEditing)
         // Leaving edit mode with the pointer still over a block would
         // otherwise strand whichever cursor was last set.
         .onChange(of: isEditing) { _, editing in if !editing { apply(hover: .none) } }
@@ -202,6 +211,7 @@ struct PlanStripView: View {
                 defer {
                     self.drag = nil
                     self.preview = nil
+                    self.lastValid = nil
                     // Dropped: back to whatever the pointer is now over,
                     // which the next hover event decides.
                     apply(hover: .none)
@@ -233,29 +243,34 @@ struct PlanStripView: View {
         return Drag(id: hit.id, grip: grip, original: segments.chronological)
     }
 
+    /// The whole plan as it would be with this drag applied, or the last
+    /// layout that worked when this one can't be resolved. Holding the last
+    /// good one is what makes an over-dragged block stop at the limit instead
+    /// of springing back to where the gesture started.
     private func applying(translation: CGFloat, drag: Drag, axis: TimeAxis) -> [PlanSegment] {
         // Points to seconds through the axis itself rather than a stored
         // scale, so this stays correct when the window is resized mid-plan.
         let secondsPerPoint = plan.chartWindow.duration / Double(max(1, axis.width))
         let delta = Double(translation) * secondsPerPoint
 
-        var result = drag.original
-        guard let index = result.firstIndex(where: { $0.id == drag.id }) else { return result }
-        let others = result.filter { $0.id != drag.id }
-        let segment = result[index]
+        guard let segment = drag.original.first(where: { $0.id == drag.id }) else { return drag.original }
+        let night = plan.chartWindow
 
+        let moved: PlanSegment
         switch drag.grip {
-        case .move:
-            result[index] = SessionPlanRules.moved(segment, by: delta, among: others,
-                                                   within: plan.chartWindow)
-        case .start:
-            result[index] = SessionPlanRules.resized(segment, movingStart: true, by: delta,
-                                                     among: others, within: plan.chartWindow)
-        case .end:
-            result[index] = SessionPlanRules.resized(segment, movingStart: false, by: delta,
-                                                     among: others, within: plan.chartWindow)
+        case .move: moved = SessionPlanRules.moved(segment, by: delta, within: night)
+        case .start: moved = SessionPlanRules.resized(segment, movingStart: true, by: delta, within: night)
+        case .end: moved = SessionPlanRules.resized(segment, movingStart: false, by: delta, within: night)
         }
-        return result
+
+        if let resolved = SessionPlanRules.resolve(dragged: moved,
+                                                   against: drag.original,
+                                                   within: night,
+                                                   allowSwap: drag.grip == .move) {
+            lastValid = resolved
+            return resolved
+        }
+        return lastValid ?? drag.original
     }
 
     private func segment(at x: CGFloat, axis: TimeAxis) -> PlanSegment? {

@@ -69,42 +69,16 @@ enum SessionPlanRules {
         return Date(timeIntervalSince1970: (date.timeIntervalSince1970 / step).rounded() * step)
     }
 
-    /// How far a block may extend in each direction: up to its neighbours, and
-    /// no further than the night being planned.
-    ///
-    /// One telescope can only point at one thing, so blocks never overlap —
-    /// the bounds here are what enforce that, rather than a validation pass
-    /// afterwards that would have to decide which of two overlapping blocks
-    /// was the wrong one.
-    static func bounds(for segment: PlanSegment,
-                       among others: [PlanSegment],
-                       within night: TimeWindow) -> (earliest: Date, latest: Date) {
-        let before = others
-            .filter { $0.id != segment.id && $0.window.start < segment.window.end }
-            .map(\.window.end)
-            .filter { $0 <= segment.window.start }
-            .max()
-        let after = others
-            .filter { $0.id != segment.id && $0.window.end > segment.window.start }
-            .map(\.window.start)
-            .filter { $0 >= segment.window.end }
-            .min()
-        return (max(night.start, before ?? night.start),
-                min(night.end, after ?? night.end))
-    }
-
-    /// Moves a block bodily, keeping its length, stopping against whatever is
-    /// on either side of it rather than pushing through.
+    /// Moves a block bodily, keeping its length, bounded only by the night
+    /// itself. What happens where it lands is `resolve`'s problem — a block is
+    /// free to be dragged over its neighbours, and stopping it dead at the
+    /// first one is exactly what made reordering impossible.
     static func moved(_ segment: PlanSegment,
                       by seconds: TimeInterval,
-                      among others: [PlanSegment],
                       within night: TimeWindow) -> PlanSegment {
-        let (earliest, latest) = bounds(for: segment, among: others, within: night)
         let length = segment.window.duration
-        guard latest.timeIntervalSince(earliest) >= length else { return segment }
-
         var start = snapped(segment.window.start.addingTimeInterval(seconds))
-        start = max(earliest, min(start, latest.addingTimeInterval(-length)))
+        start = max(night.start, min(start, night.end.addingTimeInterval(-length)))
         var moved = segment
         moved.window = TimeWindow(start: start, end: start.addingTimeInterval(length))
         return moved
@@ -114,22 +88,100 @@ enum SessionPlanRules {
     static func resized(_ segment: PlanSegment,
                         movingStart: Bool,
                         by seconds: TimeInterval,
-                        among others: [PlanSegment],
                         within night: TimeWindow) -> PlanSegment {
-        let (earliest, latest) = bounds(for: segment, among: others, within: night)
         let minimum = minimumMinutes * 60
         var resized = segment
-
         if movingStart {
             var start = snapped(segment.window.start.addingTimeInterval(seconds))
-            start = max(earliest, min(start, segment.window.end.addingTimeInterval(-minimum)))
+            start = max(night.start, min(start, segment.window.end.addingTimeInterval(-minimum)))
             resized.window = TimeWindow(start: start, end: segment.window.end)
         } else {
             var end = snapped(segment.window.end.addingTimeInterval(seconds))
-            end = min(latest, max(end, segment.window.start.addingTimeInterval(minimum)))
+            end = min(night.end, max(end, segment.window.start.addingTimeInterval(minimum)))
             resized.window = TimeWindow(start: segment.window.start, end: end)
         }
         return resized
+    }
+
+    /// Works out what the rest of the night looks like once one block has been
+    /// dragged somewhere, or returns nil if it can't be made to work — in which
+    /// case the caller holds the last layout that did, so the block simply
+    /// stops rather than snapping back to where the drag began.
+    ///
+    /// A block dragged into its neighbour shortens that neighbour from the
+    /// side being encroached on, the way dropping a clip onto a video timeline
+    /// does. Keep pushing and the neighbour would eventually vanish, which is
+    /// never what was meant — so at the point it would drop below the minimum
+    /// length it hops to the *other* side of the dragged block instead, at its
+    /// original length. That is what reordering is here: push a block far
+    /// enough into its neighbour and the two change places.
+    ///
+    /// Resizing trims the same way but never swaps. Dragging an edge is a
+    /// statement about how long you spend on *this* target, and having a
+    /// neighbour jump across the night in response would be absurd.
+    static func resolve(dragged: PlanSegment,
+                        against original: [PlanSegment],
+                        within night: TimeWindow,
+                        allowSwap: Bool) -> [PlanSegment]? {
+        let minimum = minimumMinutes * 60
+        var placed: [PlanSegment] = [dragged]
+
+        for var other in original.filter({ $0.id != dragged.id }).chronological {
+            guard other.window.intersection(with: dragged.window) != nil else {
+                placed.append(other)
+                continue
+            }
+            let length = other.window.duration
+            // Which way it gets pushed is decided by where its middle sits
+            // relative to the dragged block's, not by which edge happens to
+            // overlap: that stays stable as the overlap grows, where an
+            // edge test flips the moment the dragged block covers it.
+            let isLeft = other.window.midpoint < dragged.window.midpoint
+            let trimmed = isLeft
+                ? TimeWindow(start: other.window.start, end: dragged.window.start)
+                : TimeWindow(start: dragged.window.end, end: other.window.end)
+
+            if trimmed.duration >= minimum {
+                other.window = trimmed
+                placed.append(other)
+                continue
+            }
+
+            guard allowSwap else { return nil }
+            // Everything the displaced block has to miss: what's already been
+            // placed, plus the original positions of the ones not looked at
+            // yet. Using their originals is pessimistic — some will end up
+            // trimmed and leave more room — but it can only ever refuse a
+            // layout, never produce an overlapping one.
+            let pending = original
+                .filter { $0.id != dragged.id && $0.id != other.id }
+                .filter { o in !placed.contains { $0.id == o.id } }
+                .map(\.window)
+            let occupied = placed.map(\.window) + pending
+
+            // Not simply the far side of the dragged block: that slot may
+            // itself be taken, and then the honest answer is the next free one
+            // out. That's what lets a block be dragged past two neighbours in
+            // one gesture instead of jamming against the second.
+            guard let swapped = nearestSlot(length: length,
+                                            from: isLeft ? dragged.window.end : dragged.window.start,
+                                            goingLeft: !isLeft,
+                                            avoiding: occupied,
+                                            within: night)
+            else { return nil }
+            other.window = swapped
+            placed.append(other)
+        }
+
+        // A block that hopped across can land on one not yet considered.
+        // Rejecting the whole layout is right: the alternative is silently
+        // producing two blocks pointed at different targets at the same time.
+        for i in placed.indices {
+            for j in placed.indices where j > i {
+                if placed[i].window.intersection(with: placed[j].window) != nil { return nil }
+            }
+        }
+        return placed.chronological
     }
 
     /// Where a newly added block should go: the longest stretch of the night
@@ -155,6 +207,31 @@ enum SessionPlanRules {
         // best moment: a hand-built plan is a running order, and a new block
         // that lands flush against the one before it is what someone filling a
         // night actually wants. Dragging it elsewhere is one gesture away.
+        return TimeWindow(start: stretch.start, end: stretch.start.addingTimeInterval(length))
+    }
+
+    /// The closest place a block of a given length fits, starting from
+    /// `anchor` and searching one way only.
+    private static func nearestSlot(length: TimeInterval,
+                                    from anchor: Date,
+                                    goingLeft: Bool,
+                                    avoiding occupied: [TimeWindow],
+                                    within night: TimeWindow) -> TimeWindow? {
+        var free = [night]
+        for window in occupied {
+            free = free.flatMap { $0.subtracting(window) }
+        }
+        let roomy = free.filter { $0.duration >= length }
+
+        if goingLeft {
+            guard let stretch = roomy.filter({ $0.end <= anchor }).max(by: { $0.end < $1.end })
+            else { return nil }
+            // Flush against the right-hand end of that gap, so it ends up as
+            // close to where it was pushed from as the gap allows.
+            return TimeWindow(start: stretch.end.addingTimeInterval(-length), end: stretch.end)
+        }
+        guard let stretch = roomy.filter({ $0.start >= anchor }).min(by: { $0.start < $1.start })
+        else { return nil }
         return TimeWindow(start: stretch.start, end: stretch.start.addingTimeInterval(length))
     }
 
