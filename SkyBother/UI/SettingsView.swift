@@ -90,8 +90,15 @@ private struct LocationSettings: View {
 
                 horizonControls
 
-                Button("Refresh forecast for this site") {
-                    Task { await state.refresh(force: true) }
+                HStack {
+                    Button("Refresh forecast for this site") {
+                        Task { await state.refresh(force: true) }
+                    }
+                    Spacer()
+                    Button("Save as a separate spot") {
+                        state.duplicateCurrentSite()
+                    }
+                    .help("Copy this site — same place, same weather, same Bortle class — as a second entry with its own horizon, for a front yard and a back yard that see different amounts of sky")
                 }
             }
 
@@ -104,6 +111,12 @@ private struct LocationSettings: View {
                                 Text("\(saved.coordinateSummary) · Bortle \(saved.bortleClass)")
                                     .font(.scaled(.caption, scale: uiTextScale))
                                     .foregroundStyle(.secondary)
+                                // The line that tells two spots at one address
+                                // apart — everything above it is identical for
+                                // a front yard and a back yard.
+                                Text(saved.horizonSummary)
+                                    .font(.scaled(.caption, scale: uiTextScale))
+                                    .foregroundStyle(.secondary)
                             }
                             Spacer()
                             if saved.id == state.site.id {
@@ -112,8 +125,7 @@ private struct LocationSettings: View {
                                     .foregroundStyle(.secondary)
                             } else {
                                 Button("Use") {
-                                    state.site = saved
-                                    Task { await state.refresh(force: true) }
+                                    state.switchToSavedSite(saved)
                                 }
                             }
                             Button {

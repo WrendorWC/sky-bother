@@ -150,6 +150,33 @@ struct Site: Codable, Hashable, Identifiable, Sendable {
         }
     }
 
+    /// One line describing the horizon, for telling two spots at one address
+    /// apart in a list where every other line about them is identical.
+    var horizonSummary: String {
+        let profile = horizonByDirection
+        guard hasDirectionalHorizon, let worst = profile.max() else {
+            return "\(Format.degrees(horizonAltitude)) all round"
+        }
+        let directions = profile.indices
+            .filter { profile[$0] == worst }
+            .map { Site.horizonDirections[$0] }
+            .joined(separator: "/")
+        return "\(Format.degrees(horizonAltitude)) all round, \(Format.degrees(worst)) \(directions)"
+    }
+
+    /// A name that isn't already taken, for copying a site into a second spot
+    /// at the same address. Two entries reading "Charlotte, NC" would be
+    /// indistinguishable in the saved list at the exact moment you need to
+    /// tell them apart.
+    static func uniqueName(basedOn name: String, avoiding taken: [String]) -> String {
+        let root = name.trimmingCharacters(in: .whitespaces)
+        let base = root.isEmpty ? "Spot" : root
+        guard taken.contains(base) else { return base }
+        var suffix = 2
+        while taken.contains("\(base) (\(suffix))") { suffix += 1 }
+        return "\(base) (\(suffix))"
+    }
+
     var coordinateSummary: String {
         let latHemisphere = latitude >= 0 ? "N" : "S"
         let lonHemisphere = longitude >= 0 ? "E" : "W"
