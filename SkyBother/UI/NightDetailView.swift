@@ -288,6 +288,7 @@ struct NightDetailView: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 SectionHeader("Tonight's plan")
+                planOriginBadge
                 Spacer()
                 if !segments.isEmpty {
                     Text(planSummary(segments))
@@ -340,6 +341,28 @@ struct NightDetailView: View {
                 .panelStyle()
             }
         }
+    }
+
+    /// Says in one word whose plan this is. Without it the two are visually
+    /// identical, and the difference decides what the buttons beside it do —
+    /// Reset throws away work on a manual plan and does nothing at all to a
+    /// suggested one.
+    private var planOriginBadge: some View {
+        let manual = isOwnPlan
+        return Text(manual ? "Manual" : "Suggested")
+            .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
+            .foregroundStyle(manual ? Palette.accent : .secondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                Capsule().fill(manual ? Palette.accent.opacity(0.16) : Color.primary.opacity(0.07))
+            )
+            .overlay(
+                Capsule().strokeBorder(manual ? Palette.accent.opacity(0.45) : Color.clear)
+            )
+            .help(manual
+                  ? "You have edited this night. It stays exactly as you left it — the app won't re-plan it."
+                  : "The app's own suggestion. Editing it, or pressing Edit plan, makes it yours.")
     }
 
     private var emptyPlanMessage: String {

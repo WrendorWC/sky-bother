@@ -22,6 +22,17 @@ struct StoredSettings: Codable, Hashable, Sendable {
     /// not be used to fetch weather or build a plan.
     var hasSetLocation: Bool
 
+    /// Oldest night key worth keeping, as `NightPlan.planKey` formats them.
+    /// Plain string comparison orders `yyyy-MM-dd` correctly, so callers can
+    /// compare keys directly without parsing them back into dates.
+    static func planCutoffKey(in timeZone: TimeZone, now: Date = Date()) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: now) ?? now
+        let parts = calendar.dateComponents([.year, .month, .day], from: yesterday)
+        return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+    }
+
     static let initial = StoredSettings(site: .unset,
                                         rig: .seestarS50,
                                         preferences: .default,
@@ -63,7 +74,28 @@ struct StoredSettings: Codable, Hashable, Sendable {
         // five-minute grid stop reading 02:00:39. Only ever moves a boundary
         // by under three minutes, and adjacent blocks share their boundary
         // date exactly, so they stay flush rather than developing gaps.
-        sessionPlans = (try container.decodeIfPresent([String: [PlanSegment]].self, forKey: .sessionPlans) ?? [:])
+        // Built into a local first: referring to `site` from inside these
+        // closures while `sessionPlans` is still uninitialised is what the
+        // compiler objects to, not the work itself.
+        let planCutoff = StoredSettings.planCutoffKey(in: site.timeZone)
+        let storedPlans = try container.decodeIfPresent([String: [PlanSegment]].self, forKey: .sessionPlans) ?? [:]
+        sessionPlans = storedPlans
+            // Last night's plan and everything before it is dropped rather
+            // than kept forever. This is a planner, not a logbook: nothing in
+            // the app can navigate to a past night, so those entries were
+            // unreachable weight in the file.
+            //
+            // The cutoff is yesterday, not today, because a session keyed to
+            // one civil date runs into the small hours of the next one — at
+            // 2am you are still working last night's plan, and deleting it out
+            // from under yourself on a relaunch would be the one moment it
+            // actually mattered.
+            .filter { $0.key >= planCutoff }
+            // Snapped on the way in, so plans saved before blocks were put on
+            // a five-minute grid stop reading 02:00:39. Only ever moves a
+            // boundary by under three minutes, and adjacent blocks share their
+            // boundary date exactly, so they stay flush rather than developing
+            // gaps.
             .mapValues { segments in
                 segments.map { segment in
                     var snapped = segment
