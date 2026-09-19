@@ -162,6 +162,17 @@ struct NightPlan: Identifiable, Hashable, Sendable {
     var targets: [TargetPlan]
 
     var id: Date { date }
+
+    /// Stable key for anything stored against this night — a hand-built
+    /// session plan, currently. The civil date, not the id itself: `Date` as a
+    /// dictionary key encodes as a flat array rather than an object, and this
+    /// has to survive being read back out of a JSON file by a human.
+    var planKey: String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+    }
     var verdict: Verdict { Verdict.forScore(score) }
 
     var darkHours: Double { darkWindows.totalMinutes / 60 }

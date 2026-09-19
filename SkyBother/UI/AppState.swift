@@ -454,6 +454,73 @@ final class AppState: ObservableObject {
         }
     }
 
+    // MARK: - Session plans
+
+    /// The hand-built plan for a night, or nil when that night is still
+    /// following the app's own suggestion. An empty array is a real answer —
+    /// a night deliberately cleared — and is not the same as nil.
+    func storedPlan(for night: NightPlan) -> [PlanSegment]? {
+        settings.sessionPlans[night.planKey]
+    }
+
+    var isEditablePlanAvailable: Bool { !plans.isEmpty }
+
+    /// Takes over a night's plan for hand editing, starting from whatever was
+    /// being suggested. Seeding rather than starting blank is the whole point:
+    /// the scheduler has usually got the shape of the night right, and the
+    /// edits worth making are moving one block and splitting another, not
+    /// rebuilding from nothing.
+    func beginEditingPlan(for night: NightPlan, seededWith slots: [AutoPlanSlot]) {
+        guard settings.sessionPlans[night.planKey] == nil else { return }
+        settings.sessionPlans[night.planKey] = slots.map {
+            PlanSegment(targetID: $0.targetPlan.id,
+                        targetName: $0.targetPlan.target.displayName,
+                        window: $0.window)
+        }
+    }
+
+    func setPlan(_ segments: [PlanSegment], for night: NightPlan) {
+        settings.sessionPlans[night.planKey] = segments.chronological
+    }
+
+    /// Empties the night without handing it back to the scheduler — the entry
+    /// stays, so a cleared night reads as "nothing planned" rather than
+    /// silently reverting to the suggestion the moment it's emptied.
+    func clearPlan(for night: NightPlan) {
+        settings.sessionPlans[night.planKey] = []
+    }
+
+    /// Discards the hand-built plan entirely, so the night goes back to being
+    /// whatever the scheduler currently suggests.
+    func revertPlanToSuggested(for night: NightPlan) {
+        settings.sessionPlans.removeValue(forKey: night.planKey)
+    }
+
+    /// Adds a block for a target at the longest stretch of the night nothing
+    /// has claimed yet, preferring time the target can actually be shot in.
+    /// Returns false when there's no room left to put one.
+    @discardableResult
+    func addPlanSegment(for targetPlan: TargetPlan, to night: NightPlan) -> Bool {
+        var segments = settings.sessionPlans[night.planKey] ?? []
+        guard let window = SessionPlanRules.placement(for: targetPlan,
+                                                      among: segments,
+                                                      within: night.chartWindow,
+                                                      preferredMinutes: preferences.integrationGoalMinutes)
+        else { return false }
+
+        segments.append(PlanSegment(targetID: targetPlan.id,
+                                    targetName: targetPlan.target.displayName,
+                                    window: window))
+        settings.sessionPlans[night.planKey] = segments.chronological
+        return true
+    }
+
+    func removePlanSegment(id: UUID, from night: NightPlan) {
+        guard var segments = settings.sessionPlans[night.planKey] else { return }
+        segments.removeAll { $0.id == id }
+        settings.sessionPlans[night.planKey] = segments
+    }
+
     // MARK: - Site and rig management
 
     func apply(_ result: GeocodingResult) {

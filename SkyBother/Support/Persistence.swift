@@ -11,6 +11,12 @@ struct StoredSettings: Codable, Hashable, Sendable {
     /// doesn't cover. Scored and planned exactly like a built-in target; see
     /// `AppState.rebuildPlans()`.
     var customTargets: [Target]
+    /// Hand-built session plans, keyed by the night they belong to (see
+    /// `NightPlan.planKey`). A night with no entry here is following the
+    /// app's own suggestion; an entry that happens to be empty is a night you
+    /// deliberately cleared, which is why absence and emptiness have to mean
+    /// different things rather than both collapsing to "no plan".
+    var sessionPlans: [String: [PlanSegment]]
     /// Whether the user has ever chosen a real site. False only until first-run
     /// onboarding finishes; `site` is meaningless while this is false and must
     /// not be used to fetch weather or build a plan.
@@ -22,6 +28,7 @@ struct StoredSettings: Codable, Hashable, Sendable {
                                         savedSites: [],
                                         savedRigs: [],
                                         customTargets: [],
+                                        sessionPlans: [:],
                                         hasSetLocation: false)
 
     // Custom Codable so settings files saved before `hasSetLocation` or
@@ -29,17 +36,18 @@ struct StoredSettings: Codable, Hashable, Sendable {
     // defaults to empty, and `hasSetLocation` falls back to inspecting the
     // decoded site itself — see the reasoning in `init(from:)` below.
     enum CodingKeys: String, CodingKey {
-        case site, rig, preferences, savedSites, savedRigs, customTargets, hasSetLocation
+        case site, rig, preferences, savedSites, savedRigs, customTargets, sessionPlans, hasSetLocation
     }
 
     init(site: Site, rig: Rig, preferences: Preferences, savedSites: [Site], savedRigs: [Rig],
-         customTargets: [Target], hasSetLocation: Bool) {
+         customTargets: [Target], sessionPlans: [String: [PlanSegment]] = [:], hasSetLocation: Bool) {
         self.site = site
         self.rig = rig
         self.preferences = preferences
         self.savedSites = savedSites
         self.savedRigs = savedRigs
         self.customTargets = customTargets
+        self.sessionPlans = sessionPlans
         self.hasSetLocation = hasSetLocation
     }
 
@@ -51,6 +59,7 @@ struct StoredSettings: Codable, Hashable, Sendable {
         savedSites = try container.decode([Site].self, forKey: .savedSites)
         savedRigs = try container.decode([Rig].self, forKey: .savedRigs)
         customTargets = try container.decodeIfPresent([Target].self, forKey: .customTargets) ?? []
+        sessionPlans = try container.decodeIfPresent([String: [PlanSegment]].self, forKey: .sessionPlans) ?? [:]
 
         // A settings file written before this flag existed cannot be taken to
         // imply the user ever chose a site. The file is rewritten on *any*

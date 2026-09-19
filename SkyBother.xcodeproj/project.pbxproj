@@ -13,6 +13,7 @@
 		041099CED0B6C9E0ED1806C6 /* SkyCoordinates.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A123B8D06CD7F1E48A51CF /* SkyCoordinates.swift */; };
 		048D8D7B36D8B30C471FDAF6 /* NearbySpotSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = E126116CAD84EF2B606A71C9 /* NearbySpotSelection.swift */; };
 		07B3EC195D51800D74499AB0 /* LandCoverClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53869FB54C79F4BE1F6B74D /* LandCoverClient.swift */; };
+		089AD8B54EEE930AA6D97EA4 /* SessionPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07610846C4AC995576033CFC /* SessionPlan.swift */; };
 		0A736B7974D55C0936645129 /* SkyQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A43221B5BB9C9C070310D8 /* SkyQuality.swift */; };
 		12CDB847CB679DCE28B904A7 /* NightTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121F6312FBA6A6551B7E5A5C /* NightTimelineView.swift */; };
 		151516883513B0BF2A9ED041 /* TargetFactCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B346A89CBB8B43A2D08D7C3 /* TargetFactCatalog.swift */; };
@@ -58,6 +59,7 @@
 		CB9E6C5F22ED9AD7DC87757A /* DarkSkyFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A248B14A8FBB175A31D3EB /* DarkSkyFinder.swift */; };
 		D4DC22A589460DD493C8A218 /* JulianDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C79FBF03E53065D44D73BD96 /* JulianDate.swift */; };
 		D70E975F3A6B6B4C2567F9AC /* SkyGlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE3702C19A7134A7E3312CE /* SkyGlow.swift */; };
+		D8132666B57371193585ED0C /* PlanStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C65B07DCED75574C6A918D /* PlanStripView.swift */; };
 		DAFF390AE0C771A2456955F5 /* LocationOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA732CB649EBDFDCFAF95C77 /* LocationOnboardingView.swift */; };
 		E09DBCB7D2FFE8D1266E6E35 /* Site.swift in Sources */ = {isa = PBXBuildFile; fileRef = 460638789B415941DD7B42EF /* Site.swift */; };
 		E2A39AB2CDF119FFA1D8BDD3 /* AutoPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BC56301A546F2B6755990EC /* AutoPlan.swift */; };
@@ -73,6 +75,7 @@
 		05D8871293889B76E76720A7 /* CloudMapClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudMapClient.swift; sourceTree = "<group>"; };
 		06609FAAB2A7F0C05A258C7D /* RigFit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RigFit.swift; sourceTree = "<group>"; };
 		0676B078C685FB1C8DCA19EB /* OpenMeteoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenMeteoClient.swift; sourceTree = "<group>"; };
+		07610846C4AC995576033CFC /* SessionPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPlan.swift; sourceTree = "<group>"; };
 		0867EA4E9C35E7C5BA67DC75 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		0B29E97C5F533FF8DAFAA2B4 /* ParkHours.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParkHours.swift; sourceTree = "<group>"; };
 		0D92198AFA083369F3D169C3 /* NearbySpotPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbySpotPanel.swift; sourceTree = "<group>"; };
@@ -81,6 +84,7 @@
 		21C5A347B7B38F09484F2E56 /* SkyBother.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SkyBother.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		256FB6DE32F301123F193DBF /* TargetImages.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = TargetImages.json; sourceTree = "<group>"; };
 		2EF533F0EAA07F58C2317C4A /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
+		31C65B07DCED75574C6A918D /* PlanStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanStripView.swift; sourceTree = "<group>"; };
 		3492EE661C53801B7CD79782 /* GalacticCoordinates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalacticCoordinates.swift; sourceTree = "<group>"; };
 		3A7F52EB44A620F8E7E1166E /* MetNorwayClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetNorwayClient.swift; sourceTree = "<group>"; };
 		3BC56301A546F2B6755990EC /* AutoPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoPlan.swift; sourceTree = "<group>"; };
@@ -190,6 +194,7 @@
 				7C7E0701838380DC076493D8 /* NightDetailView.swift */,
 				8A1994C1A48D1B45C4E8AC68 /* NightListView.swift */,
 				121F6312FBA6A6551B7E5A5C /* NightTimelineView.swift */,
+				31C65B07DCED75574C6A918D /* PlanStripView.swift */,
 				0867EA4E9C35E7C5BA67DC75 /* SettingsView.swift */,
 				6E00C215DAED2F778E792A08 /* SkyView.swift */,
 				67B068C06E3D0F513EDC1027 /* TargetCatalogView.swift */,
@@ -257,6 +262,7 @@
 				F3C0D660B9E2BB51D1FDE213 /* Planner.swift */,
 				06609FAAB2A7F0C05A258C7D /* RigFit.swift */,
 				BADEDD5380AD76CBCA30A1C1 /* ScoreNarrative.swift */,
+				07610846C4AC995576033CFC /* SessionPlan.swift */,
 				D5A43221B5BB9C9C070310D8 /* SkyQuality.swift */,
 			);
 			path = Planner;
@@ -385,11 +391,13 @@
 				58873061F3C8F87E2DE745C5 /* OpenMeteoClient.swift in Sources */,
 				CA5EF8580BC1BC01906137AA /* ParkHours.swift in Sources */,
 				77C6F6B8E60F2B26573F83E9 /* Persistence.swift in Sources */,
+				D8132666B57371193585ED0C /* PlanStripView.swift in Sources */,
 				1C9668B63C6B1E72213A48C6 /* Planner.swift in Sources */,
 				25516C64919C89F5DF964622 /* Preferences.swift in Sources */,
 				C984A842B76C1B84D255E943 /* Rig.swift in Sources */,
 				326F8BEC59E0A3AE3E8580AC /* RigFit.swift in Sources */,
 				6031E0C65F6392519CDA81C3 /* ScoreNarrative.swift in Sources */,
+				089AD8B54EEE930AA6D97EA4 /* SessionPlan.swift in Sources */,
 				4F3A5995DE781AF21D00FB3C /* SettingsView.swift in Sources */,
 				E09DBCB7D2FFE8D1266E6E35 /* Site.swift in Sources */,
 				675F24DBC1EB4F951239D4A9 /* SkyBotherApp.swift in Sources */,

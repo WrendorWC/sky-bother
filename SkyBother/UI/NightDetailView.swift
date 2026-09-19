@@ -13,12 +13,11 @@ struct NightDetailView: View {
     @State private var isSkyViewExpanded = false
     @State private var sortOption: TargetSortOption = .relevance
     @State private var isHeaderCollapsed = false
-    /// Hand-picking your own candidate pool for Tonight's Plan, rather than
-    /// the usual "everything that clears your minimum score." Transient,
-    /// like the target selection itself — this describes what you're
-    /// curating for tonight's session, not a saved preference.
-    @State private var isCustomPlanMode = false
-    @State private var customPlanTargetIDs: Set<String> = []
+    /// Whether the plan strip is a drag surface rather than a picture.
+    /// Transient on purpose — the *plan* is saved, but whether you currently
+    /// have it open for editing is no more a preference than which target is
+    /// selected.
+    @State private var isEditingPlan = false
     /// True while the scroll view is actively moving — see the note on
     /// `NightTimelineView.isScrolling`; this is what actually drives it.
     @State private var isScrolling = false
@@ -246,73 +245,94 @@ struct NightDetailView: View {
 
     private var autoPlan: [AutoPlanSlot] {
         AutoPlanner.plan(for: plan, minimumScore: state.preferences.minimumScore,
-                         restrictedTo: isCustomPlanMode ? customPlanTargetIDs : nil,
                          sessionCapMinutes: sessionCapMinutes)
     }
 
-    /// The Integration Goal, as-is, for the ordinary plan — one target
-    /// shouldn't claim more of the night than a full session actually needs,
-    /// which is exactly what that preference already means. In "Plan My Own"
-    /// mode, a fixed cap regardless of how many targets are checked only has
-    /// room for as many of them as the night is long — a 4th 120-minute slot
-    /// fits an 8-hour night, a 5th doesn't, and any target beyond that
-    /// silently drops out of the plan even though "Plan My Own" exists
-    /// specifically to fit everything checked. Shrinking the cap to a fair
-    /// share of the night's total darkness as more targets are added keeps
-    /// every one of them in the plan, just with shorter sessions, rather than
-    /// hard-stopping once fixed-size chunks run out.
-    private var sessionCapMinutes: Double {
-        let goal = state.preferences.integrationGoalMinutes
-        guard isCustomPlanMode, customPlanTargetIDs.count > 1 else { return goal }
-        let fairShare = plan.darkWindows.totalMinutes / Double(customPlanTargetIDs.count)
-        return min(goal, max(AutoPlanner.minimumSlotMinutes, fairShare))
+    /// What the strip actually shows: your own plan once you have one, and the
+    /// app's suggestion until then. `nil` from the store is meaningfully
+    /// different from an empty array — the first means "still following the
+    /// suggestion", the second means "I cleared this night on purpose" — which
+    /// is why a cleared night doesn't quietly fill itself back in.
+    private var planSegments: [PlanSegment] {
+        state.storedPlan(for: plan) ?? autoPlan.map {
+            PlanSegment(targetID: $0.targetPlan.id,
+                        targetName: $0.targetPlan.target.displayName,
+                        window: $0.window)
+        }
     }
 
+    private var isOwnPlan: Bool { state.storedPlan(for: plan) != nil }
+
+    /// Minutes in the plan that its targets can't actually be shot in — the
+    /// one number worth putting in the header, since a hand-built plan is
+    /// allowed to contain them and you'd otherwise have to spot the hatching.
+    private var unshootableMinutes: Double {
+        planSegments.reduce(0) { total, segment in
+            total + segment.unusableMinutes(against: plan.targets.first { $0.id == segment.targetID })
+        }
+    }
+
+    /// The Integration Goal, as-is: one target shouldn't claim more of the
+    /// night than a full session actually needs, which is exactly what that
+    /// preference already means.
+    ///
+    /// This used to shrink to a fair share of the night when "Plan My Own" had
+    /// several targets checked, so that everything checked still fitted
+    /// somewhere. Hand-editing replaced the checkbox pool entirely — the
+    /// suggestion is now only ever a starting point you drag from, and a block
+    /// that wants to be shorter gets dragged shorter — so there is nothing
+    /// left for a variable cap to rescue.
+    private var sessionCapMinutes: Double { state.preferences.integrationGoalMinutes }
+
     private var autoPlanSection: some View {
-        let slots = autoPlan
+        let segments = planSegments.chronological
         return VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 10) {
                 SectionHeader("Tonight's plan")
                 Spacer()
-                if !slots.isEmpty {
-                    Text("\(slots.count) target\(slots.count == 1 ? "" : "s") · \(Format.hours(slots.reduce(0) { $0 + $1.window.durationHours }))")
+                if !segments.isEmpty {
+                    Text(planSummary(segments))
                         .font(.scaled(.caption, scale: uiTextScale))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(unshootableMinutes > 0 ? Palette.marginal : .secondary)
                 }
-                if isCustomPlanMode && !customPlanTargetIDs.isEmpty {
-                    Button("Clear") { customPlanTargetIDs.removeAll() }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Palette.accent)
-                        .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                if isEditingPlan {
+                    if !segments.isEmpty {
+                        planButton("Clear") { state.clearPlan(for: plan) }
+                    }
+                    if isOwnPlan {
+                        planButton("Reset") { state.revertPlanToSuggested(for: plan) }
+                    }
                 }
-                Button {
-                    isCustomPlanMode.toggle()
-                } label: {
-                    Label(isCustomPlanMode ? "Done" : "Plan My Own", systemImage: isCustomPlanMode ? "checkmark.circle.fill" : "checklist")
+                planButton(isEditingPlan ? "Done" : "Edit plan",
+                           systemImage: isEditingPlan ? "checkmark.circle.fill" : "slider.horizontal.below.rectangle") {
+                    if !isEditingPlan { state.beginEditingPlan(for: plan, seededWith: autoPlan) }
+                    isEditingPlan.toggle()
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(Palette.accent)
-                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
             }
 
-            if isCustomPlanMode && customPlanTargetIDs.isEmpty {
-                Text("Check targets in the list below to build a plan from exactly the ones you want — this replaces the usual minimum-score cutoff entirely.")
-                    .font(.scaled(.callout, scale: uiTextScale))
-                    .foregroundStyle(.secondary)
-            } else if slots.isEmpty {
-                Text(isCustomPlanMode
-                     ? "None of your selected targets have a usable window tonight that clears each other."
+            if segments.isEmpty {
+                Text(isEditingPlan
+                     ? "Nothing planned. Press + beside any target below to drop it into the night, then drag it where you want it."
                      : "Nothing tonight clears your minimum score for long enough to build a session around.")
                     .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             } else {
-                AutoPlanStripView(plan: plan, slots: slots)
-                    .frame(height: 34)
+                PlanStripView(plan: plan, segments: segments, isEditing: isEditingPlan) { edited in
+                    state.setPlan(edited, for: plan)
+                }
+                .frame(height: isEditingPlan ? 46 : 34)
+                .animation(.easeInOut(duration: 0.18), value: isEditingPlan)
+
+                if isEditingPlan {
+                    Text("Drag a block to move it, or either end to change how long you spend there. The same target can take as many blocks of the night as you like. Hatched means the target isn't up, dark or clear then — allowed, just flagged.")
+                        .font(.scaled(.caption, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
+                }
 
                 VStack(spacing: 0) {
-                    ForEach(Array(slots.enumerated()), id: \.element.id) { index, slot in
-                        autoPlanRow(slot)
-                        if index < slots.count - 1 {
+                    ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
+                        planRow(segment)
+                        if index < segments.count - 1 {
                             Divider().padding(.leading, 50)
                         }
                     }
@@ -322,29 +342,74 @@ struct NightDetailView: View {
         }
     }
 
-    private func autoPlanRow(_ slot: AutoPlanSlot) -> some View {
-        let isSelected = state.selectedTargetID == slot.targetPlan.id
+    private func planSummary(_ segments: [PlanSegment]) -> String {
+        let blocks = "\(segments.count) block\(segments.count == 1 ? "" : "s")"
+        let hours = Format.hours(segments.totalMinutes / 60)
+        guard unshootableMinutes > 0 else { return "\(blocks) · \(hours)" }
+        return "\(blocks) · \(hours) · \(Format.duration(minutes: unshootableMinutes)) unshootable"
+    }
+
+    private func planButton(_ title: String, systemImage: String? = nil, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            if let systemImage {
+                Label(title, systemImage: systemImage)
+            } else {
+                Text(title)
+            }
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Palette.accent)
+        .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+    }
+
+    private func planRow(_ segment: PlanSegment) -> some View {
+        let targetPlan = plan.targets.first { $0.id == segment.targetID }
+        let unshootable = segment.unusableMinutes(against: targetPlan)
+        let isSelected = state.selectedTargetID == segment.targetID
         return HStack(spacing: 12) {
-            ScoreBadge(score: slot.targetPlan.score, size: 30)
+            ScoreBadge(score: targetPlan?.score ?? 0, size: 30)
             VStack(alignment: .leading, spacing: 2) {
-                Text(slot.targetPlan.target.displayName)
+                Text(segment.targetName)
                     .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
-                Text(slot.targetPlan.fit.framingNote)
-                    .font(.scaled(.caption, scale: uiTextScale))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                Group {
+                    if targetPlan == nil {
+                        Text("Not up, dark or clear at all tonight")
+                    } else if unshootable > 0 {
+                        Text("\(Format.duration(minutes: unshootable)) of this block is unshootable")
+                    } else {
+                        Text(targetPlan?.fit.framingNote ?? "")
+                    }
+                }
+                .font(.scaled(.caption, scale: uiTextScale))
+                .foregroundStyle(unshootable > 0 || targetPlan == nil ? Palette.marginal : .secondary)
+                .lineLimit(1)
             }
             Spacer(minLength: 8)
-            Text("\(Format.time(slot.window.start, in: plan.timeZone))–\(Format.time(slot.window.end, in: plan.timeZone))")
-                .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(Format.time(segment.window.start, in: plan.timeZone))–\(Format.time(segment.window.end, in: plan.timeZone))")
+                    .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                Text(Format.duration(minutes: segment.window.durationMinutes))
+                    .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            if isEditingPlan {
+                Button {
+                    state.removePlanSegment(id: segment.id, from: plan)
+                } label: {
+                    Image(systemName: "minus.circle")
+                }
+                .buttonStyle(.borderless)
                 .foregroundStyle(.secondary)
+                .help("Remove this block from the plan")
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(isSelected ? Palette.accent.opacity(0.18) : Color.clear)
         .animation(.easeInOut(duration: 0.18), value: isSelected)
         .contentShape(Rectangle())
-        .onTapGesture { state.selectedTargetID = slot.targetPlan.id }
+        .onTapGesture { state.selectedTargetID = segment.targetID }
     }
 
     // MARK: - Mission summary
@@ -594,16 +659,20 @@ struct NightDetailView: View {
         } else {
             ForEach(targets) { targetPlan in
                 HStack(spacing: 10) {
-                    if isCustomPlanMode {
-                        let isChecked = customPlanTargetIDs.contains(targetPlan.id)
-                        Image(systemName: isChecked ? "checkmark.square.fill" : "square")
-                            .font(.scaled(.title3, scale: uiTextScale))
-                            .foregroundStyle(isChecked ? Palette.accent : .secondary)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                if isChecked { customPlanTargetIDs.remove(targetPlan.id) }
-                                else { customPlanTargetIDs.insert(targetPlan.id) }
-                            }
+                    if isEditingPlan {
+                        // Add, not check: a target can be in the plan more
+                        // than once, so there is no on/off state for this
+                        // button to show. Pressing it twice is a legitimate
+                        // thing to do and gives you two blocks.
+                        Button {
+                            state.addPlanSegment(for: targetPlan, to: plan)
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.scaled(.title3, scale: uiTextScale))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Palette.accent)
+                        .help("Add a block for this target at the longest gap left in the night")
                     }
                     TargetRowView(plan: plan, targetPlan: targetPlan,
                                  isSelected: state.selectedTargetID == targetPlan.id)
