@@ -252,7 +252,8 @@ struct NightDetailView: View {
         // noticed the forecast.
         guard !plan.isCloudedOut else { return [] }
         return AutoPlanner.plan(for: plan, minimumScore: state.preferences.minimumScore,
-                                sessionCapMinutes: sessionCapMinutes)
+                                sessionCapMinutes: sessionCapMinutes,
+                                minimumSlotMinutes: state.preferences.minimumSessionMinutes)
     }
 
     /// What the strip actually shows: your own plan once you have one, and the

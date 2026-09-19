@@ -405,11 +405,12 @@ private struct PlanningSettings: View {
 
     private var planEmphasisCaption: String {
         let cap = Format.duration(minutes: state.preferences.sessionCapMinutes)
+        let floor = Format.duration(minutes: state.preferences.minimumSessionMinutes)
         switch state.preferences.planEmphasis {
         case .longerIntegration:
-            return "No target is handed more than \(cap) of a night before the others get a turn. Whatever nobody else wants is still given back afterwards, so a quiet night isn't left half empty."
+            return "No target is handed more than \(cap) before the others get a turn, and nothing under \(floor) is suggested at all — by the time the mount has slewed and refocused, a shorter slot is gone. Time nobody else wants is still given back afterwards."
         case .moreTargets:
-            return "Half your Integration goal — \(cap) — so roughly twice as many targets fit. Only changes what the app suggests; a plan you've edited is left alone."
+            return "Half your Integration goal — \(cap) — so roughly twice as many targets fit, down to sessions of \(floor). Only changes what the app suggests; a plan you've edited is left alone."
         }
     }
 

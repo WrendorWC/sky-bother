@@ -37,7 +37,9 @@ struct AutoPlanSlot: Identifiable, Hashable, Sendable {
 /// meant later, lower-priority candidates got squeezed out one after
 /// another even when the night had free time they could have used.
 enum AutoPlanner {
-    /// Below this, a window isn't worth suggesting a setup change for.
+    /// Below this, a window isn't worth suggesting a setup change for at all.
+    /// Callers raise it — see `Preferences.minimumSessionMinutes` — when the
+    /// plan has been asked to favour longer sessions.
     static let minimumSlotMinutes: Double = 20
 
     /// `restrictedTo`, when given, replaces the usual minimum-score filter
@@ -80,7 +82,8 @@ enum AutoPlanner {
     ///    thing — this pass is exactly what hands the leftover back once
     ///    nothing else wants it.
     static func plan(for night: NightPlan, minimumScore: Double, restrictedTo allowedTargetIDs: Set<String>? = nil,
-                     sessionCapMinutes: Double? = nil) -> [AutoPlanSlot] {
+                     sessionCapMinutes: Double? = nil,
+                     minimumSlotMinutes: Double = AutoPlanner.minimumSlotMinutes) -> [AutoPlanSlot] {
         let isCustom = allowedTargetIDs != nil
         let candidates = night.targets
             .filter { targetPlan in

@@ -81,6 +81,25 @@ extension Preferences {
         case .moreTargets: return max(20, integrationGoalMinutes / 2)
         }
     }
+
+    /// The shortest block worth putting in a suggested plan.
+    ///
+    /// This has to move with the emphasis, not sit at a fixed floor. Asking
+    /// for longer integration and then being handed a twenty-minute slot is a
+    /// contradiction — by the time the mount has slewed, settled and refocused
+    /// there is nothing left of it — and that is exactly what happened: a
+    /// night would come back with 30, 35 and 20 minute blocks scattered among
+    /// the real ones, because the scheduler's floor knew nothing about what
+    /// you had asked for. A third of the cap keeps the floor in proportion to
+    /// it however the Integration Goal is set.
+    var minimumSessionMinutes: Double {
+        switch planEmphasis {
+        case .longerIntegration: return max(30, sessionCapMinutes / 3)
+        // Short sessions are the whole point here, so this stays at the
+        // scheduler's own floor: below twenty minutes it isn't a session.
+        case .moreTargets: return 20
+        }
+    }
 }
 
 extension Preferences {
