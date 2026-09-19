@@ -104,7 +104,7 @@ private struct LocationSettings: View {
 
             if state.settings.savedSites.count > 1 {
                 Section("Saved sites") {
-                    ForEach(state.settings.savedSites) { saved in
+                    ForEach(sortedSavedSites) { saved in
                         HStack {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(saved.name)
@@ -143,6 +143,16 @@ private struct LocationSettings: View {
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .background(Palette.spaceBackground)
+    }
+
+    /// Sorted for reading rather than left in the order they happened to be
+    /// created, which told you only which one you set up first. Compared the
+    /// way Finder compares filenames, so the numbers in the names that
+    /// "Save as a separate spot" generates run 2, 3 … 10 instead of 10, 2, 3.
+    private var sortedSavedSites: [Site] {
+        state.settings.savedSites.sorted {
+            $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }
     }
 
     // MARK: - Horizon
