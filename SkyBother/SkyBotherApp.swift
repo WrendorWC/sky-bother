@@ -112,6 +112,16 @@ struct SkyBotherApp: App {
         }
         .defaultSize(width: 980, height: 720)
 
+        // Keyed by designation so opening the browser for a second target
+        // gives it its own window rather than hijacking the first.
+        WindowGroup(id: "sky", for: String.self) { designation in
+            SkyBrowserView(designation: designation.wrappedValue)
+                .environmentObject(state)
+                .tint(Palette.accent)
+                .appTextScale(state.preferences.textScale)
+        }
+        .defaultSize(width: 1000, height: 780)
+
         WindowGroup(id: "help") {
             HelpView()
                 .tint(Palette.accent)

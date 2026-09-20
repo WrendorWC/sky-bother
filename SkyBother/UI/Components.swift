@@ -838,8 +838,12 @@ struct TargetSkyView: View {
                 fetched = ready
                 return
             }
-            fetched = nil
-            fetched = await SkyCutoutClient.shared.image(for: request)
+            let image = await SkyCutoutClient.shared.image(for: request)
+            // Same rule as the framing preview: a superseded fetch comes back
+            // nil, and writing that back would clear a picture a newer task
+            // had already resolved.
+            guard !Task.isCancelled, let image else { return }
+            fetched = image
         }
     }
 }

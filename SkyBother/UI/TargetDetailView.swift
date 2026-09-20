@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TargetDetailView: View {
     @Environment(\.uiTextScale) private var uiTextScale
+    @Environment(\.openWindow) private var openWindow
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
     var targetPlan: TargetPlan
@@ -157,6 +158,9 @@ struct TargetDetailView: View {
             // less of it.
             FramingPreview(target: target, rig: state.rig)
                 .frame(height: 250)
+                .contentShape(Rectangle())
+                .onTapGesture { openWindow(id: "sky", value: target.designation) }
+                .help("Open this patch of sky in its own window — pan, zoom and search")
             Text(targetPlan.fit.framingNote)
                 .font(.scaled(.callout, scale: uiTextScale))
             if let sampling = targetPlan.fit.samplingNote {
@@ -346,6 +350,7 @@ struct FramingPreview: View {
     /// hasn't yet or there's no network, and the drawing falls back to the
     /// invented star field it always used.
     @State private var skyImage: NSImage?
+    @State private var measured: CGSize = .zero
 
     private var frameWidth: Double { rig.fieldOfViewWidthArcminutes }
     private var frameHeight: Double { rig.fieldOfViewHeightArcminutes }
@@ -393,22 +398,36 @@ struct FramingPreview: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            let cutout = cutout(for: geometry.size)
-            content
-                .task(id: cutout) {
-                    guard let cutout else { return }
-                    // Synchronously first: a patch already on disk should be
-                    // there on the first draw rather than appearing a beat
-                    // later in place of the placeholder.
-                    if let ready = SkyCutoutClient.shared.cachedImage(for: cutout) {
-                        skyImage = ready
-                        return
-                    }
-                    skyImage = nil
-                    skyImage = await SkyCutoutClient.shared.image(for: cutout)
+        content
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear { measured = geometry.size }
+                        .onChange(of: geometry.size) { _, size in measured = size }
                 }
-        }
+            )
+            .task(id: "\(target.designation)@\(Int(measured.width))x\(Int(measured.height))") {
+                guard let request = cutout(for: measured) else { return }
+                // Already on disk: show it on this pass rather than a beat
+                // later in place of the placeholder.
+                if let ready = SkyCutoutClient.shared.cachedImage(for: request) {
+                    skyImage = ready
+                    return
+                }
+                let image = await SkyCutoutClient.shared.image(for: request)
+                // Nothing is cleared on the way in, and nothing is written on
+                // the way out unless this task is still the current one.
+                //
+                // Laying out the pane starts a fetch, and the pane settling to
+                // its final width supersedes it. The superseded fetch is
+                // cancelled, which surfaces as a nil image — and writing that
+                // nil back wiped whatever the newer task had already resolved,
+                // so the preview sat on the drawn star field with a perfectly
+                // good picture in the cache. A failure should leave what is on
+                // screen alone rather than replace it with nothing.
+                guard !Task.isCancelled, let image else { return }
+                skyImage = image
+            }
     }
 
     private var content: some View {
@@ -438,14 +457,29 @@ struct FramingPreview: View {
                                     height: objectHeight * scale)
 
             if skyImage != nil {
-                // Over real sky the ellipse becomes an annotation rather than
-                // a stand-in for the object: an outline saying where the
-                // catalogue thinks the edge is. Seeing how far the actual
-                // nebulosity runs past it is the entire point of showing real
-                // pixels, so nothing is filled in or laid over the top.
-                context.stroke(Path(ellipseIn: objectRect),
-                               with: .color(Palette.worthwhile.opacity(0.75)),
-                               style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                // No size ellipse over real sky. It was drawn from the
+                // catalogued axes, and for a great many objects those describe
+                // something far smaller than the part worth photographing — an
+                // open cluster inside a nebula is catalogued as the cluster —
+                // so the outline sat comically inside what you could plainly
+                // see, asserting an edge that isn't there. The image says how
+                // big the thing is and doesn't need contradicting.
+                //
+                // A centre tick stays, because the survey is shallow and a
+                // faint target can be nearly invisible in it. That marks where
+                // to look without claiming how far it extends.
+                let tick: CGFloat = 7
+                let gap: CGFloat = 4
+                var marks = Path()
+                marks.move(to: CGPoint(x: centre.x - gap - tick, y: centre.y))
+                marks.addLine(to: CGPoint(x: centre.x - gap, y: centre.y))
+                marks.move(to: CGPoint(x: centre.x + gap, y: centre.y))
+                marks.addLine(to: CGPoint(x: centre.x + gap + tick, y: centre.y))
+                marks.move(to: CGPoint(x: centre.x, y: centre.y - gap - tick))
+                marks.addLine(to: CGPoint(x: centre.x, y: centre.y - gap))
+                marks.move(to: CGPoint(x: centre.x, y: centre.y + gap))
+                marks.addLine(to: CGPoint(x: centre.x, y: centre.y + gap + tick))
+                context.stroke(marks, with: .color(Palette.worthwhile.opacity(0.8)), lineWidth: 1.5)
             } else if let photo = TargetImageCatalog.nsImage(for: target.designation) {
                 context.drawLayer { layer in
                     layer.clip(to: Path(ellipseIn: objectRect))
@@ -469,11 +503,17 @@ struct FramingPreview: View {
                            with: .color(fits ? Palette.go : Palette.marginal),
                            style: StrokeStyle(lineWidth: 2, dash: fits ? [] : [5, 4]))
 
-            context.draw(Text(target.sizeSummary)
-                            .font(.system(size: 14 * uiTextScale, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white),
-                         at: CGPoint(x: centre.x, y: min(size.height - 11, objectRect.maxY + 13)),
-                         anchor: .center)
+            // Only where the ellipse it labels is actually drawn. Over real
+            // sky the catalogued size is still worth knowing, but it belongs
+            // in the notes underneath rather than stamped across a picture
+            // that disagrees with it.
+            if skyImage == nil {
+                context.draw(Text(target.sizeSummary)
+                                .font(.system(size: 14 * uiTextScale, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white),
+                             at: CGPoint(x: centre.x, y: min(size.height - 11, objectRect.maxY + 13)),
+                             anchor: .center)
+            }
             }
             .background(Palette.spaceTop, in: RoundedRectangle(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.panelBorder, lineWidth: 1.5))
