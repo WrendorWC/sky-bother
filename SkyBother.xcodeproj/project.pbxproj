@@ -24,6 +24,7 @@
 		26E2B809D7E2616BC0A260BF /* MetNorwayClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A7F52EB44A620F8E7E1166E /* MetNorwayClient.swift */; };
 		2B9DAB2E81A23A0F12B4ED8D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A8276F40E115B68D146ED7 /* AppState.swift */; };
 		326F8BEC59E0A3AE3E8580AC /* RigFit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06609FAAB2A7F0C05A258C7D /* RigFit.swift */; };
+		37D9C691B55C21A09FCFA38C /* SkyCutoutClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B21991955A54E8BBF703ACE2 /* SkyCutoutClient.swift */; };
 		3C407D22ACD7A0F9C5B40084 /* ExtendedCatalog.json in Resources */ = {isa = PBXBuildFile; fileRef = 6CE5CF299A94A6F5FA50D5E9 /* ExtendedCatalog.json */; };
 		3DD8A6E80AB4E729690DA1DF /* NightDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C7E0701838380DC076493D8 /* NightDetailView.swift */; };
 		413E25F1C0D3CA5681DE859C /* NearbySpotPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D92198AFA083369F3D169C3 /* NearbySpotPanel.swift */; };
@@ -117,6 +118,7 @@
 		A501A2931558AACCE565B244 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A817D7755EE05DCD9EFCE167 /* Ephemeris.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ephemeris.swift; sourceTree = "<group>"; };
 		B188A9E4BAF4E4E9F29FEC03 /* TimeWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeWindow.swift; sourceTree = "<group>"; };
+		B21991955A54E8BBF703ACE2 /* SkyCutoutClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyCutoutClient.swift; sourceTree = "<group>"; };
 		B58706DA975CF9D40CE33ED0 /* Images */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Images; path = SkyBother/Catalog/Images; sourceTree = SOURCE_ROOT; };
 		B5D2166015F26A2F9C352297 /* OpenHorizonFinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenHorizonFinder.swift; sourceTree = "<group>"; };
 		B6A248B14A8FBB175A31D3EB /* DarkSkyFinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarkSkyFinder.swift; sourceTree = "<group>"; };
@@ -209,6 +211,7 @@
 				A2298B98269426A86EE03028 /* BuiltInCatalog.swift */,
 				6CE5CF299A94A6F5FA50D5E9 /* ExtendedCatalog.json */,
 				B58706DA975CF9D40CE33ED0 /* Images */,
+				B21991955A54E8BBF703ACE2 /* SkyCutoutClient.swift */,
 				7B346A89CBB8B43A2D08D7C3 /* TargetFactCatalog.swift */,
 				8F6F76D10491E125AC07D893 /* TargetFacts.json */,
 				DBB0607BD112BCCCEADD74AA /* TargetImageCatalog.swift */,
@@ -402,6 +405,7 @@
 				E09DBCB7D2FFE8D1266E6E35 /* Site.swift in Sources */,
 				675F24DBC1EB4F951239D4A9 /* SkyBotherApp.swift in Sources */,
 				041099CED0B6C9E0ED1806C6 /* SkyCoordinates.swift in Sources */,
+				37D9C691B55C21A09FCFA38C /* SkyCutoutClient.swift in Sources */,
 				D70E975F3A6B6B4C2567F9AC /* SkyGlow.swift in Sources */,
 				1A88BF33F810FCBF3361CA22 /* SkyProjection.swift in Sources */,
 				0A736B7974D55C0936645129 /* SkyQuality.swift in Sources */,

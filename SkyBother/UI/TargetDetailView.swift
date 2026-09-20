@@ -168,6 +168,14 @@ struct TargetDetailView: View {
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
+            // Required by the survey's own terms, not optional politeness.
+            if let url = URL(string: SkyCutoutClient.attributionURL) {
+                Link(destination: url) {
+                    Label(SkyCutoutClient.attribution, systemImage: "camera.metering.matrix")
+                }
+                .font(.scaled(.caption, scale: uiTextScale))
+                .foregroundStyle(.tertiary)
+            }
             if let info = TargetImageCatalog.info(for: target.designation), let url = URL(string: info.sourceURL) {
                 Link(destination: url) {
                     Label("Photo: \(info.sourceTitle) via Wikipedia", systemImage: "link")
@@ -333,6 +341,11 @@ struct FramingPreview: View {
 
     @Environment(\.uiTextScale) private var uiTextScale
 
+    /// Real sky for this patch, once it has arrived. Nil means either it
+    /// hasn't yet or there's no network, and the drawing falls back to the
+    /// invented star field it always used.
+    @State private var skyImage: NSImage?
+
     private var frameWidth: Double { rig.fieldOfViewWidthArcminutes }
     private var frameHeight: Double { rig.fieldOfViewHeightArcminutes }
 
@@ -354,30 +367,85 @@ struct FramingPreview: View {
         objectWidth <= frameWidth * 0.9 && objectHeight <= frameHeight * 0.9
     }
 
+    /// The patch of sky this preview is showing, in the units the cutout
+    /// service wants. Derived from the same scale the Canvas draws with, so
+    /// the fetched image lands pixel-for-pixel on the geometry over it.
+    private func cutout(for size: CGSize) -> SkyCutout? {
+        guard frameWidth > 0, frameHeight > 0, size.width > 1, size.height > 1 else { return nil }
+        let scale = self.scale(for: size)
+        guard scale > 0 else { return nil }
+        let pixelScale = NSScreen.main?.backingScaleFactor ?? 2
+        return SkyCutout(rightAscensionDegrees: target.coordinate.rightAscension,
+                         declinationDegrees: target.coordinate.declination,
+                         widthDegrees: Double(size.width) / scale / 60,
+                         pixelWidth: Int(size.width * pixelScale),
+                         pixelHeight: Int(size.height * pixelScale))
+    }
+
+    /// Points per arcminute. Fits whichever is larger — the frame or the
+    /// object — with a margin, so an oversized target visibly spills past the
+    /// frame edges.
+    private func scale(for size: CGSize) -> CGFloat {
+        let extentX = max(frameWidth, objectWidth) * 1.18
+        let extentY = max(frameHeight, objectHeight) * 1.18
+        return min(size.width / extentX, size.height / extentY)
+    }
+
     var body: some View {
+        GeometryReader { geometry in
+            let cutout = cutout(for: geometry.size)
+            content
+                .task(id: cutout) {
+                    guard let cutout else { return }
+                    // Synchronously first: a patch already on disk should be
+                    // there on the first draw rather than appearing a beat
+                    // later in place of the placeholder.
+                    if let ready = SkyCutoutClient.shared.cachedImage(for: cutout) {
+                        skyImage = ready
+                        return
+                    }
+                    skyImage = nil
+                    skyImage = await SkyCutoutClient.shared.image(for: cutout)
+                }
+        }
+    }
+
+    private var content: some View {
         ZStack(alignment: .topLeading) {
             Canvas { context, size in
             guard frameWidth > 0, frameHeight > 0 else { return }
 
-            // A faint starfield and grid so this reads as a finished sky
-            // visualization rather than an empty technical diagram — drawn
-            // first, well under the target ellipse and frame in opacity, and
-            // before anything else so it never competes with them.
-            drawBackgroundField(context: context, size: size, seed: target.designation)
-
-            // Fit whichever is larger — the frame or the object — with a margin,
-            // so an oversized target visibly spills past the frame edges.
-            let extentX = max(frameWidth, objectWidth) * 1.18
-            let extentY = max(frameHeight, objectHeight) * 1.18
-            let scale = min(size.width / extentX, size.height / extentY)
+            let scale = self.scale(for: size)
             let centre = CGPoint(x: size.width / 2, y: size.height / 2)
+
+            if let skyImage {
+                // Real sky, filling the whole panel: the cutout was requested
+                // for exactly this angular width, so it needs no fitting.
+                context.draw(Image(nsImage: skyImage),
+                             in: CGRect(origin: .zero, size: size))
+            } else {
+                // A faint starfield and grid so this reads as a finished sky
+                // visualization rather than an empty technical diagram — drawn
+                // first, well under the target ellipse and frame in opacity, and
+                // before anything else so it never competes with them.
+                drawBackgroundField(context: context, size: size, seed: target.designation)
+            }
 
             let objectRect = CGRect(x: centre.x - objectWidth * scale / 2,
                                     y: centre.y - objectHeight * scale / 2,
                                     width: objectWidth * scale,
                                     height: objectHeight * scale)
 
-            if let photo = TargetImageCatalog.nsImage(for: target.designation) {
+            if skyImage != nil {
+                // Over real sky the ellipse becomes an annotation rather than
+                // a stand-in for the object: an outline saying where the
+                // catalogue thinks the edge is. Seeing how far the actual
+                // nebulosity runs past it is the entire point of showing real
+                // pixels, so nothing is filled in or laid over the top.
+                context.stroke(Path(ellipseIn: objectRect),
+                               with: .color(Palette.worthwhile.opacity(0.75)),
+                               style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+            } else if let photo = TargetImageCatalog.nsImage(for: target.designation) {
                 context.drawLayer { layer in
                     layer.clip(to: Path(ellipseIn: objectRect))
                     layer.draw(Image(nsImage: photo), in: aspectFilled(photo.size, into: objectRect))
