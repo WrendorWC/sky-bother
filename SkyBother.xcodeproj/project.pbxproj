@@ -31,6 +31,7 @@
 		413E25F1C0D3CA5681DE859C /* NearbySpotPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D92198AFA083369F3D169C3 /* NearbySpotPanel.swift */; };
 		43764CFCF89FC27FD0D055E1 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EF533F0EAA07F58C2317C4A /* HelpView.swift */; };
 		4789CC0F6DF5D64A3C9EBDB8 /* TargetImages.json in Resources */ = {isa = PBXBuildFile; fileRef = 256FB6DE32F301123F193DBF /* TargetImages.json */; };
+		48E51A16093CB2ECD1926A3C /* Healpix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC97249DCC95945A4EAFE11 /* Healpix.swift */; };
 		4C1689A1BAFB67948A00A658 /* Moon.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52C0F2598A5F7776EEE3A6E /* Moon.swift */; };
 		4F3A5995DE781AF21D00FB3C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0867EA4E9C35E7C5BA67DC75 /* SettingsView.swift */; };
 		4FBAD4FDA7118CE8FDB52973 /* NearbySpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F419FCEE63CD7B951505A1C /* NearbySpot.swift */; };
@@ -95,6 +96,7 @@
 		3BC56301A546F2B6755990EC /* AutoPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoPlan.swift; sourceTree = "<group>"; };
 		3BE3702C19A7134A7E3312CE /* SkyGlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyGlow.swift; sourceTree = "<group>"; };
 		3C6BB733E25C9D2AEC6029E7 /* Rig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rig.swift; sourceTree = "<group>"; };
+		3EC97249DCC95945A4EAFE11 /* Healpix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Healpix.swift; sourceTree = "<group>"; };
 		3F9A4F92C5B49E3B8C9AAD65 /* NearbyPlaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPlaces.swift; sourceTree = "<group>"; };
 		429F6B0C5AB1B97D1D20ED0D /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		4443A05DD710F60E39F0AF3B /* Angles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Angles.swift; sourceTree = "<group>"; };
@@ -248,6 +250,7 @@
 				1C9EEDCDA3EC7A04EB4FED6A /* CameraFrame.swift */,
 				A817D7755EE05DCD9EFCE167 /* Ephemeris.swift */,
 				3492EE661C53801B7CD79782 /* GalacticCoordinates.swift */,
+				3EC97249DCC95945A4EAFE11 /* Healpix.swift */,
 				C79FBF03E53065D44D73BD96 /* JulianDate.swift */,
 				C52C0F2598A5F7776EEE3A6E /* Moon.swift */,
 				F7A123B8D06CD7F1E48A51CF /* SkyCoordinates.swift */,
@@ -386,6 +389,7 @@
 				018C5DA610E416E337A61A9A /* Formatting.swift in Sources */,
 				03CC61E435364D00F238DE8F /* GalacticCoordinates.swift in Sources */,
 				E2AEE2DBCE6D6278A206D99C /* GeocodingClient.swift in Sources */,
+				48E51A16093CB2ECD1926A3C /* Healpix.swift in Sources */,
 				43764CFCF89FC27FD0D055E1 /* HelpView.swift in Sources */,
 				D4DC22A589460DD493C8A218 /* JulianDate.swift in Sources */,
 				07B3EC195D51800D74499AB0 /* LandCoverClient.swift in Sources */,
