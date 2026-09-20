@@ -110,30 +110,43 @@ struct SkyBrowserView: View {
     // MARK: - The sky
 
     private func skyCanvas(size: CGSize) -> some View {
-        ZStack {
-            Palette.spaceTop
-            if let shown {
-                Image(nsImage: shown.image)
-                    .resizable()
-                    .interpolation(.high)
-                    // Re-projected rather than redrawn: the placement below is
-                    // what makes a drag or a zoom feel immediate while the
-                    // matching cutout is still in flight.
-                    .frame(width: size.width * previewScale(shown),
-                           height: size.height * previewScale(shown))
-                    .offset(previewOffset(shown, size: size))
-                    .clipped()
+        // A fixed-size base with everything else as overlays, rather than a
+        // plain ZStack. The fetched image is deliberately larger than the
+        // window — see `fetchMargin` — and as a ZStack child it grew the stack
+        // to its own size, shoving the frame rectangle and the image itself
+        // off-centre. An overlay draws over its host without being allowed to
+        // resize it, which is exactly the relationship wanted here.
+        Rectangle()
+            .fill(Palette.spaceTop)
+            .frame(width: size.width, height: size.height)
+            .overlay {
+                if let shown {
+                    Image(nsImage: shown.image)
+                        .resizable()
+                        .interpolation(.high)
+                        // Re-projected rather than refetched: this placement is
+                        // what makes a drag or a zoom feel immediate while the
+                        // matching cutout is still in flight.
+                        .frame(width: size.width * previewScale(shown),
+                               height: size.height * previewScale(shown))
+                        .offset(previewOffset(shown, size: size))
+                }
             }
-            frameOverlay(size: size)
-            if searchResultsVisible { searchResults }
-        }
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture()
-                .updating($dragOffset) { value, offset, _ in offset = value.translation }
-                .onEnded { value in pan(by: value.translation, viewWidth: size.width) }
-        )
-        .onScroll { delta in zoom(by: delta > 0 ? 1.08 : 1 / 1.08) }
+            .overlay { frameOverlay(size: size) }
+            .overlay(alignment: .topLeading) {
+                if searchResultsVisible { searchResults }
+            }
+            .clipped()
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture()
+                    .updating($dragOffset) { value, offset, _ in offset = value.translation }
+                    .onEnded { value in pan(by: value.translation, viewWidth: size.width) }
+            )
+            // Scrolling away from you zooms in, as it does in every map: a
+            // positive delta has to *shrink* the field of view, and multiplying
+            // by 1.08 grew it, so the wheel worked backwards.
+            .onScroll { delta in zoom(by: delta > 0 ? 1 / 1.12 : 1.12) }
     }
 
     /// The rig's field of view, centred — the whole reason for looking at any
@@ -181,7 +194,6 @@ struct SkyBrowserView: View {
         .frame(width: 300)
         .background(Color.black.opacity(0.86), in: RoundedRectangle(cornerRadius: 8))
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.panelBorder))
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(12)
     }
 
@@ -253,16 +265,49 @@ struct SkyBrowserView: View {
         }
     }
 
+    /// Fetched patches cover half again as much sky as the window shows.
+    ///
+    /// Every zoom step used to be a round trip — a second of staring at a
+    /// stretched image for a 12% change — because the fetch matched the view
+    /// exactly, so the smallest movement left it short. With margin in hand,
+    /// several steps of zoom and a decent pan are served by re-projecting what
+    /// is already there, and the network is only involved once the view really
+    /// has left what the image covers.
+    private static let fetchMargin = 1.5
+
+    /// Whether what's on screen still covers the view well enough to leave
+    /// alone: not stretched past legibility, not zoomed out past its edges,
+    /// and not panned so far that an edge would show.
+    private func isCovered(_ shown: (image: NSImage, centre: EquatorialCoordinate, fov: Double),
+                           size: CGSize) -> Bool {
+        let showing = fieldOfViewDegrees / shown.fov
+        guard showing <= 0.98, showing >= 0.4 else { return false }
+        let magnification = shown.fov / fieldOfViewDegrees
+        // How far past each edge of the window the image reaches.
+        let slackX = size.width * (magnification - 1) / 2
+        let slackY = size.height * (magnification - 1) / 2
+        let offset = settledOffset(shown, size: size)
+        return abs(offset.width) <= slackX && abs(offset.height) <= slackY
+    }
+
     private func load(size: CGSize) async {
         guard size.width > 32, size.height > 32 else { return }
+        if let shown, isCovered(shown, size: size) { return }
+
+        let fetchFieldOfView = min(Self.maximumFieldOfView, fieldOfViewDegrees * Self.fetchMargin)
+        let screenScale = NSScreen.main?.backingScaleFactor ?? 2
+        // Pixels scale with the margin so the extra sky doesn't cost
+        // sharpness, capped so a big window doesn't ask for a huge render.
+        let pixelWidth = min(2048, Int(size.width * screenScale * Self.fetchMargin))
+        let pixelHeight = min(2048, Int(size.height * screenScale * Self.fetchMargin))
         let request = SkyCutout(rightAscensionDegrees: centre.rightAscension,
                                 declinationDegrees: centre.declination,
-                                widthDegrees: fieldOfViewDegrees,
-                                pixelWidth: Int(size.width * (NSScreen.main?.backingScaleFactor ?? 2)),
-                                pixelHeight: Int(size.height * (NSScreen.main?.backingScaleFactor ?? 2)))
+                                widthDegrees: fetchFieldOfView,
+                                pixelWidth: pixelWidth,
+                                pixelHeight: pixelHeight)
 
         if let ready = SkyCutoutClient.shared.cachedImage(for: request) {
-            shown = (ready, centre, fieldOfViewDegrees)
+            shown = (ready, centre, fetchFieldOfView)
             return
         }
 
@@ -277,8 +322,11 @@ struct SkyBrowserView: View {
         isLoading = true
         let image = await SkyCutoutClient.shared.image(for: request)
         isLoading = false
+        // Nothing is written back unless this is still the current request —
+        // a superseded fetch is cancelled and comes back nil, and writing that
+        // would clear a perfectly good picture.
         guard generation == fetchGeneration, let image else { return }
-        shown = (image, centre, fieldOfViewDegrees)
+        shown = (image, centre, fetchFieldOfView)
     }
 
     /// How much bigger the image on screen has to be drawn than it was taken,
@@ -287,11 +335,18 @@ struct SkyBrowserView: View {
         CGFloat(clamp(shown.fov / fieldOfViewDegrees, 0.05, 20))
     }
 
-    /// Where that image sits, given the view has since moved. Inverse of
-    /// `pan`: the sky offset between where the picture was taken and where we
-    /// are now, converted back into points, plus whatever the finger is
-    /// currently doing.
-    private func previewOffset(_ shown: (image: NSImage, centre: EquatorialCoordinate, fov: Double),
+    /// Where the image sits once the view has moved on from where it was
+    /// taken, ignoring any drag in progress.
+    ///
+    /// Both terms are negated, and that sign is the whole of what made panning
+    /// feel inverted. Right ascension grows *eastward*, which is to the left
+    /// in every survey rendering, and declination grows upward while screen y
+    /// grows down — so a patch of sky whose coordinates are greater than the
+    /// view's centre sits at a *smaller* screen coordinate, on both axes.
+    /// Getting that backwards meant that on releasing a drag the image jumped
+    /// to the mirror image of where the finger had left it, which reads
+    /// exactly like panning the wrong way.
+    private func settledOffset(_ shown: (image: NSImage, centre: EquatorialCoordinate, fov: Double),
                                size: CGSize) -> CGSize {
         let pointsPerDegree = size.width / fieldOfViewDegrees
         let cosDec = max(0.02, cosDeg(centre.declination))
@@ -299,9 +354,16 @@ struct SkyBrowserView: View {
         // The short way round, so crossing 0h doesn't fling the image away.
         if deltaRA > 180 { deltaRA -= 360 }
         if deltaRA < -180 { deltaRA += 360 }
-        let x = deltaRA * cosDec * pointsPerDegree + Double(dragOffset.width)
-        let y = (shown.centre.declination - centre.declination) * pointsPerDegree + Double(dragOffset.height)
-        return CGSize(width: x, height: y)
+        return CGSize(width: -deltaRA * cosDec * pointsPerDegree,
+                      height: -(shown.centre.declination - centre.declination) * pointsPerDegree)
+    }
+
+    /// The same, plus whatever the finger is currently doing.
+    private func previewOffset(_ shown: (image: NSImage, centre: EquatorialCoordinate, fov: Double),
+                               size: CGSize) -> CGSize {
+        let settled = settledOffset(shown, size: size)
+        return CGSize(width: settled.width + dragOffset.width,
+                      height: settled.height + dragOffset.height)
     }
 
     private var fieldOfViewSummary: String {
