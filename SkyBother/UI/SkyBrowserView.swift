@@ -23,6 +23,7 @@ struct SkyBrowserView: View {
     @State private var fieldOfViewDegrees: Double = 2.0
     @State private var searchText = ""
     @State private var label: String = ""
+    @State private var isIdentifying = false
 
     /// The image currently on screen, together with where it was taken —
     /// which is what lets it be re-projected while a sharper one is fetched.
@@ -75,6 +76,16 @@ struct SkyBrowserView: View {
                     .lineLimit(1)
             }
             Spacer()
+            Button {
+                isIdentifying.toggle()
+            } label: {
+                Label("What's this?", systemImage: isIdentifying ? "tag.fill" : "tag")
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(isIdentifying ? Palette.accent : .secondary)
+            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+            .help("Name everything in view that the catalogue knows about")
+
             Text(fieldOfViewSummary)
                 .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
                 .foregroundStyle(.secondary)
@@ -133,6 +144,7 @@ struct SkyBrowserView: View {
                 }
             }
             .overlay { frameOverlay(size: size) }
+            .overlay { if isIdentifying { identifications(size: size) } }
             .overlay(alignment: .topLeading) {
                 if searchResultsVisible { searchResults }
             }
@@ -159,6 +171,73 @@ struct SkyBrowserView: View {
             .stroke(Palette.go, lineWidth: 2)
             .frame(width: max(2, width), height: max(2, height))
             .allowsHitTesting(false)
+    }
+
+    // MARK: - Identifying
+
+    /// Everything the catalogue knows about that falls inside the current
+    /// view, marked and named where it actually sits.
+    ///
+    /// Drawn from the catalogue rather than asked of a name resolver: it is
+    /// instant, works with no network, and the 1,100-odd objects in it are
+    /// precisely the ones worth pointing a telescope at. Something genuinely
+    /// obscure will go unnamed, which is the honest outcome — better than a
+    /// label that takes a second to arrive and names a star.
+    private func identifications(size: CGSize) -> some View {
+        ZStack {
+            ForEach(visibleTargets, id: \.id) { target in
+                let offset = screenOffset(of: target.coordinate, size: size)
+                let radius = max(9.0, target.majorAxisArcminutes / 60
+                                 * Double(size.width) / fieldOfViewDegrees / 2)
+                ZStack {
+                    Circle()
+                        .strokeBorder(Palette.accent.opacity(0.85), lineWidth: 1.5)
+                        .frame(width: radius * 2, height: radius * 2)
+                    Text(target.displayName)
+                        .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 4))
+                        .fixedSize()
+                        .offset(y: radius + 11)
+                }
+                .offset(offset)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    /// Catalogue objects whose centres are inside the window, with the most
+    /// prominent first so a crowded field labels its showpieces rather than
+    /// whatever happens to come first in the file.
+    private var visibleTargets: [Target] {
+        let halfWidth = fieldOfViewDegrees / 2
+        let halfHeight = halfWidth * 0.85
+        return (BuiltInCatalog.all + state.customTargets)
+            .filter { target in
+                let cosDec = max(0.02, cosDeg(centre.declination))
+                var deltaRA = target.coordinate.rightAscension - centre.rightAscension
+                if deltaRA > 180 { deltaRA -= 360 }
+                if deltaRA < -180 { deltaRA += 360 }
+                return abs(deltaRA * cosDec) <= halfWidth
+                    && abs(target.coordinate.declination - centre.declination) <= halfHeight
+            }
+            .sorted { $0.majorAxisArcminutes > $1.majorAxisArcminutes }
+            .prefix(25)
+            .map { $0 }
+    }
+
+    /// Where a sky coordinate lands on screen, in the same convention as
+    /// `settledOffset`: east is left, north is up.
+    private func screenOffset(of coordinate: EquatorialCoordinate, size: CGSize) -> CGSize {
+        let pointsPerDegree = Double(size.width) / fieldOfViewDegrees
+        let cosDec = max(0.02, cosDeg(centre.declination))
+        var deltaRA = coordinate.rightAscension - centre.rightAscension
+        if deltaRA > 180 { deltaRA -= 360 }
+        if deltaRA < -180 { deltaRA += 360 }
+        return CGSize(width: -deltaRA * cosDec * pointsPerDegree,
+                      height: -(coordinate.declination - centre.declination) * pointsPerDegree)
     }
 
     private var searchResultsVisible: Bool {
