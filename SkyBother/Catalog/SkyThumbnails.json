@@ -1,0 +1,2414 @@
+{
+ "IC 10": {
+  "file": "IC_10.jpg",
+  "fovArcminutes": 14.9
+ },
+ "IC 1029": {
+  "file": "IC_1029.jpg",
+  "fovArcminutes": 6.1
+ },
+ "IC 1266": {
+  "file": "IC_1266.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 127": {
+  "file": "IC_127.jpg",
+  "fovArcminutes": 3.7
+ },
+ "IC 1287": {
+  "file": "IC_1287.jpg",
+  "fovArcminutes": 44.0
+ },
+ "IC 143": {
+  "file": "IC_143.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 1442": {
+  "file": "IC_1442.jpg",
+  "fovArcminutes": 9.2
+ },
+ "IC 1613": {
+  "file": "IC_1613.jpg",
+  "fovArcminutes": 40.3
+ },
+ "IC 1633": {
+  "file": "IC_1633.jpg",
+  "fovArcminutes": 6.4
+ },
+ "IC 2003": {
+  "file": "IC_2003.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 2051": {
+  "file": "IC_2051.jpg",
+  "fovArcminutes": 6.3
+ },
+ "IC 2105": {
+  "file": "IC_2105.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 2128": {
+  "file": "IC_2128.jpg",
+  "fovArcminutes": 10.6
+ },
+ "IC 2149": {
+  "file": "IC_2149.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 2157": {
+  "file": "IC_2157.jpg",
+  "fovArcminutes": 5.9
+ },
+ "IC 2165": {
+  "file": "IC_2165.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 239": {
+  "file": "IC_239.jpg",
+  "fovArcminutes": 9.4
+ },
+ "IC 2448": {
+  "file": "IC_2448.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 2469": {
+  "file": "IC_2469.jpg",
+  "fovArcminutes": 12.7
+ },
+ "IC 2488": {
+  "file": "IC_2488.jpg",
+  "fovArcminutes": 15.8
+ },
+ "IC 2501": {
+  "file": "IC_2501.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 2553": {
+  "file": "IC_2553.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 2574": {
+  "file": "IC_2574.jpg",
+  "fovArcminutes": 28.4
+ },
+ "IC 2581": {
+  "file": "IC_2581.jpg",
+  "fovArcminutes": 13.2
+ },
+ "IC 2621": {
+  "file": "IC_2621.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 3370": {
+  "file": "IC_3370.jpg",
+  "fovArcminutes": 6.9
+ },
+ "IC 342": {
+  "file": "IC_342.jpg",
+  "fovArcminutes": 43.5
+ },
+ "IC 356": {
+  "file": "IC_356.jpg",
+  "fovArcminutes": 8.8
+ },
+ "IC 3568": {
+  "file": "IC_3568.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 3896": {
+  "file": "IC_3896.jpg",
+  "fovArcminutes": 6.7
+ },
+ "IC 4191": {
+  "file": "IC_4191.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 4291": {
+  "file": "IC_4291.jpg",
+  "fovArcminutes": 11.2
+ },
+ "IC 4296": {
+  "file": "IC_4296.jpg",
+  "fovArcminutes": 10.2
+ },
+ "IC 4329": {
+  "file": "IC_4329.jpg",
+  "fovArcminutes": 10.4
+ },
+ "IC 4406": {
+  "file": "IC_4406.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 444": {
+  "file": "IC_444.jpg",
+  "fovArcminutes": 17.6
+ },
+ "IC 4634": {
+  "file": "IC_4634.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 4651": {
+  "file": "IC_4651.jpg",
+  "fovArcminutes": 21.1
+ },
+ "IC 4765": {
+  "file": "IC_4765.jpg",
+  "fovArcminutes": 8.3
+ },
+ "IC 4776": {
+  "file": "IC_4776.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 4797": {
+  "file": "IC_4797.jpg",
+  "fovArcminutes": 5.8
+ },
+ "IC 4889": {
+  "file": "IC_4889.jpg",
+  "fovArcminutes": 6.6
+ },
+ "IC 4997": {
+  "file": "IC_4997.jpg",
+  "fovArcminutes": 3.0
+ },
+ "IC 5146": {
+  "file": "IC_5146.jpg",
+  "fovArcminutes": 22.0
+ },
+ "IC 5148": {
+  "file": "IC_5148.jpg",
+  "fovArcminutes": 5.1
+ },
+ "IC 5201": {
+  "file": "IC_5201.jpg",
+  "fovArcminutes": 14.7
+ },
+ "IC 5267": {
+  "file": "IC_5267.jpg",
+  "fovArcminutes": 12.3
+ },
+ "IC 5325": {
+  "file": "IC_5325.jpg",
+  "fovArcminutes": 6.3
+ },
+ "IC 5328": {
+  "file": "IC_5328.jpg",
+  "fovArcminutes": 6.6
+ },
+ "LMC": {
+  "file": "LMC.jpg",
+  "fovArcminutes": 300.0
+ },
+ "NGC 1027": {
+  "file": "NGC_1027.jpg",
+  "fovArcminutes": 17.2
+ },
+ "NGC 103": {
+  "file": "NGC_103.jpg",
+  "fovArcminutes": 5.9
+ },
+ "NGC 104": {
+  "file": "NGC_104.jpg",
+  "fovArcminutes": 110.0
+ },
+ "NGC 1058": {
+  "file": "NGC_1058.jpg",
+  "fovArcminutes": 5.4
+ },
+ "NGC 1073": {
+  "file": "NGC_1073.jpg",
+  "fovArcminutes": 7.8
+ },
+ "NGC 1097": {
+  "file": "NGC_1097.jpg",
+  "fovArcminutes": 23.3
+ },
+ "NGC 1209": {
+  "file": "NGC_1209.jpg",
+  "fovArcminutes": 5.0
+ },
+ "NGC 121": {
+  "file": "NGC_121.jpg",
+  "fovArcminutes": 8.4
+ },
+ "NGC 1232": {
+  "file": "NGC_1232.jpg",
+  "fovArcminutes": 14.9
+ },
+ "NGC 1255": {
+  "file": "NGC_1255.jpg",
+  "fovArcminutes": 8.9
+ },
+ "NGC 129": {
+  "file": "NGC_129.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 1302": {
+  "file": "NGC_1302.jpg",
+  "fovArcminutes": 9.4
+ },
+ "NGC 1313": {
+  "file": "NGC_1313.jpg",
+  "fovArcminutes": 24.4
+ },
+ "NGC 1317": {
+  "file": "NGC_1317.jpg",
+  "fovArcminutes": 6.8
+ },
+ "NGC 1326": {
+  "file": "NGC_1326.jpg",
+  "fovArcminutes": 9.4
+ },
+ "NGC 1332": {
+  "file": "NGC_1332.jpg",
+  "fovArcminutes": 11.7
+ },
+ "NGC 134": {
+  "file": "NGC_134.jpg",
+  "fovArcminutes": 18.4
+ },
+ "NGC 1340": {
+  "file": "NGC_1340.jpg",
+  "fovArcminutes": 11.3
+ },
+ "NGC 1342": {
+  "file": "NGC_1342.jpg",
+  "fovArcminutes": 13.9
+ },
+ "NGC 1350": {
+  "file": "NGC_1350.jpg",
+  "fovArcminutes": 11.4
+ },
+ "NGC 1374": {
+  "file": "NGC_1374.jpg",
+  "fovArcminutes": 6.3
+ },
+ "NGC 1380": {
+  "file": "NGC_1380.jpg",
+  "fovArcminutes": 10.1
+ },
+ "NGC 1387": {
+  "file": "NGC_1387.jpg",
+  "fovArcminutes": 6.6
+ },
+ "NGC 1395": {
+  "file": "NGC_1395.jpg",
+  "fovArcminutes": 10.4
+ },
+ "NGC 1398": {
+  "file": "NGC_1398.jpg",
+  "fovArcminutes": 15.3
+ },
+ "NGC 1404": {
+  "file": "NGC_1404.jpg",
+  "fovArcminutes": 11.0
+ },
+ "NGC 1407": {
+  "file": "NGC_1407.jpg",
+  "fovArcminutes": 12.6
+ },
+ "NGC 1411": {
+  "file": "NGC_1411.jpg",
+  "fovArcminutes": 5.4
+ },
+ "NGC 1425": {
+  "file": "NGC_1425.jpg",
+  "fovArcminutes": 10.8
+ },
+ "NGC 1427": {
+  "file": "NGC_1427.jpg",
+  "fovArcminutes": 9.5
+ },
+ "NGC 1433": {
+  "file": "NGC_1433.jpg",
+  "fovArcminutes": 13.6
+ },
+ "NGC 1444": {
+  "file": "NGC_1444.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 1453": {
+  "file": "NGC_1453.jpg",
+  "fovArcminutes": 5.4
+ },
+ "NGC 1496": {
+  "file": "NGC_1496.jpg",
+  "fovArcminutes": 4.6
+ },
+ "NGC 1512": {
+  "file": "NGC_1512.jpg",
+  "fovArcminutes": 18.5
+ },
+ "NGC 1514": {
+  "file": "NGC_1514.jpg",
+  "fovArcminutes": 4.8
+ },
+ "NGC 1515": {
+  "file": "NGC_1515.jpg",
+  "fovArcminutes": 12.1
+ },
+ "NGC 1528": {
+  "file": "NGC_1528.jpg",
+  "fovArcminutes": 21.1
+ },
+ "NGC 1532": {
+  "file": "NGC_1532.jpg",
+  "fovArcminutes": 24.8
+ },
+ "NGC 1535": {
+  "file": "NGC_1535.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 1537": {
+  "file": "NGC_1537.jpg",
+  "fovArcminutes": 9.6
+ },
+ "NGC 1545": {
+  "file": "NGC_1545.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 1549": {
+  "file": "NGC_1549.jpg",
+  "fovArcminutes": 11.2
+ },
+ "NGC 1555": {
+  "file": "NGC_1555.jpg",
+  "fovArcminutes": 4.0
+ },
+ "NGC 1574": {
+  "file": "NGC_1574.jpg",
+  "fovArcminutes": 9.1
+ },
+ "NGC 1582": {
+  "file": "NGC_1582.jpg",
+  "fovArcminutes": 17.2
+ },
+ "NGC 1596": {
+  "file": "NGC_1596.jpg",
+  "fovArcminutes": 8.5
+ },
+ "NGC 1600": {
+  "file": "NGC_1600.jpg",
+  "fovArcminutes": 7.3
+ },
+ "NGC 1605": {
+  "file": "NGC_1605.jpg",
+  "fovArcminutes": 7.3
+ },
+ "NGC 1617": {
+  "file": "NGC_1617.jpg",
+  "fovArcminutes": 11.5
+ },
+ "NGC 1637": {
+  "file": "NGC_1637.jpg",
+  "fovArcminutes": 7.0
+ },
+ "NGC 1647": {
+  "file": "NGC_1647.jpg",
+  "fovArcminutes": 59.4
+ },
+ "NGC 1662": {
+  "file": "NGC_1662.jpg",
+  "fovArcminutes": 30.4
+ },
+ "NGC 1672": {
+  "file": "NGC_1672.jpg",
+  "fovArcminutes": 13.5
+ },
+ "NGC 1700": {
+  "file": "NGC_1700.jpg",
+  "fovArcminutes": 6.8
+ },
+ "NGC 1711": {
+  "file": "NGC_1711.jpg",
+  "fovArcminutes": 7.7
+ },
+ "NGC 1735": {
+  "file": "NGC_1735.jpg",
+  "fovArcminutes": 4.0
+ },
+ "NGC 1746": {
+  "file": "NGC_1746.jpg",
+  "fovArcminutes": 39.6
+ },
+ "NGC 1747": {
+  "file": "NGC_1747.jpg",
+  "fovArcminutes": 9.7
+ },
+ "NGC 1755": {
+  "file": "NGC_1755.jpg",
+  "fovArcminutes": 4.8
+ },
+ "NGC 1767": {
+  "file": "NGC_1767.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 1772": {
+  "file": "NGC_1772.jpg",
+  "fovArcminutes": 3.3
+ },
+ "NGC 1774": {
+  "file": "NGC_1774.jpg",
+  "fovArcminutes": 3.7
+ },
+ "NGC 1778": {
+  "file": "NGC_1778.jpg",
+  "fovArcminutes": 9.9
+ },
+ "NGC 1782": {
+  "file": "NGC_1782.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 1786": {
+  "file": "NGC_1786.jpg",
+  "fovArcminutes": 4.4
+ },
+ "NGC 1787": {
+  "file": "NGC_1787.jpg",
+  "fovArcminutes": 52.8
+ },
+ "NGC 1788": {
+  "file": "NGC_1788.jpg",
+  "fovArcminutes": 4.4
+ },
+ "NGC 1792": {
+  "file": "NGC_1792.jpg",
+  "fovArcminutes": 12.1
+ },
+ "NGC 1807": {
+  "file": "NGC_1807.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 1808": {
+  "file": "NGC_1808.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 1831": {
+  "file": "NGC_1831.jpg",
+  "fovArcminutes": 8.4
+ },
+ "NGC 1835": {
+  "file": "NGC_1835.jpg",
+  "fovArcminutes": 5.1
+ },
+ "NGC 1841": {
+  "file": "NGC_1841.jpg",
+  "fovArcminutes": 8.8
+ },
+ "NGC 1854": {
+  "file": "NGC_1854.jpg",
+  "fovArcminutes": 5.1
+ },
+ "NGC 1857": {
+  "file": "NGC_1857.jpg",
+  "fovArcminutes": 9.9
+ },
+ "NGC 1858": {
+  "file": "NGC_1858.jpg",
+  "fovArcminutes": 9.7
+ },
+ "NGC 1866": {
+  "file": "NGC_1866.jpg",
+  "fovArcminutes": 12.1
+ },
+ "NGC 1870": {
+  "file": "NGC_1870.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 1873": {
+  "file": "NGC_1873.jpg",
+  "fovArcminutes": 6.2
+ },
+ "NGC 1910": {
+  "file": "NGC_1910.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 1913": {
+  "file": "NGC_1913.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 1916": {
+  "file": "NGC_1916.jpg",
+  "fovArcminutes": 4.6
+ },
+ "NGC 1923": {
+  "file": "NGC_1923.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 1931": {
+  "file": "NGC_1931.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 1947": {
+  "file": "NGC_1947.jpg",
+  "fovArcminutes": 7.7
+ },
+ "NGC 1948": {
+  "file": "NGC_1948.jpg",
+  "fovArcminutes": 15.4
+ },
+ "NGC 1951": {
+  "file": "NGC_1951.jpg",
+  "fovArcminutes": 3.7
+ },
+ "NGC 1967": {
+  "file": "NGC_1967.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 1970": {
+  "file": "NGC_1970.jpg",
+  "fovArcminutes": 3.3
+ },
+ "NGC 1974": {
+  "file": "NGC_1974.jpg",
+  "fovArcminutes": 3.5
+ },
+ "NGC 1978": {
+  "file": "NGC_1978.jpg",
+  "fovArcminutes": 8.8
+ },
+ "NGC 1984": {
+  "file": "NGC_1984.jpg",
+  "fovArcminutes": 3.3
+ },
+ "NGC 1986": {
+  "file": "NGC_1986.jpg",
+  "fovArcminutes": 6.2
+ },
+ "NGC 1999": {
+  "file": "NGC_1999.jpg",
+  "fovArcminutes": 4.4
+ },
+ "NGC 2004": {
+  "file": "NGC_2004.jpg",
+  "fovArcminutes": 6.6
+ },
+ "NGC 2011": {
+  "file": "NGC_2011.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 2018": {
+  "file": "NGC_2018.jpg",
+  "fovArcminutes": 6.2
+ },
+ "NGC 2019": {
+  "file": "NGC_2019.jpg",
+  "fovArcminutes": 3.3
+ },
+ "NGC 2025": {
+  "file": "NGC_2025.jpg",
+  "fovArcminutes": 4.2
+ },
+ "NGC 2027": {
+  "file": "NGC_2027.jpg",
+  "fovArcminutes": 10.1
+ },
+ "NGC 2031": {
+  "file": "NGC_2031.jpg",
+  "fovArcminutes": 7.3
+ },
+ "NGC 2037": {
+  "file": "NGC_2037.jpg",
+  "fovArcminutes": 6.4
+ },
+ "NGC 2041": {
+  "file": "NGC_2041.jpg",
+  "fovArcminutes": 5.7
+ },
+ "NGC 2042": {
+  "file": "NGC_2042.jpg",
+  "fovArcminutes": 9.9
+ },
+ "NGC 2060": {
+  "file": "NGC_2060.jpg",
+  "fovArcminutes": 4.8
+ },
+ "NGC 2065": {
+  "file": "NGC_2065.jpg",
+  "fovArcminutes": 5.1
+ },
+ "NGC 2070": {
+  "file": "NGC_2070.jpg",
+  "fovArcminutes": 88.0
+ },
+ "NGC 2080": {
+  "file": "NGC_2080.jpg",
+  "fovArcminutes": 3.7
+ },
+ "NGC 2096": {
+  "file": "NGC_2096.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 2098": {
+  "file": "NGC_2098.jpg",
+  "fovArcminutes": 4.8
+ },
+ "NGC 2100": {
+  "file": "NGC_2100.jpg",
+  "fovArcminutes": 5.5
+ },
+ "NGC 2103": {
+  "file": "NGC_2103.jpg",
+  "fovArcminutes": 8.8
+ },
+ "NGC 2112": {
+  "file": "NGC_2112.jpg",
+  "fovArcminutes": 46.2
+ },
+ "NGC 2122": {
+  "file": "NGC_2122.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 2129": {
+  "file": "NGC_2129.jpg",
+  "fovArcminutes": 8.6
+ },
+ "NGC 2134": {
+  "file": "NGC_2134.jpg",
+  "fovArcminutes": 6.2
+ },
+ "NGC 2136": {
+  "file": "NGC_2136.jpg",
+  "fovArcminutes": 6.2
+ },
+ "NGC 2141": {
+  "file": "NGC_2141.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 2156": {
+  "file": "NGC_2156.jpg",
+  "fovArcminutes": 4.6
+ },
+ "NGC 2157": {
+  "file": "NGC_2157.jpg",
+  "fovArcminutes": 6.2
+ },
+ "NGC 2159": {
+  "file": "NGC_2159.jpg",
+  "fovArcminutes": 4.2
+ },
+ "NGC 2164": {
+  "file": "NGC_2164.jpg",
+  "fovArcminutes": 6.2
+ },
+ "NGC 2169": {
+  "file": "NGC_2169.jpg",
+  "fovArcminutes": 15.8
+ },
+ "NGC 2175": {
+  "file": "NGC_2175.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 2180": {
+  "file": "NGC_2180.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 2182": {
+  "file": "NGC_2182.jpg",
+  "fovArcminutes": 6.6
+ },
+ "NGC 2186": {
+  "file": "NGC_2186.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 2192": {
+  "file": "NGC_2192.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 2203": {
+  "file": "NGC_2203.jpg",
+  "fovArcminutes": 7.0
+ },
+ "NGC 2210": {
+  "file": "NGC_2210.jpg",
+  "fovArcminutes": 7.3
+ },
+ "NGC 2214": {
+  "file": "NGC_2214.jpg",
+  "fovArcminutes": 6.8
+ },
+ "NGC 2215": {
+  "file": "NGC_2215.jpg",
+  "fovArcminutes": 18.5
+ },
+ "NGC 2217": {
+  "file": "NGC_2217.jpg",
+  "fovArcminutes": 10.2
+ },
+ "NGC 2236": {
+  "file": "NGC_2236.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 2243": {
+  "file": "NGC_2243.jpg",
+  "fovArcminutes": 11.2
+ },
+ "NGC 2245": {
+  "file": "NGC_2245.jpg",
+  "fovArcminutes": 4.4
+ },
+ "NGC 2247": {
+  "file": "NGC_2247.jpg",
+  "fovArcminutes": 4.4
+ },
+ "NGC 225": {
+  "file": "NGC_225.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 2250": {
+  "file": "NGC_2250.jpg",
+  "fovArcminutes": 11.2
+ },
+ "NGC 2251": {
+  "file": "NGC_2251.jpg",
+  "fovArcminutes": 12.5
+ },
+ "NGC 2252": {
+  "file": "NGC_2252.jpg",
+  "fovArcminutes": 14.5
+ },
+ "NGC 2254": {
+  "file": "NGC_2254.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 2259": {
+  "file": "NGC_2259.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 2262": {
+  "file": "NGC_2262.jpg",
+  "fovArcminutes": 8.6
+ },
+ "NGC 2266": {
+  "file": "NGC_2266.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 2269": {
+  "file": "NGC_2269.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 2280": {
+  "file": "NGC_2280.jpg",
+  "fovArcminutes": 14.4
+ },
+ "NGC 2281": {
+  "file": "NGC_2281.jpg",
+  "fovArcminutes": 23.8
+ },
+ "NGC 2282": {
+  "file": "NGC_2282.jpg",
+  "fovArcminutes": 6.6
+ },
+ "NGC 2286": {
+  "file": "NGC_2286.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 2300": {
+  "file": "NGC_2300.jpg",
+  "fovArcminutes": 6.7
+ },
+ "NGC 2301": {
+  "file": "NGC_2301.jpg",
+  "fovArcminutes": 22.4
+ },
+ "NGC 2304": {
+  "file": "NGC_2304.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 2309": {
+  "file": "NGC_2309.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 2311": {
+  "file": "NGC_2311.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 2324": {
+  "file": "NGC_2324.jpg",
+  "fovArcminutes": 19.1
+ },
+ "NGC 2325": {
+  "file": "NGC_2325.jpg",
+  "fovArcminutes": 8.7
+ },
+ "NGC 2331": {
+  "file": "NGC_2331.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 2335": {
+  "file": "NGC_2335.jpg",
+  "fovArcminutes": 19.1
+ },
+ "NGC 2343": {
+  "file": "NGC_2343.jpg",
+  "fovArcminutes": 16.5
+ },
+ "NGC 2345": {
+  "file": "NGC_2345.jpg",
+  "fovArcminutes": 15.2
+ },
+ "NGC 2353": {
+  "file": "NGC_2353.jpg",
+  "fovArcminutes": 14.5
+ },
+ "NGC 2354": {
+  "file": "NGC_2354.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 2360": {
+  "file": "NGC_2360.jpg",
+  "fovArcminutes": 19.8
+ },
+ "NGC 2366": {
+  "file": "NGC_2366.jpg",
+  "fovArcminutes": 9.6
+ },
+ "NGC 2367": {
+  "file": "NGC_2367.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 2371": {
+  "file": "NGC_2371.jpg",
+  "fovArcminutes": 4.8
+ },
+ "NGC 2380": {
+  "file": "NGC_2380.jpg",
+  "fovArcminutes": 5.5
+ },
+ "NGC 2383": {
+  "file": "NGC_2383.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 2384": {
+  "file": "NGC_2384.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 2392": {
+  "file": "NGC_2392.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 2395": {
+  "file": "NGC_2395.jpg",
+  "fovArcminutes": 10.2
+ },
+ "NGC 2396": {
+  "file": "NGC_2396.jpg",
+  "fovArcminutes": 14.5
+ },
+ "NGC 2409": {
+  "file": "NGC_2409.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 2414": {
+  "file": "NGC_2414.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 2421": {
+  "file": "NGC_2421.jpg",
+  "fovArcminutes": 11.2
+ },
+ "NGC 2432": {
+  "file": "NGC_2432.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 2434": {
+  "file": "NGC_2434.jpg",
+  "fovArcminutes": 5.9
+ },
+ "NGC 2439": {
+  "file": "NGC_2439.jpg",
+  "fovArcminutes": 19.1
+ },
+ "NGC 2451": {
+  "file": "NGC_2451.jpg",
+  "fovArcminutes": 82.5
+ },
+ "NGC 2453": {
+  "file": "NGC_2453.jpg",
+  "fovArcminutes": 6.6
+ },
+ "NGC 2455": {
+  "file": "NGC_2455.jpg",
+  "fovArcminutes": 9.9
+ },
+ "NGC 2477": {
+  "file": "NGC_2477.jpg",
+  "fovArcminutes": 40.9
+ },
+ "NGC 2479": {
+  "file": "NGC_2479.jpg",
+  "fovArcminutes": 13.9
+ },
+ "NGC 2482": {
+  "file": "NGC_2482.jpg",
+  "fovArcminutes": 14.5
+ },
+ "NGC 2483": {
+  "file": "NGC_2483.jpg",
+  "fovArcminutes": 7.3
+ },
+ "NGC 2489": {
+  "file": "NGC_2489.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 2520": {
+  "file": "NGC_2520.jpg",
+  "fovArcminutes": 20.5
+ },
+ "NGC 2533": {
+  "file": "NGC_2533.jpg",
+  "fovArcminutes": 11.0
+ },
+ "NGC 2539": {
+  "file": "NGC_2539.jpg",
+  "fovArcminutes": 27.1
+ },
+ "NGC 2546": {
+  "file": "NGC_2546.jpg",
+  "fovArcminutes": 36.3
+ },
+ "NGC 2549": {
+  "file": "NGC_2549.jpg",
+  "fovArcminutes": 8.0
+ },
+ "NGC 2571": {
+  "file": "NGC_2571.jpg",
+  "fovArcminutes": 15.8
+ },
+ "NGC 2580": {
+  "file": "NGC_2580.jpg",
+  "fovArcminutes": 6.6
+ },
+ "NGC 2587": {
+  "file": "NGC_2587.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 2613": {
+  "file": "NGC_2613.jpg",
+  "fovArcminutes": 16.8
+ },
+ "NGC 2635": {
+  "file": "NGC_2635.jpg",
+  "fovArcminutes": 11.2
+ },
+ "NGC 2640": {
+  "file": "NGC_2640.jpg",
+  "fovArcminutes": 10.3
+ },
+ "NGC 2645": {
+  "file": "NGC_2645.jpg",
+  "fovArcminutes": 14.5
+ },
+ "NGC 2655": {
+  "file": "NGC_2655.jpg",
+  "fovArcminutes": 8.6
+ },
+ "NGC 2658": {
+  "file": "NGC_2658.jpg",
+  "fovArcminutes": 15.8
+ },
+ "NGC 2660": {
+  "file": "NGC_2660.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 2663": {
+  "file": "NGC_2663.jpg",
+  "fovArcminutes": 8.6
+ },
+ "NGC 2669": {
+  "file": "NGC_2669.jpg",
+  "fovArcminutes": 18.5
+ },
+ "NGC 2670": {
+  "file": "NGC_2670.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 2681": {
+  "file": "NGC_2681.jpg",
+  "fovArcminutes": 8.7
+ },
+ "NGC 2683": {
+  "file": "NGC_2683.jpg",
+  "fovArcminutes": 20.9
+ },
+ "NGC 2768": {
+  "file": "NGC_2768.jpg",
+  "fovArcminutes": 12.4
+ },
+ "NGC 2775": {
+  "file": "NGC_2775.jpg",
+  "fovArcminutes": 9.4
+ },
+ "NGC 278": {
+  "file": "NGC_278.jpg",
+  "fovArcminutes": 5.2
+ },
+ "NGC 2784": {
+  "file": "NGC_2784.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 2808": {
+  "file": "NGC_2808.jpg",
+  "fovArcminutes": 19.8
+ },
+ "NGC 2822": {
+  "file": "NGC_2822.jpg",
+  "fovArcminutes": 8.7
+ },
+ "NGC 2855": {
+  "file": "NGC_2855.jpg",
+  "fovArcminutes": 7.6
+ },
+ "NGC 2859": {
+  "file": "NGC_2859.jpg",
+  "fovArcminutes": 7.0
+ },
+ "NGC 2910": {
+  "file": "NGC_2910.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 2925": {
+  "file": "NGC_2925.jpg",
+  "fovArcminutes": 16.5
+ },
+ "NGC 2964": {
+  "file": "NGC_2964.jpg",
+  "fovArcminutes": 6.4
+ },
+ "NGC 2972": {
+  "file": "NGC_2972.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 3033": {
+  "file": "NGC_3033.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 3077": {
+  "file": "NGC_3077.jpg",
+  "fovArcminutes": 11.5
+ },
+ "NGC 3078": {
+  "file": "NGC_3078.jpg",
+  "fovArcminutes": 6.7
+ },
+ "NGC 3079": {
+  "file": "NGC_3079.jpg",
+  "fovArcminutes": 18.0
+ },
+ "NGC 3091": {
+  "file": "NGC_3091.jpg",
+  "fovArcminutes": 8.1
+ },
+ "NGC 3100": {
+  "file": "NGC_3100.jpg",
+  "fovArcminutes": 7.8
+ },
+ "NGC 3105": {
+  "file": "NGC_3105.jpg",
+  "fovArcminutes": 9.0
+ },
+ "NGC 3136": {
+  "file": "NGC_3136.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 3169": {
+  "file": "NGC_3169.jpg",
+  "fovArcminutes": 9.5
+ },
+ "NGC 3184": {
+  "file": "NGC_3184.jpg",
+  "fovArcminutes": 16.3
+ },
+ "NGC 3189": {
+  "file": "NGC_3189.jpg",
+  "fovArcminutes": 8.0
+ },
+ "NGC 3198": {
+  "file": "NGC_3198.jpg",
+  "fovArcminutes": 14.2
+ },
+ "NGC 3211": {
+  "file": "NGC_3211.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 3223": {
+  "file": "NGC_3223.jpg",
+  "fovArcminutes": 9.4
+ },
+ "NGC 3228": {
+  "file": "NGC_3228.jpg",
+  "fovArcminutes": 14.5
+ },
+ "NGC 3245": {
+  "file": "NGC_3245.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 3250": {
+  "file": "NGC_3250.jpg",
+  "fovArcminutes": 6.5
+ },
+ "NGC 3255": {
+  "file": "NGC_3255.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 330": {
+  "file": "NGC_330.jpg",
+  "fovArcminutes": 6.2
+ },
+ "NGC 3319": {
+  "file": "NGC_3319.jpg",
+  "fovArcminutes": 8.0
+ },
+ "NGC 3324": {
+  "file": "NGC_3324.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 3330": {
+  "file": "NGC_3330.jpg",
+  "fovArcminutes": 11.2
+ },
+ "NGC 3338": {
+  "file": "NGC_3338.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 3344": {
+  "file": "NGC_3344.jpg",
+  "fovArcminutes": 14.7
+ },
+ "NGC 3348": {
+  "file": "NGC_3348.jpg",
+  "fovArcminutes": 4.7
+ },
+ "NGC 3372": {
+  "file": "NGC_3372.jpg",
+  "fovArcminutes": 264.0
+ },
+ "NGC 3377": {
+  "file": "NGC_3377.jpg",
+  "fovArcminutes": 8.5
+ },
+ "NGC 3384": {
+  "file": "NGC_3384.jpg",
+  "fovArcminutes": 11.5
+ },
+ "NGC 3423": {
+  "file": "NGC_3423.jpg",
+  "fovArcminutes": 7.8
+ },
+ "NGC 3432": {
+  "file": "NGC_3432.jpg",
+  "fovArcminutes": 16.3
+ },
+ "NGC 3486": {
+  "file": "NGC_3486.jpg",
+  "fovArcminutes": 12.8
+ },
+ "NGC 3489": {
+  "file": "NGC_3489.jpg",
+  "fovArcminutes": 7.6
+ },
+ "NGC 3496": {
+  "file": "NGC_3496.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 3519": {
+  "file": "NGC_3519.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 3557": {
+  "file": "NGC_3557.jpg",
+  "fovArcminutes": 9.6
+ },
+ "NGC 3572": {
+  "file": "NGC_3572.jpg",
+  "fovArcminutes": 9.0
+ },
+ "NGC 3585": {
+  "file": "NGC_3585.jpg",
+  "fovArcminutes": 14.5
+ },
+ "NGC 3590": {
+  "file": "NGC_3590.jpg",
+  "fovArcminutes": 11.2
+ },
+ "NGC 362": {
+  "file": "NGC_362.jpg",
+  "fovArcminutes": 19.1
+ },
+ "NGC 3621": {
+  "file": "NGC_3621.jpg",
+  "fovArcminutes": 21.5
+ },
+ "NGC 3626": {
+  "file": "NGC_3626.jpg",
+  "fovArcminutes": 6.5
+ },
+ "NGC 3631": {
+  "file": "NGC_3631.jpg",
+  "fovArcminutes": 8.2
+ },
+ "NGC 3640": {
+  "file": "NGC_3640.jpg",
+  "fovArcminutes": 9.5
+ },
+ "NGC 3646": {
+  "file": "NGC_3646.jpg",
+  "fovArcminutes": 6.8
+ },
+ "NGC 3680": {
+  "file": "NGC_3680.jpg",
+  "fovArcminutes": 12.5
+ },
+ "NGC 3699": {
+  "file": "NGC_3699.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 3705": {
+  "file": "NGC_3705.jpg",
+  "fovArcminutes": 9.5
+ },
+ "NGC 3706": {
+  "file": "NGC_3706.jpg",
+  "fovArcminutes": 6.8
+ },
+ "NGC 3717": {
+  "file": "NGC_3717.jpg",
+  "fovArcminutes": 14.3
+ },
+ "NGC 3718": {
+  "file": "NGC_3718.jpg",
+  "fovArcminutes": 10.3
+ },
+ "NGC 3726": {
+  "file": "NGC_3726.jpg",
+  "fovArcminutes": 11.6
+ },
+ "NGC 3766": {
+  "file": "NGC_3766.jpg",
+  "fovArcminutes": 15.2
+ },
+ "NGC 3810": {
+  "file": "NGC_3810.jpg",
+  "fovArcminutes": 7.4
+ },
+ "NGC 3877": {
+  "file": "NGC_3877.jpg",
+  "fovArcminutes": 11.8
+ },
+ "NGC 3892": {
+  "file": "NGC_3892.jpg",
+  "fovArcminutes": 6.8
+ },
+ "NGC 3904": {
+  "file": "NGC_3904.jpg",
+  "fovArcminutes": 7.6
+ },
+ "NGC 3923": {
+  "file": "NGC_3923.jpg",
+  "fovArcminutes": 15.2
+ },
+ "NGC 3938": {
+  "file": "NGC_3938.jpg",
+  "fovArcminutes": 7.8
+ },
+ "NGC 3941": {
+  "file": "NGC_3941.jpg",
+  "fovArcminutes": 7.7
+ },
+ "NGC 3945": {
+  "file": "NGC_3945.jpg",
+  "fovArcminutes": 12.2
+ },
+ "NGC 3949": {
+  "file": "NGC_3949.jpg",
+  "fovArcminutes": 5.0
+ },
+ "NGC 3953": {
+  "file": "NGC_3953.jpg",
+  "fovArcminutes": 13.5
+ },
+ "NGC 3960": {
+  "file": "NGC_3960.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 3962": {
+  "file": "NGC_3962.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 4026": {
+  "file": "NGC_4026.jpg",
+  "fovArcminutes": 9.7
+ },
+ "NGC 4027": {
+  "file": "NGC_4027.jpg",
+  "fovArcminutes": 7.8
+ },
+ "NGC 4051": {
+  "file": "NGC_4051.jpg",
+  "fovArcminutes": 10.8
+ },
+ "NGC 4052": {
+  "file": "NGC_4052.jpg",
+  "fovArcminutes": 11.2
+ },
+ "NGC 4062": {
+  "file": "NGC_4062.jpg",
+  "fovArcminutes": 9.1
+ },
+ "NGC 4064": {
+  "file": "NGC_4064.jpg",
+  "fovArcminutes": 7.1
+ },
+ "NGC 4096": {
+  "file": "NGC_4096.jpg",
+  "fovArcminutes": 12.4
+ },
+ "NGC 4105": {
+  "file": "NGC_4105.jpg",
+  "fovArcminutes": 9.5
+ },
+ "NGC 4106": {
+  "file": "NGC_4106.jpg",
+  "fovArcminutes": 9.1
+ },
+ "NGC 4147": {
+  "file": "NGC_4147.jpg",
+  "fovArcminutes": 5.3
+ },
+ "NGC 4178": {
+  "file": "NGC_4178.jpg",
+  "fovArcminutes": 10.3
+ },
+ "NGC 419": {
+  "file": "NGC_419.jpg",
+  "fovArcminutes": 6.2
+ },
+ "NGC 4214": {
+  "file": "NGC_4214.jpg",
+  "fovArcminutes": 14.9
+ },
+ "NGC 4216": {
+  "file": "NGC_4216.jpg",
+  "fovArcminutes": 17.2
+ },
+ "NGC 4217": {
+  "file": "NGC_4217.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 4220": {
+  "file": "NGC_4220.jpg",
+  "fovArcminutes": 7.3
+ },
+ "NGC 4236": {
+  "file": "NGC_4236.jpg",
+  "fovArcminutes": 51.7
+ },
+ "NGC 4251": {
+  "file": "NGC_4251.jpg",
+  "fovArcminutes": 5.1
+ },
+ "NGC 4267": {
+  "file": "NGC_4267.jpg",
+  "fovArcminutes": 5.6
+ },
+ "NGC 4274": {
+  "file": "NGC_4274.jpg",
+  "fovArcminutes": 8.0
+ },
+ "NGC 4278": {
+  "file": "NGC_4278.jpg",
+  "fovArcminutes": 6.4
+ },
+ "NGC 4281": {
+  "file": "NGC_4281.jpg",
+  "fovArcminutes": 6.3
+ },
+ "NGC 4291": {
+  "file": "NGC_4291.jpg",
+  "fovArcminutes": 4.2
+ },
+ "NGC 4314": {
+  "file": "NGC_4314.jpg",
+  "fovArcminutes": 8.1
+ },
+ "NGC 4337": {
+  "file": "NGC_4337.jpg",
+  "fovArcminutes": 14.5
+ },
+ "NGC 4339": {
+  "file": "NGC_4339.jpg",
+  "fovArcminutes": 5.1
+ },
+ "NGC 4340": {
+  "file": "NGC_4340.jpg",
+  "fovArcminutes": 6.2
+ },
+ "NGC 4350": {
+  "file": "NGC_4350.jpg",
+  "fovArcminutes": 6.2
+ },
+ "NGC 4371": {
+  "file": "NGC_4371.jpg",
+  "fovArcminutes": 8.5
+ },
+ "NGC 4372": {
+  "file": "NGC_4372.jpg",
+  "fovArcminutes": 26.4
+ },
+ "NGC 4373": {
+  "file": "NGC_4373.jpg",
+  "fovArcminutes": 8.8
+ },
+ "NGC 4395": {
+  "file": "NGC_4395.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 4414": {
+  "file": "NGC_4414.jpg",
+  "fovArcminutes": 4.3
+ },
+ "NGC 4421": {
+  "file": "NGC_4421.jpg",
+  "fovArcminutes": 5.7
+ },
+ "NGC 4439": {
+  "file": "NGC_4439.jpg",
+  "fovArcminutes": 9.9
+ },
+ "NGC 4450": {
+  "file": "NGC_4450.jpg",
+  "fovArcminutes": 12.0
+ },
+ "NGC 4457": {
+  "file": "NGC_4457.jpg",
+  "fovArcminutes": 6.1
+ },
+ "NGC 4459": {
+  "file": "NGC_4459.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 4463": {
+  "file": "NGC_4463.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 4477": {
+  "file": "NGC_4477.jpg",
+  "fovArcminutes": 8.1
+ },
+ "NGC 4494": {
+  "file": "NGC_4494.jpg",
+  "fovArcminutes": 9.6
+ },
+ "NGC 45": {
+  "file": "NGC_45.jpg",
+  "fovArcminutes": 13.6
+ },
+ "NGC 4503": {
+  "file": "NGC_4503.jpg",
+  "fovArcminutes": 7.7
+ },
+ "NGC 4517": {
+  "file": "NGC_4517.jpg",
+  "fovArcminutes": 19.8
+ },
+ "NGC 4535": {
+  "file": "NGC_4535.jpg",
+  "fovArcminutes": 17.9
+ },
+ "NGC 4536": {
+  "file": "NGC_4536.jpg",
+  "fovArcminutes": 15.6
+ },
+ "NGC 4546": {
+  "file": "NGC_4546.jpg",
+  "fovArcminutes": 7.0
+ },
+ "NGC 4559": {
+  "file": "NGC_4559.jpg",
+  "fovArcminutes": 23.3
+ },
+ "NGC 457": {
+  "file": "NGC_457.jpg",
+  "fovArcminutes": 17.2
+ },
+ "NGC 4589": {
+  "file": "NGC_4589.jpg",
+  "fovArcminutes": 6.4
+ },
+ "NGC 4593": {
+  "file": "NGC_4593.jpg",
+  "fovArcminutes": 5.3
+ },
+ "NGC 4596": {
+  "file": "NGC_4596.jpg",
+  "fovArcminutes": 8.6
+ },
+ "NGC 4605": {
+  "file": "NGC_4605.jpg",
+  "fovArcminutes": 12.9
+ },
+ "NGC 4609": {
+  "file": "NGC_4609.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 4618": {
+  "file": "NGC_4618.jpg",
+  "fovArcminutes": 7.8
+ },
+ "NGC 4631": {
+  "file": "NGC_4631.jpg",
+  "fovArcminutes": 33.0
+ },
+ "NGC 4636": {
+  "file": "NGC_4636.jpg",
+  "fovArcminutes": 14.0
+ },
+ "NGC 4638": {
+  "file": "NGC_4638.jpg",
+  "fovArcminutes": 5.1
+ },
+ "NGC 4654": {
+  "file": "NGC_4654.jpg",
+  "fovArcminutes": 10.4
+ },
+ "NGC 4660": {
+  "file": "NGC_4660.jpg",
+  "fovArcminutes": 4.6
+ },
+ "NGC 4666": {
+  "file": "NGC_4666.jpg",
+  "fovArcminutes": 10.9
+ },
+ "NGC 4691": {
+  "file": "NGC_4691.jpg",
+  "fovArcminutes": 6.7
+ },
+ "NGC 4696": {
+  "file": "NGC_4696.jpg",
+  "fovArcminutes": 8.5
+ },
+ "NGC 4699": {
+  "file": "NGC_4699.jpg",
+  "fovArcminutes": 8.8
+ },
+ "NGC 4710": {
+  "file": "NGC_4710.jpg",
+  "fovArcminutes": 9.7
+ },
+ "NGC 4742": {
+  "file": "NGC_4742.jpg",
+  "fovArcminutes": 4.7
+ },
+ "NGC 4753": {
+  "file": "NGC_4753.jpg",
+  "fovArcminutes": 14.3
+ },
+ "NGC 4754": {
+  "file": "NGC_4754.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 4802": {
+  "file": "NGC_4802.jpg",
+  "fovArcminutes": 5.8
+ },
+ "NGC 4845": {
+  "file": "NGC_4845.jpg",
+  "fovArcminutes": 12.1
+ },
+ "NGC 4852": {
+  "file": "NGC_4852.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 488": {
+  "file": "NGC_488.jpg",
+  "fovArcminutes": 11.1
+ },
+ "NGC 4900": {
+  "file": "NGC_4900.jpg",
+  "fovArcminutes": 4.7
+ },
+ "NGC 4930": {
+  "file": "NGC_4930.jpg",
+  "fovArcminutes": 7.8
+ },
+ "NGC 4936": {
+  "file": "NGC_4936.jpg",
+  "fovArcminutes": 6.3
+ },
+ "NGC 4941": {
+  "file": "NGC_4941.jpg",
+  "fovArcminutes": 7.2
+ },
+ "NGC 4958": {
+  "file": "NGC_4958.jpg",
+  "fovArcminutes": 10.5
+ },
+ "NGC 5011": {
+  "file": "NGC_5011.jpg",
+  "fovArcminutes": 6.4
+ },
+ "NGC 5018": {
+  "file": "NGC_5018.jpg",
+  "fovArcminutes": 7.7
+ },
+ "NGC 5044": {
+  "file": "NGC_5044.jpg",
+  "fovArcminutes": 8.1
+ },
+ "NGC 5053": {
+  "file": "NGC_5053.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 5054": {
+  "file": "NGC_5054.jpg",
+  "fovArcminutes": 11.1
+ },
+ "NGC 5084": {
+  "file": "NGC_5084.jpg",
+  "fovArcminutes": 21.8
+ },
+ "NGC 5087": {
+  "file": "NGC_5087.jpg",
+  "fovArcminutes": 6.6
+ },
+ "NGC 5090": {
+  "file": "NGC_5090.jpg",
+  "fovArcminutes": 7.7
+ },
+ "NGC 5101": {
+  "file": "NGC_5101.jpg",
+  "fovArcminutes": 13.0
+ },
+ "NGC 5102": {
+  "file": "NGC_5102.jpg",
+  "fovArcminutes": 21.4
+ },
+ "NGC 5138": {
+  "file": "NGC_5138.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 5168": {
+  "file": "NGC_5168.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 5170": {
+  "file": "NGC_5170.jpg",
+  "fovArcminutes": 17.5
+ },
+ "NGC 5206": {
+  "file": "NGC_5206.jpg",
+  "fovArcminutes": 9.4
+ },
+ "NGC 524": {
+  "file": "NGC_524.jpg",
+  "fovArcminutes": 7.4
+ },
+ "NGC 5247": {
+  "file": "NGC_5247.jpg",
+  "fovArcminutes": 11.7
+ },
+ "NGC 5248": {
+  "file": "NGC_5248.jpg",
+  "fovArcminutes": 9.0
+ },
+ "NGC 5253": {
+  "file": "NGC_5253.jpg",
+  "fovArcminutes": 11.0
+ },
+ "NGC 5281": {
+  "file": "NGC_5281.jpg",
+  "fovArcminutes": 15.2
+ },
+ "NGC 5307": {
+  "file": "NGC_5307.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 5315": {
+  "file": "NGC_5315.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 5316": {
+  "file": "NGC_5316.jpg",
+  "fovArcminutes": 21.8
+ },
+ "NGC 5322": {
+  "file": "NGC_5322.jpg",
+  "fovArcminutes": 12.4
+ },
+ "NGC 5354": {
+  "file": "NGC_5354.jpg",
+  "fovArcminutes": 6.7
+ },
+ "NGC 5363": {
+  "file": "NGC_5363.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 5365": {
+  "file": "NGC_5365.jpg",
+  "fovArcminutes": 8.5
+ },
+ "NGC 5377": {
+  "file": "NGC_5377.jpg",
+  "fovArcminutes": 8.0
+ },
+ "NGC 5419": {
+  "file": "NGC_5419.jpg",
+  "fovArcminutes": 8.8
+ },
+ "NGC 5460": {
+  "file": "NGC_5460.jpg",
+  "fovArcminutes": 29.0
+ },
+ "NGC 5483": {
+  "file": "NGC_5483.jpg",
+  "fovArcminutes": 7.5
+ },
+ "NGC 5530": {
+  "file": "NGC_5530.jpg",
+  "fovArcminutes": 10.7
+ },
+ "NGC 5576": {
+  "file": "NGC_5576.jpg",
+  "fovArcminutes": 6.2
+ },
+ "NGC 559": {
+  "file": "NGC_559.jpg",
+  "fovArcminutes": 19.8
+ },
+ "NGC 5617": {
+  "file": "NGC_5617.jpg",
+  "fovArcminutes": 11.2
+ },
+ "NGC 5638": {
+  "file": "NGC_5638.jpg",
+  "fovArcminutes": 4.3
+ },
+ "NGC 5662": {
+  "file": "NGC_5662.jpg",
+  "fovArcminutes": 17.8
+ },
+ "NGC 5676": {
+  "file": "NGC_5676.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 5678": {
+  "file": "NGC_5678.jpg",
+  "fovArcminutes": 6.5
+ },
+ "NGC 5694": {
+  "file": "NGC_5694.jpg",
+  "fovArcminutes": 7.3
+ },
+ "NGC 5701": {
+  "file": "NGC_5701.jpg",
+  "fovArcminutes": 4.4
+ },
+ "NGC 5715": {
+  "file": "NGC_5715.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 5746": {
+  "file": "NGC_5746.jpg",
+  "fovArcminutes": 15.9
+ },
+ "NGC 5775": {
+  "file": "NGC_5775.jpg",
+  "fovArcminutes": 8.1
+ },
+ "NGC 5812": {
+  "file": "NGC_5812.jpg",
+  "fovArcminutes": 5.9
+ },
+ "NGC 5813": {
+  "file": "NGC_5813.jpg",
+  "fovArcminutes": 9.1
+ },
+ "NGC 5822": {
+  "file": "NGC_5822.jpg",
+  "fovArcminutes": 39.6
+ },
+ "NGC 5824": {
+  "file": "NGC_5824.jpg",
+  "fovArcminutes": 11.2
+ },
+ "NGC 584": {
+  "file": "NGC_584.jpg",
+  "fovArcminutes": 8.3
+ },
+ "NGC 5845": {
+  "file": "NGC_5845.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 5850": {
+  "file": "NGC_5850.jpg",
+  "fovArcminutes": 7.4
+ },
+ "NGC 5866": {
+  "file": "NGC_5866.jpg",
+  "fovArcminutes": 13.9
+ },
+ "NGC 5873": {
+  "file": "NGC_5873.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 5882": {
+  "file": "NGC_5882.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 5898": {
+  "file": "NGC_5898.jpg",
+  "fovArcminutes": 5.9
+ },
+ "NGC 5903": {
+  "file": "NGC_5903.jpg",
+  "fovArcminutes": 6.6
+ },
+ "NGC 5946": {
+  "file": "NGC_5946.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 596": {
+  "file": "NGC_596.jpg",
+  "fovArcminutes": 4.7
+ },
+ "NGC 5986": {
+  "file": "NGC_5986.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 6005": {
+  "file": "NGC_6005.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 6015": {
+  "file": "NGC_6015.jpg",
+  "fovArcminutes": 12.8
+ },
+ "NGC 6067": {
+  "file": "NGC_6067.jpg",
+  "fovArcminutes": 17.8
+ },
+ "NGC 6087": {
+  "file": "NGC_6087.jpg",
+  "fovArcminutes": 22.4
+ },
+ "NGC 609": {
+  "file": "NGC_609.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 6115": {
+  "file": "NGC_6115.jpg",
+  "fovArcminutes": 9.9
+ },
+ "NGC 6124": {
+  "file": "NGC_6124.jpg",
+  "fovArcminutes": 29.7
+ },
+ "NGC 613": {
+  "file": "NGC_613.jpg",
+  "fovArcminutes": 12.1
+ },
+ "NGC 6139": {
+  "file": "NGC_6139.jpg",
+  "fovArcminutes": 9.9
+ },
+ "NGC 6144": {
+  "file": "NGC_6144.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 6167": {
+  "file": "NGC_6167.jpg",
+  "fovArcminutes": 15.8
+ },
+ "NGC 6169": {
+  "file": "NGC_6169.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 6178": {
+  "file": "NGC_6178.jpg",
+  "fovArcminutes": 15.2
+ },
+ "NGC 6192": {
+  "file": "NGC_6192.jpg",
+  "fovArcminutes": 16.5
+ },
+ "NGC 6210": {
+  "file": "NGC_6210.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 6215": {
+  "file": "NGC_6215.jpg",
+  "fovArcminutes": 5.8
+ },
+ "NGC 6216": {
+  "file": "NGC_6216.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 6235": {
+  "file": "NGC_6235.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 6242": {
+  "file": "NGC_6242.jpg",
+  "fovArcminutes": 14.5
+ },
+ "NGC 6249": {
+  "file": "NGC_6249.jpg",
+  "fovArcminutes": 16.7
+ },
+ "NGC 6250": {
+  "file": "NGC_6250.jpg",
+  "fovArcminutes": 21.1
+ },
+ "NGC 6253": {
+  "file": "NGC_6253.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 6259": {
+  "file": "NGC_6259.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 6268": {
+  "file": "NGC_6268.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 6281": {
+  "file": "NGC_6281.jpg",
+  "fovArcminutes": 22.4
+ },
+ "NGC 6287": {
+  "file": "NGC_6287.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 6300": {
+  "file": "NGC_6300.jpg",
+  "fovArcminutes": 11.7
+ },
+ "NGC 6322": {
+  "file": "NGC_6322.jpg",
+  "fovArcminutes": 13.9
+ },
+ "NGC 6374": {
+  "file": "NGC_6374.jpg",
+  "fovArcminutes": 15.2
+ },
+ "NGC 6396": {
+  "file": "NGC_6396.jpg",
+  "fovArcminutes": 7.3
+ },
+ "NGC 6404": {
+  "file": "NGC_6404.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 6425": {
+  "file": "NGC_6425.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 6440": {
+  "file": "NGC_6440.jpg",
+  "fovArcminutes": 11.2
+ },
+ "NGC 6445": {
+  "file": "NGC_6445.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 6451": {
+  "file": "NGC_6451.jpg",
+  "fovArcminutes": 15.8
+ },
+ "NGC 6453": {
+  "file": "NGC_6453.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 6469": {
+  "file": "NGC_6469.jpg",
+  "fovArcminutes": 19.8
+ },
+ "NGC 6482": {
+  "file": "NGC_6482.jpg",
+  "fovArcminutes": 4.5
+ },
+ "NGC 6496": {
+  "file": "NGC_6496.jpg",
+  "fovArcminutes": 10.2
+ },
+ "NGC 6503": {
+  "file": "NGC_6503.jpg",
+  "fovArcminutes": 13.1
+ },
+ "NGC 6507": {
+  "file": "NGC_6507.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 6517": {
+  "file": "NGC_6517.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 654": {
+  "file": "NGC_654.jpg",
+  "fovArcminutes": 13.9
+ },
+ "NGC 6544": {
+  "file": "NGC_6544.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 6546": {
+  "file": "NGC_6546.jpg",
+  "fovArcminutes": 15.2
+ },
+ "NGC 6563": {
+  "file": "NGC_6563.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 6567": {
+  "file": "NGC_6567.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 6568": {
+  "file": "NGC_6568.jpg",
+  "fovArcminutes": 17.2
+ },
+ "NGC 6583": {
+  "file": "NGC_6583.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 6590": {
+  "file": "NGC_6590.jpg",
+  "fovArcminutes": 8.8
+ },
+ "NGC 660": {
+  "file": "NGC_660.jpg",
+  "fovArcminutes": 10.1
+ },
+ "NGC 6604": {
+  "file": "NGC_6604.jpg",
+  "fovArcminutes": 21.1
+ },
+ "NGC 6605": {
+  "file": "NGC_6605.jpg",
+  "fovArcminutes": 13.9
+ },
+ "NGC 6625": {
+  "file": "NGC_6625.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 663": {
+  "file": "NGC_663.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 6638": {
+  "file": "NGC_6638.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 6642": {
+  "file": "NGC_6642.jpg",
+  "fovArcminutes": 8.6
+ },
+ "NGC 6643": {
+  "file": "NGC_6643.jpg",
+  "fovArcminutes": 7.3
+ },
+ "NGC 6644": {
+  "file": "NGC_6644.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 6645": {
+  "file": "NGC_6645.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 6647": {
+  "file": "NGC_6647.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 6652": {
+  "file": "NGC_6652.jpg",
+  "fovArcminutes": 11.2
+ },
+ "NGC 6683": {
+  "file": "NGC_6683.jpg",
+  "fovArcminutes": 6.6
+ },
+ "NGC 6684": {
+  "file": "NGC_6684.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 6703": {
+  "file": "NGC_6703.jpg",
+  "fovArcminutes": 5.3
+ },
+ "NGC 6704": {
+  "file": "NGC_6704.jpg",
+  "fovArcminutes": 7.3
+ },
+ "NGC 6709": {
+  "file": "NGC_6709.jpg",
+  "fovArcminutes": 19.1
+ },
+ "NGC 6716": {
+  "file": "NGC_6716.jpg",
+  "fovArcminutes": 15.8
+ },
+ "NGC 6743": {
+  "file": "NGC_6743.jpg",
+  "fovArcminutes": 15.2
+ },
+ "NGC 6752": {
+  "file": "NGC_6752.jpg",
+  "fovArcminutes": 29.0
+ },
+ "NGC 6753": {
+  "file": "NGC_6753.jpg",
+  "fovArcminutes": 6.5
+ },
+ "NGC 6758": {
+  "file": "NGC_6758.jpg",
+  "fovArcminutes": 6.1
+ },
+ "NGC 6760": {
+  "file": "NGC_6760.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 6791": {
+  "file": "NGC_6791.jpg",
+  "fovArcminutes": 13.9
+ },
+ "NGC 6802": {
+  "file": "NGC_6802.jpg",
+  "fovArcminutes": 9.9
+ },
+ "NGC 6803": {
+  "file": "NGC_6803.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 6811": {
+  "file": "NGC_6811.jpg",
+  "fovArcminutes": 15.8
+ },
+ "NGC 6823": {
+  "file": "NGC_6823.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 6861": {
+  "file": "NGC_6861.jpg",
+  "fovArcminutes": 7.0
+ },
+ "NGC 6868": {
+  "file": "NGC_6868.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 6876": {
+  "file": "NGC_6876.jpg",
+  "fovArcminutes": 7.6
+ },
+ "NGC 6883": {
+  "file": "NGC_6883.jpg",
+  "fovArcminutes": 9.9
+ },
+ "NGC 6907": {
+  "file": "NGC_6907.jpg",
+  "fovArcminutes": 7.3
+ },
+ "NGC 6934": {
+  "file": "NGC_6934.jpg",
+  "fovArcminutes": 11.9
+ },
+ "NGC 6940": {
+  "file": "NGC_6940.jpg",
+  "fovArcminutes": 23.8
+ },
+ "NGC 6958": {
+  "file": "NGC_6958.jpg",
+  "fovArcminutes": 5.4
+ },
+ "NGC 6995": {
+  "file": "NGC_6995.jpg",
+  "fovArcminutes": 26.4
+ },
+ "NGC 6997": {
+  "file": "NGC_6997.jpg",
+  "fovArcminutes": 15.2
+ },
+ "NGC 7006": {
+  "file": "NGC_7006.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 7008": {
+  "file": "NGC_7008.jpg",
+  "fovArcminutes": 3.1
+ },
+ "NGC 7039": {
+  "file": "NGC_7039.jpg",
+  "fovArcminutes": 17.2
+ },
+ "NGC 7049": {
+  "file": "NGC_7049.jpg",
+  "fovArcminutes": 8.7
+ },
+ "NGC 7062": {
+  "file": "NGC_7062.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 7063": {
+  "file": "NGC_7063.jpg",
+  "fovArcminutes": 13.9
+ },
+ "NGC 7067": {
+  "file": "NGC_7067.jpg",
+  "fovArcminutes": 5.3
+ },
+ "NGC 7082": {
+  "file": "NGC_7082.jpg",
+  "fovArcminutes": 19.8
+ },
+ "NGC 7083": {
+  "file": "NGC_7083.jpg",
+  "fovArcminutes": 7.8
+ },
+ "NGC 7086": {
+  "file": "NGC_7086.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 7090": {
+  "file": "NGC_7090.jpg",
+  "fovArcminutes": 17.9
+ },
+ "NGC 7128": {
+  "file": "NGC_7128.jpg",
+  "fovArcminutes": 6.6
+ },
+ "NGC 7144": {
+  "file": "NGC_7144.jpg",
+  "fovArcminutes": 7.5
+ },
+ "NGC 7145": {
+  "file": "NGC_7145.jpg",
+  "fovArcminutes": 6.5
+ },
+ "NGC 7160": {
+  "file": "NGC_7160.jpg",
+  "fovArcminutes": 9.2
+ },
+ "NGC 7192": {
+  "file": "NGC_7192.jpg",
+  "fovArcminutes": 5.3
+ },
+ "NGC 720": {
+  "file": "NGC_720.jpg",
+  "fovArcminutes": 9.9
+ },
+ "NGC 7205": {
+  "file": "NGC_7205.jpg",
+  "fovArcminutes": 8.1
+ },
+ "NGC 7213": {
+  "file": "NGC_7213.jpg",
+  "fovArcminutes": 10.6
+ },
+ "NGC 7217": {
+  "file": "NGC_7217.jpg",
+  "fovArcminutes": 9.9
+ },
+ "NGC 7226": {
+  "file": "NGC_7226.jpg",
+  "fovArcminutes": 6.6
+ },
+ "NGC 7234": {
+  "file": "NGC_7234.jpg",
+  "fovArcminutes": 5.3
+ },
+ "NGC 7243": {
+  "file": "NGC_7243.jpg",
+  "fovArcminutes": 33.0
+ },
+ "NGC 7245": {
+  "file": "NGC_7245.jpg",
+  "fovArcminutes": 8.6
+ },
+ "NGC 7261": {
+  "file": "NGC_7261.jpg",
+  "fovArcminutes": 15.2
+ },
+ "NGC 7295": {
+  "file": "NGC_7295.jpg",
+  "fovArcminutes": 5.9
+ },
+ "NGC 7314": {
+  "file": "NGC_7314.jpg",
+  "fovArcminutes": 9.3
+ },
+ "NGC 7377": {
+  "file": "NGC_7377.jpg",
+  "fovArcminutes": 8.6
+ },
+ "NGC 7410": {
+  "file": "NGC_7410.jpg",
+  "fovArcminutes": 13.2
+ },
+ "NGC 7424": {
+  "file": "NGC_7424.jpg",
+  "fovArcminutes": 11.0
+ },
+ "NGC 7457": {
+  "file": "NGC_7457.jpg",
+  "fovArcminutes": 8.7
+ },
+ "NGC 7492": {
+  "file": "NGC_7492.jpg",
+  "fovArcminutes": 6.6
+ },
+ "NGC 752": {
+  "file": "NGC_752.jpg",
+  "fovArcminutes": 85.8
+ },
+ "NGC 7626": {
+  "file": "NGC_7626.jpg",
+  "fovArcminutes": 5.5
+ },
+ "NGC 7686": {
+  "file": "NGC_7686.jpg",
+  "fovArcminutes": 7.9
+ },
+ "NGC 7713": {
+  "file": "NGC_7713.jpg",
+  "fovArcminutes": 10.8
+ },
+ "NGC 772": {
+  "file": "NGC_772.jpg",
+  "fovArcminutes": 10.1
+ },
+ "NGC 7741": {
+  "file": "NGC_7741.jpg",
+  "fovArcminutes": 8.0
+ },
+ "NGC 7788": {
+  "file": "NGC_7788.jpg",
+  "fovArcminutes": 5.3
+ },
+ "NGC 7789": {
+  "file": "NGC_7789.jpg",
+  "fovArcminutes": 31.7
+ },
+ "NGC 779": {
+  "file": "NGC_779.jpg",
+  "fovArcminutes": 3.0
+ },
+ "NGC 908": {
+  "file": "NGC_908.jpg",
+  "fovArcminutes": 13.5
+ },
+ "NGC 925": {
+  "file": "NGC_925.jpg",
+  "fovArcminutes": 23.6
+ },
+ "NGC 936": {
+  "file": "NGC_936.jpg",
+  "fovArcminutes": 9.8
+ },
+ "NGC 988": {
+  "file": "NGC_988.jpg",
+  "fovArcminutes": 9.5
+ },
+ "SMC": {
+  "file": "SMC.jpg",
+  "fovArcminutes": 300.0
+ }
+}

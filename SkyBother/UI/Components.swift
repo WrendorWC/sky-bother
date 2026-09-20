@@ -794,18 +794,73 @@ func drawStarfield(context: GraphicsContext, size: CGSize, seed: String) {
     }
 }
 
-/// A target's reference photo, if the built-in catalog has one, filling and
-/// cropping its space. Falls back to a starry "no photo" placeholder so
-/// callers never have to branch on whether a given target has art — most of
-/// the ~1000 extended-catalog objects don't have a Wikipedia photo to draw
-/// from, so this is the common case, not a rare edge case.
+/// This target's actual patch of sky, from the Digitized Sky Survey.
+///
+/// Prefers the thumbnail built into the app, and falls back to fetching one —
+/// which is the case for every target that *does* have a Wikipedia photo,
+/// since the build script only fills the gaps. Those are worth fetching on
+/// demand rather than bundling: the catalogue sheet is opened one target at a
+/// time, and the client caches what it gets.
+struct TargetSkyView: View {
+    @Environment(\.uiTextScale) private var uiTextScale
+    var target: Target
+    var contentMode: ContentMode = .fit
+
+    @State private var fetched: NSImage?
+
+    /// The same framing rule the build script uses, so a bundled thumbnail
+    /// and a fetched one show the same amount of sky.
+    private var cutout: SkyCutout {
+        let arcminutes = max(3.0, min(300.0, target.majorAxisArcminutes * 2.2))
+        return SkyCutout(rightAscensionDegrees: target.coordinate.rightAscension,
+                         declinationDegrees: target.coordinate.declination,
+                         widthDegrees: arcminutes / 60,
+                         pixelWidth: 512, pixelHeight: 512)
+    }
+
+    var body: some View {
+        Group {
+            if let image = TargetImageCatalog.skyThumbnail(for: target.designation) ?? fetched {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: contentMode)
+            } else {
+                ZStack {
+                    Palette.spaceTop
+                    ProgressView().controlSize(.small)
+                }
+            }
+        }
+        .task(id: target.designation) {
+            guard TargetImageCatalog.skyThumbnail(for: target.designation) == nil else { return }
+            let request = cutout
+            if let ready = SkyCutoutClient.shared.cachedImage(for: request) {
+                fetched = ready
+                return
+            }
+            fetched = nil
+            fetched = await SkyCutoutClient.shared.image(for: request)
+        }
+    }
+}
+
+/// A target's picture, filling and cropping its space.
+///
+/// Wikipedia photo first where one exists: a colour image from a real
+/// telescope, which simply looks better than a photographic-plate scan. Where
+/// there isn't one — about 600 of the ~1150 catalogue objects — a Digitized
+/// Sky Survey thumbnail of that patch of sky stands in. The starry
+/// placeholder underneath both is now genuinely rare rather than the common
+/// case it used to be, and means only that a target is outside the survey or
+/// was added by hand.
 struct TargetThumbnail: View {
     @Environment(\.uiTextScale) private var uiTextScale
     var designation: String
     var contentMode: ContentMode = .fill
 
     var body: some View {
-        if let image = TargetImageCatalog.nsImage(for: designation) {
+        if let image = TargetImageCatalog.nsImage(for: designation)
+            ?? TargetImageCatalog.skyThumbnail(for: designation) {
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: contentMode)

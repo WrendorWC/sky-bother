@@ -228,11 +228,23 @@ struct TargetCatalogDetail: View {
             // VStack's own intrinsic size drive the sheet means it's exactly
             // as tall as this particular target needs, never more.
             VStack(alignment: .leading, spacing: 16) {
-                TargetThumbnail(designation: target.designation, contentMode: .fit)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 300)
-                    .background(Palette.spaceTop, in: RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.panelBorder))
+                // Both, where both exist: the survey says what is really
+                // there and how it sits among its neighbours, the photograph
+                // says what it looks like properly exposed in colour. They
+                // answer different questions and neither replaces the other —
+                // which is why the sheet shows them side by side rather than
+                // picking one.
+                HStack(alignment: .top, spacing: 12) {
+                    labelledImage("Sky survey") {
+                        TargetSkyView(target: target)
+                    }
+                    if TargetImageCatalog.hasPhoto(for: target.designation) {
+                        labelledImage("Photograph") {
+                            TargetThumbnail(designation: target.designation, contentMode: .fit)
+                        }
+                    }
+                }
+                .frame(height: 300)
 
                 VStack(alignment: .leading, spacing: 8) {
                     factRow("Magnitude", String(format: "%.1f", target.magnitude))
@@ -263,9 +275,19 @@ struct TargetCatalogDetail: View {
                     .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.panelBorder))
                 }
 
-                if let info = TargetImageCatalog.info(for: target.designation), let url = URL(string: info.sourceURL) {
+                // Credit for the survey imagery, required by its licence.
+                if let url = URL(string: SkyCutoutClient.attributionURL) {
                     Link(destination: url) {
-                        Label("Photo: \(info.sourceTitle) via Wikipedia", systemImage: "link")
+                        Label(SkyCutoutClient.attribution, systemImage: "camera.metering.matrix")
+                    }
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(.tertiary)
+                }
+
+                if let info = TargetImageCatalog.info(for: target.designation),
+                   let source = info.sourceURL, let url = URL(string: source) {
+                    Link(destination: url) {
+                        Label("Photo: \(info.sourceTitle ?? target.designation) via Wikipedia", systemImage: "link")
                     }
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(Palette.accent)
@@ -275,6 +297,19 @@ struct TargetCatalogDetail: View {
         }
         .frame(minWidth: 440, idealWidth: 460, maxWidth: 520)
         .spaceBackground()
+    }
+
+    private func labelledImage<Content: View>(_ title: String,
+                                              @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title.uppercased())
+                .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
+                .foregroundStyle(.tertiary)
+            content()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Palette.spaceTop, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.panelBorder))
+        }
     }
 
     private func factRow(_ label: String, _ value: String) -> some View {

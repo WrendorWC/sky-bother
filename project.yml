@@ -29,7 +29,13 @@ targets:
       - path: SkyBother
         excludes:
           - Catalog/Images
+          - Catalog/SkyThumbnails
       - path: SkyBother/Catalog/Images
+        type: folder
+      # Same treatment for the same reason: TargetImageCatalog looks these up
+      # with `subdirectory: "SkyThumbnails"`, which needs the folder copied as
+      # a unit rather than its contents scattered into Resources.
+      - path: SkyBother/Catalog/SkyThumbnails
         type: folder
     settings:
       base:

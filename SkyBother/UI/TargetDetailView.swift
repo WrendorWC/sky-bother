@@ -176,9 +176,10 @@ struct TargetDetailView: View {
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.tertiary)
             }
-            if let info = TargetImageCatalog.info(for: target.designation), let url = URL(string: info.sourceURL) {
+            if let info = TargetImageCatalog.info(for: target.designation),
+                   let source = info.sourceURL, let url = URL(string: source) {
                 Link(destination: url) {
-                    Label("Photo: \(info.sourceTitle) via Wikipedia", systemImage: "link")
+                    Label("Photo: \(info.sourceTitle ?? target.designation) via Wikipedia", systemImage: "link")
                 }
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(Palette.accent)
