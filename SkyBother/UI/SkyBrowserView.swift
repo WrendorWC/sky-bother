@@ -35,6 +35,11 @@ struct SkyBrowserView: View {
     @State private var isLoading = false
     @State private var fetchGeneration = 0
 
+    /// Sharp cells, keyed by their request. Drawn over the coarse base.
+    @State private var cells: [String: NSImage] = [:]
+    @State private var requestedCells: Set<String> = []
+    @State private var cellEpoch = 0
+
     /// Live gesture offsets, applied on top of `centre` without committing to
     /// it, so a drag can be followed continuously and resolved once.
     @GestureState private var dragOffset: CGSize = .zero
@@ -157,6 +162,13 @@ struct SkyBrowserView: View {
                         .frame(width: size.width * previewScale(shown),
                                height: size.height * previewScale(shown))
                         .offset(previewOffset(shown, size: size))
+                }
+                // The sharp layer, over the coarse one so nothing is ever
+                // blank while it fills in.
+                let epoch = cellEpoch
+                Canvas { context, canvasSize in
+                    _ = epoch
+                    drawCells(context: context, size: canvasSize)
                 }
             }
             .overlay { frameOverlay(size: size) }
@@ -532,7 +544,7 @@ struct SkyBrowserView: View {
     ///
     /// So there is a budget on total area instead of a cap per side, spent in
     /// whatever shape the window is. Slightly soft beats waiting.
-    private static func pixels(for size: CGSize, magnification: Double, budget: Double = 900_000) -> (Int, Int) {
+    private static func pixels(for size: CGSize, magnification: Double, budget: Double = 260_000) -> (Int, Int) {
         let scale = Double(NSScreen.main?.backingScaleFactor ?? 2)
         var width = Double(size.width) * scale * magnification
         var height = Double(size.height) * scale * magnification
@@ -553,7 +565,6 @@ struct SkyBrowserView: View {
 
         if let ready = SkyCutoutClient.shared.cachedImage(for: request.cutout) {
             shown = (ready, request.centre, request.fov)
-            prefetchNeighbours(of: request, size: size)
             return
         }
 
@@ -590,30 +601,108 @@ struct SkyBrowserView: View {
         // would clear a perfectly good picture.
         guard generation == fetchGeneration, let image else { return }
         shown = (image, request.centre, request.fov)
-        prefetchNeighbours(of: request, size: size)
     }
 
-    /// Quietly fetches the four cells around this one.
+    // MARK: - Sharp mosaic
+
+    /// One patch of the sharp layer.
+    private struct Cell {
+        var centre: EquatorialCoordinate
+        var fov: Double
+        var cutout: SkyCutout
+        var key: String { cutout.cacheKey }
+    }
+
+    /// Pixels per cell. Four of these in parallel cost about what one request
+    /// of the same total size costs divided by five — measured against the
+    /// service, a single 2048×1600 render took 17.5s where the same 3.3
+    /// megapixels split four ways and fetched at once took 3.7s. Its cost
+    /// climbs with area, so many small requests beat one large one by a
+    /// distance, and that is the whole reason the sharp layer is a mosaic.
+    private static let cellPixels = 1024
+
+    /// The cells covering the view, on a grid so that panning reuses them.
     ///
-    /// Panning is overwhelmingly sideways into the next cell, and having it
-    /// already in hand turns the commonest move from a wait into nothing at
-    /// all. These never touch `shown`; they only warm the cache.
-    private func prefetchNeighbours(of request: (cutout: SkyCutout, centre: EquatorialCoordinate, fov: Double),
-                                    size: CGSize) {
-        let step = request.fov / 4
-        let raStep = step / max(0.05, cosDeg(request.centre.declination))
-        let around = [(raStep, 0.0), (-raStep, 0.0), (0.0, step), (0.0, -step)]
-        for (deltaRA, deltaDec) in around {
-            let declination = clamp(request.centre.declination + deltaDec, -89, 89)
-            let neighbour = SkyCutout(
-                rightAscensionDegrees: normalize360(request.centre.rightAscension + deltaRA),
-                declinationDegrees: declination,
-                widthDegrees: request.fov,
-                pixelWidth: request.cutout.pixelWidth,
-                pixelHeight: request.cutout.pixelHeight)
-            guard SkyCutoutClient.shared.cachedImage(for: neighbour) == nil else { continue }
-            Task.detached(priority: .background) {
-                _ = await SkyCutoutClient.shared.image(for: neighbour)
+    /// Half the field across, so two of them span the window and 1024 pixels
+    /// each lands about two thousand across the view — which is what a retina
+    /// display actually shows. Only cells that genuinely overlap the window
+    /// are included: generating a fixed ring around the centre produced
+    /// twenty-five of them for a view that needed four, and twenty-five
+    /// megapixels of requests is how a fast idea becomes a slow one.
+    private func mosaic(for size: CGSize) -> [Cell] {
+        let fov = Self.fieldLadder.first { $0 >= fieldOfViewDegrees / 2 } ?? fieldOfViewDegrees
+        let pointsPerDegree = Double(size.width) / fieldOfViewDegrees
+        let side = fov * pointsPerDegree
+        let view = CGRect(x: -Double(size.width) / 2 - Double(dragOffset.width),
+                          y: -Double(size.height) / 2 - Double(dragOffset.height),
+                          width: Double(size.width), height: Double(size.height))
+
+        let reach = Int((fieldOfViewDegrees / fov).rounded(.up)) + 1
+        let baseDec = (centre.declination / fov).rounded() * fov
+        var result: [Cell] = []
+
+        for row in -reach...reach {
+            let declination = clamp(baseDec + Double(row) * fov, -88, 88)
+            let raStep = fov / max(0.05, cosDeg(declination))
+            let baseRA = (centre.rightAscension / raStep).rounded() * raStep
+            for column in -reach...reach {
+                let rightAscension = normalize360(baseRA + Double(column) * raStep)
+                let cellCentre = EquatorialCoordinate(rightAscension: rightAscension,
+                                                      declination: declination)
+                let offset = screenOffset(of: cellCentre, size: size)
+                let rect = CGRect(x: offset.width - side / 2, y: offset.height - side / 2,
+                                  width: side, height: side)
+                guard rect.intersects(view) else { continue }
+                result.append(Cell(centre: cellCentre, fov: fov,
+                                   cutout: SkyCutout(rightAscensionDegrees: rightAscension,
+                                                     declinationDegrees: declination,
+                                                     widthDegrees: fov,
+                                                     pixelWidth: Self.cellPixels,
+                                                     pixelHeight: Self.cellPixels)))
+            }
+        }
+        return result
+    }
+
+    private func drawCells(context: GraphicsContext, size: CGSize) {
+        let pointsPerDegree = Double(size.width) / fieldOfViewDegrees
+        let middle = CGPoint(x: size.width / 2 + dragOffset.width,
+                             y: size.height / 2 + dragOffset.height)
+        for cell in mosaic(for: size) {
+            guard let image = cells[cell.key] else {
+                // Only once the coarse base is up. Firing these immediately
+                // filled the connection pool and pushed the quick, whole-view
+                // image out behind a queue of megapixel ones, so the view
+                // stayed blank for seconds with plenty in flight.
+                if shown != nil { requestCell(cell) }
+                continue
+            }
+            let side = cell.fov * pointsPerDegree
+            let offset = screenOffset(of: cell.centre, size: size)
+            // Half a point of overdraw so rounding cannot leave a hairline
+            // between neighbours.
+            let rect = CGRect(x: middle.x + offset.width - side / 2 - 0.5,
+                              y: middle.y + offset.height - side / 2 - 0.5,
+                              width: side + 1, height: side + 1)
+            context.draw(Image(nsImage: image), in: rect)
+        }
+    }
+
+    private func requestCell(_ cell: Cell) {
+        guard !requestedCells.contains(cell.key) else { return }
+        requestedCells.insert(cell.key)
+        if let ready = SkyCutoutClient.shared.cachedImage(for: cell.cutout) {
+            cells[cell.key] = ready
+            cellEpoch += 1
+            return
+        }
+        Task {
+            if let image = await SkyCutoutClient.shared.image(for: cell.cutout) {
+                cells[cell.key] = image
+                cellEpoch += 1
+            } else {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                requestedCells.remove(cell.key)
             }
         }
     }
