@@ -464,7 +464,7 @@ struct SkyBrowserView: View {
     /// several steps of zoom and a decent pan are served by re-projecting what
     /// is already there, and the network is only involved once the view really
     /// has left what the image covers.
-    private static let fetchMargin = 1.5
+    private static let fetchMargin = 1.8
 
     /// Whether what's on screen still covers the view well enough to leave
     /// alone: not stretched past legibility, not zoomed out past its edges,
@@ -481,24 +481,59 @@ struct SkyBrowserView: View {
         return abs(offset.width) <= slackX && abs(offset.height) <= slackY
     }
 
+    /// Fields of view worth fetching at. Requests land on one of these rather
+    /// than on whatever the window happens to be showing, so that zooming
+    /// settles onto a handful of sizes instead of a continuum of one-offs.
+    private static let fieldLadder: [Double] = [
+        0.05, 0.075, 0.11, 0.17, 0.25, 0.38, 0.56, 0.84, 1.3, 1.9, 2.8, 4.2, 6.3, 9.5, 14, 21, 32, 48, 60,
+    ]
+
+    /// The patch to ask for: snapped to the ladder, and centred on a grid
+    /// point rather than on the view.
+    ///
+    /// This is the whole of the speed problem. Asking for exactly what is on
+    /// screen means every position is a different request, so the cache filled
+    /// with dozens of near-identical pictures and essentially never hit — pan
+    /// a pixel and the last second and a half of waiting was wasted. Snapping
+    /// makes neighbouring views ask for the *same* patch, which is then drawn
+    /// offset, so a pan within a cell costs nothing, a pan back to somewhere
+    /// visited is instant, and only genuinely new sky goes to the network.
+    private func snappedRequest(size: CGSize) -> (cutout: SkyCutout, centre: EquatorialCoordinate, fov: Double) {
+        let wanted = fieldOfViewDegrees * Self.fetchMargin
+        let fov = Self.fieldLadder.first { $0 >= wanted } ?? Self.maximumFieldOfView
+
+        // A quarter of the fetched field: fine enough that the snapped patch
+        // still comfortably covers the view wherever inside the cell you are.
+        let step = fov / 4
+        let declination = clamp((centre.declination / step).rounded() * step, -89, 89)
+        // Lines of right ascension crowd together near the poles, so the grid
+        // has to widen in RA by the same factor to stay square on the sky.
+        let raStep = step / max(0.05, cosDeg(declination))
+        let rightAscension = normalize360((centre.rightAscension / raStep).rounded() * raStep)
+
+        let screenScale = NSScreen.main?.backingScaleFactor ?? 2
+        let magnification = fov / max(fieldOfViewDegrees, 0.0001)
+        let pixelWidth = min(2048, Int(Double(size.width) * Double(screenScale) * magnification))
+        let pixelHeight = min(2048, Int(Double(size.height) * Double(screenScale) * magnification))
+
+        let snapped = EquatorialCoordinate(rightAscension: rightAscension, declination: declination)
+        return (SkyCutout(rightAscensionDegrees: rightAscension,
+                          declinationDegrees: declination,
+                          widthDegrees: fov,
+                          pixelWidth: pixelWidth,
+                          pixelHeight: pixelHeight),
+                snapped, fov)
+    }
+
     private func load(size: CGSize) async {
         guard size.width > 32, size.height > 32 else { return }
         if let shown, isCovered(shown, size: size) { return }
 
-        let fetchFieldOfView = min(Self.maximumFieldOfView, fieldOfViewDegrees * Self.fetchMargin)
-        let screenScale = NSScreen.main?.backingScaleFactor ?? 2
-        // Pixels scale with the margin so the extra sky doesn't cost
-        // sharpness, capped so a big window doesn't ask for a huge render.
-        let pixelWidth = min(2048, Int(size.width * screenScale * Self.fetchMargin))
-        let pixelHeight = min(2048, Int(size.height * screenScale * Self.fetchMargin))
-        let request = SkyCutout(rightAscensionDegrees: centre.rightAscension,
-                                declinationDegrees: centre.declination,
-                                widthDegrees: fetchFieldOfView,
-                                pixelWidth: pixelWidth,
-                                pixelHeight: pixelHeight)
+        let request = snappedRequest(size: size)
 
-        if let ready = SkyCutoutClient.shared.cachedImage(for: request) {
-            shown = (ready, centre, fetchFieldOfView)
+        if let ready = SkyCutoutClient.shared.cachedImage(for: request.cutout) {
+            shown = (ready, request.centre, request.fov)
+            prefetchNeighbours(of: request, size: size)
             return
         }
 
@@ -511,13 +546,39 @@ struct SkyBrowserView: View {
         guard generation == fetchGeneration else { return }
 
         isLoading = true
-        let image = await SkyCutoutClient.shared.image(for: request)
+        let image = await SkyCutoutClient.shared.image(for: request.cutout)
         isLoading = false
         // Nothing is written back unless this is still the current request —
         // a superseded fetch is cancelled and comes back nil, and writing that
         // would clear a perfectly good picture.
         guard generation == fetchGeneration, let image else { return }
-        shown = (image, centre, fetchFieldOfView)
+        shown = (image, request.centre, request.fov)
+        prefetchNeighbours(of: request, size: size)
+    }
+
+    /// Quietly fetches the four cells around this one.
+    ///
+    /// Panning is overwhelmingly sideways into the next cell, and having it
+    /// already in hand turns the commonest move from a wait into nothing at
+    /// all. These never touch `shown`; they only warm the cache.
+    private func prefetchNeighbours(of request: (cutout: SkyCutout, centre: EquatorialCoordinate, fov: Double),
+                                    size: CGSize) {
+        let step = request.fov / 4
+        let raStep = step / max(0.05, cosDeg(request.centre.declination))
+        let around = [(raStep, 0.0), (-raStep, 0.0), (0.0, step), (0.0, -step)]
+        for (deltaRA, deltaDec) in around {
+            let declination = clamp(request.centre.declination + deltaDec, -89, 89)
+            let neighbour = SkyCutout(
+                rightAscensionDegrees: normalize360(request.centre.rightAscension + deltaRA),
+                declinationDegrees: declination,
+                widthDegrees: request.fov,
+                pixelWidth: request.cutout.pixelWidth,
+                pixelHeight: request.cutout.pixelHeight)
+            guard SkyCutoutClient.shared.cachedImage(for: neighbour) == nil else { continue }
+            Task.detached(priority: .background) {
+                _ = await SkyCutoutClient.shared.image(for: neighbour)
+            }
+        }
     }
 
     /// How much bigger the image on screen has to be drawn than it was taken,
