@@ -44,7 +44,13 @@ struct SkyBrowserView: View {
 
     /// Live gesture offsets, applied on top of `centre` without committing to
     /// it, so a drag can be followed continuously and resolved once.
-    @GestureState private var dragOffset: CGSize = .zero
+    /// Plain state rather than `@GestureState`.
+    ///
+    /// `@GestureState` returns to zero by itself when a gesture ends, but it
+    /// does so as an *animation*, while the centre it hands off to updates
+    /// instantly — so for the length of that animation both were applied at
+    /// once. Holding it here lets the release commit both halves together.
+    @State private var dragOffset: CGSize = .zero
 
     private static let minimumFieldOfView = 0.05
     private static let maximumFieldOfView = 60.0
@@ -209,8 +215,18 @@ struct SkyBrowserView: View {
             .contentShape(Rectangle())
             .gesture(
                 DragGesture()
-                    .updating($dragOffset) { value, offset, _ in offset = value.translation }
-                    .onEnded { value in pan(by: value.translation, viewWidth: size.width) }
+                    .onChanged { value in dragOffset = value.translation }
+                    .onEnded { value in
+                        // Both in one transaction, with animation off: the
+                        // drag offset is only ever released in the same frame
+                        // that the centre absorbs it.
+                        var transaction = Transaction()
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) {
+                            pan(by: value.translation, viewWidth: size.width)
+                            dragOffset = .zero
+                        }
+                    }
             )
             // Scrolling away from you zooms in, as it does in every map: a
             // positive delta has to *shrink* the field of view, and multiplying
@@ -220,6 +236,14 @@ struct SkyBrowserView: View {
 
     /// The rig's field of view, centred — the whole reason for looking at any
     /// of this being to decide what to point at.
+    private func frameHalfWidth(size: CGSize) -> Double {
+        state.rig.fieldOfViewWidthArcminutes / 60 * Double(size.width) / fieldOfViewDegrees / 2
+    }
+
+    private func frameHalfHeight(size: CGSize) -> Double {
+        state.rig.fieldOfViewHeightArcminutes / 60 * Double(size.width) / fieldOfViewDegrees / 2
+    }
+
     private func frameOverlay(size: CGSize) -> some View {
         let pointsPerDegree = size.width / fieldOfViewDegrees
         let width = state.rig.fieldOfViewWidthArcminutes / 60 * pointsPerDegree
@@ -301,6 +325,12 @@ struct SkyBrowserView: View {
             // straddling an edge.
             guard position.x > 10, position.x < size.width - 10,
                   position.y > 10, position.y < size.height - 28
+            else { continue }
+            // And inside the rig's frame. Further out the circles stop
+            // sitting on what they name, and the frame is the part of the
+            // view being asked about in any case.
+            guard abs(offset.width) <= frameHalfWidth(size: size),
+                  abs(offset.height) <= frameHalfHeight(size: size)
             else { continue }
 
             let radius = max(9.0, target.majorAxisArcminutes / 60
