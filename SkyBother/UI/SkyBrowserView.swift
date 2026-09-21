@@ -511,11 +511,7 @@ struct SkyBrowserView: View {
         let raStep = step / max(0.05, cosDeg(declination))
         let rightAscension = normalize360((centre.rightAscension / raStep).rounded() * raStep)
 
-        let screenScale = NSScreen.main?.backingScaleFactor ?? 2
-        let magnification = fov / max(fieldOfViewDegrees, 0.0001)
-        let pixelWidth = min(2048, Int(Double(size.width) * Double(screenScale) * magnification))
-        let pixelHeight = min(2048, Int(Double(size.height) * Double(screenScale) * magnification))
-
+        let (pixelWidth, pixelHeight) = Self.pixels(for: size, magnification: fov / max(fieldOfViewDegrees, 0.0001))
         let snapped = EquatorialCoordinate(rightAscension: rightAscension, declination: declination)
         return (SkyCutout(rightAscensionDegrees: rightAscension,
                           declinationDegrees: declination,
@@ -523,6 +519,30 @@ struct SkyBrowserView: View {
                           pixelWidth: pixelWidth,
                           pixelHeight: pixelHeight),
                 snapped, fov)
+    }
+
+    /// How many pixels to ask the renderer for.
+    ///
+    /// This is what made a cold view take the better part of twenty seconds.
+    /// Asking at retina resolution *and* for the wider patch that the margin
+    /// needs multiplied out to well past two thousand pixels a side, and the
+    /// service's cost climbs steeply with area: measured against it, 600×400
+    /// comes back in 1.8s, 1024×800 in 3.0s, 1600×1250 in 6.4s and 2048×2048
+    /// in 12.9s. The old code asked for the last of those every time.
+    ///
+    /// So there is a budget on total area instead of a cap per side, spent in
+    /// whatever shape the window is. Slightly soft beats waiting.
+    private static func pixels(for size: CGSize, magnification: Double, budget: Double = 900_000) -> (Int, Int) {
+        let scale = Double(NSScreen.main?.backingScaleFactor ?? 2)
+        var width = Double(size.width) * scale * magnification
+        var height = Double(size.height) * scale * magnification
+        let area = max(1, width * height)
+        if area > budget {
+            let shrink = (budget / area).squareRoot()
+            width *= shrink
+            height *= shrink
+        }
+        return (max(64, Int(width)), max(64, Int(height)))
     }
 
     private func load(size: CGSize) async {
@@ -546,6 +566,23 @@ struct SkyBrowserView: View {
         guard generation == fetchGeneration else { return }
 
         isLoading = true
+        // Something on screen quickly, then the real thing. The service's
+        // floor is about a second and a half however small the request, so a
+        // quarter-area version lands in roughly that and the full one follows
+        // — which reads as "loading" rather than "broken".
+        if shown == nil {
+            let (coarseWidth, coarseHeight) = Self.pixels(
+                for: size, magnification: request.fov / max(fieldOfViewDegrees, 0.0001), budget: 200_000)
+            let coarse = SkyCutout(rightAscensionDegrees: request.centre.rightAscension,
+                                   declinationDegrees: request.centre.declination,
+                                   widthDegrees: request.fov,
+                                   pixelWidth: coarseWidth, pixelHeight: coarseHeight)
+            if let quick = await SkyCutoutClient.shared.image(for: coarse),
+               generation == fetchGeneration, shown == nil {
+                shown = (quick, request.centre, request.fov)
+            }
+        }
+
         let image = await SkyCutoutClient.shared.image(for: request.cutout)
         isLoading = false
         // Nothing is written back unless this is still the current request —
