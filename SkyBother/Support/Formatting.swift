@@ -39,6 +39,18 @@ enum Format {
     }
 
     /// "4h 25m", "45m", "—"
+    /// Storage, in the units a person thinks in.
+    static func bytes(_ value: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: value)
+    }
+
+    static func arcseconds(_ value: Double) -> String {
+        value < 10 ? String(format: "%.1f\u{2033}", value) : String(format: "%.0f\u{2033}", value)
+    }
+
     static func duration(minutes: Double) -> String {
         guard minutes.isFinite, minutes > 0 else { return "—" }
         let total = Int(minutes.rounded())
