@@ -52,6 +52,11 @@ struct SkyBrowserView: View {
     /// once. Holding it here lets the release commit both halves together.
     @State private var dragOffset: CGSize = .zero
 
+    /// Counts copies so a quick second click restarts the "Copied" tick
+    /// rather than having the first one's timer clear it early.
+    @State private var copyCount = 0
+    @State private var showsCopied = false
+
     private static let minimumFieldOfView = 0.05
     private static let maximumFieldOfView = 60.0
 
@@ -386,11 +391,27 @@ struct SkyBrowserView: View {
             Button {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(text, forType: .string)
+                copyCount += 1
+                let copy = copyCount
+                withAnimation(.easeOut(duration: 0.15)) { showsCopied = true }
+                Task {
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    guard copy == copyCount else { return }
+                    withAnimation(.easeIn(duration: 0.25)) { showsCopied = false }
+                }
             } label: {
-                Image(systemName: "doc.on.doc")
+                HStack(spacing: 4) {
+                    Image(systemName: showsCopied ? "checkmark" : "doc.on.doc")
+                        .contentTransition(.symbolEffect(.replace))
+                    if showsCopied {
+                        Text("Copied")
+                            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                            .transition(.opacity)
+                    }
+                }
+                .foregroundStyle(showsCopied ? Palette.go : .white.opacity(0.8))
             }
             .buttonStyle(.borderless)
-            .foregroundStyle(.white.opacity(0.8))
             .help("Copy the frame's centre (J2000)")
         }
         .padding(.horizontal, 9)
