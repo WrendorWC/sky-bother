@@ -457,9 +457,9 @@ private struct PlanningSettings: View {
     private var offlineSkyCaption: String {
         let order = state.preferences.offlineSkyOrder
         guard order > 0 else {
-            return "Sky images are fetched when you look at something and kept afterwards. Nothing is downloaded in advance, so the first look at a patch of sky waits on the network."
+            return "Sky images are fetched as you look at them and kept afterwards, blended into one smooth picture. Nothing is downloaded in advance, so the first look at a patch of sky waits on the network."
         }
-        return "Downloads the whole sky at this detail, plus every coarser level, so panning and zooming out are instant and work with no network. Zooming in past it still fetches the sharper tiles for wherever you are looking, and keeps them. The survey's own limit is \(Format.arcseconds(SkyTileStore.resolutionArcseconds(forOrder: SkyTileStore.nativeOrder)))/px, and all of it at that detail would be about 157 GB — hence a base layer rather than the lot."
+        return "Downloads the whole sky at this detail, plus every coarser level, so panning and zooming are instant and work with no network. Zooming in past it still fetches sharper tiles for wherever you are looking, and keeps them. Note that downloaded sky is drawn tile by tile rather than blended, and the survey's photographic plates differ enough in brightness that you can see where they join — this buys speed, not a better picture."
     }
 
     private var planEmphasisCaption: String {

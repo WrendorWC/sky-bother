@@ -25,6 +25,13 @@ struct SkyBrowserView: View {
     @State private var label: String = ""
     @State private var isIdentifying = false
 
+    /// The cutout currently on screen, with where it was taken, so it can be
+    /// re-projected while a new one is in flight. Used only when nothing has
+    /// been downloaded — see `usesTiles`.
+    @State private var shown: (image: NSImage, centre: EquatorialCoordinate, fov: Double)?
+    @State private var isLoading = false
+    @State private var fetchGeneration = 0
+
     /// Bumped whenever a tile arrives, purely to ask the canvas to repaint.
     @State private var tileEpoch = 0
     /// Tiles already asked for, so a redraw doesn't queue the same fetch again.
@@ -33,6 +40,18 @@ struct SkyBrowserView: View {
     /// Live gesture offsets, applied on top of `centre` without committing to
     /// it, so a drag can be followed continuously and resolved once.
     @GestureState private var dragOffset: CGSize = .zero
+
+    /// Tiles only once something has been downloaded.
+    ///
+    /// Tiles are quicker and work offline, but they are the survey's own
+    /// pixels laid down untouched — and DSS2's plates disagree about how
+    /// bright the sky is, by a factor of four and a half between neighbours,
+    /// which reads as a patchwork of diamonds. A rendered cutout blends that
+    /// away. So the default stays on cutouts and looks exactly as it did
+    /// before any of this, and choosing to download opts into tiles — drawn
+    /// from Pan-STARRS, whose neighbouring tiles agree to within about a
+    /// tenth, so the seams never arise.
+    private var usesTiles: Bool { state.preferences.offlineSkyOrder > 0 }
 
     private static let minimumFieldOfView = 0.05
     private static let maximumFieldOfView = 60.0
@@ -43,6 +62,10 @@ struct SkyBrowserView: View {
             Divider()
             GeometryReader { geometry in
                 skyCanvas(size: geometry.size)
+                    .task(id: FetchKey(centre: centre, fov: fieldOfViewDegrees, size: geometry.size)) {
+                        guard !usesTiles else { return }
+                        await load(size: geometry.size)
+                    }
             }
             Divider()
             footer
@@ -82,6 +105,7 @@ struct SkyBrowserView: View {
             .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
             .help("Name everything in view that the catalogue knows about")
 
+            if isLoading { ProgressView().controlSize(.small) }
             Text(fieldOfViewSummary)
                 .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
                 .foregroundStyle(.secondary)
@@ -104,7 +128,8 @@ struct SkyBrowserView: View {
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.tertiary)
             if let url = URL(string: SkyCutoutClient.attributionURL) {
-                Link(SkyCutoutClient.attribution, destination: url)
+                Link(usesTiles ? SkyTileStore.attribution : SkyCutoutClient.attribution,
+                     destination: url)
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.tertiary)
             }
@@ -124,10 +149,19 @@ struct SkyBrowserView: View {
                 // landing actually invalidates the view — reading it inside
                 // the drawing closure would not, since that runs at paint
                 // time rather than when the body is evaluated.
-                let epoch = tileEpoch
-                Canvas { context, canvasSize in
-                    _ = epoch
-                    drawTiles(context: context, size: canvasSize)
+                if usesTiles {
+                    let epoch = tileEpoch
+                    Canvas { context, canvasSize in
+                        _ = epoch
+                        drawTiles(context: context, size: canvasSize)
+                    }
+                } else if let shown {
+                    Image(nsImage: shown.image)
+                        .resizable()
+                        .interpolation(.high)
+                        .frame(width: size.width * previewScale(shown),
+                               height: size.height * previewScale(shown))
+                        .offset(previewOffset(shown, size: size))
                 }
             }
             .overlay { frameOverlay(size: size) }
@@ -467,6 +501,119 @@ struct SkyBrowserView: View {
     }
 
     // MARK: - Image
+
+    /// Identity of a fetch: changing any of these means a different picture.
+    private struct FetchKey: Hashable {
+        var ra: Double, dec: Double, fov: Double, width: Int, height: Int
+        init(centre: EquatorialCoordinate, fov: Double, size: CGSize) {
+            self.ra = (centre.rightAscension * 1000).rounded()
+            self.dec = (centre.declination * 1000).rounded()
+            self.fov = (fov * 10000).rounded()
+            self.width = Int(size.width)
+            self.height = Int(size.height)
+        }
+    }
+
+    /// Fetched patches cover half again as much sky as the window shows.
+    ///
+    /// Every zoom step used to be a round trip — a second of staring at a
+    /// stretched image for a 12% change — because the fetch matched the view
+    /// exactly, so the smallest movement left it short. With margin in hand,
+    /// several steps of zoom and a decent pan are served by re-projecting what
+    /// is already there, and the network is only involved once the view really
+    /// has left what the image covers.
+    private static let fetchMargin = 1.5
+
+    /// Whether what's on screen still covers the view well enough to leave
+    /// alone: not stretched past legibility, not zoomed out past its edges,
+    /// and not panned so far that an edge would show.
+    private func isCovered(_ shown: (image: NSImage, centre: EquatorialCoordinate, fov: Double),
+                           size: CGSize) -> Bool {
+        let showing = fieldOfViewDegrees / shown.fov
+        guard showing <= 0.98, showing >= 0.4 else { return false }
+        let magnification = shown.fov / fieldOfViewDegrees
+        // How far past each edge of the window the image reaches.
+        let slackX = size.width * (magnification - 1) / 2
+        let slackY = size.height * (magnification - 1) / 2
+        let offset = settledOffset(shown, size: size)
+        return abs(offset.width) <= slackX && abs(offset.height) <= slackY
+    }
+
+    private func load(size: CGSize) async {
+        guard size.width > 32, size.height > 32 else { return }
+        if let shown, isCovered(shown, size: size) { return }
+
+        let fetchFieldOfView = min(Self.maximumFieldOfView, fieldOfViewDegrees * Self.fetchMargin)
+        let screenScale = NSScreen.main?.backingScaleFactor ?? 2
+        // Pixels scale with the margin so the extra sky doesn't cost
+        // sharpness, capped so a big window doesn't ask for a huge render.
+        let pixelWidth = min(2048, Int(size.width * screenScale * Self.fetchMargin))
+        let pixelHeight = min(2048, Int(size.height * screenScale * Self.fetchMargin))
+        let request = SkyCutout(rightAscensionDegrees: centre.rightAscension,
+                                declinationDegrees: centre.declination,
+                                widthDegrees: fetchFieldOfView,
+                                pixelWidth: pixelWidth,
+                                pixelHeight: pixelHeight)
+
+        if let ready = SkyCutoutClient.shared.cachedImage(for: request) {
+            shown = (ready, centre, fetchFieldOfView)
+            return
+        }
+
+        // A short pause before going to the network: panning or zooming a few
+        // steps in a row shouldn't fire a request for every intermediate view
+        // nobody looked at.
+        fetchGeneration += 1
+        let generation = fetchGeneration
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        guard generation == fetchGeneration else { return }
+
+        isLoading = true
+        let image = await SkyCutoutClient.shared.image(for: request)
+        isLoading = false
+        // Nothing is written back unless this is still the current request —
+        // a superseded fetch is cancelled and comes back nil, and writing that
+        // would clear a perfectly good picture.
+        guard generation == fetchGeneration, let image else { return }
+        shown = (image, centre, fetchFieldOfView)
+    }
+
+    /// How much bigger the image on screen has to be drawn than it was taken,
+    /// which is simply the ratio of the two fields of view.
+    private func previewScale(_ shown: (image: NSImage, centre: EquatorialCoordinate, fov: Double)) -> CGFloat {
+        CGFloat(clamp(shown.fov / fieldOfViewDegrees, 0.05, 20))
+    }
+
+    /// Where the image sits once the view has moved on from where it was
+    /// taken, ignoring any drag in progress.
+    ///
+    /// Both terms are negated, and that sign is the whole of what made panning
+    /// feel inverted. Right ascension grows *eastward*, which is to the left
+    /// in every survey rendering, and declination grows upward while screen y
+    /// grows down — so a patch of sky whose coordinates are greater than the
+    /// view's centre sits at a *smaller* screen coordinate, on both axes.
+    /// Getting that backwards meant that on releasing a drag the image jumped
+    /// to the mirror image of where the finger had left it, which reads
+    /// exactly like panning the wrong way.
+    private func settledOffset(_ shown: (image: NSImage, centre: EquatorialCoordinate, fov: Double),
+                               size: CGSize) -> CGSize {
+        let pointsPerDegree = size.width / fieldOfViewDegrees
+        let cosDec = max(0.02, cosDeg(centre.declination))
+        var deltaRA = shown.centre.rightAscension - centre.rightAscension
+        // The short way round, so crossing 0h doesn't fling the image away.
+        if deltaRA > 180 { deltaRA -= 360 }
+        if deltaRA < -180 { deltaRA += 360 }
+        return CGSize(width: -deltaRA * cosDec * pointsPerDegree,
+                      height: -(shown.centre.declination - centre.declination) * pointsPerDegree)
+    }
+
+    /// The same, plus whatever the finger is currently doing.
+    private func previewOffset(_ shown: (image: NSImage, centre: EquatorialCoordinate, fov: Double),
+                               size: CGSize) -> CGSize {
+        let settled = settledOffset(shown, size: size)
+        return CGSize(width: settled.width + dragOffset.width,
+                      height: settled.height + dragOffset.height)
+    }
 
     private var fieldOfViewSummary: String {
         fieldOfViewDegrees < 1
