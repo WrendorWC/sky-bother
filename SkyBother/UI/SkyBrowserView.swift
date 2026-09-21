@@ -35,26 +35,9 @@ struct SkyBrowserView: View {
     @State private var isLoading = false
     @State private var fetchGeneration = 0
 
-    /// Bumped whenever a tile arrives, purely to ask the canvas to repaint.
-    @State private var tileEpoch = 0
-    /// Tiles already asked for, so a redraw doesn't queue the same fetch again.
-    @State private var requested: Set<String> = []
-
     /// Live gesture offsets, applied on top of `centre` without committing to
     /// it, so a drag can be followed continuously and resolved once.
     @GestureState private var dragOffset: CGSize = .zero
-
-    /// Tiles only once something has been downloaded.
-    ///
-    /// Tiles are quicker and work offline, but they are the survey's own
-    /// pixels laid down untouched — and DSS2's plates disagree about how
-    /// bright the sky is, by a factor of four and a half between neighbours,
-    /// which reads as a patchwork of diamonds. A rendered cutout blends that
-    /// away. So the default stays on cutouts and looks exactly as it did
-    /// before any of this, and choosing to download opts into tiles — drawn
-    /// from Pan-STARRS, whose neighbouring tiles agree to within about a
-    /// tenth, so the seams never arise.
-    private var usesTiles: Bool { state.preferences.offlineSkyOrder > 0 }
 
     private static let minimumFieldOfView = 0.05
     private static let maximumFieldOfView = 60.0
@@ -66,7 +49,6 @@ struct SkyBrowserView: View {
             GeometryReader { geometry in
                 skyCanvas(size: geometry.size)
                     .task(id: FetchKey(centre: centre, fov: fieldOfViewDegrees, size: geometry.size)) {
-                        guard !usesTiles else { return }
                         await load(size: geometry.size)
                     }
             }
@@ -148,8 +130,7 @@ struct SkyBrowserView: View {
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.tertiary)
             if let url = URL(string: SkyCutoutClient.attributionURL) {
-                Link(usesTiles ? SkyTileStore.attribution : SkyCutoutClient.attribution,
-                     destination: url)
+                Link(SkyCutoutClient.attribution, destination: url)
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.tertiary)
             }
@@ -169,13 +150,7 @@ struct SkyBrowserView: View {
                 // landing actually invalidates the view — reading it inside
                 // the drawing closure would not, since that runs at paint
                 // time rather than when the body is evaluated.
-                if usesTiles {
-                    let epoch = tileEpoch
-                    Canvas { context, canvasSize in
-                        _ = epoch
-                        drawTiles(context: context, size: canvasSize)
-                    }
-                } else if let shown {
+                if let shown {
                     Image(nsImage: shown.image)
                         .resizable()
                         .interpolation(.high)
@@ -200,157 +175,6 @@ struct SkyBrowserView: View {
             // positive delta has to *shrink* the field of view, and multiplying
             // by 1.12 grew it, so the wheel worked backwards.
             .onScroll { delta in zoom(by: delta > 0 ? 1 / 1.12 : 1.12) }
-    }
-
-    // MARK: - Tiles
-
-    /// The order to draw at: fine enough that tiles aren't visibly upscaled,
-    /// coarse enough that a wide view isn't a thousand of them. Capped at the
-    /// survey's own resolution, below which there is nothing more to have.
-    private var drawOrder: Int {
-        min(SkyTileStore.nativeOrder, Healpix.order(forFieldOfViewDegrees: fieldOfViewDegrees))
-    }
-
-    /// Which tiles cover the window, found by sampling the view rather than by
-    /// solving the region analytically. Tiles are chosen to be roughly a third
-    /// of the field across, so a grid sampled more finely than that cannot
-    /// miss one, and the margin covers a drag in progress.
-    private func visibleTiles(size: CGSize) -> [Int] {
-        let order = drawOrder
-        var pixels: Set<Int> = []
-        let steps = 10
-        for row in -1...(steps + 1) {
-            for column in -1...(steps + 1) {
-                let x = (Double(column) / Double(steps) - 0.5) * Double(size.width) - Double(dragOffset.width)
-                let y = (Double(row) / Double(steps) - 0.5) * Double(size.height) - Double(dragOffset.height)
-                let coordinate = skyCoordinate(atScreenOffset: CGSize(width: x, height: y), size: size)
-                pixels.insert(Healpix.pixel(rightAscensionDegrees: coordinate.rightAscension,
-                                            declinationDegrees: coordinate.declination,
-                                            order: order))
-            }
-        }
-        // Discard anything that isn't plausibly in view. The inverse
-        // projection is a small-angle approximation and at the far corners of
-        // the sample grid it can wander onto another face of the sky
-        // altogether — a handful of tiles from completely the wrong place,
-        // fetched for nothing and drawn who knows where. A tile whose centre
-        // is further off than the field itself was never on screen.
-        let reach = fieldOfViewDegrees * 1.2
-        return pixels.filter { pixel in
-            SkyCoordinates.separation(Healpix.centre(ofPixel: pixel, order: order), centre) <= reach
-        }
-    }
-
-    /// Inverse of `screenOffset`.
-    private func skyCoordinate(atScreenOffset offset: CGSize, size: CGSize) -> EquatorialCoordinate {
-        let pointsPerDegree = Double(size.width) / fieldOfViewDegrees
-        let declination = clamp(centre.declination - Double(offset.height) / pointsPerDegree, -89.99, 89.99)
-        let cosDec = max(0.02, cosDeg(declination))
-        let rightAscension = normalize360(
-            centre.rightAscension - Double(offset.width) / pointsPerDegree / cosDec)
-        return EquatorialCoordinate(rightAscension: rightAscension, declination: declination)
-    }
-
-    /// Each tile is drawn into the quadrilateral its own corners project to.
-    ///
-    /// A HEALPix tile is a diamond on the sky, not a rectangle, so it cannot
-    /// simply be blitted into a frame. Three of its corners give the affine
-    /// transform that maps the square image onto the sky where it belongs —
-    /// exact for a parallelogram, and at these scales a tile is close enough
-    /// to one that the error is far under a pixel.
-    private func drawTiles(context: GraphicsContext, size: CGSize) {
-        let order = drawOrder
-        let centreOffset = CGPoint(x: size.width / 2 + dragOffset.width,
-                                   y: size.height / 2 + dragOffset.height)
-
-        // Sorted into two passes. A coarser ancestor covers four times the
-        // area of the tile it stands in for, so drawing it in amongst its
-        // sharp neighbours paints over them — which is what turned the view
-        // into a patchwork of mismatched diamonds. Every stand-in goes down
-        // first, as a base layer, and the real tiles cover it.
-        var base: [Int: (order: Int, image: NSImage)] = [:]
-        var sharp: [(pixel: Int, image: NSImage)] = []
-
-        for pixel in visibleTiles(size: size) {
-            if let image = SkyTileStore.shared.cachedImage(order: order, pixel: pixel) {
-                sharp.append((pixel, image))
-                continue
-            }
-            request(order: order, pixel: pixel)
-            var coarser = order - 1
-            var ancestor = pixel / 4
-            while coarser >= 0 {
-                if let image = SkyTileStore.shared.cachedImage(order: coarser, pixel: ancestor) {
-                    // Keyed by the ancestor, so one standing in for four
-                    // children is drawn once rather than four times.
-                    base[ancestor] = (coarser, image)
-                    break
-                }
-                request(order: coarser, pixel: ancestor)
-                coarser -= 1
-                ancestor /= 4
-            }
-        }
-
-        for (pixel, entry) in base {
-            draw(entry.image, pixel: pixel, order: entry.order,
-                 context: context, size: size, centreOffset: centreOffset)
-        }
-        for entry in sharp {
-            draw(entry.image, pixel: entry.pixel, order: order,
-                 context: context, size: size, centreOffset: centreOffset)
-        }
-    }
-
-    /// One tile, into the quadrilateral its own corners project to.
-    ///
-    /// A HEALPix tile is a diamond on the sky, not a rectangle, so it cannot
-    /// simply be blitted into a frame. Three of its corners give the affine
-    /// transform that maps the square image onto the sky where it belongs —
-    /// exact for a parallelogram, and at these scales a tile is close enough
-    /// to one that the error is far under a pixel.
-    private func draw(_ image: NSImage, pixel: Int, order: Int,
-                      context: GraphicsContext, size: CGSize, centreOffset: CGPoint) {
-        let corners = Healpix.corners(ofPixel: pixel, order: order).map { coordinate -> CGPoint in
-            let offset = screenOffset(of: coordinate, size: size)
-            return CGPoint(x: centreOffset.x + offset.width, y: centreOffset.y + offset.height)
-        }
-        guard corners.count == 4 else { return }
-        let topLeft = corners[0], topRight = corners[1], bottomLeft = corners[3]
-        let width = image.size.width, height = image.size.height
-        guard width > 0, height > 0 else { return }
-
-        let acrossX = (topRight.x - topLeft.x) / width
-        let acrossY = (topRight.y - topLeft.y) / width
-        let downX = (bottomLeft.x - topLeft.x) / height
-        let downY = (bottomLeft.y - topLeft.y) / height
-        guard acrossX.isFinite, acrossY.isFinite, downX.isFinite, downY.isFinite else { return }
-
-        var layer = context
-        layer.transform = CGAffineTransform(a: acrossX, b: acrossY, c: downX, d: downY,
-                                            tx: topLeft.x, ty: topLeft.y)
-        // A whisker of overdraw closes the hairline seams that rounding
-        // otherwise leaves between neighbouring tiles.
-        layer.draw(Image(nsImage: image),
-                   in: CGRect(x: -0.5, y: -0.5, width: width + 1, height: height + 1))
-    }
-
-    private func request(order: Int, pixel: Int) {
-        let key = "\(order)/\(pixel)"
-        guard !requested.contains(key) else { return }
-        requested.insert(key)
-        Task {
-            if await SkyTileStore.shared.image(order: order, pixel: pixel) != nil {
-                tileEpoch += 1
-            } else {
-                // Asked for again, but not at once. Clearing this immediately
-                // meant every redraw re-fired every failed tile, which is how
-                // a handful of slow requests became thousands of simultaneous
-                // ones. The store also holds its own cooldown per tile.
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-                requested.remove(key)
-            }
-        }
     }
 
     /// The rig's field of view, centred — the whole reason for looking at any

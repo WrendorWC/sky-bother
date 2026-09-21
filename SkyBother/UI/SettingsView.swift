@@ -343,7 +343,6 @@ private struct EquipmentSettings: View {
 private struct PlanningSettings: View {
     @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
-    @ObservedObject private var tiles = SkyTileStore.shared
 
     var body: some View {
         Form {
@@ -381,10 +380,6 @@ private struct PlanningSettings: View {
                 }
             }
 
-            Section("Offline sky imagery") {
-                skyImagerySettings
-            }
-
             Section("What to show") {
                 sliderRow(title: "Hide below score",
                           value: $state.preferences.minimumScore,
@@ -406,60 +401,6 @@ private struct PlanningSettings: View {
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .background(Palette.spaceBackground)
-    }
-
-    // MARK: - Offline sky imagery
-
-    /// How much of the survey to keep on disk.
-    ///
-    /// The whole thing at native resolution is about 157 GB, which is not an
-    /// option worth offering. What is worth offering is a base layer: keep the
-    /// wide views instant and offline, and let the fine detail arrive as it is
-    /// needed. Anything deeper than the chosen order is fetched for whatever
-    /// you happen to be looking at and kept, so browsing sharpens the cache
-    /// where you actually go.
-    @ViewBuilder
-    private var skyImagerySettings: some View {
-        Picker("Keep offline", selection: $state.preferences.offlineSkyOrder) {
-            Text("Nothing — fetch as needed").tag(0)
-            ForEach(3...7, id: \.self) { order in
-                Text("\(Format.bytes(SkyTileStore.estimatedBytes(forOrder: order))) · sharp to \(Format.arcseconds(SkyTileStore.resolutionArcseconds(forOrder: order)))/px")
-                    .tag(order)
-            }
-        }
-        Text(offlineSkyCaption)
-            .font(.scaled(.caption, scale: uiTextScale))
-            .foregroundStyle(.secondary)
-
-        HStack(spacing: 10) {
-            if let downloading = tiles.downloadingOrder {
-                ProgressView(value: Double(tiles.downloadedTiles),
-                             total: Double(max(1, tiles.totalTiles)))
-                    .frame(maxWidth: 180)
-                Text("\(tiles.downloadedTiles) of \(tiles.totalTiles)")
-                    .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
-                    .foregroundStyle(.secondary)
-                Button("Stop") { tiles.cancelDownload() }
-                let _ = downloading
-            } else if state.preferences.offlineSkyOrder > 0 {
-                Button("Download now") { tiles.download(order: state.preferences.offlineSkyOrder) }
-            }
-            Spacer()
-            Text("\(Format.bytes(tiles.bytesOnDisk)) on disk")
-                .font(.scaled(.caption, scale: uiTextScale))
-                .foregroundStyle(.secondary)
-            Button("Clear") { tiles.clear() }
-                .disabled(tiles.bytesOnDisk == 0)
-        }
-        .task { tiles.refreshUsage() }
-    }
-
-    private var offlineSkyCaption: String {
-        let order = state.preferences.offlineSkyOrder
-        guard order > 0 else {
-            return "Sky images are fetched as you look at them and kept afterwards, blended into one smooth picture. Nothing is downloaded in advance, so the first look at a patch of sky waits on the network."
-        }
-        return "Downloads the whole sky at this detail, plus every coarser level, so panning and zooming are instant and work with no network. Zooming in past it still fetches sharper tiles for wherever you are looking, and keeps them. Note that downloaded sky is drawn tile by tile rather than blended, and the survey's photographic plates differ enough in brightness that you can see where they join — this buys speed, not a better picture."
     }
 
     private var planEmphasisCaption: String {

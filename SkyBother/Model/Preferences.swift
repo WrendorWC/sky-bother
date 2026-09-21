@@ -50,10 +50,6 @@ struct Preferences: Codable, Hashable, Sendable {
     /// hand is yours, and nothing here rearranges it.
     var planEmphasis: PlanEmphasis = .longerIntegration
 
-    /// HiPS order of sky imagery to keep on disk, or 0 for none. See
-    /// `SkyTileStore` — higher means sharper and very much larger.
-    var offlineSkyOrder: Int = 0
-
     static let `default` = Preferences()
 }
 
@@ -132,7 +128,6 @@ extension Preferences {
         showsZenithRiskWarnings = value(.showsZenithRiskWarnings, fallback.showsZenithRiskWarnings)
         textScale = value(.textScale, fallback.textScale)
         planEmphasis = value(.planEmphasis, fallback.planEmphasis)
-        offlineSkyOrder = value(.offlineSkyOrder, fallback.offlineSkyOrder)
     }
 }
 
