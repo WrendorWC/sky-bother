@@ -343,9 +343,11 @@ struct SkyBrowserView: View {
             if await SkyTileStore.shared.image(order: order, pixel: pixel) != nil {
                 tileEpoch += 1
             } else {
-                // Forget a failure, so a tile lost to a dropped connection is
-                // asked for again on the next redraw instead of leaving a hole
-                // in the sky for the rest of the session.
+                // Asked for again, but not at once. Clearing this immediately
+                // meant every redraw re-fired every failed tile, which is how
+                // a handful of slow requests became thousands of simultaneous
+                // ones. The store also holds its own cooldown per tile.
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
                 requested.remove(key)
             }
         }

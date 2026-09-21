@@ -42,16 +42,22 @@ final class SkyTileStore: ObservableObject {
     /// Pan-STARRS stops at about 30 degrees south, so DSS2 fills in below
     /// that. A southern view is therefore the patchy one, which is the right
     /// way round: it is the only sky there is down there.
-    /// DSS2, because it is the one that works from in here.
+    /// DSS2, despite its seams, because Pan-STARRS cannot show a nebula.
     ///
-    /// Pan-STARRS would be the better picture by a distance — five
-    /// neighbouring tiles measured 35.0 to 39.1 in mean brightness against
-    /// DSS2's 7.5 to 34.9, which is the difference between a seamless sky and
-    /// a patchwork of diamonds — and it was wired up first. But every request
-    /// for one of its tiles fails inside this app, while the identical URL,
-    /// with the identical User-Agent, returns a valid 512×512 JPEG in about a
-    /// second from the command line. Both mirrors, every order. Not yet
-    /// understood, and not worth shipping a browser that draws nothing.
+    /// Pan-STARRS is the better-behaved survey by a distance: five
+    /// neighbouring tiles measured 35.0 to 39.1 in mean brightness where
+    /// DSS2's ran 7.5 to 34.9, so its tiles join invisibly where DSS2's show
+    /// every plate boundary. It was wired in, and the joins did disappear.
+    ///
+    /// What also disappeared was the Flaming Star Nebula. Pan-STARRS images in
+    /// g/r/i/z, stretched for point sources, and emission nebulosity barely
+    /// registers — the frame came back a rich star field with nothing in it.
+    /// The i-r-g composite is no better. For someone photographing nebulae
+    /// that is the wrong trade: DSS2's red plates are why its pictures look
+    /// like the thing you are going to shoot.
+    ///
+    /// So the seams stay, and they are the reason the default view is still a
+    /// blended cutout rather than tiles.
     private static let primaryMirrors = [
         "https://irsa.ipac.caltech.edu/data/hips/CDS/DSS2/color",
     ]
@@ -80,12 +86,39 @@ final class SkyTileStore: ObservableObject {
         return image
     }
 
+    /// At most this many tiles are fetched at once.
+    ///
+    /// Without a cap the browser asked for every tile in view simultaneously,
+    /// and each failure was retried on the next redraw, so a view needing
+    /// thirty tiles turned into thousands of requests in flight against one
+    /// host. Every one then timed out, which triggered more redraws and more
+    /// requests: a collapse that fed itself. It logged 4,813 timeouts in under
+    /// a minute, and looked for all the world like the server refusing us —
+    /// the same URL fetched fine from anywhere else at the time.
+    private static let maximumConcurrentFetches = 5
+    private var activeFetches = 0
+    /// Tiles that just failed, and when it is reasonable to ask again. Retrying
+    /// a timeout immediately is what turned a slow server into an unusable one.
+    private var retryAfter: [String: Date] = [:]
+
     /// Fetches a tile, or nil — a missing tile is a gap in the picture, not an
-    /// error worth reporting. The survey genuinely has holes at high orders.
+    /// error worth reporting. Nil also means "not now": at capacity, or too
+    /// soon after a failure. The caller redraws often enough to ask again.
     func image(order: Int, pixel: Int) async -> NSImage? {
         if let cached = cachedImage(order: order, pixel: pixel) { return cached }
-        guard let (data, image) = await Self.fetch(order: order, pixel: pixel) else { return nil }
-        memory.setObject(image, forKey: Self.key(order: order, pixel: pixel) as NSString)
+        let key = Self.key(order: order, pixel: pixel)
+        if let wait = retryAfter[key], wait > Date() { return nil }
+        guard activeFetches < Self.maximumConcurrentFetches else { return nil }
+
+        activeFetches += 1
+        defer { activeFetches -= 1 }
+
+        guard let (data, image) = await Self.fetch(order: order, pixel: pixel) else {
+            retryAfter[key] = Date().addingTimeInterval(15)
+            return nil
+        }
+        retryAfter[key] = nil
+        memory.setObject(image, forKey: key as NSString)
         Self.write(data, order: order, pixel: pixel)
         return image
     }
@@ -185,9 +218,10 @@ final class SkyTileStore: ObservableObject {
                 var next = 0
                 // Several at a time: the cost is almost all latency, and one
                 // at a time would make an order-6 download take most of a day.
-                // Six is brisk without being a nuisance to a free archive.
+                // Four is brisk without tipping a free archive into timing out
+                // every request, which is what too many at once does.
                 await withTaskGroup(of: Void.self) { group in
-                    for _ in 0..<6 {
+                    for _ in 0..<4 {
                         guard next < count else { break }
                         let pixel = next
                         next += 1
