@@ -95,8 +95,16 @@ struct SkyCutoutClient: Sendable {
     /// Fetches the patch, or returns nil rather than throwing: a missing sky
     /// image is a cosmetic disappointment, not an error worth a banner. The
     /// caller keeps drawing what it drew before.
+    /// No more than this many renders in flight at once. The service is
+    /// quick in parallel but each request is expensive, and letting an
+    /// unbounded number queue means they time out and get retried, which
+    /// makes the queue longer still.
+    private static let gate = AsyncGate(limit: 4)
+
     func image(for cutout: SkyCutout) async -> NSImage? {
         if let cached = cachedImage(for: cutout) { return cached }
+        await Self.gate.enter()
+        defer { Task { await Self.gate.leave() } }
 
         for endpoint in Self.endpoints {
             guard var components = URLComponents(string: endpoint) else { continue }
@@ -113,7 +121,7 @@ struct SkyCutoutClient: Sendable {
 
             var request = URLRequest(url: url)
             request.setValue(Self.userAgent, forHTTPHeaderField: "User-Agent")
-            request.timeoutInterval = 20
+            request.timeoutInterval = 30
 
             guard let (data, response) = try? await URLSession.shared.data(for: request),
                   let http = response as? HTTPURLResponse, http.statusCode == 200,
@@ -165,6 +173,30 @@ struct SkyCutoutClient: Sendable {
         }
         for file in sorted.prefix(files.count - limit) {
             try? FileManager.default.removeItem(at: file)
+        }
+    }
+}
+
+
+/// A plain counting semaphore for async callers.
+actor AsyncGate {
+    private let limit: Int
+    private var active = 0
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+
+    init(limit: Int) { self.limit = limit }
+
+    func enter() async {
+        if active < limit { active += 1; return }
+        await withCheckedContinuation { waiting.append($0) }
+    }
+
+    func leave() {
+        if let next = waiting.first {
+            waiting.removeFirst()
+            next.resume()
+        } else {
+            active = max(0, active - 1)
         }
     }
 }

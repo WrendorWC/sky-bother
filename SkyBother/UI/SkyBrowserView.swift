@@ -39,6 +39,10 @@ struct SkyBrowserView: View {
     @State private var cells: [String: NSImage] = [:]
     @State private var requestedCells: Set<String> = []
     @State private var cellEpoch = 0
+    /// The view as it was when it last stopped moving. The sharp layer is
+    /// only fetched for this, never for a view being passed through.
+    @State private var settled: FetchKey?
+    @State private var canvasSize: CGSize = .zero
 
     /// Live gesture offsets, applied on top of `centre` without committing to
     /// it, so a drag can be followed continuously and resolved once.
@@ -63,6 +67,21 @@ struct SkyBrowserView: View {
         .background(Palette.spaceBackground)
         .task(id: IdentifyKey(identifying: isIdentifying, centre: centre, fov: fieldOfViewDegrees)) {
             await identifyCentre()
+        }
+        // Each scroll notch is its own field of view, and several in a row
+        // cross several rungs of the ladder — each of which is a whole new set
+        // of cells. Requesting them all meant a dozen megapixel cutouts in
+        // flight for levels nobody stopped at, which is why zooming out
+        // churned for ten seconds and still showed the coarse image. Nothing
+        // sharp is asked for until the view has actually settled.
+        .task(id: FetchKey(centre: centre, fov: fieldOfViewDegrees, size: .zero)) {
+            settled = nil
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            guard !Task.isCancelled else { return }
+            settled = FetchKey(centre: centre, fov: fieldOfViewDegrees, size: .zero)
+        }
+        .task(id: MosaicKey(settled: settled, size: canvasSize, hasBase: shown != nil)) {
+            await loadMosaic()
         }
         // Keyed rather than `onAppear`, so a window that is handed a target
         // after it has already appeared still centres on it instead of sitting
@@ -166,10 +185,17 @@ struct SkyBrowserView: View {
                 // The sharp layer, over the coarse one so nothing is ever
                 // blank while it fills in.
                 let epoch = cellEpoch
-                Canvas { context, canvasSize in
+                Canvas { context, drawSize in
                     _ = epoch
-                    drawCells(context: context, size: canvasSize)
+                    drawCells(context: context, size: drawSize)
                 }
+                .background(
+                    GeometryReader { geometry in
+                        Color.clear
+                            .onAppear { canvasSize = geometry.size }
+                            .onChange(of: geometry.size) { _, value in canvasSize = value }
+                    }
+                )
             }
             .overlay { frameOverlay(size: size) }
             .overlay { if isIdentifying { identifications(size: size) } }
@@ -384,6 +410,19 @@ struct SkyBrowserView: View {
                                    Self.minimumFieldOfView, Self.maximumFieldOfView)
     }
 
+    /// What the sharp layer is currently meant to be covering.
+    private struct MosaicKey: Hashable {
+        var settled: FetchKey?
+        var width: Int, height: Int
+        var hasBase: Bool
+        init(settled: FetchKey?, size: CGSize, hasBase: Bool) {
+            self.settled = settled
+            self.width = Int(size.width)
+            self.height = Int(size.height)
+            self.hasBase = hasBase
+        }
+    }
+
     /// Identity of a lookup. Panning or zooming asks the question again;
     /// turning the mode off stops asking.
     private struct IdentifyKey: Hashable {
@@ -544,7 +583,7 @@ struct SkyBrowserView: View {
     ///
     /// So there is a budget on total area instead of a cap per side, spent in
     /// whatever shape the window is. Slightly soft beats waiting.
-    private static func pixels(for size: CGSize, magnification: Double, budget: Double = 260_000) -> (Int, Int) {
+    private static func pixels(for size: CGSize, magnification: Double, budget: Double = 520_000) -> (Int, Int) {
         let scale = Double(NSScreen.main?.backingScaleFactor ?? 2)
         var width = Double(size.width) * scale * magnification
         var height = Double(size.height) * scale * magnification
@@ -619,7 +658,11 @@ struct SkyBrowserView: View {
     /// megapixels split four ways and fetched at once took 3.7s. Its cost
     /// climbs with area, so many small requests beat one large one by a
     /// distance, and that is the whole reason the sharp layer is a mosaic.
-    private static let cellPixels = 1024
+    /// 896 rather than 1024: two cells span the window, so this puts about
+    /// 1,800 pixels across the view — sharp on a retina display without the
+    /// extra 30% of render time a full 1024 costs, which at three to five
+    /// seconds a cell is the difference you actually wait for.
+    private static let cellPixels = 896
 
     /// The cells covering the view, on a grid so that panning reuses them.
     ///
@@ -669,14 +712,7 @@ struct SkyBrowserView: View {
         let middle = CGPoint(x: size.width / 2 + dragOffset.width,
                              y: size.height / 2 + dragOffset.height)
         for cell in mosaic(for: size) {
-            guard let image = cells[cell.key] else {
-                // Only once the coarse base is up. Firing these immediately
-                // filled the connection pool and pushed the quick, whole-view
-                // image out behind a queue of megapixel ones, so the view
-                // stayed blank for seconds with plenty in flight.
-                if shown != nil { requestCell(cell) }
-                continue
-            }
+            guard let image = cells[cell.key] else { continue }
             let side = cell.fov * pointsPerDegree
             let offset = screenOffset(of: cell.centre, size: size)
             // Half a point of overdraw so rounding cannot leave a hairline
@@ -688,21 +724,36 @@ struct SkyBrowserView: View {
         }
     }
 
-    private func requestCell(_ cell: Cell) {
-        guard !requestedCells.contains(cell.key) else { return }
-        requestedCells.insert(cell.key)
-        if let ready = SkyCutoutClient.shared.cachedImage(for: cell.cutout) {
-            cells[cell.key] = ready
-            cellEpoch += 1
-            return
-        }
-        Task {
-            if let image = await SkyCutoutClient.shared.image(for: cell.cutout) {
-                cells[cell.key] = image
+    /// Fetches whatever the settled view is missing.
+    ///
+    /// Deliberately not called from the drawing closure. It used to be, and
+    /// the guard that stopped a cell being asked for twice was a piece of view
+    /// state mutated mid-render — which does not reliably take effect, so
+    /// every redraw fired the same request again. The log showed one cell
+    /// started five times over fifteen seconds, requests running to forty as
+    /// they queued behind each other and timed out, each timeout prompting
+    /// another. The same collapse the tile fetcher had, by the same route.
+    private func loadMosaic() async {
+        guard shown != nil, canvasSize.width > 32,
+              settled == FetchKey(centre: centre, fov: fieldOfViewDegrees, size: .zero)
+        else { return }
+
+        for cell in mosaic(for: canvasSize) where cells[cell.key] == nil {
+            if let ready = SkyCutoutClient.shared.cachedImage(for: cell.cutout) {
+                cells[cell.key] = ready
                 cellEpoch += 1
-            } else {
-                try? await Task.sleep(nanoseconds: 3_000_000_000)
-                requestedCells.remove(cell.key)
+                continue
+            }
+            guard !requestedCells.contains(cell.key) else { continue }
+            requestedCells.insert(cell.key)
+            Task {
+                if let image = await SkyCutoutClient.shared.image(for: cell.cutout) {
+                    cells[cell.key] = image
+                    cellEpoch += 1
+                } else {
+                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    requestedCells.remove(cell.key)
+                }
             }
         }
     }
