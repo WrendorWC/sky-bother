@@ -37,11 +37,9 @@ struct SkyBrowserView: View {
 
     /// Sharp cells, keyed by their request. Drawn over the coarse base.
     @State private var cells: [String: NSImage] = [:]
-    @State private var requestedCells: Set<String> = []
     @State private var cellEpoch = 0
     /// The view as it was when it last stopped moving. The sharp layer is
     /// only fetched for this, never for a view being passed through.
-    @State private var settled: FetchKey?
     @State private var canvasSize: CGSize = .zero
 
     /// Live gesture offsets, applied on top of `centre` without committing to
@@ -68,19 +66,24 @@ struct SkyBrowserView: View {
         .task(id: IdentifyKey(identifying: isIdentifying, centre: centre, fov: fieldOfViewDegrees)) {
             await identifyCentre()
         }
+        // One task, keyed on the view, with the wait inside it.
+        //
+        // This used to set a separate "settled" flag, and the flag was cleared
+        // at the top of the very task that set it — so any re-render that
+        // restarted the task put it back to nil, and it was never once true.
+        // The sharp layer was therefore never requested at all, which is why
+        // the view stayed at the resolution of the coarse first pass no matter
+        // how long you waited.
+        //
         // Each scroll notch is its own field of view, and several in a row
-        // cross several rungs of the ladder — each of which is a whole new set
-        // of cells. Requesting them all meant a dozen megapixel cutouts in
-        // flight for levels nobody stopped at, which is why zooming out
-        // churned for ten seconds and still showed the coarse image. Nothing
-        // sharp is asked for until the view has actually settled.
-        .task(id: FetchKey(centre: centre, fov: fieldOfViewDegrees, size: .zero)) {
-            settled = nil
+        // cross several rungs of the size ladder, so the wait is still needed:
+        // it stops a quick zoom ordering a full set of cutouts for every level
+        // it passes through. Cancelling and restarting one task does that
+        // without anything to get stuck.
+        .task(id: MosaicKey(centre: centre, fov: fieldOfViewDegrees,
+                            size: canvasSize, hasBase: shown != nil)) {
             try? await Task.sleep(nanoseconds: 400_000_000)
             guard !Task.isCancelled else { return }
-            settled = FetchKey(centre: centre, fov: fieldOfViewDegrees, size: .zero)
-        }
-        .task(id: MosaicKey(settled: settled, size: canvasSize, hasBase: shown != nil)) {
             await loadMosaic()
         }
         // Keyed rather than `onAppear`, so a window that is handed a target
@@ -410,13 +413,15 @@ struct SkyBrowserView: View {
                                    Self.minimumFieldOfView, Self.maximumFieldOfView)
     }
 
-    /// What the sharp layer is currently meant to be covering.
+    /// What the sharp layer is meant to be covering.
     private struct MosaicKey: Hashable {
-        var settled: FetchKey?
+        var ra: Double, dec: Double, fov: Double
         var width: Int, height: Int
         var hasBase: Bool
-        init(settled: FetchKey?, size: CGSize, hasBase: Bool) {
-            self.settled = settled
+        init(centre: EquatorialCoordinate, fov: Double, size: CGSize, hasBase: Bool) {
+            self.ra = (centre.rightAscension * 1000).rounded()
+            self.dec = (centre.declination * 1000).rounded()
+            self.fov = (fov * 10000).rounded()
             self.width = Int(size.width)
             self.height = Int(size.height)
             self.hasBase = hasBase
@@ -734,26 +739,30 @@ struct SkyBrowserView: View {
     /// they queued behind each other and timed out, each timeout prompting
     /// another. The same collapse the tile fetcher had, by the same route.
     private func loadMosaic() async {
-        guard shown != nil, canvasSize.width > 32,
-              settled == FetchKey(centre: centre, fov: fieldOfViewDegrees, size: .zero)
-        else { return }
+        guard shown != nil, canvasSize.width > 32 else { return }
+        let wanted = mosaic(for: canvasSize)
 
-        for cell in mosaic(for: canvasSize) where cells[cell.key] == nil {
-            if let ready = SkyCutoutClient.shared.cachedImage(for: cell.cutout) {
-                cells[cell.key] = ready
-                cellEpoch += 1
-                continue
-            }
-            guard !requestedCells.contains(cell.key) else { continue }
-            requestedCells.insert(cell.key)
-            Task {
-                if let image = await SkyCutoutClient.shared.image(for: cell.cutout) {
-                    cells[cell.key] = image
+        // The wheel keeps turning until every cell is in, not just until the
+        // first coarse image lands — otherwise it stops while the picture is
+        // still visibly improving, which reads as "this is as good as it gets".
+        isLoading = true
+        defer { isLoading = false }
+
+        await withTaskGroup(of: (String, NSImage?).self) { group in
+            for cell in wanted where cells[cell.key] == nil {
+                if let ready = SkyCutoutClient.shared.cachedImage(for: cell.cutout) {
+                    cells[cell.key] = ready
                     cellEpoch += 1
-                } else {
-                    try? await Task.sleep(nanoseconds: 5_000_000_000)
-                    requestedCells.remove(cell.key)
+                    continue
                 }
+                group.addTask {
+                    (cell.key, await SkyCutoutClient.shared.image(for: cell.cutout))
+                }
+            }
+            for await (key, image) in group {
+                guard let image else { continue }
+                cells[key] = image
+                cellEpoch += 1
             }
         }
     }
