@@ -243,14 +243,6 @@ struct SkyBrowserView: View {
 
     /// The rig's field of view, centred — the whole reason for looking at any
     /// of this being to decide what to point at.
-    private func frameHalfWidth(size: CGSize) -> Double {
-        state.rig.fieldOfViewWidthArcminutes / 60 * Double(size.width) / fieldOfViewDegrees / 2
-    }
-
-    private func frameHalfHeight(size: CGSize) -> Double {
-        state.rig.fieldOfViewHeightArcminutes / 60 * Double(size.width) / fieldOfViewDegrees / 2
-    }
-
     private func frameOverlay(size: CGSize) -> some View {
         let pointsPerDegree = size.width / fieldOfViewDegrees
         let width = state.rig.fieldOfViewWidthArcminutes / 60 * pointsPerDegree
@@ -332,12 +324,6 @@ struct SkyBrowserView: View {
             // straddling an edge.
             guard position.x > 10, position.x < size.width - 10,
                   position.y > 10, position.y < size.height - 28
-            else { continue }
-            // And inside the rig's frame. Further out the circles stop
-            // sitting on what they name, and the frame is the part of the
-            // view being asked about in any case.
-            guard abs(offset.width) <= frameHalfWidth(size: size),
-                  abs(offset.height) <= frameHalfHeight(size: size)
             else { continue }
 
             let radius = max(9.0, target.majorAxisArcminutes / 60
