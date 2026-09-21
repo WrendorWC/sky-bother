@@ -216,7 +216,7 @@ struct SkyBrowserView: View {
             .overlay { frameOverlay(size: size) }
             .overlay { if isIdentifying { identifications(size: size) } }
             .overlay(alignment: .topLeading) {
-                if searchResultsVisible { searchResults }
+                if searchResultsVisible { searchResults } else { centreReadout(size: size) }
             }
             .clipped()
             .contentShape(Rectangle())
@@ -374,6 +374,31 @@ struct SkyBrowserView: View {
                       height: -(coordinate.declination - centre.declination) * pointsPerDegree)
     }
 
+    /// Where the rig's frame is pointing, to type into the telescope's own
+    /// app. The frame is always centred, so this is simply the view's centre
+    /// — exact, with none of the flat-sky approximation the markers use.
+    private func centreReadout(size: CGSize) -> some View {
+        let text = Format.preciseCoordinates(panned(centre, by: dragOffset, viewWidth: size.width))
+        return HStack(spacing: 8) {
+            Text(text)
+                .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
+                .foregroundStyle(.white)
+            Button {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(text, forType: .string)
+            } label: {
+                Image(systemName: "doc.on.doc")
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(.white.opacity(0.8))
+            .help("Copy the frame's centre (J2000)")
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(Color.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 6))
+        .padding(12)
+    }
+
     private var searchResultsVisible: Bool {
         !searchText.trimmingCharacters(in: .whitespaces).isEmpty && !matches.isEmpty
     }
@@ -521,13 +546,20 @@ struct SkyBrowserView: View {
     /// together towards the poles: the same angular step across the sky is
     /// more degrees of RA the further from the equator you are.
     private func pan(by translation: CGSize, viewWidth: CGFloat) {
+        centre = panned(centre, by: translation, viewWidth: viewWidth)
+        label = ""
+    }
+
+    /// Where the centre would be after a drag, without committing to it — so
+    /// the readout can follow the finger rather than catching up on release.
+    private func panned(_ start: EquatorialCoordinate, by translation: CGSize,
+                        viewWidth: CGFloat) -> EquatorialCoordinate {
         let degreesPerPoint = fieldOfViewDegrees / Double(max(1, viewWidth))
-        let declination = clamp(centre.declination + Double(translation.height) * degreesPerPoint, -89.9, 89.9)
+        let declination = clamp(start.declination + Double(translation.height) * degreesPerPoint, -89.9, 89.9)
         let cosDec = max(0.02, cosDeg(declination))
         let rightAscension = normalize360(
-            centre.rightAscension + Double(translation.width) * degreesPerPoint / cosDec)
-        centre = EquatorialCoordinate(rightAscension: rightAscension, declination: declination)
-        label = ""
+            start.rightAscension + Double(translation.width) * degreesPerPoint / cosDec)
+        return EquatorialCoordinate(rightAscension: rightAscension, declination: declination)
     }
 
     // MARK: - Image

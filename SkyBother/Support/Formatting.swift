@@ -107,4 +107,18 @@ enum Format {
         return String(format: "%02dh %04.1fm  %@%02d° %02.0f′",
                       raHours, raMinutes, sign, decDegrees, decMinutes)
     }
+
+    /// To the second of arc, for typing into a telescope's own app.
+    ///
+    /// Rounded as whole tenths of a second of time and whole seconds of arc
+    /// before splitting into fields, so 59.96s carries into the next minute
+    /// instead of printing as "60.0s".
+    static func preciseCoordinates(_ coordinate: EquatorialCoordinate) -> String {
+        let raTenths = Int((coordinate.rightAscension / 15 * 36_000).rounded()) % (24 * 36_000)
+        let sign = coordinate.declination < 0 ? "−" : "+"
+        let decSeconds = Int((abs(coordinate.declination) * 3600).rounded())
+        return String(format: "%02dh %02dm %04.1fs  %@%02d° %02d′ %02d″",
+                      raTenths / 36_000, raTenths / 600 % 60, Double(raTenths % 600) / 10,
+                      sign, decSeconds / 3600, decSeconds / 60 % 60, decSeconds % 60)
+    }
 }
