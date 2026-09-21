@@ -155,39 +155,32 @@ struct NightDetailView: View {
     // One scroll view for the whole column — mission summary, stats,
     // timeline, legend and tonight's plan at the top, then the target
     // list below — rather than two independently-scrolling regions
-    // stacked on top of each other. The filter bar pins in place as a
-    // section header once you scroll past it, so it stays reachable
-    // while browsing targets without needing its own scroll area.
+    // stacked on top of each other.
+    //
+    // One lazy stack for all of it, header included. The header used to sit
+    // in an eager VStack above a lazy stack of targets, and scrolling back up
+    // to where the two met made SwiftUI re-anchor the lazy stack: the offset
+    // was pushed back about 160pt, over and over, with the content size
+    // unchanged — the jitter scrolling up out of the target list. Measured
+    // with a fast scroll down and 30pt steps back up: that loop every few
+    // steps before, none after, with Sky View open or closed. Making the
+    // list eager instead also cured it but doubled what a fast scroll costs.
+    //
+    // The filter bar no longer pins: it pinned under the compact header,
+    // which covered it, so nothing visible is lost.
     private var plainScrollView: some View {
         ScrollView {
-            // The header (mission summary, stats, timeline, legend, tonight's
-            // plan) is one big one-off block, not repeating content — it
-            // stays in a plain VStack, laid out eagerly like normal, rather
-            // than as a sibling item inside the LazyVStack below. Lazy
-            // stacks estimate the size of anything not yet on screen, and a
-            // block this tall and this variable (a whole chart, a
-            // conditional cloud-out banner) is exactly the kind of item that
-            // estimate gets wrong — which showed up as the scroll position
-            // visibly fighting itself while scrolling back up past it. The
-            // target list below, which can run to 60+ rows, is the part that
-            // actually benefits from being lazy.
-            VStack(alignment: .leading, spacing: 0) {
+            LazyVStack(alignment: .leading, spacing: 0) {
                 header
                     .padding(20)
                     .id(topAnchorID)
                 Divider()
-            }
-
-            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                Section {
-                    targetListContent
-                } header: {
-                    filterBar
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(Palette.panel)
-                    Divider()
-                }
+                filterBar
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(Palette.panel)
+                Divider()
+                targetListContent
             }
         }
         .scrollIndicators(.visible)
