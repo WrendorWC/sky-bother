@@ -375,27 +375,72 @@ struct SkyBrowserView: View {
     /// label that takes a second to arrive and names a star.
     private func identifications(size: CGSize) -> some View {
         ZStack {
-            ForEach(visibleTargets, id: \.id) { target in
-                let offset = screenOffset(of: target.coordinate, size: size)
-                let radius = max(9.0, target.majorAxisArcminutes / 60
-                                 * Double(size.width) / fieldOfViewDegrees / 2)
+            ForEach(markers(size: size)) { marker in
                 ZStack {
                     Circle()
                         .strokeBorder(Palette.accent.opacity(0.85), lineWidth: 1.5)
-                        .frame(width: radius * 2, height: radius * 2)
-                    Text(target.displayName)
-                        .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
-                        .background(Color.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 4))
-                        .fixedSize()
-                        .offset(y: radius + 11)
+                        .frame(width: marker.radius * 2, height: marker.radius * 2)
+                    if marker.showsLabel {
+                        Text(marker.name)
+                            .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(Color.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 4))
+                            .fixedSize()
+                            .offset(y: marker.radius + 11)
+                    }
                 }
-                .offset(offset)
+                .offset(marker.offset)
             }
         }
         .allowsHitTesting(false)
+    }
+
+    private struct Marker: Identifiable {
+        var id: String
+        var name: String
+        var offset: CGSize
+        var radius: Double
+        var showsLabel: Bool
+    }
+
+    /// Works out where each mark goes, and which of them can carry a name.
+    ///
+    /// Two things this fixes. A mark whose centre is off the edge used to be
+    /// drawn anyway, so its label appeared sliced in half against the top of
+    /// the view. And nothing stopped two labels landing on top of each other —
+    /// "NGC 1893" and "Tadpoles Nebula" were printed over one another and
+    /// neither could be read. A mark that cannot have a legible label keeps
+    /// its circle and loses the text, which still says something is there.
+    private func markers(size: CGSize) -> [Marker] {
+        let middle = CGPoint(x: size.width / 2, y: size.height / 2)
+        var claimed: [CGRect] = []
+        var result: [Marker] = []
+
+        for target in visibleTargets {
+            let offset = screenOffset(of: target.coordinate, size: size)
+            let position = CGPoint(x: middle.x + offset.width, y: middle.y + offset.height)
+            // Inside the view with room for the label underneath, rather than
+            // straddling an edge.
+            guard position.x > 10, position.x < size.width - 10,
+                  position.y > 10, position.y < size.height - 28
+            else { continue }
+
+            let radius = max(9.0, target.majorAxisArcminutes / 60
+                             * Double(size.width) / fieldOfViewDegrees / 2)
+            // Close enough for a collision test; the exact width depends on
+            // the font, but labels only need to not be drawn over each other.
+            let width = Double(target.displayName.count) * 6.5 * Double(uiTextScale) + 14
+            let label = CGRect(x: position.x - width / 2,
+                               y: position.y + radius + 3,
+                               width: width, height: 18 * Double(uiTextScale))
+            let free = !claimed.contains { $0.intersects(label) }
+            if free { claimed.append(label) }
+            result.append(Marker(id: target.id, name: target.displayName,
+                                 offset: offset, radius: radius, showsLabel: free))
+        }
+        return result
     }
 
     /// Catalogue objects whose centres are inside the window, with the most
@@ -541,10 +586,15 @@ struct SkyBrowserView: View {
         }
 
         isResolving = true
-        centreName = await SkyResolver.name(rightAscensionDegrees: centre.rightAscension,
-                                            declinationDegrees: centre.declination,
-                                            radiusArcminutes: fieldOfViewDegrees * 60 / 8)
-        isResolving = false
+        // Cleared however this leaves, including when the view moves and this
+        // lookup is cancelled part-way — otherwise the spinner kept turning
+        // next to an answer that had already arrived.
+        defer { isResolving = false }
+        let resolved = await SkyResolver.name(rightAscensionDegrees: centre.rightAscension,
+                                              declinationDegrees: centre.declination,
+                                              radiusArcminutes: fieldOfViewDegrees * 60 / 8)
+        guard !Task.isCancelled else { return }
+        centreName = resolved
     }
 
     /// Screen movement to sky movement.
