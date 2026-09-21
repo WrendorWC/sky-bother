@@ -198,6 +198,13 @@ struct SkyBrowserView: View {
                     _ = epoch
                     drawCells(context: context, size: drawSize)
                 }
+                // Pinned to the view. It shares this overlay with the coarse
+                // image, which is framed several times larger than the window,
+                // and left flexible the canvas grew to match — so the cells
+                // were drawn at that image's scale, magnified about the centre
+                // relative to the markers, and a released drag jumped by the
+                // same factor.
+                .frame(width: size.width, height: size.height)
                 .background(
                     GeometryReader { geometry in
                         Color.clear
