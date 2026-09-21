@@ -32,6 +32,7 @@
 		43764CFCF89FC27FD0D055E1 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EF533F0EAA07F58C2317C4A /* HelpView.swift */; };
 		4789CC0F6DF5D64A3C9EBDB8 /* TargetImages.json in Resources */ = {isa = PBXBuildFile; fileRef = 256FB6DE32F301123F193DBF /* TargetImages.json */; };
 		48E51A16093CB2ECD1926A3C /* Healpix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC97249DCC95945A4EAFE11 /* Healpix.swift */; };
+		4AA71B4691644A16BE9BF73C /* SkyResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C30ED2A029EDAA75CB7645E /* SkyResolver.swift */; };
 		4C1689A1BAFB67948A00A658 /* Moon.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52C0F2598A5F7776EEE3A6E /* Moon.swift */; };
 		4F3A5995DE781AF21D00FB3C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0867EA4E9C35E7C5BA67DC75 /* SettingsView.swift */; };
 		4FBAD4FDA7118CE8FDB52973 /* NearbySpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F419FCEE63CD7B951505A1C /* NearbySpot.swift */; };
@@ -122,6 +123,7 @@
 		8F6F76D10491E125AC07D893 /* TargetFacts.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = TargetFacts.json; sourceTree = "<group>"; };
 		907954043CD0C303D7D3E582 /* Constellation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constellation.swift; sourceTree = "<group>"; };
 		916944C4D5E50DC97D5F6E2C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		9C30ED2A029EDAA75CB7645E /* SkyResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyResolver.swift; sourceTree = "<group>"; };
 		9DA0FBE41B05F9E38B31F059 /* SkyProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyProjection.swift; sourceTree = "<group>"; };
 		A03639BEF9F701145C4FBB6E /* Target.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Target.swift; sourceTree = "<group>"; };
 		A2298B98269426A86EE03028 /* BuiltInCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuiltInCatalog.swift; sourceTree = "<group>"; };
@@ -223,6 +225,7 @@
 				6CE5CF299A94A6F5FA50D5E9 /* ExtendedCatalog.json */,
 				B58706DA975CF9D40CE33ED0 /* Images */,
 				B21991955A54E8BBF703ACE2 /* SkyCutoutClient.swift */,
+				9C30ED2A029EDAA75CB7645E /* SkyResolver.swift */,
 				583C7973712342F3C9E7F14B /* SkyThumbnails */,
 				7F279CD41CFEA04D2D029FC0 /* SkyThumbnails.json */,
 				4CF75FC17B6D0EA40A67BDCA /* SkyTileStore.swift */,
@@ -428,6 +431,7 @@
 				D70E975F3A6B6B4C2567F9AC /* SkyGlow.swift in Sources */,
 				1A88BF33F810FCBF3361CA22 /* SkyProjection.swift in Sources */,
 				0A736B7974D55C0936645129 /* SkyQuality.swift in Sources */,
+				4AA71B4691644A16BE9BF73C /* SkyResolver.swift in Sources */,
 				756DD7CB6E8E99F183758283 /* SkyTileStore.swift in Sources */,
 				B7974615B6B0E7E32ACCCD35 /* SkyView.swift in Sources */,
 				71F708AEF0F8A4663CDDAFAF /* Sun.swift in Sources */,

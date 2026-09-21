@@ -24,6 +24,9 @@ struct SkyBrowserView: View {
     @State private var searchText = ""
     @State private var label: String = ""
     @State private var isIdentifying = false
+    /// What sits at the centre of the view, once asked for.
+    @State private var centreName: String?
+    @State private var isResolving = false
 
     /// The cutout currently on screen, with where it was taken, so it can be
     /// re-projected while a new one is in flight. Used only when nothing has
@@ -71,6 +74,9 @@ struct SkyBrowserView: View {
             footer
         }
         .background(Palette.spaceBackground)
+        .task(id: IdentifyKey(identifying: isIdentifying, centre: centre, fov: fieldOfViewDegrees)) {
+            await identifyCentre()
+        }
         // Keyed rather than `onAppear`, so a window that is handed a target
         // after it has already appeared still centres on it instead of sitting
         // wherever it opened.
@@ -88,7 +94,19 @@ struct SkyBrowserView: View {
                 .onSubmit { if let first = matches.first { go(to: first) } }
                 .frame(maxWidth: 280)
 
-            if !label.isEmpty {
+            // While identifying, the centre wins: the whole point of pressing
+            // the button is to ask about where you have moved to, so a name
+            // left over from wherever you started would be answering the wrong
+            // question — which is exactly what it did.
+            if isIdentifying {
+                HStack(spacing: 6) {
+                    if isResolving { ProgressView().controlSize(.small) }
+                    Text(centreName ?? (isResolving ? "Looking…" : "Nothing catalogued here"))
+                        .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
+                        .foregroundStyle(centreName == nil ? .secondary : Palette.accent)
+                        .lineLimit(1)
+                }
+            } else if !label.isEmpty {
                 Text(label)
                     .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -99,11 +117,13 @@ struct SkyBrowserView: View {
                 isIdentifying.toggle()
             } label: {
                 Label("What's this?", systemImage: isIdentifying ? "tag.fill" : "tag")
+                    .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
             }
-            .buttonStyle(.borderless)
-            .foregroundStyle(isIdentifying ? Palette.accent : .secondary)
-            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
-            .help("Name everything in view that the catalogue knows about")
+            // A real button rather than bare text: it toggles a mode, and
+            // nothing about the old styling said it could be pressed.
+            .buttonStyle(.bordered)
+            .tint(isIdentifying ? Palette.accent : .secondary)
+            .help("Name what's at the centre of the view, and everything around it the catalogue knows")
 
             if isLoading { ProgressView().controlSize(.small) }
             Text(fieldOfViewSummary)
@@ -479,6 +499,52 @@ struct SkyBrowserView: View {
     private func zoom(by factor: Double) {
         fieldOfViewDegrees = clamp(fieldOfViewDegrees * factor,
                                    Self.minimumFieldOfView, Self.maximumFieldOfView)
+    }
+
+    /// Identity of a lookup. Panning or zooming asks the question again;
+    /// turning the mode off stops asking.
+    private struct IdentifyKey: Hashable {
+        var identifying: Bool
+        var ra: Double, dec: Double, fov: Double
+        init(identifying: Bool, centre: EquatorialCoordinate, fov: Double) {
+            self.identifying = identifying
+            self.ra = (centre.rightAscension * 1000).rounded()
+            self.dec = (centre.declination * 1000).rounded()
+            self.fov = (fov * 1000).rounded()
+        }
+    }
+
+    /// The catalogue first, then Simbad.
+    ///
+    /// The catalogue is instant and offline but holds about eleven hundred
+    /// objects, so panning onto an ordinary galaxy finds nothing in it — and
+    /// answering "nothing" when the sky plainly contains something is the
+    /// complaint this exists to fix. Scoring by separation against the
+    /// object's own size rather than raw distance is what lets a big nebula
+    /// you are sitting inside beat a small cluster whose centre happens to be
+    /// nearer.
+    private func identifyCentre() async {
+        guard isIdentifying else { centreName = nil; return }
+
+        let nearby = (BuiltInCatalog.all + state.customTargets)
+            .map { target -> (Target, Double) in
+                let separation = SkyCoordinates.separation(target.coordinate, centre)
+                let reach = max(target.majorAxisArcminutes / 60 / 2, 0.02)
+                return (target, separation / reach)
+            }
+            .filter { $0.1 <= 1.5 }
+            .min { $0.1 < $1.1 }
+
+        if let match = nearby?.0 {
+            centreName = "\(match.displayName) · \(match.type.displayName)"
+            return
+        }
+
+        isResolving = true
+        centreName = await SkyResolver.name(rightAscensionDegrees: centre.rightAscension,
+                                            declinationDegrees: centre.declination,
+                                            radiusArcminutes: fieldOfViewDegrees * 60 / 8)
+        isResolving = false
     }
 
     /// Screen movement to sky movement.
