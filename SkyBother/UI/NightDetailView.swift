@@ -18,6 +18,8 @@ struct NightDetailView: View {
     /// have it open for editing is no more a preference than which target is
     /// selected.
     @State private var isEditingPlan = false
+    /// The easter egg: the header's moon opens tonight's Moon, properly drawn.
+    @State private var isShowingMoon = false
     /// True while the scroll view is actively moving — see the note on
     /// `NightTimelineView.isScrolling`; this is what actually drives it.
     @State private var isScrolling = false
@@ -530,6 +532,8 @@ struct NightDetailView: View {
             }
             MoonPhaseDisc(illuminatedFraction: plan.moon.illuminatedFraction, isWaxing: plan.moon.isWaxing, diameter: 34)
                 .hoverTooltip("\(plan.moon.illuminationPercent)% \(plan.moon.phaseName.lowercased())")
+                .onTapGesture { isShowingMoon = true }
+                .sheet(isPresented: $isShowingMoon) { MoonCard(plan: plan) }
         }
         .padding(16)
         .panelStyle(cornerRadius: 14)

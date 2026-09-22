@@ -52,11 +52,13 @@
 		8D2399E1FDD669D5848E2FA7 /* SkyDome.metal in Sources */ = {isa = PBXBuildFile; fileRef = 378A0F752FD63B0C235E9A6B /* SkyDome.metal */; };
 		9A3DDEDEE59797EA85BB553F /* Target.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03639BEF9F701145C4FBB6E /* Target.swift */; };
 		9A7FA8CF11BA6AC32DB24F0D /* NearbyPlaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9A4F92C5B49E3B8C9AAD65 /* NearbyPlaces.swift */; };
+		A2ACB97E5890E437509141D5 /* MoonCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40ED508ABC0DA40A267BF2B5 /* MoonCard.swift */; };
 		AADC18B67BCCF912DA100820 /* NightListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1994C1A48D1B45C4E8AC68 /* NightListView.swift */; };
 		AC2BA9B88095DC469FB62142 /* NightLightsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58BDA77DF11F11A3366FDE78 /* NightLightsClient.swift */; };
 		B64C10EA181B808276EDB428 /* Images in Resources */ = {isa = PBXBuildFile; fileRef = B58706DA975CF9D40CE33ED0 /* Images */; };
 		B7974615B6B0E7E32ACCCD35 /* SkyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E00C215DAED2F778E792A08 /* SkyView.swift */; };
 		BFAABDEE4EDBF8CF70A97446 /* TargetImageCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB0607BD112BCCCEADD74AA /* TargetImageCatalog.swift */; };
+		C0F98DCF07F996E768332497 /* MoonMap.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A750DF9618DEE6723EF61C88 /* MoonMap.jpg */; };
 		C221051609F08A0118E11DF4 /* NightPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040966302C52DB4A5DA521D9 /* NightPlan.swift */; };
 		C3A4367E1EFEE1E4CF11DDFD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A501A2931558AACCE565B244 /* Assets.xcassets */; };
 		C984A842B76C1B84D255E943 /* Rig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6BB733E25C9D2AEC6029E7 /* Rig.swift */; };
@@ -72,6 +74,7 @@
 		E2A39AB2CDF119FFA1D8BDD3 /* AutoPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BC56301A546F2B6755990EC /* AutoPlan.swift */; };
 		E2AEE2DBCE6D6278A206D99C /* GeocodingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAD3101893926C494A6A45A /* GeocodingClient.swift */; };
 		E7E81802BB4469198C880D09 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916944C4D5E50DC97D5F6E2C /* ContentView.swift */; };
+		EF926E923D4E5B07E93E9F66 /* MoonGlobe.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9ED26EE0C4965A40B990D525 /* MoonGlobe.metal */; };
 		F8355B8854989ED06666701F /* Ephemeris.swift in Sources */ = {isa = PBXBuildFile; fileRef = A817D7755EE05DCD9EFCE167 /* Ephemeris.swift */; };
 		F9C858C81A863A7933BEB221 /* StarMap.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 60A19186776A6FB21AD71803 /* StarMap.jpg */; };
 		FBA7E1EA6EC4AF6FC330CB4F /* CameraFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C9EEDCDA3EC7A04EB4FED6A /* CameraFrame.swift */; };
@@ -102,6 +105,7 @@
 		3BE3702C19A7134A7E3312CE /* SkyGlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyGlow.swift; sourceTree = "<group>"; };
 		3C6BB733E25C9D2AEC6029E7 /* Rig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rig.swift; sourceTree = "<group>"; };
 		3F9A4F92C5B49E3B8C9AAD65 /* NearbyPlaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPlaces.swift; sourceTree = "<group>"; };
+		40ED508ABC0DA40A267BF2B5 /* MoonCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonCard.swift; sourceTree = "<group>"; };
 		429F6B0C5AB1B97D1D20ED0D /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		4443A05DD710F60E39F0AF3B /* Angles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Angles.swift; sourceTree = "<group>"; };
 		4496CB31E8E93CCDBAD854BA /* TargetDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetDetailView.swift; sourceTree = "<group>"; };
@@ -127,9 +131,11 @@
 		916944C4D5E50DC97D5F6E2C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		9C30ED2A029EDAA75CB7645E /* SkyResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyResolver.swift; sourceTree = "<group>"; };
 		9DA0FBE41B05F9E38B31F059 /* SkyProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyProjection.swift; sourceTree = "<group>"; };
+		9ED26EE0C4965A40B990D525 /* MoonGlobe.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = MoonGlobe.metal; sourceTree = "<group>"; };
 		A03639BEF9F701145C4FBB6E /* Target.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Target.swift; sourceTree = "<group>"; };
 		A2298B98269426A86EE03028 /* BuiltInCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuiltInCatalog.swift; sourceTree = "<group>"; };
 		A501A2931558AACCE565B244 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A750DF9618DEE6723EF61C88 /* MoonMap.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = MoonMap.jpg; sourceTree = "<group>"; };
 		A817D7755EE05DCD9EFCE167 /* Ephemeris.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ephemeris.swift; sourceTree = "<group>"; };
 		B188A9E4BAF4E4E9F29FEC03 /* TimeWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeWindow.swift; sourceTree = "<group>"; };
 		B21991955A54E8BBF703ACE2 /* SkyCutoutClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyCutoutClient.swift; sourceTree = "<group>"; };
@@ -206,6 +212,8 @@
 				916944C4D5E50DC97D5F6E2C /* ContentView.swift */,
 				2EF533F0EAA07F58C2317C4A /* HelpView.swift */,
 				DA732CB649EBDFDCFAF95C77 /* LocationOnboardingView.swift */,
+				40ED508ABC0DA40A267BF2B5 /* MoonCard.swift */,
+				9ED26EE0C4965A40B990D525 /* MoonGlobe.metal */,
 				0D92198AFA083369F3D169C3 /* NearbySpotPanel.swift */,
 				7C7E0701838380DC076493D8 /* NightDetailView.swift */,
 				8A1994C1A48D1B45C4E8AC68 /* NightListView.swift */,
@@ -227,6 +235,7 @@
 				A2298B98269426A86EE03028 /* BuiltInCatalog.swift */,
 				6CE5CF299A94A6F5FA50D5E9 /* ExtendedCatalog.json */,
 				B58706DA975CF9D40CE33ED0 /* Images */,
+				A750DF9618DEE6723EF61C88 /* MoonMap.jpg */,
 				B21991955A54E8BBF703ACE2 /* SkyCutoutClient.swift */,
 				9C30ED2A029EDAA75CB7645E /* SkyResolver.swift */,
 				583C7973712342F3C9E7F14B /* SkyThumbnails */,
@@ -370,6 +379,7 @@
 				C3A4367E1EFEE1E4CF11DDFD /* Assets.xcassets in Resources */,
 				3C407D22ACD7A0F9C5B40084 /* ExtendedCatalog.json in Resources */,
 				B64C10EA181B808276EDB428 /* Images in Resources */,
+				C0F98DCF07F996E768332497 /* MoonMap.jpg in Resources */,
 				25A8975CC7D83C2944BB45E3 /* SkyThumbnails in Resources */,
 				D236563EFBA68906751D3492 /* SkyThumbnails.json in Resources */,
 				F9C858C81A863A7933BEB221 /* StarMap.jpg in Resources */,
@@ -406,6 +416,8 @@
 				DAFF390AE0C771A2456955F5 /* LocationOnboardingView.swift in Sources */,
 				26E2B809D7E2616BC0A260BF /* MetNorwayClient.swift in Sources */,
 				4C1689A1BAFB67948A00A658 /* Moon.swift in Sources */,
+				A2ACB97E5890E437509141D5 /* MoonCard.swift in Sources */,
+				EF926E923D4E5B07E93E9F66 /* MoonGlobe.metal in Sources */,
 				9A7FA8CF11BA6AC32DB24F0D /* NearbyPlaces.swift in Sources */,
 				4FBAD4FDA7118CE8FDB52973 /* NearbySpot.swift in Sources */,
 				413E25F1C0D3CA5681DE859C /* NearbySpotPanel.swift in Sources */,
