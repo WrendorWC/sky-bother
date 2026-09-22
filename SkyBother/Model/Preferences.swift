@@ -44,6 +44,10 @@ struct Preferences: Codable, Hashable, Sendable {
     /// sizes read as genuinely small — a "more space" scaled 4K/5K display
     /// being the common case, not an unusual one.
     var textScale: Double = 1.0
+    /// Size the UI to the window instead: as large as it can be with the
+    /// rows that must stay on one line still fitting. `textScale` is then
+    /// only where the slider picks up if this is turned off.
+    var autoFitsText: Bool = true
 
     /// What the suggested plan does with a night that can't give every target
     /// a full session. It only shapes the suggestion — a plan you've edited by
@@ -127,6 +131,7 @@ extension Preferences {
         usesImperialUnits = value(.usesImperialUnits, fallback.usesImperialUnits)
         showsZenithRiskWarnings = value(.showsZenithRiskWarnings, fallback.showsZenithRiskWarnings)
         textScale = value(.textScale, fallback.textScale)
+        autoFitsText = value(.autoFitsText, fallback.autoFitsText)
         planEmphasis = value(.planEmphasis, fallback.planEmphasis)
     }
 }

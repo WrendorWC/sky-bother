@@ -97,14 +97,31 @@ struct NightListView: View {
         }
     }
 
+    /// Auto sizes the UI to the window; turning it off hands over to the
+    /// slider, starting from whatever size Auto had reached so nothing jumps.
     private var textSizeControl: some View {
-        HStack(spacing: 8) {
+        let isAuto = Binding(
+            get: { state.preferences.autoFitsText },
+            set: { auto in
+                if !auto {
+                    state.preferences.textScale = min(max((Double(uiTextScale) / 0.05).rounded() * 0.05, 0.85), 1.5)
+                }
+                state.preferences.autoFitsText = auto
+            })
+        return HStack(spacing: 8) {
             Text("UI Scale")
-            Slider(value: $state.preferences.textScale, in: 0.85...1.5, step: 0.05)
-                .controlSize(.small)
-            Text("\(Int((state.preferences.textScale * 100).rounded()))%")
+            if isAuto.wrappedValue {
+                Spacer(minLength: 0)
+            } else {
+                Slider(value: $state.preferences.textScale, in: 0.85...1.5, step: 0.05)
+                    .controlSize(.small)
+            }
+            Text("\(Int((uiTextScale * 100).rounded()))%")
                 .monospacedDigit()
                 .frame(minWidth: 34, alignment: .trailing)
+            Toggle("Auto", isOn: isAuto)
+                .toggleStyle(.checkbox)
+                .controlSize(.small)
         }
         .font(.scaled(.caption, scale: uiTextScale))
         .foregroundStyle(.secondary)
@@ -206,6 +223,7 @@ private struct NightRow: View {
                     .transition(.scale.combined(with: .opacity))
             }
         }
+        .reportsOneLineFit()
         .padding(.vertical, 7)
         .padding(.horizontal, 8)
         .background(isSelected ? Palette.accent.opacity(0.14) : Color.clear, in: RoundedRectangle(cornerRadius: 8))

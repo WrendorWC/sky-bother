@@ -131,6 +131,7 @@ enum HelpContent {
             HelpSection(heading: "Minimum Altitude", body: "Targets below this altitude are excluded, on top of your blocked-horizon limits — useful for ruling out the murky, high-airmass sky near the horizon even where nothing's physically in the way."),
             HelpSection(heading: "Integration Goal", body: "The usable minutes a target needs to earn full marks on \"Time on Target.\" Set it to the session length you actually plan to shoot."),
             HelpSection(heading: "Hide Below Score", body: "A display filter on the target list only. Lowering it reveals more marginal targets without changing how anything is scored."),
+            HelpSection(heading: "UI Scale", body: "Under the night list. With Auto on, the whole interface sizes itself to the window: as large as it can be while the night rows, Tonight\u{2019}s Plan and the target list all stay on one line with nothing cut off. It re-fits whenever the window changes size, so a big display gets big text. The night\u{2019}s statistics and the chart key wrap whole items onto a second row rather than shrinking everything to fit on one. Turn Auto off to set the size yourself with the slider, which starts from wherever Auto had got to."),
             HelpSection(heading: "Nights Ahead", body: "How many nights the list plans. Open-Meteo forecasts further out than the maximum, but cloud cover past about a week is not worth acting on.")
         ]),
 

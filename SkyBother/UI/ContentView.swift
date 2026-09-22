@@ -19,6 +19,15 @@ struct ContentView: View {
     /// Room for the two column dividers on top of the columns themselves.
     static let minWindowWidth = sidebarMinWidth + contentMinWidth + detailMinWidth + 10
 
+    /// Wide enough for the night rows at the current UI scale. Fixed, the
+    /// sidebar was what stopped the automatic scale growing on a big window:
+    /// its rows filled it at about 115% however much room the rest had.
+    /// Measured: a row needs about 86pt plus 131pt per unit of scale, and the
+    /// column adds its own padding around that.
+    private var sidebarWidth: CGFloat {
+        max(Self.sidebarMinWidth, 130 + 135 * CGFloat(state.effectiveTextScale))
+    }
+
     var body: some View {
         if state.needsLocationSetup {
             LocationOnboardingView()
@@ -26,7 +35,9 @@ struct ContentView: View {
         } else {
             NavigationSplitView {
                 NightListView()
-                    .navigationSplitViewColumnWidth(min: Self.sidebarMinWidth, ideal: 290, max: 380)
+                    .reportsFitsToAutoScale(state, column: "sidebar")
+                    .navigationSplitViewColumnWidth(min: sidebarWidth, ideal: max(290, sidebarWidth),
+                                                    max: max(380, sidebarWidth + 60))
             } content: {
                 // The width constraint has to apply regardless of which
                 // branch renders — it was only on the "has a plan" branch,
@@ -44,6 +55,7 @@ struct ContentView: View {
                         // state tree, genuinely its own.
                         NightDetailView(plan: plan)
                             .id(plan.id)
+                            .reportsFitsToAutoScale(state, column: "night")
                     } else {
                         EmptyStateView(title: "No nights planned",
                                        message: "Set a location in Settings, then refresh.",

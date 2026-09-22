@@ -28,6 +28,95 @@ extension View {
     }
 }
 
+// MARK: - Fitting the UI to the window
+
+/// How much room the tightest must-fit row has, as a ratio of what it
+/// needs: 1 is an exact fit, under 1 means something is being cut off or
+/// wrapped. Every row that reports contributes, and the smallest wins.
+struct OneLineFitKey: PreferenceKey {
+    static let defaultValue: CGFloat = .infinity
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = min(value, nextValue())
+    }
+}
+
+/// Compares the width a row is given with the width it would take laid out
+/// on one line with nothing cut off, measured on a hidden copy of itself.
+private struct OneLineFitProbe: ViewModifier {
+    func body(content: Content) -> some View {
+        content.background(
+            GeometryReader { given in
+                content
+                    .fixedSize()
+                    .hidden()
+                    .background(
+                        GeometryReader { wanted in
+                            Color.clear.preference(key: OneLineFitKey.self,
+                                                   value: given.size.width / max(1, wanted.size.width))
+                        }
+                    )
+            }
+        )
+    }
+}
+
+extension View {
+    /// Marks a row the automatic UI scale must keep on one line and uncut.
+    func reportsOneLineFit() -> some View {
+        modifier(OneLineFitProbe())
+    }
+
+    /// Reports this column's tightest must-fit row to the automatic UI
+    /// scale. Once per column, not once for the window: a split view's
+    /// columns are hosted separately, and what's measured inside one never
+    /// reaches a modifier on the split view itself.
+    func reportsFitsToAutoScale(_ state: AppState, column: String) -> some View {
+        onPreferenceChange(OneLineFitKey.self) { ratio in
+            state.reportOneLineFit(ratio, column: column)
+        }
+    }
+}
+
+/// Lays its items out left to right and starts a new row when the next one
+/// won't fit, so nothing is ever cut short — whole items move down instead.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 16
+    var lineSpacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, lineHeight: CGFloat = 0, widest: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > 0 && x + size.width > width {
+                y += lineHeight + lineSpacing
+                x = 0
+                lineHeight = 0
+            }
+            x += size.width + spacing
+            lineHeight = max(lineHeight, size.height)
+            widest = max(widest, x - spacing)
+        }
+        return CGSize(width: proposal.width ?? widest, height: y + lineHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, lineHeight: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > bounds.minX && x + size.width > bounds.maxX {
+                y += lineHeight + lineSpacing
+                x = bounds.minX
+                lineHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y),
+                          proposal: ProposedViewSize(width: min(size.width, bounds.width), height: size.height))
+            x += size.width + spacing
+            lineHeight = max(lineHeight, size.height)
+        }
+    }
+}
+
 /// How tall the night-detail pane actually is on screen — the scroll
 /// viewport, which tracks the window, not the scrolled content, which does
 /// not. Sky View is the only thing that needs it: it is square and lives in a
@@ -655,19 +744,13 @@ struct LabelledValue: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            // This row's item count varies (weather data isn't always
-            // available), so its available width per item does too. Two
-            // lines' worth of height is always reserved, whether the value
-            // needs it or not, so a narrower item never wraps and grows the
-            // whole statistics row's height — and on the rare value that
-            // still doesn't fit even across two lines, it trails off with an
-            // ellipsis rather than growing further, with the untruncated
-            // text one hover away instead of just being lost.
+            // One line, whole: the statistics row flows, so an item that
+            // doesn't fit moves to the next row instead of being squeezed
+            // until its value wraps or its label is cut short.
             Text(value)
                 .font(.scaled(.title3, scale: uiTextScale).weight(.medium))
                 .monospacedDigit()
-                .lineLimit(2, reservesSpace: true)
-                .hoverTooltip(value)
+                .lineLimit(1)
         }
     }
 }

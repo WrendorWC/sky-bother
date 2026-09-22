@@ -16,6 +16,51 @@ final class AppState: ObservableObject {
     @Published var weatherErrorMessage: String?
     @Published private(set) var cloudMapImage: NSImage?
     @Published private(set) var cloudMapCapturedAt: Date?
+    /// What the main window last fitted its UI scale to — see
+    /// `reportOneLineFit(_:column:)`. Not saved: it's a fact about the
+    /// window's current size, worked out again on every launch.
+    @Published var fittedTextScale: Double?
+
+    /// Each column's latest report: the scale it was measured at and how
+    /// much room its tightest row had then.
+    private var fitReports: [String: (scale: Double, ratio: Double)] = [:]
+
+    /// Bigger than the slider goes, for large displays; the floor stops a
+    /// very narrow window shrinking text to unreadable.
+    static let autoTextScaleRange: ClosedRange<Double> = 0.8...1.8
+
+    /// Grows or shrinks the automatic UI scale until the tightest row in any
+    /// column just fits on one line.
+    ///
+    /// Each report is turned into the scale that column could take — the
+    /// scale it was measured at times how much room it had — which keeps a
+    /// column that hasn't re-measured since the last change from being
+    /// counted twice. Text grows in proportion to the scale and padding
+    /// doesn't, so that estimate is close rather than exact and a few passes
+    /// settle it; the dead band around an exact fit stops it hunting.
+    func reportOneLineFit(_ ratio: CGFloat, column: String) {
+        guard ratio.isFinite, ratio > 0 else {
+            fitReports[column] = nil
+            return
+        }
+        let current = effectiveTextScale
+        fitReports[column] = (current, Double(ratio))
+        guard preferences.autoFitsText,
+              let tightest = fitReports.values.map({ $0.scale * $0.ratio }).min() else { return }
+        let limit = min(tightest * 0.985, current * 1.2)
+        let next = (min(max(limit, Self.autoTextScaleRange.lowerBound),
+                        Self.autoTextScaleRange.upperBound) * 100).rounded() / 100
+        let tooBig = fitReports.values.contains { $0.ratio < 0.995 && abs($0.scale - current) < 0.005 }
+        if (tooBig && next < current) || next > current + 0.02 {
+            fittedTextScale = next
+        }
+    }
+
+    /// The UI scale every window uses: fitted to the main window when that's
+    /// on, the slider's value otherwise.
+    var effectiveTextScale: Double {
+        preferences.autoFitsText ? (fittedTextScale ?? preferences.textScale) : preferences.textScale
+    }
     @Published private(set) var nearbySpots: NearbySpotState = .idle
     /// Where "Use This Spot" switched away from, so the sidebar can offer the
     /// way back while that spot is still the site in use.

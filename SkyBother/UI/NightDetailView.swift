@@ -187,6 +187,48 @@ struct NightDetailView: View {
         }
         .scrollIndicators(.visible)
         .spaceBackground()
+        .background(alignment: .top) { fitProbes }
+    }
+
+    // MARK: - Fitting the UI scale
+
+    /// Hidden copies of the rows in this column that must stay on one line,
+    /// laid out at the same width as the real ones, for the automatic UI
+    /// scale to measure. Copies, because the real rows live in a lazy stack
+    /// that stops laying out whatever has scrolled away — measuring those
+    /// made the whole UI change size as you scrolled.
+    private var fitProbes: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 14) {
+                ForEach(planSegments.chronological) { segment in
+                    planRow(segment).reportsOneLineFit()
+                }
+            }
+            .padding(20)
+            ForEach(widestTargets) { targetPlan in
+                targetListRow(targetPlan).reportsOneLineFit()
+            }
+        }
+        // Content width, not the scroll view's: always-visible scroll bars
+        // take their width out of what the rows get.
+        .padding(.trailing, NSScroller.preferredScrollerStyle == .legacy
+                 ? NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy) : 0)
+        .hidden()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// The targets whose rows need the most room, so the list is judged by
+    /// its worst case rather than by whichever rows happen to be on screen.
+    /// Estimated from the length of the text in their first line; a few are
+    /// measured properly in case the estimate picks the wrong one.
+    private var widestTargets: [TargetPlan] {
+        func length(_ targetPlan: TargetPlan) -> Int {
+            let target = targetPlan.target
+            return target.displayName.count + (target.commonName != nil ? target.designation.count : 0)
+                + target.type.shortName.count
+        }
+        return Array(targets.sorted { length($0) > length($1) }.prefix(3))
     }
 
     // MARK: - Header
@@ -547,8 +589,10 @@ struct NightDetailView: View {
         return plan.headline
     }
 
+    /// Flows onto a second row when the column is narrow — whole stats move
+    /// down rather than any of them being cut short or wrapped mid-value.
     private var statistics: some View {
-        HStack(alignment: .top, spacing: 26) {
+        FlowLayout(spacing: 26, lineSpacing: 12) {
             LabelledValue(label: "Astronomical dark",
                           value: darkWindowText,
                           systemImage: "moon.stars")
@@ -576,7 +620,6 @@ struct NightDetailView: View {
                                                  imperial: state.preferences.usesImperialUnits),
                               systemImage: "wind")
             }
-            Spacer(minLength: 0)
         }
     }
 
@@ -587,15 +630,17 @@ struct NightDetailView: View {
         return "\(Format.time(dusk, in: plan.timeZone))–\(Format.time(dawn, in: plan.timeZone))"
     }
 
+    /// Whole items wrap onto a second row rather than being cut short —
+    /// a truncated key tells you nothing, and it would otherwise be the
+    /// first thing to make the automatic UI scale shrink everything.
     private var legend: some View {
-        HStack(spacing: 16) {
+        FlowLayout(spacing: 16, lineSpacing: 6) {
             legendItem(color: Palette.cloud.opacity(0.7), label: "cloud from the top")
             legendItem(color: Palette.moonlight.opacity(0.8), label: "moonlight and its altitude")
             legendItem(color: Palette.astronomical, label: "darker background = darker sky")
             if let target = selectedTargetPlan {
                 legendItem(color: Palette.accent, label: "\(target.target.displayName)'s altitude · shaded box = its best window")
             }
-            Spacer()
             if let dew = dewAssessment {
                 Label(dewAdviceLine(dew), systemImage: dew.level >= .high ? "drop.fill" : "drop")
                     .font(.scaled(.caption, scale: uiTextScale))
@@ -747,6 +792,7 @@ struct NightDetailView: View {
             ViewThatFits(in: .horizontal) {
                 Text("\(targets.count) targets meet criteria")
                 Text("\(targets.count) targets")
+                Text("\(targets.count)")
             }
             .lineLimit(1)
             .font(.scaled(.callout, scale: uiTextScale))
@@ -765,31 +811,35 @@ struct NightDetailView: View {
                 .frame(minHeight: 320)
         } else {
             ForEach(targets) { targetPlan in
-                HStack(spacing: 10) {
-                    if isEditingPlan {
-                        // Add, not check: a target can be in the plan more
-                        // than once, so there is no on/off state for this
-                        // button to show. Pressing it twice is a legitimate
-                        // thing to do and gives you two blocks.
-                        Button {
-                            state.addPlanSegment(for: targetPlan, to: plan)
-                        } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.scaled(.title3, scale: uiTextScale))
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Palette.accent)
-                        .help("Add a block for this target at the longest gap left in the night")
-                    }
-                    TargetRowView(plan: plan, targetPlan: targetPlan,
-                                 isSelected: state.selectedTargetID == targetPlan.id)
-                }
-                .padding(.horizontal, 20)
-                .contentShape(Rectangle())
-                .onTapGesture { state.selectedTargetID = targetPlan.id }
+                targetListRow(targetPlan)
                 Divider().padding(.leading, 20)
             }
         }
+    }
+
+    private func targetListRow(_ targetPlan: TargetPlan) -> some View {
+        HStack(spacing: 10) {
+            if isEditingPlan {
+                // Add, not check: a target can be in the plan more
+                // than once, so there is no on/off state for this
+                // button to show. Pressing it twice is a legitimate
+                // thing to do and gives you two blocks.
+                Button {
+                    state.addPlanSegment(for: targetPlan, to: plan)
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.scaled(.title3, scale: uiTextScale))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Palette.accent)
+                .help("Add a block for this target at the longest gap left in the night")
+            }
+            TargetRowView(plan: plan, targetPlan: targetPlan,
+                         isSelected: state.selectedTargetID == targetPlan.id)
+        }
+        .padding(.horizontal, 20)
+        .contentShape(Rectangle())
+        .onTapGesture { state.selectedTargetID = targetPlan.id }
     }
 
     private var emptyTitle: String {

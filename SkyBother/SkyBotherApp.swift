@@ -84,7 +84,7 @@ struct SkyBotherApp: App {
             ContentView()
                 .environmentObject(state)
                 .tint(Palette.accent)
-                .appTextScale(state.preferences.textScale)
+                .appTextScale(state.effectiveTextScale)
                 .frame(minWidth: ContentView.minWindowWidth, minHeight: 720)
                 .background(TitleBarZoomAndDragFix())
         }
@@ -108,7 +108,7 @@ struct SkyBotherApp: App {
             TargetCatalogView()
                 .environmentObject(state)
                 .tint(Palette.accent)
-                .appTextScale(state.preferences.textScale)
+                .appTextScale(state.effectiveTextScale)
         }
         .defaultSize(width: 980, height: 720)
         .associatedWindow()
@@ -119,7 +119,7 @@ struct SkyBotherApp: App {
             SkyBrowserView(designation: designation.wrappedValue)
                 .environmentObject(state)
                 .tint(Palette.accent)
-                .appTextScale(state.preferences.textScale)
+                .appTextScale(state.effectiveTextScale)
         }
         .defaultSize(width: 1000, height: 780)
         .associatedWindow()
@@ -127,7 +127,7 @@ struct SkyBotherApp: App {
         WindowGroup(id: "help") {
             HelpView()
                 .tint(Palette.accent)
-                .appTextScale(state.preferences.textScale)
+                .appTextScale(state.effectiveTextScale)
         }
         .defaultSize(width: 900, height: 700)
         .associatedWindow()
@@ -136,7 +136,7 @@ struct SkyBotherApp: App {
             SettingsView()
                 .environmentObject(state)
                 .tint(Palette.accent)
-                .appTextScale(state.preferences.textScale)
+                .appTextScale(state.effectiveTextScale)
         }
         .associatedWindow()
 
@@ -144,7 +144,7 @@ struct SkyBotherApp: App {
             MenuBarSummaryView()
                 .environmentObject(state)
                 .tint(Palette.accent)
-                .appTextScale(state.preferences.textScale)
+                .appTextScale(state.effectiveTextScale)
         } label: {
             MenuBarScoreIcon()
                 .environmentObject(state)
