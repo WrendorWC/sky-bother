@@ -5,6 +5,8 @@
 A Mac app that answers exactly that: whether tonight is worth setting up for, and
 what to point at if it is.
 
+![Sky Bother's main window: a week of nights scored down the left, tonight's darkness, cloud, moon and dew risk across the night, a suggested plan of 47 Tucanae then the Orion Nebula, and the Orion Nebula framed in a Seestar S50's field of view](docs/main-window.png)
+
 **[Download the latest beta →](https://github.com/WrendorWC/sky-bother/releases/latest)**
 Unzip, drag `SkyBother.app` into Applications, then right-click it and choose
 Open the first time (it isn't notarized yet, so macOS needs that one-time nudge).
