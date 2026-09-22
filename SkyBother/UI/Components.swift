@@ -296,6 +296,7 @@ private final class TitleBarFixProbe: NSView {
         // its children out with Auto Layout and the toolbar hasn't
         // necessarily finished arriving when this runs.
         let catcher = TitleBarDragCatcherView(frame: .zero)
+        catcher.owner = window
         catcher.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(catcher, positioned: .above, relativeTo: nil)
         NSLayoutConstraint.activate([
@@ -323,7 +324,17 @@ private final class TitleBarDragCatcherView: NSView {
     /// plain title bar can.
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
+    /// The window whose title bar this is. In full screen AppKit moves the
+    /// title bar into a separate toolbar window, so `window` stops being it.
+    weak var owner: NSWindow?
+
     override func hitTest(_ point: NSPoint) -> NSView? {
+        // Out of the way entirely in full screen. There is no window to drag
+        // or zoom there, and the title bar has moved into a toolbar window of
+        // its own whose `toolbar` is nil — so no toolbar buttons were found
+        // to let through, and every click on Settings, Catalog and Help was
+        // swallowed.
+        if owner?.styleMask.contains(.fullScreen) ?? false { return nil }
         guard let superview, let window else { return nil }
         let local = convert(point, from: superview)
         guard bounds.contains(local) else { return nil }
