@@ -228,6 +228,29 @@ extension View {
 
 }
 
+extension Scene {
+    /// Lets a secondary window — the catalog, help, the sky browser — open
+    /// over a full-screen main window instead of as a full-screen space of
+    /// its own.
+    ///
+    /// A plain window group's windows are full-screen primaries, so with the
+    /// main window in full screen SwiftUI opened the catalog as a second
+    /// full-screen space — the main window vanished into another Space and
+    /// the catalog had no title bar to close it by — or, for Help, put it on
+    /// the ordinary desktop in a Space the user wasn't looking at. Marking
+    /// the NSWindow from inside its content came too late: SwiftUI has
+    /// already put the window on screen by then. An associated role is set
+    /// on the scene, before any window exists, and keeps these windows with
+    /// the main one. It only exists from macOS 15; on 14 they behave as before.
+    func associatedWindow() -> some Scene {
+        if #available(macOS 15.0, *) {
+            return windowManagerRole(.associated)
+        } else {
+            return self
+        }
+    }
+}
+
 /// SwiftUI's inline toolbar title is an `NSToolbarTitleView` that spans the
 /// whole strip between the leading toolbar buttons and the trailing ones, at
 /// the full height of the header, and it swallows mouse-downs instead of

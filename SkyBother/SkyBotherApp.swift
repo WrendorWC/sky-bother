@@ -111,6 +111,7 @@ struct SkyBotherApp: App {
                 .appTextScale(state.preferences.textScale)
         }
         .defaultSize(width: 980, height: 720)
+        .associatedWindow()
 
         // Keyed by designation so opening the browser for a second target
         // gives it its own window rather than hijacking the first.
@@ -121,6 +122,7 @@ struct SkyBotherApp: App {
                 .appTextScale(state.preferences.textScale)
         }
         .defaultSize(width: 1000, height: 780)
+        .associatedWindow()
 
         WindowGroup(id: "help") {
             HelpView()
@@ -128,6 +130,7 @@ struct SkyBotherApp: App {
                 .appTextScale(state.preferences.textScale)
         }
         .defaultSize(width: 900, height: 700)
+        .associatedWindow()
 
         Settings {
             SettingsView()
