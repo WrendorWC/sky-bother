@@ -151,6 +151,17 @@ enum Palette {
     static let panel = Color(red: 0.14, green: 0.12, blue: 0.20)
     static let panelBorder = Color(red: 0.62, green: 0.52, blue: 0.98).opacity(0.18)
 
+    /// Green, yellow, orange, red — the order everyone already reads a risk
+    /// scale in, so the dots under the night chart need no key.
+    static func dewRisk(_ level: DewRiskLevel) -> Color {
+        switch level {
+        case .low: return go
+        case .moderate: return Color(red: 0.93, green: 0.84, blue: 0.30)
+        case .high: return Color(red: 0.96, green: 0.56, blue: 0.22)
+        case .veryHigh: return skip
+        }
+    }
+
     static func verdict(_ verdict: Verdict) -> Color {
         switch verdict {
         case .exceptional: return exceptional

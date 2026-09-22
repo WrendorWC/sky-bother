@@ -84,9 +84,6 @@ private struct LocationSettings: View {
                             .tag(value)
                     }
                 }
-                Text("Bortle class decides whether galaxies are realistic from here. If you do not know yours, look your site up on a light pollution map — it is the single most useful number in this app.")
-                    .font(.scaled(.caption, scale: uiTextScale))
-                    .foregroundStyle(.secondary)
 
                 horizonControls
 
@@ -188,10 +185,6 @@ private struct LocationSettings: View {
                             .frame(width: 34, alignment: .trailing)
                     }
                 }
-                Text("Each direction covers the 45° of sky centred on it, so S also covers SSE through SSW. A target is ignored while it sits below the line for whichever direction it is in — it keeps the rest of its night.")
-                    .font(.scaled(.caption, scale: uiTextScale))
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 2)
             }
             .padding(.top, 4)
         } label: {
@@ -251,9 +244,6 @@ private struct EquipmentSettings: View {
                         Button(preset.name) { state.applyPreset(preset) }
                     }
                 }
-                Text("Presets use published optical specs and the standard dimensions of each model's sensor. Check them against your own unit — everything below is editable.")
-                    .font(.scaled(.caption, scale: uiTextScale))
-                    .foregroundStyle(.secondary)
             }
 
             Section("Your rigs") {
@@ -318,7 +308,7 @@ private struct EquipmentSettings: View {
                             Slider(value: $state.rig.zenithAvoidanceAltitude, in: 60...90, step: 1) {
                                 Text("Warn above")
                             }
-                            Text("Alt-az mounts rotate the field fastest overhead, and many smart telescopes stall near the zenith. Targets passing above \(Format.degrees(state.rig.zenithAvoidanceAltitude)) get a warning.")
+                            Text("Targets passing above \(Format.degrees(state.rig.zenithAvoidanceAltitude)) get a warning.")
                                 .font(.scaled(.caption, scale: uiTextScale))
                                 .foregroundStyle(.secondary)
                         }
@@ -388,9 +378,6 @@ private struct PlanningSettings: View {
 
                 Stepper("Plan \(state.preferences.forecastNights) nights ahead",
                         value: $state.preferences.forecastNights, in: 1...14)
-                Text("Open-Meteo forecasts further out than this, but cloud cover past about a week is not worth acting on.")
-                    .font(.scaled(.caption, scale: uiTextScale))
-                    .foregroundStyle(.secondary)
 
                 Toggle("Include star clusters", isOn: $state.preferences.includeStarClusters)
                 Toggle("Include targets larger than the frame", isOn: $state.preferences.includeOversizedTargets)

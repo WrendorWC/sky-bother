@@ -208,9 +208,6 @@ struct TargetDetailView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            Text("Traced live on tonight's main timeline — this target is selected there too.")
-                .font(.scaled(.caption, scale: uiTextScale))
-                .foregroundStyle(.tertiary)
         }
     }
 
@@ -222,13 +219,7 @@ struct TargetDetailView: View {
 
     private var scoring: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 5) {
-                SectionHeader("Why this score")
-                Image(systemName: "info.circle")
-                    .font(.scaled(.caption2, scale: uiTextScale))
-                    .foregroundStyle(.tertiary)
-                    .hoverTooltip("Each impact is the real model re-run with that one factor made perfect — how many points you'd gain, not an invented share of the total.")
-            }
+            SectionHeader("Why this score")
 
             if let primary = primaryFactorResult, primary.impact > 1 {
                 Label {
@@ -245,9 +236,6 @@ struct TargetDetailView: View {
                     FactorBar(factor: factor, impact: scoreImpact(of: factor, in: targetPlan.factors, actualScore: targetPlan.score))
                 }
             }
-            Text("Impact shows how many score points this factor costs under tonight's conditions.")
-                .font(.scaled(.caption, scale: uiTextScale))
-                .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

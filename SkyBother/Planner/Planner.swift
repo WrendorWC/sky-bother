@@ -126,6 +126,7 @@ struct Planner: Sendable {
                         seeing: context.weather?.seeing ?? 0.6,
                         temperature: context.weather?.temperatureCelsius ?? .nan,
                         dewSpread: context.weather?.dewPointSpread ?? .nan,
+                        windSpeed: context.weather?.windSpeedKilometersPerHour ?? .nan,
                         hasWeather: context.weather != nil)
         }
 

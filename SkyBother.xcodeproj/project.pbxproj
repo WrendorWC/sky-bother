@@ -17,6 +17,7 @@
 		0A736B7974D55C0936645129 /* SkyQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A43221B5BB9C9C070310D8 /* SkyQuality.swift */; };
 		12CDB847CB679DCE28B904A7 /* NightTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121F6312FBA6A6551B7E5A5C /* NightTimelineView.swift */; };
 		151516883513B0BF2A9ED041 /* TargetFactCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B346A89CBB8B43A2D08D7C3 /* TargetFactCatalog.swift */; };
+		19B20CF22174534852E2B1F5 /* DewRisk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6BCE3EDF964A070B0EBAC3 /* DewRisk.swift */; };
 		1A88BF33F810FCBF3361CA22 /* SkyProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DA0FBE41B05F9E38B31F059 /* SkyProjection.swift */; };
 		1C9668B63C6B1E72213A48C6 /* Planner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C0D660B9E2BB51D1FDE213 /* Planner.swift */; };
 		1EE8629C594AE74FB429B4F7 /* TargetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4496CB31E8E93CCDBAD854BA /* TargetDetailView.swift */; };
@@ -92,6 +93,7 @@
 		21C5A347B7B38F09484F2E56 /* SkyBother.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SkyBother.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		256FB6DE32F301123F193DBF /* TargetImages.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = TargetImages.json; sourceTree = "<group>"; };
 		2EF533F0EAA07F58C2317C4A /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
+		2F6BCE3EDF964A070B0EBAC3 /* DewRisk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DewRisk.swift; sourceTree = "<group>"; };
 		31C65B07DCED75574C6A918D /* PlanStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanStripView.swift; sourceTree = "<group>"; };
 		3492EE661C53801B7CD79782 /* GalacticCoordinates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalacticCoordinates.swift; sourceTree = "<group>"; };
 		378A0F752FD63B0C235E9A6B /* SkyDome.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SkyDome.metal; sourceTree = "<group>"; };
@@ -279,6 +281,7 @@
 			isa = PBXGroup;
 			children = (
 				3BC56301A546F2B6755990EC /* AutoPlan.swift */,
+				2F6BCE3EDF964A070B0EBAC3 /* DewRisk.swift */,
 				040966302C52DB4A5DA521D9 /* NightPlan.swift */,
 				F3C0D660B9E2BB51D1FDE213 /* Planner.swift */,
 				06609FAAB2A7F0C05A258C7D /* RigFit.swift */,
@@ -392,6 +395,7 @@
 				CA3E88DDD147614D983171AC /* Constellation.swift in Sources */,
 				E7E81802BB4469198C880D09 /* ContentView.swift in Sources */,
 				CB9E6C5F22ED9AD7DC87757A /* DarkSkyFinder.swift in Sources */,
+				19B20CF22174534852E2B1F5 /* DewRisk.swift in Sources */,
 				F8355B8854989ED06666701F /* Ephemeris.swift in Sources */,
 				018C5DA610E416E337A61A9A /* Formatting.swift in Sources */,
 				03CC61E435364D00F238DE8F /* GalacticCoordinates.swift in Sources */,

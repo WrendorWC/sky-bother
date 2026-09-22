@@ -77,6 +77,9 @@ struct NightSample: Hashable, Sendable {
     var seeing: Double
     var temperature: Double
     var dewSpread: Double
+    /// Sustained wind, km/h — for dew risk, where still air is what lets the
+    /// optics cool below ambient.
+    var windSpeed: Double
     var hasWeather: Bool
 
     var isDark: Bool { darkness >= 0.35 }

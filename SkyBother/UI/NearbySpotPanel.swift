@@ -178,9 +178,9 @@ struct NearbySpotPanel: View {
                         alternateRow(alternate, goal: result.goal)
                     }
                 }
-                Text(result.goal == .darkerSky
-                     ? "Bortle classes are estimated from NASA satellite night lights. Check it's open and safe after dark."
-                     : "Open view estimated from ESA WorldCover satellite land cover, assuming trees about 15 m tall. Check it's open and safe after dark.")
+                // Where these numbers come from is in Help; the one thing
+                // worth saying here is the one that matters before you drive.
+                Text("Check if it's open and safe after dark.")
                     .font(.scaled(.caption2, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

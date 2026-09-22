@@ -209,7 +209,12 @@ struct NightDetailView: View {
             // stationary cursor) into an animated transaction — fighting the
             // scroll view's own momentum and producing a visible jitter that
             // made it hard to scroll back to the top.
-            NightTimelineView(plan: plan, selectedTarget: selectedTargetPlan, scrubTime: $scrubTime, isScrolling: isScrolling)
+            VStack(spacing: 5) {
+                NightTimelineView(plan: plan, selectedTarget: selectedTargetPlan, scrubTime: $scrubTime, isScrolling: isScrolling)
+                if plan.hasWeather {
+                    DewRiskStrip(plan: plan, imperial: state.preferences.usesImperialUnits, isScrolling: isScrolling)
+                }
+            }
 
             legend
 
@@ -557,10 +562,11 @@ struct NightDetailView: View {
                               value: Format.temperature(celsius: plan.minimumTemperature,
                                                         imperial: state.preferences.usesImperialUnits),
                               systemImage: "thermometer.low")
-                LabelledValue(label: "Dew spread",
-                              value: Format.temperatureDelta(celsius: plan.minimumDewSpread,
-                                                             imperial: state.preferences.usesImperialUnits),
-                              systemImage: "humidity")
+                if let dew = dewAssessment {
+                    DewRiskValue(assessment: dew, timeZone: plan.timeZone,
+                                 imperial: state.preferences.usesImperialUnits,
+                                 explanation: dewExplanation(dew))
+                }
                 LabelledValue(label: "Gusts",
                               value: Format.wind(kilometersPerHour: plan.maximumGust,
                                                  imperial: state.preferences.usesImperialUnits),
@@ -586,19 +592,78 @@ struct NightDetailView: View {
                 legendItem(color: Palette.accent, label: "\(target.target.displayName)'s altitude · shaded box = its best window")
             }
             Spacer()
-            if let dewWarning = dewWarning {
-                Label(dewWarning, systemImage: "drop.fill")
+            if let dew = dewAssessment {
+                Label(dewAdviceLine(dew), systemImage: dew.level >= .high ? "drop.fill" : "drop")
                     .font(.scaled(.caption, scale: uiTextScale))
-                    .foregroundStyle(Palette.marginal)
+                    .foregroundStyle(dew.level == .low ? Color.secondary : Palette.dewRisk(dew.level))
+                    .lineLimit(1)
+                    .hoverTooltip(dewExplanation(dew))
             }
         }
         .font(.scaled(.caption, scale: uiTextScale))
         .foregroundStyle(.secondary)
     }
 
-    private var dewWarning: String? {
-        guard plan.hasDewRisk else { return nil }
-        return "Dew likely — bring a dew heater"
+    // MARK: - Dew risk
+
+    /// The stretch dew risk is rated over: tonight's plan from its first
+    /// block to its last, since that is when the scope is actually out, or
+    /// astronomical darkness when there is no plan.
+    private var dewSession: TimeWindow {
+        let segments = planSegments.chronological
+        if let first = segments.first, let last = segments.last {
+            return TimeWindow(start: first.window.start, end: last.window.end)
+        }
+        if let dusk = plan.astronomicalDusk, let dawn = plan.astronomicalDawn {
+            return TimeWindow(start: dusk, end: dawn)
+        }
+        return plan.chartWindow
+    }
+
+    private var dewAssessment: DewRisk.Assessment? {
+        guard plan.hasWeather else { return nil }
+        return DewRisk.assess(samples: plan.samples, over: dewSession)
+    }
+
+    /// Short enough for the legend row: the advice, and when it starts to
+    /// matter.
+    private func dewAdviceLine(_ dew: DewRisk.Assessment) -> String {
+        guard dew.level > .low else { return dew.level.advice }
+        return "\(dew.level.advice) \(dewWhen(dew))"
+    }
+
+    /// "all night" only when it really is — the worst level holding for the
+    /// whole session — and otherwise when it starts, or when it eases.
+    private func dewWhen(_ dew: DewRisk.Assessment) -> String {
+        if dew.isWorstThroughout { return "all night" }
+        if dew.peakStart <= dew.sessionStart.addingTimeInterval(10 * 60) {
+            return "until \(Format.time(dew.peakEnd, in: plan.timeZone))"
+        }
+        return "after \(Format.time(dew.peakStart, in: plan.timeZone))"
+    }
+
+    /// The full reading, for hover: what, when and what to do. How it is
+    /// worked out lives in Help, not here.
+    private func dewExplanation(_ dew: DewRisk.Assessment) -> String {
+        let imperial = state.preferences.usesImperialUnits
+        let spread = Format.temperatureDelta(celsius: dew.spreadAtPeak, imperial: imperial)
+        let when = dewWhen(dew)
+        let reading: String
+        switch dew.level {
+        case .low:
+            reading = "Temperature stays well clear of the dew point through the session."
+        case _ where dew.peakIsRadiative:
+            reading = "Clear, calm sky \(when): optics can cool below the air and dew over with the temperature still \(spread) above the dew point."
+        case .moderate:
+            reading = "Temperature comes within \(spread) of the dew point \(when)."
+        case .high where dew.isWorstThroughout:
+            reading = "Temperature stays close to the dew point all night."
+        case .high:
+            reading = "Risk is highest \(when), with the temperature close to the dew point."
+        case .veryHigh:
+            reading = "Temperature is expected to stay within \(spread) of the dew point \(when). Dew protection strongly recommended."
+        }
+        return "\(dew.level.name) dew risk. \(reading) \(dew.level.advice)."
     }
 
     private func legendItem(color: Color, label: String) -> some View {
@@ -793,7 +858,7 @@ struct TargetRowView: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.scaled(.caption, scale: uiTextScale))
                             .foregroundStyle(Palette.marginal)
-                            .hoverTooltip("Zenith risk from \(Format.time(risk.start, in: plan.timeZone)) — field rotation peaks near the zenith and some alt-az mounts stall there.")
+                            .hoverTooltip("Zenith risk from \(Format.time(risk.start, in: plan.timeZone))")
                     }
                 }
             }
@@ -890,5 +955,181 @@ private struct AutoPlanStripView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.panelBorder))
+    }
+}
+
+/// Dew risk in the statistics row: a coloured level, and the tightest
+/// temperature/dew-point spread in the session with when it comes.
+private struct DewRiskValue: View {
+    @Environment(\.uiTextScale) private var uiTextScale
+    var assessment: DewRisk.Assessment
+    var timeZone: TimeZone
+    var imperial: Bool
+    var explanation: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 4) {
+                Image(systemName: "drop")
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(Palette.accent)
+                Text("Dew risk")
+                    .font(.scaled(.callout, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(Palette.dewRisk(assessment.level))
+                    .frame(width: 10 * uiTextScale, height: 10 * uiTextScale)
+                Text(assessment.level.name)
+                    .font(.scaled(.title3, scale: uiTextScale).weight(.medium))
+                    .lineLimit(1)
+            }
+            Text("min \(Format.temperatureDelta(celsius: assessment.minimumSpread, imperial: imperial)) at \(Format.time(assessment.minimumSpreadTime, in: timeZone))")
+                .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .hoverTooltip(explanation)
+    }
+}
+
+/// A bar on the night chart's own time axis, coloured by dew risk as it
+/// changes, so a night that starts dry and turns wet towards morning reads
+/// at a glance. Hovering it reads out that moment and the key.
+private struct DewRiskStrip: View {
+    @Environment(\.uiTextScale) private var uiTextScale
+    var plan: NightPlan
+    var imperial: Bool
+    /// See `NightTimelineView.isScrolling`: hover fires as content scrolls
+    /// under a still cursor, and answering it mid-scroll fights the scroll.
+    var isScrolling: Bool
+
+    @State private var hoverX: CGFloat?
+
+    /// How far either side of a change the colours blend, so a change reads
+    /// as the gradual thing it is rather than a hard edge at one sample.
+    private static let blendMinutes: Double = 20
+
+    var body: some View {
+        GeometryReader { geometry in
+            let axis = TimeAxis(window: plan.chartWindow, width: geometry.size.width)
+            Canvas { context, size in
+                let bar = Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: size.height / 2)
+                let stops = gradientStops(axis: axis, width: size.width)
+                guard stops.count > 1 else { return }
+                context.fill(bar, with: .linearGradient(Gradient(stops: stops),
+                                                        startPoint: .zero,
+                                                        endPoint: CGPoint(x: size.width, y: 0)))
+            }
+            .frame(height: 6 * uiTextScale)
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .onContinuousHover { phase in
+                guard !isScrolling else { hoverX = nil; return }
+                switch phase {
+                case .active(let location): hoverX = location.x
+                case .ended: hoverX = nil
+                }
+            }
+            .onChange(of: isScrolling) { _, scrolling in if scrolling { hoverX = nil } }
+            .overlay(alignment: .bottomLeading) {
+                if let hoverX, let sample = sample(at: axis.date(for: hoverX)),
+                   let conditions = DewRisk.conditions(of: sample) {
+                    let cardWidth = 250 * uiTextScale
+                    readout(time: sample.date, conditions: conditions)
+                        .frame(width: cardWidth, alignment: .leading)
+                        .offset(x: clamp(hoverX - cardWidth / 2, 0, max(0, geometry.size.width - cardWidth)),
+                                y: -geometry.size.height - 4)
+                        .allowsHitTesting(false)
+                }
+            }
+        }
+        // Taller than the bar itself, so it can be hovered without
+        // pixel-hunting a 6pt line.
+        .frame(height: 14 * uiTextScale)
+    }
+
+    private func sample(at date: Date) -> NightSample? {
+        plan.samples.min { abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date)) }
+    }
+
+    /// One stop per sample, each the average colour of the samples within
+    /// `blendMinutes` of it — a box blur along the night, so steady stretches
+    /// stay their own colour and changes fade across the blend width.
+    private func gradientStops(axis: TimeAxis, width: CGFloat) -> [Gradient.Stop] {
+        guard width > 0 else { return [] }
+        let rated: [(Date, SIMD3<Double>)] = plan.samples.compactMap { sample in
+            DewRisk.level(of: sample).map { (sample.date, Self.rgb(Palette.dewRisk($0))) }
+        }
+        let reach = Self.blendMinutes * 60
+        return rated.map { date, _ in
+            let near = rated.filter { abs($0.0.timeIntervalSince(date)) <= reach }.map(\.1)
+            let mean = near.reduce(SIMD3<Double>(repeating: 0), +) / Double(near.count)
+            return Gradient.Stop(color: Color(red: mean.x, green: mean.y, blue: mean.z),
+                                 location: axis.x(for: date) / width)
+        }
+    }
+
+    private static func rgb(_ color: Color) -> SIMD3<Double> {
+        let resolved = NSColor(color).usingColorSpace(.sRGB) ?? .gray
+        return SIMD3(resolved.redComponent, resolved.greenComponent, resolved.blueComponent)
+    }
+
+    private func readout(time: Date, conditions: DewConditions) -> some View {
+        let level = DewRisk.level(for: conditions)
+        let spread = Format.temperatureDelta(celsius: conditions.spreadCelsius, imperial: imperial)
+        return VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                Circle().fill(Palette.dewRisk(level)).frame(width: 9, height: 9)
+                Text("\(Format.time(time, in: plan.timeZone)) · \(level.name) dew risk")
+                    .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+            }
+            Text(spreadNote(spread: spread, conditions: conditions, level: level))
+                .font(.scaled(.caption2, scale: uiTextScale))
+                .foregroundStyle(.white.opacity(0.8))
+                .fixedSize(horizontal: false, vertical: true)
+            Divider().overlay(Color.white.opacity(0.2))
+            ForEach(DewRiskLevel.allCases, id: \.self) { key in
+                HStack(spacing: 6) {
+                    Circle().fill(Palette.dewRisk(key)).frame(width: 7, height: 7)
+                    Text(key.name)
+                        .font(.scaled(.caption2, scale: uiTextScale).weight(key == level ? .bold : .regular))
+                        .frame(width: 62 * uiTextScale, alignment: .leading)
+                    Text(bandText(key))
+                        .font(.scaled(.caption2, scale: uiTextScale))
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 7)
+        // Opaque: it sits over the chart, whose labels showed through.
+        .background(Color.black, in: RoundedRectangle(cornerRadius: 7))
+    }
+
+    /// The spread, and the clear-and-calm step only when it actually moved
+    /// the rating — a spread that is already Very High has nowhere to go.
+    private func spreadNote(spread: String, conditions: DewConditions, level: DewRiskLevel) -> String {
+        if DewRisk.favoursRadiativeCooling(conditions),
+           DewRisk.baseLevel(spreadCelsius: conditions.spreadCelsius) < level {
+            return "Air \(spread) above its dew point, under a clear, calm sky — optics cool below the air, so one step higher."
+        }
+        return "Air \(spread) above its dew point."
+    }
+
+    /// The spread band for each level, in the units you've chosen.
+    private func bandText(_ level: DewRiskLevel) -> String {
+        func delta(_ celsius: Double) -> String {
+            imperial ? String(format: "%.0f°F", celsius * 9 / 5) : String(format: "%.1f°C", celsius)
+        }
+        switch level {
+        case .low: return "spread over \(delta(DewRisk.lowAbove))"
+        case .moderate: return "\(delta(DewRisk.moderateAbove))–\(delta(DewRisk.lowAbove))"
+        case .high: return "\(delta(DewRisk.highAbove))–\(delta(DewRisk.moderateAbove))"
+        case .veryHigh: return "\(delta(DewRisk.highAbove)) or less"
+        }
     }
 }
