@@ -138,6 +138,7 @@ struct SkyBotherApp: App {
                 .tint(Palette.accent)
                 .appTextScale(state.preferences.textScale)
         }
+        .associatedWindow()
 
         MenuBarExtra {
             MenuBarSummaryView()

@@ -229,7 +229,7 @@ extension View {
 }
 
 extension Scene {
-    /// Lets a secondary window — the catalog, help, the sky browser — open
+    /// Lets a secondary window — settings, the catalog, help, the sky browser — open
     /// over a full-screen main window instead of as a full-screen space of
     /// its own.
     ///
