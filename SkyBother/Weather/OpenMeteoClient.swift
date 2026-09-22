@@ -27,6 +27,15 @@ struct OpenMeteoClient {
         "wind_speed_10m", "wind_gusts_10m", "visibility", "precipitation_probability"
     ]
 
+    /// Both models in one request. `best_match` is Open-Meteo's own pick —
+    /// for the US that is HRRR/GFS, a single model, and on a night the models
+    /// disagree it can be the most optimistic of them. The National Blend of
+    /// Models is NOAA's weighted, bias-corrected blend of all of them, and
+    /// what the NWS forecast starts from, so it is used wherever it exists.
+    /// Outside its area (it reaches southern Canada, not Europe or Africa)
+    /// the response simply has no NBM fields and `best_match` is used alone.
+    static let models = ["best_match", "ncep_nbm_conus"]
+
     func forecastURL(latitude: Double, longitude: Double, days: Int) -> URL? {
         var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")
         components?.queryItems = [
@@ -37,7 +46,8 @@ struct OpenMeteoClient {
             URLQueryItem(name: "timezone", value: "UTC"),
             URLQueryItem(name: "wind_speed_unit", value: "kmh"),
             URLQueryItem(name: "temperature_unit", value: "celsius"),
-            URLQueryItem(name: "forecast_days", value: String(min(16, max(1, days))))
+            URLQueryItem(name: "forecast_days", value: String(min(16, max(1, days)))),
+            URLQueryItem(name: "models", value: Self.models.joined(separator: ","))
         ]
         return components?.url
     }
@@ -100,39 +110,35 @@ struct OpenMeteoClient {
     }
 
     private struct Payload: Decodable {
+        /// With more than one model requested, every series comes back
+        /// suffixed with its model — `cloud_cover_best_match`,
+        /// `cloud_cover_ncep_nbm_conus` — so the keys are read as they come
+        /// rather than spelled out.
         struct Hourly: Decodable {
             let time: [Double]
-            let cloudCover: [Double?]?
-            let cloudCoverLow: [Double?]?
-            let cloudCoverMid: [Double?]?
-            let cloudCoverHigh: [Double?]?
-            let temperature2m: [Double?]?
-            let dewPoint2m: [Double?]?
-            let relativeHumidity2m: [Double?]?
-            let windSpeed10m: [Double?]?
-            let windGusts10m: [Double?]?
-            let visibility: [Double?]?
-            let precipitationProbability: [Double?]?
+            let series: [String: [Double?]]
 
-            // `.convertFromSnakeCase` cannot see the word boundary in
-            // "temperature_2m" — the digit right after the underscore breaks
-            // its heuristic, so it silently fails to match these five keys and
-            // every field falls back to its default (temperature pinned at
-            // 10°C, wind gusts at 10 km/h, etc.) regardless of the real
-            // forecast. Spelling the keys out here is the fix.
-            enum CodingKeys: String, CodingKey {
-                case time
-                case cloudCover = "cloud_cover"
-                case cloudCoverLow = "cloud_cover_low"
-                case cloudCoverMid = "cloud_cover_mid"
-                case cloudCoverHigh = "cloud_cover_high"
-                case temperature2m = "temperature_2m"
-                case dewPoint2m = "dew_point_2m"
-                case relativeHumidity2m = "relative_humidity_2m"
-                case windSpeed10m = "wind_speed_10m"
-                case windGusts10m = "wind_gusts_10m"
-                case visibility
-                case precipitationProbability = "precipitation_probability"
+            private struct Key: CodingKey {
+                var stringValue: String
+                var intValue: Int? { nil }
+                init(stringValue: String) { self.stringValue = stringValue }
+                init?(intValue: Int) { nil }
+            }
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: Key.self)
+                time = try container.decode([Double].self, forKey: Key(stringValue: "time"))
+                var series: [String: [Double?]] = [:]
+                for key in container.allKeys where key.stringValue != "time" {
+                    series[key.stringValue] = try? container.decode([Double?].self, forKey: key)
+                }
+                self.series = series
+            }
+
+            func value(_ variable: String, model: String, at index: Int) -> Double? {
+                guard let values = series["\(variable)_\(model)"] ?? series[variable],
+                      index < values.count else { return nil }
+                return values[index]
             }
         }
 
@@ -141,38 +147,68 @@ struct OpenMeteoClient {
         let hourly: Hourly
 
         func forecast() -> WeatherForecast {
-            /// Missing samples are common at the far end of a forecast; a nil is
-            /// filled with a neutral value rather than dropping the whole hour.
-            func value(_ array: [Double?]?, _ index: Int, fallback: Double) -> Double {
-                guard let array, index < array.count, let v = array[index] else { return fallback }
-                return v
-            }
-
             var hours: [HourlyWeather] = []
             hours.reserveCapacity(hourly.time.count)
 
             for (index, stamp) in hourly.time.enumerated() {
-                let total = value(hourly.cloudCover, index, fallback: 50)
+                /// NBM where it has a value — its whole area, out to about 11
+                /// days, visibility to about 3 — and `best_match` otherwise.
+                /// A gap in both is filled with a neutral value rather than
+                /// dropping the whole hour.
+                func value(_ variable: String, fallback: Double) -> Double {
+                    hourly.value(variable, model: "ncep_nbm_conus", at: index)
+                        ?? hourly.value(variable, model: "best_match", at: index)
+                        ?? fallback
+                }
+                func regular(_ variable: String) -> Double? {
+                    hourly.value(variable, model: "best_match", at: index)
+                }
+
+                let total = value("cloud_cover", fallback: 50)
+                let (low, mid, high) = Self.layers(total: total,
+                                                   regularTotal: regular("cloud_cover"),
+                                                   low: regular("cloud_cover_low"),
+                                                   mid: regular("cloud_cover_mid"),
+                                                   high: regular("cloud_cover_high"))
                 hours.append(HourlyWeather(
                     date: Date(timeIntervalSince1970: stamp),
                     cloudCoverTotal: total,
-                    cloudCoverLow: value(hourly.cloudCoverLow, index, fallback: total / 3),
-                    cloudCoverMid: value(hourly.cloudCoverMid, index, fallback: total / 3),
-                    cloudCoverHigh: value(hourly.cloudCoverHigh, index, fallback: total / 3),
-                    temperatureCelsius: value(hourly.temperature2m, index, fallback: 10),
-                    dewPointCelsius: value(hourly.dewPoint2m, index, fallback: 5),
-                    relativeHumidity: value(hourly.relativeHumidity2m, index, fallback: 70),
-                    windSpeedKilometersPerHour: value(hourly.windSpeed10m, index, fallback: 5),
-                    windGustsKilometersPerHour: value(hourly.windGusts10m, index, fallback: 10),
-                    visibilityMeters: value(hourly.visibility, index, fallback: 20000),
-                    precipitationProbability: value(hourly.precipitationProbability, index, fallback: 0)))
+                    cloudCoverLow: low,
+                    cloudCoverMid: mid,
+                    cloudCoverHigh: high,
+                    temperatureCelsius: value("temperature_2m", fallback: 10),
+                    dewPointCelsius: value("dew_point_2m", fallback: 5),
+                    relativeHumidity: value("relative_humidity_2m", fallback: 70),
+                    windSpeedKilometersPerHour: value("wind_speed_10m", fallback: 5),
+                    windGustsKilometersPerHour: value("wind_gusts_10m", fallback: 10),
+                    visibilityMeters: value("visibility", fallback: 20000),
+                    precipitationProbability: value("precipitation_probability", fallback: 0)))
             }
 
             return WeatherForecast(hours: hours.sorted { $0.date < $1.date },
                                    timeZoneIdentifier: timezone ?? "UTC",
                                    elevationMeters: elevation ?? 0,
                                    retrievedAt: Date(),
+                                   // Exactly this: `AppState` reads any other
+                                   // source as the backup provider.
                                    source: "Open-Meteo")
+        }
+
+        /// How much cloud from one model, what kind from the other.
+        ///
+        /// NBM gives total cloud but no low/mid/high split, and the split is
+        /// what lets thin cirrus count for less than low stratus. So the
+        /// regular forecast's layers are scaled to NBM's total, keeping their
+        /// mix. Where the regular forecast has no cloud to take a mix from,
+        /// the total is spread evenly, as for any other missing split.
+        static func layers(total: Double, regularTotal: Double?,
+                           low: Double?, mid: Double?, high: Double?) -> (Double, Double, Double) {
+            guard let low, let mid, let high, let regularTotal,
+                  low + mid + high > 1, regularTotal > 0 else {
+                return (total / 3, total / 3, total / 3)
+            }
+            let scale = total / regularTotal
+            return (min(100, low * scale), min(100, mid * scale), min(100, high * scale))
         }
     }
 }
