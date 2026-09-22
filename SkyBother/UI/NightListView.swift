@@ -107,6 +107,7 @@ struct NightListView: View {
                     state.preferences.textScale = min(max((Double(uiTextScale) / 0.05).rounded() * 0.05, 0.85), 1.5)
                 }
                 state.preferences.autoFitsText = auto
+                if auto { state.refitTextScale() }
             })
         return HStack(spacing: 8) {
             Text("UI Scale")

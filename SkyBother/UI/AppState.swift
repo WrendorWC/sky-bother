@@ -43,14 +43,38 @@ final class AppState: ObservableObject {
             fitReports[column] = nil
             return
         }
+        fitReports[column] = (effectiveTextScale, Double(ratio))
+        refitTextScale()
+    }
+
+    /// The main window's width, for the comfortable size below.
+    var mainWindowWidth: Double = 0 {
+        didSet { if abs(mainWindowWidth - oldValue) >= 1 { refitTextScale() } }
+    }
+
+    /// The size that reads comfortably at a given window width — not the
+    /// most that fits, which on a laptop was a good deal bigger than wanted.
+    /// Set from what reads right in practice: 120% filling a 1512pt laptop
+    /// screen, about 145% filling a 3008pt 4K one, and in proportion between
+    /// and beyond.
+    static func comfortableTextScale(forWindowWidth width: Double) -> Double {
+        1.20 + (width - 1512) * (0.25 / 1496)
+    }
+
+    func refitTextScale() {
+        guard preferences.autoFitsText, mainWindowWidth > 0 else { return }
         let current = effectiveTextScale
-        fitReports[column] = (current, Double(ratio))
-        guard preferences.autoFitsText,
-              let tightest = fitReports.values.map({ $0.scale * $0.ratio }).min() else { return }
-        let limit = min(tightest * 0.985, current * 1.2)
+        let comfortable = Self.comfortableTextScale(forWindowWidth: mainWindowWidth)
+        // The comfortable size unless something wouldn't fit at it, in which
+        // case the most that does.
+        var limit = min(comfortable, current * 1.2)
+        if let tightest = fitReports.values.map({ $0.scale * $0.ratio }).min() {
+            limit = min(limit, tightest * 0.985)
+        }
         let next = (min(max(limit, Self.autoTextScaleRange.lowerBound),
                         Self.autoTextScaleRange.upperBound) * 100).rounded() / 100
         let tooBig = fitReports.values.contains { $0.ratio < 0.995 && abs($0.scale - current) < 0.005 }
+            || current > comfortable + 0.005
         if (tooBig && next < current) || next > current + 0.02 {
             fittedTextScale = next
         }

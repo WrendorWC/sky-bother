@@ -78,6 +78,14 @@ struct ContentView: View {
                 .navigationSplitViewColumnWidth(min: Self.detailMinWidth, ideal: 440, max: 560)
             }
             .navigationTitle("Sky Bother?")
+            // The automatic UI scale's comfortable size depends on this.
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear { state.mainWindowWidth = geometry.size.width }
+                        .onChange(of: geometry.size.width) { _, width in state.mainWindowWidth = width }
+                }
+            )
             .toolbarTitleDisplayMode(.inline)
             .forcedToolbarBackground(Palette.spaceTop)
             .toolbar {
