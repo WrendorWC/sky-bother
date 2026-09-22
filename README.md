@@ -27,8 +27,13 @@ You do not need to know git. The three steps below are the whole thing.
 **1. Install Xcode** (one time, free, but it is a big download — around 7 GB)
 
 Open the App Store on your Mac, search for **Xcode**, install it. Launch it once
-after installing and accept the licence prompt it shows. That is all the setup
-Xcode needs.
+after installing and accept the licence prompt it shows.
+
+Sky View draws the night sky with a Metal shader, and recent versions of Xcode
+download the Metal compiler separately. If the build stops with "missing Metal
+Toolchain", run this once in Terminal (it is about 850 MB):
+
+    xcodebuild -downloadComponent MetalToolchain
 
 **2. Download this code**
 
