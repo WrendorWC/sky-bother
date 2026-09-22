@@ -35,7 +35,7 @@ enum HelpContent {
                 HelpSwatch(color: Palette.marginal, label: "45–59 — Marginal"),
                 HelpSwatch(color: Palette.skip, label: "Below 45 — Poor")
             ]),
-            HelpSection(heading: "Night Score vs. Target Score", body: "A night's score weighs clear dark time (35%), sky clarity (30%), the moon (25%), and conditions like wind and dew (10%). A target's score weighs time on target (26%), sky darkness (18%), cloud cover (18%), how well it fills the frame (15%), how detectable it is against the sky background (14%), and altitude (9%). The two are calculated independently, on purpose — a night can be excellent overall while one particular target is a poor match for it, or the other way around.")
+            HelpSection(heading: "Night Score vs. Target Score", body: "A night's score weighs clear dark time (35%), sky clarity (30%), the moon (25%), and conditions like wind and dew (10%). Clear dark time and sky clarity are both taken from the night's longest unbroken stretch of dark sky under your Maximum Cloud Cover — the \u{201c}Best imaging\u{201d} window shown at the top — measured against your Integration Goal. Nothing outside that stretch counts, good or bad: four clear hours make a night worth going out for however cloudy the rest of it is, while a whole night of scattered cloud that never gets under your limit scores poorly, since all it gives you is a lot of cloudy frames to throw away. A target's score weighs time on target (26%), sky darkness (18%), cloud cover (18%), how well it fills the frame (15%), how detectable it is against the sky background (14%), and altitude (9%). The two are calculated independently, on purpose — a night can be excellent overall while one particular target is a poor match for it, or the other way around.")
         ]),
 
         HelpTopic(title: "The Night Timeline", systemImage: "chart.bar.xaxis", sections: [
@@ -126,7 +126,7 @@ enum HelpContent {
 
         HelpTopic(title: "Planning Settings", systemImage: "slider.horizontal.3", sections: [
             HelpSection(body: "These, in Settings → Planning, decide what counts as usable and what gets shown. They don't change any underlying astronomical calculation — just the thresholds applied to it."),
-            HelpSection(heading: "Maximum Cloud Cover", body: "Hours with effective cloud cover above this get excluded — this is the number the green availability bars are actually tested against."),
+            HelpSection(heading: "Maximum Cloud Cover", body: "What you count as clear. Hours with effective cloud cover above this get excluded — it's the number the green availability bars are tested against, and it decides the night's longest clear stretch, which the night score is built on. Around 20% separates a night with a genuinely clear window from one of steady scattered cloud."),
             HelpSection(heading: "Minimum Darkness", body: "How far below the horizon the sun has to be before an hour counts as dark. Shown as a slider from twilight to fully astronomically dark, rather than raw degrees."),
             HelpSection(heading: "Minimum Altitude", body: "Targets below this altitude are excluded, on top of your blocked-horizon limits — useful for ruling out the murky, high-airmass sky near the horizon even where nothing's physically in the way."),
             HelpSection(heading: "Integration Goal", body: "The usable minutes a target needs to earn full marks on \"Time on Target.\" Set it to the session length you actually plan to shoot."),

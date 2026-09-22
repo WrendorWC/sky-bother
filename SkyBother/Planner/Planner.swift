@@ -641,13 +641,27 @@ struct Planner: Sendable {
                               hasWeather: Bool,
                               minimumDewSpread: Double,
                               maximumGust: Double) -> [ScoreFactor] {
+        // A night is judged by its best unbroken stretch of clear, dark sky —
+        // the same "best imaging" window the header shows — not by its total
+        // or its average. Four clear hours make a night worth going out for
+        // however bad the rest of it is, while a whole night of scattered
+        // cloud only makes a lot of data to throw away. So both the time and
+        // the clarity are taken from that one window, and what happens
+        // outside it doesn't count.
         let goalHours = max(0.5, preferences.integrationGoalMinutes / 60)
-        let clearDarkHours = clearDarkWindows.totalMinutes / 60
+        let bestWindow = clearDarkWindows.longest
+        let clearDarkHours = (bestWindow?.durationMinutes ?? 0) / 60
         let timeValue = clamp(clearDarkHours / goalHours, 0, 1)
 
         let clarity: Double
-        if hasWeather && !darkSamples.isEmpty {
-            clarity = clamp(darkSamples.map(\.clearFactor).reduce(0, +) / Double(darkSamples.count), 0, 1)
+        let inWindow = bestWindow.map { window in darkSamples.filter { window.contains($0.date) } } ?? []
+        if hasWeather && !inWindow.isEmpty {
+            clarity = clamp(inWindow.map(\.clearFactor).reduce(0, +) / Double(inWindow.count), 0, 1)
+        } else if hasWeather {
+            // No clear stretch at all: the night's own average, so a clouded-out
+            // night still reads as cloudy rather than as neutral.
+            clarity = darkSamples.isEmpty ? 0
+                : clamp(darkSamples.map(\.clearFactor).reduce(0, +) / Double(darkSamples.count), 0, 1)
         } else {
             clarity = 0.6
         }
@@ -663,11 +677,11 @@ struct Planner: Sendable {
             ScoreFactor(name: "Clear dark time",
                         value: timeValue,
                         weight: 0.35,
-                        detail: String(format: "%.1f h against a %.1f h goal", clearDarkHours, goalHours)),
+                        detail: String(format: "Longest clear stretch %.1f h against a %.1f h goal", clearDarkHours, goalHours)),
             ScoreFactor(name: "Sky clarity",
                         value: clarity,
                         weight: 0.30,
-                        detail: hasWeather ? "Average cloud cover through the dark hours" : "Beyond the forecast"),
+                        detail: hasWeather ? "Cloud cover during the longest clear stretch" : "Beyond the forecast"),
             ScoreFactor(name: "Moon",
                         value: clamp(1 - moon.interference, 0, 1),
                         weight: 0.25,
