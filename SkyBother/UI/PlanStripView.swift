@@ -163,12 +163,18 @@ struct PlanStripView: View {
     private func drawHatching(context: GraphicsContext, shape: Path, axis: TimeAxis,
                               height: CGFloat, fragments: [TimeWindow]) {
         guard !fragments.isEmpty else { return }
-        var context = context
-        context.clip(to: shape)
+        var block = context
+        block.clip(to: shape)
         for fragment in fragments {
             let from = axis.x(for: fragment.start)
             let to = axis.x(for: fragment.end)
             guard to > from else { continue }
+            // A fresh copy per fragment. Clipping the shared context instead
+            // narrowed it to the first fragment for every one after, and two
+            // fragments never overlap — so a block unshootable at both ends,
+            // as dragging one end out of its window easily makes it, only
+            // ever showed the hatching at one of them.
+            var context = block
             var stripes = Path()
             // Diagonals rather than a flat wash, so this survives being drawn
             // over any of the score colours without becoming its own colour.
