@@ -92,6 +92,16 @@ final class AppState: ObservableObject {
 
     @Published var selectedNightID: Date?
     @Published var selectedTargetID: String?
+
+    /// What fills the main window. Not a set of tabs: each view other than
+    /// Home is entered by an action (Plan session, …) and left by its own
+    /// Back, Cancel or Done.
+    enum MainView: Equatable {
+        case home
+        case planner
+    }
+
+    @Published private(set) var mainView: MainView = .home
     @Published var searchText: String = ""
     @Published var typeFilter: Set<TargetType> = []
 
@@ -494,6 +504,11 @@ final class AppState: ObservableObject {
         isPlanning = false
 
         plans = computed
+        // The night being planned has dropped out of the forecast window —
+        // it's in the past now — so there's nothing left to plan.
+        if let planDraft, !computed.contains(where: { $0.planKey == planDraft.planKey }) {
+            closePlanner()
+        }
         if let selectedNightID, computed.contains(where: { $0.id == selectedNightID }) {
             // keep the current selection
         } else {
@@ -579,12 +594,38 @@ final class AppState: ObservableObject {
         planDraft = PlanDraft(planKey: night.planKey,
                               displayed: storedPlan(for: night) ?? suggestedPlan(for: night),
                               isManual: isManualPlan(for: night))
-        recentReset = nil
+    }
+
+    /// Opens the planning workspace on a night, with its plan ready to edit.
+    func openPlanner(for night: NightPlan) {
+        selectedNightID = night.id
+        beginEditingPlan(for: night)
+        mainView = .planner
+    }
+
+    /// Back to Home. Whatever the draft held must already have been saved or
+    /// discarded — this never decides that on the user's behalf.
+    func closePlanner() {
+        planDraft = nil
+        mainView = .home
+    }
+
+    /// Keeps an untouched suggestion in step with the scheduler while it's
+    /// open — a forecast refresh, or a change to what the plan favours. Once
+    /// the draft has been edited, or started from a Manual plan, it's left
+    /// alone.
+    func reseedDraftIfPristine(for night: NightPlan) {
+        guard let draft = planDraft, draft.planKey == night.planKey,
+              !draft.isDirty, !draft.originalIsManual else { return }
+        let fresh = suggestedPlan(for: night)
+        guard !PlanDraft.isSemanticallyEqual(fresh, draft.original) else { return }
+        planDraft = PlanDraft(planKey: night.planKey, displayed: fresh, isManual: false)
     }
 
     /// Replaces the draft's blocks — one finished drag or resize.
     func updateDraft(_ segments: [PlanSegment]) {
         planDraft?.segments = segments.chronological
+        recentReset = nil
     }
 
     /// Adds a block for a target at the longest stretch of the night nothing
@@ -603,11 +644,13 @@ final class AppState: ObservableObject {
                                   window: window)
         draft.segments = (draft.segments + [segment]).chronological
         planDraft = draft
+        recentReset = nil
         return segment
     }
 
     func removeDraftSegment(id: UUID) {
         planDraft?.segments.removeAll { $0.id == id }
+        recentReset = nil
     }
 
     /// Empties the draft. A cleared night, once saved, stays empty rather than
@@ -615,6 +658,12 @@ final class AppState: ObservableObject {
     /// everything back.
     func clearDraft() {
         planDraft?.segments = []
+        recentReset = nil
+    }
+
+    /// Undoes every change in the draft but keeps editing.
+    func revertDraft() {
+        planDraft?.revert()
     }
 
     /// Throws the draft away. Nothing was saved, so nothing needs undoing.
@@ -645,13 +694,17 @@ final class AppState: ObservableObject {
 
     @Published private(set) var recentReset: PlanReset?
 
-    /// Drops a night's Manual plan so it follows the current suggestion again,
-    /// closing the editor if that night is open in it.
+    /// Drops a night's Manual plan so it follows the current suggestion again.
+    /// If that night is open in the planner, the draft starts over from the
+    /// fresh suggestion rather than carrying on from the removed plan.
     func resetPlanToSuggested(for night: NightPlan) {
-        if isEditingPlan(for: night) { planDraft = nil }
+        let wasEditing = isEditingPlan(for: night)
         var plans = settings.sessionPlans
         guard let removed = PlanBook.reset(night.planKey, in: &plans) else { return }
         settings.sessionPlans = plans
+        if wasEditing {
+            planDraft = PlanDraft(planKey: night.planKey, displayed: suggestedPlan(for: night), isManual: false)
+        }
         recentReset = PlanReset(planKey: night.planKey, segments: removed)
     }
 
@@ -661,6 +714,31 @@ final class AppState: ObservableObject {
         var plans = settings.sessionPlans
         PlanBook.undoReset(reset.planKey, restoring: reset.segments, in: &plans)
         settings.sessionPlans = plans
+        if let draft = planDraft, draft.planKey == reset.planKey {
+            planDraft = PlanDraft(planKey: reset.planKey, displayed: reset.segments, isManual: true)
+        }
+    }
+
+    // MARK: Selection
+
+    /// The blocks a target has in a night's plan, as currently shown.
+    func plannedBlocks(for targetID: String, in night: NightPlan) -> [PlanSegment] {
+        displayedPlan(for: night).filter { $0.targetID == targetID }
+    }
+
+    /// The best other night in the forecast for a target that has no usable
+    /// time on this one, so "not tonight" can come with "try Saturday".
+    func nearestUsefulNight(for targetID: String, after night: NightPlan) -> (night: NightPlan, target: TargetPlan)? {
+        plans
+            .filter { $0.id != night.id }
+            .compactMap { other -> (NightPlan, TargetPlan)? in
+                guard let candidate = other.targets.first(where: { $0.id == targetID }),
+                      candidate.usableMinutes >= preferences.minimumSessionMinutes,
+                      candidate.score >= preferences.minimumScore else { return nil }
+                return (other, candidate)
+            }
+            .min { abs($0.0.date.timeIntervalSince(night.date)) < abs($1.0.date.timeIntervalSince(night.date)) }
+            .map { (night: $0.0, target: $0.1) }
     }
 
     // MARK: - Site and rig management

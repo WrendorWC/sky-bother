@@ -187,4 +187,39 @@ final class PlanDraftTests: XCTestCase {
         let decoded = try JSONDecoder().decode([String: [PlanSegment]].self, from: data)
         XCTAssertEqual(decoded, plans)
     }
+
+    /// Loading settings used to round every saved block to the five-minute
+    /// grid, which pushed untouched blocks past their target's usable time.
+    func testSavedPlansLoadExactlyAsSaved() throws {
+        var settings = StoredSettings.initial
+        settings.hasSetLocation = true
+        let futureKey = "2099-01-01"
+        var offGrid = suggestion
+        offGrid[1].window = TimeWindow(start: at(120.97), end: at(330.97))
+        settings.sessionPlans = [futureKey: offGrid]
+
+        let data = try JSONEncoder().encode(settings)
+        let loaded = try JSONDecoder().decode(StoredSettings.self, from: data)
+        XCTAssertEqual(loaded.sessionPlans[futureKey], offGrid)
+    }
+
+    func testUnshootableSliversUnderAMinuteAreIgnored() {
+        let block = PlanSegment(targetID: "ngc869", targetName: "Double Cluster",
+                                window: TimeWindow(start: at(0), end: at(120)))
+        let targetPlan = TargetPlan.fixture(id: "ngc869", windows: [TimeWindow(start: at(0.5), end: at(119.7))])
+        XCTAssertEqual(block.unusableMinutes(against: targetPlan), 0)
+
+        let late = TargetPlan.fixture(id: "ngc869", windows: [TimeWindow(start: at(5), end: at(120))])
+        XCTAssertEqual(block.unusableMinutes(against: late), 5, accuracy: 0.01)
+    }
+
+    func testRevertRestoresTheOriginalAndKeepsEditing() {
+        var draft = PlanDraft(planKey: key, displayed: suggestion, isManual: false)
+        draft.segments.removeLast()
+        draft.segments[0] = SessionPlanRules.moved(draft.segments[0], by: 20 * 60, within: night)
+        XCTAssertTrue(draft.isDirty)
+        draft.revert()
+        XCTAssertFalse(draft.isDirty)
+        XCTAssertEqual(draft.segments, draft.original)
+    }
 }

@@ -17,9 +17,18 @@ struct PlanStripView: View {
     var plan: NightPlan
     var segments: [PlanSegment]
     var isEditing: Bool
+    /// The one block to outline as selected. Nil outlines every block of the
+    /// selected target instead, which is right for a read-only strip where a
+    /// block is only ever a way of pointing at its target.
+    var selectedSegmentID: UUID? = nil
+    /// A block was clicked rather than dragged.
+    var onSelect: ((PlanSegment) -> Void)? = nil
+    /// The block being dragged, as it would land if dropped now — nil once
+    /// the drag ends — so the times can be read out while it moves.
+    var onDragReadout: ((PlanSegment?) -> Void)? = nil
     /// Called once per gesture, on release — not continuously, so a drag
-    /// doesn't write to disk sixty times a second.
-    var onCommit: ([PlanSegment]) -> Void
+    /// doesn't redraw everything that depends on the plan sixty times a second.
+    var onCommit: ([PlanSegment]) -> Void = { _ in }
 
     /// How close to an edge counts as grabbing the edge rather than the block.
     private static let edgeGrabWidth: CGFloat = 10
@@ -128,7 +137,8 @@ struct PlanStripView: View {
             let endX = axis.x(for: segment.window.end)
             let rect = CGRect(x: startX + gap / 2, y: 0,
                               width: max(2, (endX - startX) - gap), height: size.height)
-            let isSelected = state.selectedTargetID == segment.targetID
+            let isSelected = selectedSegmentID.map { $0 == segment.id }
+                ?? (state.selectedTargetID == segment.targetID)
             // No target plan means the target has dropped out of tonight
             // entirely — clouded over, or now behind the horizon. There's no
             // score to colour it by, and it isn't a neutral state either.
@@ -208,13 +218,16 @@ struct PlanStripView: View {
                     if let drag { apply(hover: drag.grip == .move ? .dragging : .edge) }
                 }
                 guard let drag, isEditing else { return }
-                preview = applying(translation: value.translation.width, drag: drag, axis: axis)
+                let layout = applying(translation: value.translation.width, drag: drag, axis: axis)
+                preview = layout
+                onDragReadout?(layout.first { $0.id == drag.id })
             }
             .onEnded { value in
                 defer {
                     self.drag = nil
                     self.preview = nil
                     self.lastValid = nil
+                    onDragReadout?(nil)
                     // Dropped: back to whatever the pointer is now over,
                     // which the next hover event decides.
                     apply(hover: .none)
@@ -223,6 +236,7 @@ struct PlanStripView: View {
                 if abs(value.translation.width) < 3 {
                     if let hit = segment(at: value.location.x, axis: axis) {
                         state.selectedTargetID = hit.targetID
+                        onSelect?(hit)
                     }
                     return
                 }

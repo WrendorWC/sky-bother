@@ -34,6 +34,11 @@ struct PlanDraft: Equatable, Sendable {
     /// in don't.
     var isDirty: Bool { !Self.isSemanticallyEqual(original, segments) }
 
+    /// Back to the plan as it was when editing began, still editing.
+    mutating func revert() {
+        segments = original
+    }
+
     enum Outcome: Equatable {
         /// Nothing to save; whatever was there before stays as it was.
         case unchanged

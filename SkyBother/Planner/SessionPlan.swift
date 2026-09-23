@@ -36,7 +36,10 @@ extension PlanSegment {
             fragments = fragments.flatMap { $0.subtracting(usable) }
             if fragments.isEmpty { return [] }
         }
-        return fragments
+        // Slivers under a minute are where a block's edge and its target's
+        // window were worked out a few seconds apart. They can't be seen on
+        // the strip, and "0m unshootable" is just noise.
+        return fragments.filter { $0.duration >= 60 }
     }
 
     func unusableMinutes(against targetPlan: TargetPlan?) -> Double {

@@ -32,6 +32,11 @@ struct ContentView: View {
         if state.needsLocationSetup {
             LocationOnboardingView()
                 .navigationTitle("Sky Bother?")
+        } else if state.mainView == .planner, let plan = plannerNight {
+            PlannerWorkspaceView(plan: plan)
+                .toolbarTitleDisplayMode(.inline)
+                .forcedToolbarBackground(Palette.spaceTop)
+                .toolbar { windowToolbar }
         } else {
             NavigationSplitView {
                 NightListView()
@@ -70,8 +75,8 @@ struct ContentView: View {
                        let targetPlan = plan.targets.first(where: { $0.id == selectedID }) {
                         TargetDetailView(plan: plan, targetPlan: targetPlan)
                     } else {
-                        EmptyStateView(title: "Pick a target",
-                                       message: "Select something from the list to see how it sits in your frame tonight.",
+                        EmptyStateView(title: "No target selected",
+                                       message: "Click the best target or a planned block to see it here, or press Plan session to browse every candidate.",
                                        systemImage: "scope")
                     }
                 }
@@ -88,38 +93,52 @@ struct ContentView: View {
             )
             .toolbarTitleDisplayMode(.inline)
             .forcedToolbarBackground(Palette.spaceTop)
-            .toolbar {
-                // A duplicate of the app menu's Settings item (and Cmd-,) —
-                // this is the one settings-adjacent thing that isn't already
-                // one click away from the main window otherwise.
-                ToolbarItem {
-                    Button {
-                        openSettings()
-                    } label: {
-                        Label("Settings", systemImage: "gearshape")
-                    }
-                    .help("Site, rig and planning preferences")
-                }
-                ToolbarItem {
-                    Button {
-                        openWindow(id: "catalog")
-                    } label: {
-                        Label("Target Catalog", systemImage: "photo.on.rectangle.angled")
-                    }
-                    .help("Browse the target catalog with photos")
-                }
-                ToolbarItem {
-                    Button {
-                        openWindow(id: "help")
-                    } label: {
-                        Label("Help", systemImage: "questionmark.circle")
-                    }
-                    .help("What the scores, colours and charts mean")
-                }
-            }
+            .toolbar { windowToolbar }
             .task {
                 await state.refresh()
             }
+        }
+    }
+}
+
+extension ContentView {
+    /// The night open in the planner, looked up afresh so a forecast refresh
+    /// hands the planner the rebuilt night rather than a stale copy.
+    private var plannerNight: NightPlan? {
+        guard let draft = state.planDraft else { return nil }
+        return state.plans.first { $0.planKey == draft.planKey }
+    }
+
+    /// The same three buttons in the same places whichever view fills the
+    /// window.
+    @ToolbarContentBuilder
+    private var windowToolbar: some ToolbarContent {
+        // A duplicate of the app menu's Settings item (and Cmd-,) —
+        // this is the one settings-adjacent thing that isn't already
+        // one click away from the main window otherwise.
+        ToolbarItem {
+            Button {
+                openSettings()
+            } label: {
+                Label("Settings", systemImage: "gearshape")
+            }
+            .help("Site, rig and planning preferences")
+        }
+        ToolbarItem {
+            Button {
+                openWindow(id: "catalog")
+            } label: {
+                Label("Target Catalog", systemImage: "photo.on.rectangle.angled")
+            }
+            .help("Browse the target catalog with photos")
+        }
+        ToolbarItem {
+            Button {
+                openWindow(id: "help")
+            } label: {
+                Label("Help", systemImage: "questionmark.circle")
+            }
+            .help("What the scores, colours and charts mean")
         }
     }
 }

@@ -11,31 +11,13 @@ struct NightDetailView: View {
     /// the part of the night actually worth looking at.
     @State private var scrubTime: Date
     @State private var isSkyViewExpanded = false
-    @State private var sortOption: TargetSortOption = .relevance
     @State private var isHeaderCollapsed = false
-    /// Asks before Reset throws away a Manual plan.
-    @State private var isConfirmingReset = false
     /// The easter egg: the header's moon opens tonight's Moon, properly drawn.
     @State private var isShowingMoon = false
     /// True while the scroll view is actively moving — see the note on
     /// `NightTimelineView.isScrolling`; this is what actually drives it.
     @State private var isScrolling = false
     @State private var scrollSettleTask: Task<Void, Never>?
-
-    /// Filtering happens in `AppState.visibleTargets(for:)`; sorting is a
-    /// pure display concern on top of that, so it stays local view state
-    /// rather than something the planner needs to know about.
-    private var targets: [TargetPlan] {
-        let filtered = state.visibleTargets(for: plan)
-        switch sortOption {
-        case .relevance:
-            return filtered // already score-descending, straight from the planner
-        case .alphabetical:
-            return filtered.sorted { $0.target.displayName.localizedCaseInsensitiveCompare($1.target.displayName) == .orderedAscending }
-        case .size:
-            return filtered.sorted { $0.target.majorAxisArcminutes > $1.target.majorAxisArcminutes }
-        }
-    }
 
     init(plan: NightPlan) {
         self.plan = plan
@@ -151,35 +133,15 @@ struct NightDetailView: View {
         .overlay(Divider(), alignment: .bottom)
     }
 
-    // One scroll view for the whole column — mission summary, stats,
-    // timeline, legend and tonight's plan at the top, then the target
-    // list below — rather than two independently-scrolling regions
-    // stacked on top of each other.
-    //
-    // One lazy stack for all of it, header included. The header used to sit
-    // in an eager VStack above a lazy stack of targets, and scrolling back up
-    // to where the two met made SwiftUI re-anchor the lazy stack: the offset
-    // was pushed back about 160pt, over and over, with the content size
-    // unchanged — the jitter scrolling up out of the target list. Measured
-    // with a fast scroll down and 30pt steps back up: that loop every few
-    // steps before, none after, with Sky View open or closed. Making the
-    // list eager instead also cured it but doubled what a fast scroll costs.
-    //
-    // The filter bar no longer pins: it pinned under the compact header,
-    // which covered it, so nothing visible is lost.
+    // One scroll view for the whole column: summary, conditions, timeline,
+    // Sky View and the plan. Browsing every target lives in the planner now,
+    // so this column answers "is this night worth it" and nothing more.
     private var plainScrollView: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
                 header
                     .padding(20)
                     .id(topAnchorID)
-                Divider()
-                filterBar
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(Palette.panel)
-                Divider()
-                targetListContent
             }
         }
         .scrollIndicators(.visible)
@@ -191,21 +153,14 @@ struct NightDetailView: View {
 
     /// Hidden copies of the rows in this column that must stay on one line,
     /// laid out at the same width as the real ones, for the automatic UI
-    /// scale to measure. Copies, because the real rows live in a lazy stack
-    /// that stops laying out whatever has scrolled away — measuring those
-    /// made the whole UI change size as you scrolled.
+    /// scale to measure.
     private var fitProbes: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 14) {
-                ForEach(planSegments.chronological) { segment in
-                    planRow(segment).reportsOneLineFit()
-                }
-            }
-            .padding(20)
-            ForEach(widestTargets) { targetPlan in
-                targetListRow(targetPlan).reportsOneLineFit()
+        VStack(alignment: .leading, spacing: 14) {
+            ForEach(planSegments.chronological) { segment in
+                planRow(segment).reportsOneLineFit()
             }
         }
+        .padding(20)
         // Content width, not the scroll view's: always-visible scroll bars
         // take their width out of what the rows get.
         .padding(.trailing, NSScroller.preferredScrollerStyle == .legacy
@@ -213,19 +168,6 @@ struct NightDetailView: View {
         .hidden()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-    }
-
-    /// The targets whose rows need the most room, so the list is judged by
-    /// its worst case rather than by whichever rows happen to be on screen.
-    /// Estimated from the length of the text in their first line; a few are
-    /// measured properly in case the estimate picks the wrong one.
-    private var widestTargets: [TargetPlan] {
-        func length(_ targetPlan: TargetPlan) -> Int {
-            let target = targetPlan.target
-            return target.displayName.count + (target.commonName != nil ? target.designation.count : 0)
-                + target.type.shortName.count
-        }
-        return Array(targets.sorted { length($0) > length($1) }.prefix(3))
     }
 
     // MARK: - Header
@@ -291,15 +233,12 @@ struct NightDetailView: View {
         .tint(Palette.accent)
     }
 
-    // MARK: - Auto-plan
+    // MARK: - Plan summary
 
     private var autoPlan: [AutoPlanSlot] { state.suggestedSlots(for: plan) }
 
-    /// Whether the plan strip is a drag surface rather than a picture.
-    private var isEditingPlan: Bool { state.isEditingPlan(for: plan) }
-
-    /// What the strip shows: the draft while editing, your own plan once you
-    /// have one, and the app's suggestion until then.
+    /// Your own plan once you have one, and the app's suggestion until then.
+    /// Home only ever reads it; changing it happens in the planner.
     private var planSegments: [PlanSegment] { state.displayedPlan(for: plan) }
 
     private var isOwnPlan: Bool { state.isManualPlan(for: plan) }
@@ -313,10 +252,6 @@ struct NightDetailView: View {
         }
     }
 
-    /// See `Preferences.sessionCapMinutes` — the Integration Goal, or half of
-    /// it when the plan is asked to favour more targets over longer ones.
-    private var sessionCapMinutes: Double { state.preferences.sessionCapMinutes }
-
     private var autoPlanSection: some View {
         let segments = planSegments.chronological
         return VStack(alignment: .leading, spacing: 8) {
@@ -329,63 +264,24 @@ struct NightDetailView: View {
                         .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(unshootableMinutes > 0 ? Palette.marginal : .secondary)
                 }
-                if isEditingPlan {
-                    planButton("Cancel") { state.cancelEditingPlan() }
-                        .help("Close the editor and discard these changes (Esc)")
-                        .onEscapeKey { state.cancelEditingPlan() }
-                    if !segments.isEmpty {
-                        planButton("Clear") { state.clearDraft() }
-                            .help("Empty the plan. Nothing is saved until Done; Cancel brings it back.")
-                    }
+                planButton("Edit plan", systemImage: "slider.horizontal.below.rectangle") {
+                    state.openPlanner(for: plan)
                 }
-                if isOwnPlan {
-                    planButton("Reset manual plan") { isConfirmingReset = true }
-                        .help("Remove your manual plan and go back to the app's current suggestion")
-                }
-                if isEditingPlan {
-                    planButton(state.planDraft?.isDirty == true ? "Done" : "Close",
-                               systemImage: "checkmark.circle.fill") {
-                        state.finishEditingPlan()
-                    }
-                    .help(state.planDraft?.isDirty == true
-                          ? "Save these changes as your manual plan"
-                          : "No changes to save — the plan stays as it was")
-                } else {
-                    planButton("Edit plan", systemImage: "slider.horizontal.below.rectangle") {
-                        state.beginEditingPlan(for: plan)
-                    }
-                }
-            }
-            .confirmationDialog(resetTitle, isPresented: $isConfirmingReset) {
-                Button("Reset manual plan", role: .destructive) { state.resetPlanToSuggested(for: plan) }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Your manual plan for this night will be removed and replaced by the app's current suggestion, built from the latest forecast and your settings.")
-            }
-
-            if let reset = state.recentReset, reset.planKey == plan.planKey {
-                resetUndoBanner
+                .help("Open the planner to change this night's plan")
             }
 
             if segments.isEmpty {
                 Text(emptyPlanMessage)
                     .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)
+            } else if segments.count == 1 {
+                // One target needs no Gantt strip: a single full-width bar
+                // says nothing the row's own times don't.
+                planRow(segments[0])
+                    .panelStyle()
             } else {
-                PlanStripView(plan: plan, segments: segments, isEditing: isEditingPlan) { edited in
-                    state.updateDraft(edited)
-                }
-                // One height in both modes. Growing on entering edit mode
-                // shoved everything below it down the page at the exact moment
-                // you were reaching for a block, so the thing you were aiming
-                // at moved. Edit mode announces itself by its outline instead.
-                .frame(height: 38)
-
-                if isEditingPlan {
-                    Text("Drag a block to move it, or either end to change how long you spend there. The same target can take as many blocks of the night as you like. Hatched means the target isn't up, dark or clear then — allowed, just flagged.")
-                        .font(.scaled(.caption, scale: uiTextScale))
-                        .foregroundStyle(.secondary)
-                }
+                PlanStripView(plan: plan, segments: segments, isEditing: false)
+                    .frame(height: 38)
 
                 VStack(spacing: 0) {
                     ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
@@ -401,54 +297,17 @@ struct NightDetailView: View {
     }
 
     /// Says in one word whose plan this is. Without it the two are visually
-    /// identical, and the difference decides what the buttons beside it do —
-    /// Reset throws away work on a manual plan and does nothing at all to a
-    /// suggested one.
+    /// identical, and the difference decides whether the plan still follows
+    /// the forecast.
     private var planOriginBadge: some View {
-        let manual = isOwnPlan
-        return Text(manual ? "Manual" : "Suggested")
-            .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
-            .foregroundStyle(manual ? Palette.accent : .secondary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(
-                Capsule().fill(manual ? Palette.accent.opacity(0.16) : Color.primary.opacity(0.07))
-            )
-            .overlay(
-                Capsule().strokeBorder(manual ? Palette.accent.opacity(0.45) : Color.clear)
-            )
-            .help(manual
-                  ? "You have edited this night. It stays exactly as you left it — the app won't re-plan it."
-                  : "The app's own suggestion. It follows the forecast and your settings until you change it and press Done.")
+        PlanOriginBadge(isManual: isOwnPlan)
     }
 
     private var emptyPlanMessage: String {
         if plan.isCloudedOut {
-            return "Clouded out — nothing to plan. The target list below shows what would have been up if it clears."
+            return "Clouded out — nothing to plan. The planner still lists what would have been up if it clears."
         }
-        if isEditingPlan {
-            return "Nothing planned. Press + beside any target below to drop it into the night, then drag it where you want it."
-        }
-        return "Nothing tonight clears your minimum score for long enough to build a session around."
-    }
-
-    private var resetTitle: String {
-        "Reset the plan for \(Format.longDate(plan.date, in: plan.timeZone))?"
-    }
-
-    /// Offered after a Reset until the next edit to any plan — see
-    /// `AppState.recentReset`. Not on a timer: a short one expired before a
-    /// person reading the message could reach the button.
-    private var resetUndoBanner: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "arrow.uturn.backward.circle")
-                .foregroundStyle(.secondary)
-            Text("Manual plan removed. This night follows the suggestion again.")
-                .font(.scaled(.caption, scale: uiTextScale))
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 8)
-            planButton("Undo") { state.undoPlanReset() }
-        }
+        return "Nothing tonight clears your minimum score for long enough to build a session around. Plan session lets you build one by hand."
     }
 
     private func planSummary(_ segments: [PlanSegment]) -> String {
@@ -472,53 +331,9 @@ struct NightDetailView: View {
     }
 
     private func planRow(_ segment: PlanSegment) -> some View {
-        let targetPlan = plan.targets.first { $0.id == segment.targetID }
-        let unshootable = segment.unusableMinutes(against: targetPlan)
-        let isSelected = state.selectedTargetID == segment.targetID
-        return HStack(spacing: 12) {
-            ScoreBadge(score: targetPlan?.score ?? 0, size: 30)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(segment.targetName)
-                    .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
-                Group {
-                    if targetPlan == nil {
-                        Text("Not up, dark or clear at all tonight")
-                    } else if unshootable > 0 {
-                        Text("\(Format.duration(minutes: unshootable)) of this block is unshootable")
-                    } else {
-                        Text(targetPlan?.fit.framingNote ?? "")
-                    }
-                }
-                .font(.scaled(.caption, scale: uiTextScale))
-                .foregroundStyle(unshootable > 0 || targetPlan == nil ? Palette.marginal : .secondary)
-                .lineLimit(1)
-            }
-            Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("\(Format.time(segment.window.start, in: plan.timeZone))–\(Format.time(segment.window.end, in: plan.timeZone))")
-                    .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
-                    .foregroundStyle(.secondary)
-                Text(Format.duration(minutes: segment.window.durationMinutes))
-                    .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-            if isEditingPlan {
-                Button {
-                    state.removeDraftSegment(id: segment.id)
-                } label: {
-                    Image(systemName: "minus.circle")
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.secondary)
-                .help("Remove this block from the plan")
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(isSelected ? Palette.accent.opacity(0.18) : Color.clear)
-        .animation(.easeInOut(duration: 0.18), value: isSelected)
-        .contentShape(Rectangle())
-        .onTapGesture { state.selectedTargetID = segment.targetID }
+        PlanBlockRow(plan: plan, segment: segment)
+            .contentShape(Rectangle())
+            .onTapGesture { state.selectedTargetID = segment.targetID }
     }
 
     // MARK: - Mission summary
@@ -526,6 +341,7 @@ struct NightDetailView: View {
     /// The 2-3-second answer: is tonight worth it, when, at what, and why
     /// not more. Everything below this is the detail that backs it up.
     private var missionSummary: some View {
+        VStack(alignment: .leading, spacing: 12) {
         HStack(alignment: .center, spacing: 16) {
             ScoreBadge(score: plan.score, size: 58)
             // Three distinct lines rather than one run-on sentence: the
@@ -555,23 +371,27 @@ struct NightDetailView: View {
                     .hoverTooltip(operationalSummaryLine)
                 if let best = plan.bestTarget {
                     let bestTargetLine = "\(best.target.displayName) · \(Int(best.score.rounded()))"
-                    HStack(spacing: 6) {
-                        Text("Best target")
-                            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
-                            .foregroundStyle(Palette.accent)
-                        Text(bestTargetLine)
-                            .font(.scaled(.callout, scale: uiTextScale).weight(.medium))
-                            .lineLimit(1)
+                    // Selecting it only changes what the Selected target
+                    // panel shows — never the plan.
+                    Button {
+                        state.selectedTargetID = best.id
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("Best target")
+                                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                                .foregroundStyle(Palette.accent)
+                            Text(bestTargetLine)
+                                .font(.scaled(.callout, scale: uiTextScale).weight(.medium))
+                                .lineLimit(1)
+                            Image(systemName: "chevron.right.circle")
+                                .font(.scaled(.caption, scale: uiTextScale))
+                                .foregroundStyle(Palette.accent)
+                        }
+                        .contentShape(Rectangle())
                     }
-                    .hoverTooltip(bestTargetLine)
-                }
-                if let limitation = nightLimitationPhrase(for: plan) {
-                    let limitationLine = "Main limitation: \(limitation)"
-                    Text(limitationLine)
-                        .font(.scaled(.caption, scale: uiTextScale))
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
-                        .hoverTooltip(limitationLine)
+                    .buttonStyle(.plain)
+                    .help("Show \(best.target.displayName) in the Selected target panel")
+                    .accessibilityLabel("Best target, \(bestTargetLine). Show details")
                 }
             }
             Spacer(minLength: 0)
@@ -598,6 +418,29 @@ struct NightDetailView: View {
                 .hoverTooltip("\(plan.moon.illuminationPercent)% \(plan.moon.phaseName.lowercased())")
                 .onTapGesture { isShowingMoon = true }
                 .sheet(isPresented: $isShowingMoon) { MoonCard(plan: plan) }
+        }
+        // The night's one-sentence limitation beside the one thing to do
+        // next, on a row of their own so neither squeezes the headline.
+        HStack(spacing: 12) {
+            if let limitation = nightLimitationPhrase(for: plan) {
+                let limitationLine = "Main limitation: \(limitation)"
+                Label(limitationLine, systemImage: "exclamationmark.circle")
+                    .font(.scaled(.callout, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .hoverTooltip(limitationLine)
+            }
+            Spacer(minLength: 8)
+            Button {
+                state.openPlanner(for: plan)
+            } label: {
+                Label("Plan session", systemImage: "list.bullet.rectangle")
+                    .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .help("Choose targets and build this night's session")
+        }
         }
         .padding(16)
         .panelStyle(cornerRadius: 14)
@@ -756,137 +599,32 @@ struct NightDetailView: View {
         .hoverTooltip(label)
     }
 
-    // MARK: - Filters
-
-    private var filterBar: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField("Filter targets", text: $state.searchText)
-                    .textFieldStyle(.plain)
-                    .frame(width: 190)
-            }
-            .padding(.horizontal, 9)
-            .padding(.vertical, 6)
-            .background(Palette.panel, in: RoundedRectangle(cornerRadius: 7))
-            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.panelBorder))
-
-            Menu {
-                Button("All Types") { state.typeFilter.removeAll() }
-                Divider()
-                ForEach(TargetType.allCases) { type in
-                    Toggle(type.displayName, isOn: Binding(
-                        get: { state.typeFilter.contains(type) },
-                        set: { isOn in
-                            if isOn { state.typeFilter.insert(type) } else { state.typeFilter.remove(type) }
-                        }))
-                }
-            } label: {
-                Label(state.typeFilter.isEmpty ? "All Types" : "\(state.typeFilter.count) Types",
-                      systemImage: "line.3.horizontal.decrease.circle")
-            }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-
-            Menu {
-                Picker("Sort by", selection: $sortOption) {
-                    ForEach(TargetSortOption.allCases) { option in
-                        Text(option.rawValue).tag(option)
-                    }
-                }
-                .pickerStyle(.inline)
-            } label: {
-                Label(sortOption.rawValue, systemImage: "arrow.up.arrow.down.circle")
-            }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-
-            Spacer()
-
-            if state.isPlanning {
-                ProgressView().controlSize(.small)
-            }
-            // One line only: unconstrained, a narrow center column squeezes
-            // this down to a single character per line and the whole bar
-            // grows hundreds of points tall. Short form when the long one
-            // doesn't fit.
-            ViewThatFits(in: .horizontal) {
-                Text("\(targets.count) targets meet criteria")
-                Text("\(targets.count) targets")
-                Text("\(targets.count)")
-            }
-            .lineLimit(1)
-            .font(.scaled(.callout, scale: uiTextScale))
-            .foregroundStyle(.secondary)
-        }
-    }
-
-    // MARK: - Targets
-
-    @ViewBuilder
-    private var targetListContent: some View {
-        if targets.isEmpty {
-            EmptyStateView(title: emptyTitle,
-                           message: emptyMessage,
-                           systemImage: "binoculars")
-                .frame(minHeight: 320)
-        } else {
-            ForEach(targets) { targetPlan in
-                targetListRow(targetPlan)
-                Divider().padding(.leading, 20)
-            }
-        }
-    }
-
-    private func targetListRow(_ targetPlan: TargetPlan) -> some View {
-        HStack(spacing: 10) {
-            if isEditingPlan {
-                // Add, not check: a target can be in the plan more
-                // than once, so there is no on/off state for this
-                // button to show. Pressing it twice is a legitimate
-                // thing to do and gives you two blocks.
-                Button {
-                    if let added = state.addDraftSegment(for: targetPlan, in: plan) {
-                        state.selectedTargetID = added.targetID
-                    }
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.scaled(.title3, scale: uiTextScale))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Palette.accent)
-                .help("Add a block for this target at the longest gap left in the night")
-            }
-            TargetRowView(plan: plan, targetPlan: targetPlan,
-                         isSelected: state.selectedTargetID == targetPlan.id)
-        }
-        .padding(.horizontal, 20)
-        .contentShape(Rectangle())
-        .onTapGesture { state.selectedTargetID = targetPlan.id }
-    }
-
-    private var emptyTitle: String {
-        plan.darkWindows.isEmpty ? "No darkness tonight" : "Nothing clears your thresholds"
-    }
-
-    private var emptyMessage: String {
-        if plan.darkWindows.isEmpty {
-            return "The sun never gets far enough below the horizon at this latitude and date."
-        }
-        if !state.searchText.isEmpty || !state.typeFilter.isEmpty {
-            return "No targets match the current filter."
-        }
-        return "Try lowering the minimum altitude or minimum score in Settings."
-    }
 }
 
 enum TargetSortOption: String, CaseIterable, Identifiable {
-    case relevance = "Most Relevant"
+    case relevance = "Best Score"
+    case longestWindow = "Longest Window"
+    case bestTime = "Best Time"
     case alphabetical = "Alphabetical"
     case size = "Size in the Sky"
 
     var id: String { rawValue }
+
+    /// Expects the planner's own order — score, highest first — as input.
+    func sorted(_ targets: [TargetPlan]) -> [TargetPlan] {
+        switch self {
+        case .relevance:
+            return targets
+        case .longestWindow:
+            return targets.sorted { $0.usableMinutes > $1.usableMinutes }
+        case .bestTime:
+            return targets.sorted { ($0.bestTime ?? .distantFuture) < ($1.bestTime ?? .distantFuture) }
+        case .alphabetical:
+            return targets.sorted { $0.target.displayName.localizedCaseInsensitiveCompare($1.target.displayName) == .orderedAscending }
+        case .size:
+            return targets.sorted { $0.target.majorAxisArcminutes > $1.target.majorAxisArcminutes }
+        }
+    }
 }
 
 struct TargetRowView: View {
@@ -895,6 +633,8 @@ struct TargetRowView: View {
     var plan: NightPlan
     var targetPlan: TargetPlan
     var isSelected: Bool = false
+    /// How many blocks of the plan being built point at this target.
+    var plannedBlocks: Int = 0
 
     /// Tapping the thumbnail opens the same reference-catalog card the
     /// Target Catalog window uses (photo, facts, discovery trivia when
@@ -923,6 +663,13 @@ struct TargetRowView: View {
                         .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(.tertiary)
                     Spacer(minLength: 0)
+                    if plannedBlocks > 0 {
+                        Label(plannedBlocks > 1 ? "Planned ×\(plannedBlocks)" : "Planned",
+                              systemImage: "checkmark.circle.fill")
+                            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                            .foregroundStyle(Palette.accent)
+                            .fixedSize()
+                    }
                 }
 
                 TargetAvailabilityBar(plan: plan, targetPlan: targetPlan)
@@ -951,7 +698,11 @@ struct TargetRowView: View {
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
         .background(isSelected ? Palette.accent.opacity(0.18) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
+        // An outline as well as the tint: it stays visible when the window
+        // isn't key and doesn't rely on colour alone.
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(isSelected ? Palette.accent : Color.clear, lineWidth: 1.5))
         .animation(.easeInOut(duration: 0.18), value: isSelected)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .sheet(isPresented: $isShowingCatalogDetail) {
             TargetCatalogDetail(target: targetPlan.target)
         }

@@ -6,10 +6,18 @@ struct TargetDetailView: View {
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
     var targetPlan: TargetPlan
+    /// Set in the planner, where the panel can put the target into the plan
+    /// being built. Nil on Home, which only ever reads the plan.
+    var onAddToPlan: (() -> Void)? = nil
+    var framingHeight: CGFloat = 250
+    /// Off in the planner, whose window title says what the whole window is.
+    var setsWindowTitle = true
 
     /// True once the full headline card has scrolled past the top of the
     /// column — the trigger for showing the compact sticky replacement.
     @State private var isHeaderCollapsed = false
+    @State private var isShowingScore = true
+    @State private var isShowingTechnical = false
 
     private var target: Target { targetPlan.target }
 
@@ -24,28 +32,117 @@ struct TargetDetailView: View {
             }
         }
         .animation(.easeInOut(duration: 0.16), value: isHeaderCollapsed)
-        .navigationTitle(target.displayName)
+        .modifier(WindowTitle(title: setsWindowTitle ? target.displayName : nil))
     }
 
+    /// Three levels: the practical conclusion first, then why it scored what
+    /// it did, then the numbers for anyone who wants them.
     private var scrollBody: some View {
         VStack(alignment: .leading, spacing: 22) {
-            headline
-                .background(
-                    GeometryReader { geometry in
-                        Color.clear.preference(
-                            key: ScrollOffsetKey.self,
-                            value: geometry.frame(in: .named("targetDetailScroll")).maxY)
-                    }
-                )
+            VStack(alignment: .leading, spacing: 14) {
+                SectionHeader("Selected target")
+                headline
+                    .background(
+                        GeometryReader { geometry in
+                            Color.clear.preference(
+                                key: ScrollOffsetKey.self,
+                                value: geometry.frame(in: .named("targetDetailScroll")).maxY)
+                        }
+                    )
+                planStatus
+                altitude
+                framing
+            }
+            // Directly under the overview: these change what you'd do.
             if targetPlan.verdict == .marginal || targetPlan.verdict == .poor { whyNot }
-            framing
-            altitude
-            scoring
             if !targetPlan.warnings.isEmpty { warnings }
-            facts
-            if let info = TargetFactCatalog.info(for: target.designation) { funFact(info) }
+
+            DisclosureGroup(isExpanded: $isShowingScore) {
+                scoring.padding(.top, 8)
+            } label: {
+                disclosureLabel("Why this score", isExpanded: $isShowingScore)
+            }
+
+            DisclosureGroup(isExpanded: $isShowingTechnical) {
+                VStack(alignment: .leading, spacing: 22) {
+                    facts
+                    if let info = TargetFactCatalog.info(for: target.designation) { funFact(info) }
+                }
+                .padding(.top, 8)
+            } label: {
+                disclosureLabel("Technical details", isExpanded: $isShowingTechnical)
+            }
         }
         .padding(20)
+    }
+
+    private func disclosureLabel(_ title: String, isExpanded: Binding<Bool>) -> some View {
+        SectionHeader(title)
+            // DisclosureGroup only toggles on its own triangle by default.
+            .contentShape(Rectangle())
+            .onTapGesture { isExpanded.wrappedValue.toggle() }
+    }
+
+    // MARK: - Plan status
+
+    private var plannedBlocks: [PlanSegment] { state.plannedBlocks(for: targetPlan.id, in: plan) }
+
+    /// Whether this target is in the plan, and where — the difference
+    /// between the target you're looking at and the ones you'll shoot.
+    @ViewBuilder
+    private var planStatus: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if targetPlan.usableMinutes <= 0 {
+                unavailableNote
+            }
+            if !plannedBlocks.isEmpty {
+                Label {
+                    Text("Planned · " + plannedBlocks.map {
+                        "\(Format.time($0.window.start, in: plan.timeZone))–\(Format.time($0.window.end, in: plan.timeZone))"
+                    }.joined(separator: ", "))
+                } icon: {
+                    Image(systemName: "checkmark.circle.fill")
+                }
+                .font(.scaled(.callout, scale: uiTextScale).weight(.medium))
+                .foregroundStyle(Palette.accent)
+            } else {
+                Label("Not in the plan", systemImage: "circle.dashed")
+                    .font(.scaled(.callout, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+            }
+            if let onAddToPlan {
+                Button(action: onAddToPlan) {
+                    Label(plannedBlocks.isEmpty ? "Add to plan" : "Add another block", systemImage: "plus.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .help(plannedBlocks.isEmpty
+                      ? "Put a block for this target in the longest free stretch of the night"
+                      : "The same target can take more than one block — this adds another in the longest free stretch")
+            }
+        }
+    }
+
+    /// No usable time on this night: say why, and when would work instead.
+    @ViewBuilder
+    private var unavailableNote: some View {
+        let reason = whyNotBullets(factors: targetPlan.factors, limit: 1).first
+            ?? "it isn't up, dark and clear at the same time"
+        WarningRow(text: "No usable time this night — \(reason)")
+        if let other = state.nearestUsefulNight(for: targetPlan.id, after: plan) {
+            let label = "Try \(Format.weekday(other.night.date, in: other.night.timeZone)) \(Format.dayAndMonth(other.night.date, in: other.night.timeZone)) · \(Int(other.target.score.rounded())) · \(other.target.usableHoursText)"
+            if state.mainView == .home {
+                Button(label) { state.selectedNightID = other.night.id }
+                    .buttonStyle(.link)
+                    .font(.scaled(.callout, scale: uiTextScale))
+                    .help("Open that night")
+            } else {
+                Text(label)
+                    .font(.scaled(.callout, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     // `onScrollGeometryChange` (macOS 15+) reads the ScrollView's real content
@@ -131,7 +228,18 @@ struct TargetDetailView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            Text(verdictSentence)
+                .font(.scaled(.callout, scale: uiTextScale).weight(.medium))
+                .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    /// One sentence for the main reason it is or isn't recommended.
+    private var verdictSentence: String {
+        if let primary = primaryFactorResult, primary.impact > 1 {
+            return "\(targetPlan.verdict.rawValue) — held back most by \(limitationPhrase(for: primary.factor))."
+        }
+        return "\(targetPlan.verdict.rawValue) — nothing in particular holds it back."
     }
 
     private var compassPoint: String {
@@ -157,7 +265,7 @@ struct TargetDetailView: View {
             // "Why this score" got pushed below the fold. Same geometry, just
             // less of it.
             FramingPreview(target: target, rig: state.rig)
-                .frame(height: 250)
+                .frame(height: framingHeight)
                 .contentShape(Rectangle())
                 .onTapGesture { openWindow(id: "sky", value: target.designation) }
                 .help("Open this patch of sky in its own window — pan, zoom and search")
@@ -219,18 +327,8 @@ struct TargetDetailView: View {
 
     private var scoring: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeader("Why this score")
-
-            if let primary = primaryFactorResult, primary.impact > 1 {
-                Label {
-                    Text("Main limitation: \(primary.factor.name) — \(limitationPhrase(for: primary.factor))")
-                } icon: {
-                    Image(systemName: "arrow.down.circle.fill")
-                }
-                .font(.scaled(.callout, scale: uiTextScale).weight(.medium))
-                .foregroundStyle(Palette.marginal)
-            }
-
+            // The main limitation is already the overview's one sentence;
+            // this is the breakdown behind it.
             VStack(alignment: .leading, spacing: 7) {
                 ForEach(targetPlan.factors) { factor in
                     FactorBar(factor: factor, impact: scoreImpact(of: factor, in: targetPlan.factors, actualScore: targetPlan.score))
@@ -310,6 +408,14 @@ struct TargetDetailView: View {
             Text(value)
                 .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
         }
+    }
+}
+
+private struct WindowTitle: ViewModifier {
+    var title: String?
+
+    func body(content: Content) -> some View {
+        if let title { content.navigationTitle(title) } else { content }
     }
 }
 

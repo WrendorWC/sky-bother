@@ -70,10 +70,6 @@ struct StoredSettings: Codable, Hashable, Sendable {
         savedSites = try container.decode([Site].self, forKey: .savedSites)
         savedRigs = try container.decode([Rig].self, forKey: .savedRigs)
         customTargets = try container.decodeIfPresent([Target].self, forKey: .customTargets) ?? []
-        // Snapped on the way in, so plans saved before blocks were put on a
-        // five-minute grid stop reading 02:00:39. Only ever moves a boundary
-        // by under three minutes, and adjacent blocks share their boundary
-        // date exactly, so they stay flush rather than developing gaps.
         // Built into a local first: referring to `site` from inside these
         // closures while `sessionPlans` is still uninitialised is what the
         // compiler objects to, not the work itself.
@@ -91,18 +87,12 @@ struct StoredSettings: Codable, Hashable, Sendable {
             // from under yourself on a relaunch would be the one moment it
             // actually mattered.
             .filter { $0.key >= planCutoff }
-            // Snapped on the way in, so plans saved before blocks were put on
-            // a five-minute grid stop reading 02:00:39. Only ever moves a
-            // boundary by under three minutes, and adjacent blocks share their
-            // boundary date exactly, so they stay flush rather than developing
-            // gaps.
-            .mapValues { segments in
-                segments.map { segment in
-                    var snapped = segment
-                    snapped.window = SessionPlanRules.snapped(segment.window)
-                    return snapped
-                }
-            }
+            // Loaded exactly as saved. These used to be snapped to the
+            // five-minute grid on the way in, but a saved plan keeps the
+            // scheduler's own times for any block that was never dragged, and
+            // rounding those pushed them a minute or two past the edge of the
+            // target's usable time — marking them unshootable after every
+            // relaunch, and quietly changing the plan without anyone editing it.
 
         // A settings file written before this flag existed cannot be taken to
         // imply the user ever chose a site. The file is rewritten on *any*
