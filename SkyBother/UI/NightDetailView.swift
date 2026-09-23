@@ -665,7 +665,9 @@ struct NightDetailView: View {
             RoundedRectangle(cornerRadius: 2)
                 .fill(color)
                 .frame(width: 14, height: 9)
-                .overlay(RoundedRectangle(cornerRadius: 2).strokeBorder(Color.primary.opacity(0.15)))
+                // A clear outline: the "darker sky" swatch is near-black and
+                // vanished against the background with a faint one.
+                .overlay(RoundedRectangle(cornerRadius: 2).strokeBorder(Color.primary.opacity(0.55), lineWidth: 1))
             // Fixed to one line: the selected-target item's label is dynamic
             // (target name included) and, unconstrained, would wrap to a
             // second line in a narrower window — growing the whole legend
