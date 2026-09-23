@@ -243,12 +243,7 @@ struct TargetDetailView: View {
     }
 
     /// One sentence for the main reason it is or isn't recommended.
-    private var verdictSentence: String {
-        if let primary = primaryFactorResult, primary.impact > 1 {
-            return "\(targetPlan.verdict.rawValue) — held back most by \(limitationPhrase(for: primary.factor))."
-        }
-        return "\(targetPlan.verdict.rawValue) — nothing in particular holds it back."
-    }
+    private var verdictSentence: String { targetVerdictSentence(targetPlan) }
 
     private var compassPoint: String {
         HorizontalCoordinate(altitude: targetPlan.altitudeAtBest,

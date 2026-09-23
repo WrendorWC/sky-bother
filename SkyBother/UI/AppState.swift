@@ -735,6 +735,62 @@ final class AppState: ObservableObject {
         }
     }
 
+    // MARK: From the catalog
+
+    /// The night the planner has open, if any — the one night a catalog
+    /// action can't quietly switch away from.
+    var nightBeingPlanned: NightPlan? {
+        guard let planDraft else { return nil }
+        return plans.first { $0.planKey == planDraft.planKey }
+    }
+
+    /// Something asking the catalog window to show a particular night, and
+    /// optionally to search for something. The catalog applies it and clears it.
+    struct CatalogRequest: Equatable {
+        var nightID: Date?
+        var search: String? = nil
+    }
+
+    @Published var catalogRequest: CatalogRequest?
+
+    /// A block the catalog just added, for the planner to select and
+    /// explain the way it does its own Adds. The planner clears it.
+    @Published var blockAddedElsewhere: PlanSegment?
+
+    enum CatalogAddResult: Equatable {
+        case added(PlanSegment)
+        /// Every stretch of the night is already taken.
+        case noRoom
+        /// The planner is open on a different night; that work comes first.
+        case plannerBusy(otherNight: Date)
+    }
+
+    /// Adds a target to a night's plan from the catalog. The planner opens on
+    /// that night with the new block in its draft — nothing is saved until
+    /// Done there, same as any other edit.
+    func addFromCatalog(_ targetPlan: TargetPlan, to night: NightPlan) -> CatalogAddResult {
+        if let busy = nightBeingPlanned, busy.planKey != night.planKey {
+            return .plannerBusy(otherNight: busy.date)
+        }
+        openPlanner(for: night)
+        selectedTargetID = targetPlan.id
+        guard let segment = addDraftSegment(for: targetPlan, in: night) else { return .noRoom }
+        blockAddedElsewhere = segment
+        return .added(segment)
+    }
+
+    /// Shows a target on a night in the main window — Home's Selected target
+    /// panel, or the planner's if that night is being planned. Changes only
+    /// what's selected. False when the planner is busy with another night.
+    @discardableResult
+    func showFromCatalog(_ targetID: String, on night: NightPlan) -> Bool {
+        if let busy = nightBeingPlanned, busy.planKey != night.planKey { return false }
+        if mainView == .skyView { closeSkyView() }
+        if mainView == .home { selectedNightID = night.id }
+        selectedTargetID = targetID
+        return true
+    }
+
     // MARK: Selection
 
     /// The blocks a target has in a night's plan, as currently shown.

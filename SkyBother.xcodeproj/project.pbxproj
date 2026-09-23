@@ -97,6 +97,7 @@
 		964E681B54B225B637355B79 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916944C4D5E50DC97D5F6E2C /* ContentView.swift */; };
 		9A3DDEDEE59797EA85BB553F /* Target.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03639BEF9F701145C4FBB6E /* Target.swift */; };
 		9A7FA8CF11BA6AC32DB24F0D /* NearbyPlaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9A4F92C5B49E3B8C9AAD65 /* NearbyPlaces.swift */; };
+		9ACC3469D11D4B2C8EE31174 /* CatalogQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A4F4B498990E1BA6ACCA56D /* CatalogQuery.swift */; };
 		A123ADCEE0ED7FA16DFBC089 /* NightListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1994C1A48D1B45C4E8AC68 /* NightListView.swift */; };
 		A2ACB97E5890E437509141D5 /* MoonCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40ED508ABC0DA40A267BF2B5 /* MoonCard.swift */; };
 		A672871709C93291A5E7C5C4 /* JulianDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C79FBF03E53065D44D73BD96 /* JulianDate.swift */; };
@@ -105,6 +106,7 @@
 		AB31C01779401A441185DCBF /* NightDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C7E0701838380DC076493D8 /* NightDetailView.swift */; };
 		AC196A3CD18126E3C4A7FFB8 /* SessionPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07610846C4AC995576033CFC /* SessionPlan.swift */; };
 		AC2BA9B88095DC469FB62142 /* NightLightsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58BDA77DF11F11A3366FDE78 /* NightLightsClient.swift */; };
+		AC373408CF9CC11BD5FD5AC4 /* CatalogQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A4F4B498990E1BA6ACCA56D /* CatalogQuery.swift */; };
 		ACBF301AA8181600DC11D0E2 /* NearbyPlaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9A4F92C5B49E3B8C9AAD65 /* NearbyPlaces.swift */; };
 		B0285781A1FB67DC44DF5A73 /* AutoPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BC56301A546F2B6755990EC /* AutoPlan.swift */; };
 		B1601A579C92B32BF5D7A778 /* TargetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4496CB31E8E93CCDBAD854BA /* TargetDetailView.swift */; };
@@ -123,6 +125,7 @@
 		C3A4367E1EFEE1E4CF11DDFD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A501A2931558AACCE565B244 /* Assets.xcassets */; };
 		C792CBFCCF27F084A3889057 /* SkyViewScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9147CD88A151E37523D49B13 /* SkyViewScreen.swift */; };
 		C9566B5AF9ABA326F608D008 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A8276F40E115B68D146ED7 /* AppState.swift */; };
+		C97505E5FA591C74215CA7B6 /* CatalogQueryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABAFED8E569DB47A7F42CDE2 /* CatalogQueryTests.swift */; };
 		C984A842B76C1B84D255E943 /* Rig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6BB733E25C9D2AEC6029E7 /* Rig.swift */; };
 		CA3E88DDD147614D983171AC /* Constellation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 907954043CD0C303D7D3E582 /* Constellation.swift */; };
 		CA5EF8580BC1BC01906137AA /* ParkHours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B29E97C5F533FF8DAFAA2B4 /* ParkHours.swift */; };
@@ -204,6 +207,7 @@
 		858AEE4315CE242F7E5C6F06 /* Shootability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shootability.swift; sourceTree = "<group>"; };
 		89216F01CDADC4FD5ABB6250 /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
 		8A1994C1A48D1B45C4E8AC68 /* NightListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightListView.swift; sourceTree = "<group>"; };
+		8A4F4B498990E1BA6ACCA56D /* CatalogQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogQuery.swift; sourceTree = "<group>"; };
 		8D4CA051BE49E839FDF95C5E /* Fixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fixtures.swift; sourceTree = "<group>"; };
 		8D784A45A374237FD5C0D1B4 /* SkyBotherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SkyBotherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F6F76D10491E125AC07D893 /* TargetFacts.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = TargetFacts.json; sourceTree = "<group>"; };
@@ -218,6 +222,7 @@
 		A501A2931558AACCE565B244 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A750DF9618DEE6723EF61C88 /* MoonMap.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = MoonMap.jpg; sourceTree = "<group>"; };
 		A817D7755EE05DCD9EFCE167 /* Ephemeris.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ephemeris.swift; sourceTree = "<group>"; };
+		ABAFED8E569DB47A7F42CDE2 /* CatalogQueryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogQueryTests.swift; sourceTree = "<group>"; };
 		B188A9E4BAF4E4E9F29FEC03 /* TimeWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeWindow.swift; sourceTree = "<group>"; };
 		B21991955A54E8BBF703ACE2 /* SkyCutoutClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyCutoutClient.swift; sourceTree = "<group>"; };
 		B58706DA975CF9D40CE33ED0 /* Images */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Images; path = SkyBother/Catalog/Images; sourceTree = SOURCE_ROOT; };
@@ -275,6 +280,7 @@
 		727D91051059260442DEFEFC /* SkyBotherTests */ = {
 			isa = PBXGroup;
 			children = (
+				ABAFED8E569DB47A7F42CDE2 /* CatalogQueryTests.swift */,
 				8D4CA051BE49E839FDF95C5E /* Fixtures.swift */,
 				EE9218A5DDDA723F9B6A81C3 /* PlanDraftTests.swift */,
 				494FAD9FF64CF24470E41183 /* SkyViewTimelineTests.swift */,
@@ -389,6 +395,7 @@
 			isa = PBXGroup;
 			children = (
 				3BC56301A546F2B6755990EC /* AutoPlan.swift */,
+				8A4F4B498990E1BA6ACCA56D /* CatalogQuery.swift */,
 				2F6BCE3EDF964A070B0EBAC3 /* DewRisk.swift */,
 				040966302C52DB4A5DA521D9 /* NightPlan.swift */,
 				03ED5D1151B8FA598EE0F6A2 /* PlanDraft.swift */,
@@ -522,6 +529,7 @@
 				E2A39AB2CDF119FFA1D8BDD3 /* AutoPlan.swift in Sources */,
 				FDF9E66A08EB26441C0019A0 /* BuiltInCatalog.swift in Sources */,
 				FBA7E1EA6EC4AF6FC330CB4F /* CameraFrame.swift in Sources */,
+				9ACC3469D11D4B2C8EE31174 /* CatalogQuery.swift in Sources */,
 				018C10723C100C10C27FFFA8 /* CloudMapClient.swift in Sources */,
 				7B97B9D4B095C723A9C77CE4 /* Components.swift in Sources */,
 				CA3E88DDD147614D983171AC /* Constellation.swift in Sources */,
@@ -597,6 +605,8 @@
 				B0285781A1FB67DC44DF5A73 /* AutoPlan.swift in Sources */,
 				395DD98FB1FE15C1639D2CBC /* BuiltInCatalog.swift in Sources */,
 				246A915AA956DB12EC741876 /* CameraFrame.swift in Sources */,
+				AC373408CF9CC11BD5FD5AC4 /* CatalogQuery.swift in Sources */,
+				C97505E5FA591C74215CA7B6 /* CatalogQueryTests.swift in Sources */,
 				ED99549D90D85A820884137E /* CloudMapClient.swift in Sources */,
 				052B01A944B3A6016D8B9FE7 /* Components.swift in Sources */,
 				E411FEDB0A384E05CDA99691 /* Constellation.swift in Sources */,

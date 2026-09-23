@@ -693,7 +693,7 @@ struct TargetRowView: View {
         .animation(.easeInOut(duration: 0.18), value: isSelected)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .sheet(isPresented: $isShowingCatalogDetail) {
-            TargetCatalogDetail(target: targetPlan.target)
+            TargetCatalogDetail(target: targetPlan.target, night: plan)
         }
     }
 

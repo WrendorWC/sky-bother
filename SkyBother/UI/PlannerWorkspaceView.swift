@@ -11,6 +11,7 @@ import SwiftUI
 struct PlannerWorkspaceView: View {
     @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
+    @Environment(\.openWindow) private var openWindow
     var plan: NightPlan
 
     @State private var sortOption: TargetSortOption = .relevance
@@ -87,6 +88,10 @@ struct PlannerWorkspaceView: View {
         .navigationTitle("Plan session")
         .onEscapeKey { escape() }
         .onChange(of: suggestionKey) { _, _ in state.reseedDraftIfPristine(for: plan) }
+        // A block added from the catalog gets the same selection and note as
+        // one added here.
+        .onAppear { adoptBlockAddedElsewhere() }
+        .onChange(of: state.blockAddedElsewhere) { _, _ in adoptBlockAddedElsewhere() }
         .confirmationDialog(leaveTitle, isPresented: $isConfirmingLeave) {
             Button("Save plan") { done() }
             Button("Discard changes", role: .destructive) {
@@ -411,9 +416,22 @@ struct PlannerWorkspaceView: View {
                 .background(Palette.panel)
             Divider()
             if candidates.isEmpty {
-                EmptyStateView(title: "No candidates",
-                               message: emptyCandidatesMessage,
-                               systemImage: "binoculars")
+                VStack(spacing: 10) {
+                    Image(systemName: "binoculars")
+                        .font(.system(size: 40 * uiTextScale))
+                        .foregroundStyle(Palette.accent.opacity(0.7))
+                    Text("No candidates")
+                        .font(.scaled(.title3, scale: uiTextScale).weight(.semibold))
+                    Text(emptyCandidatesMessage)
+                        .font(.scaled(.body, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 380)
+                    catalogButton(search: state.searchText)
+                        .padding(.top, 6)
+                }
+                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
@@ -421,6 +439,7 @@ struct PlannerWorkspaceView: View {
                             candidateRow(targetPlan)
                             Divider().padding(.leading, 20)
                         }
+                        catalogFooter
                     }
                 }
                 .scrollIndicators(.visible)
@@ -428,11 +447,45 @@ struct PlannerWorkspaceView: View {
         }
     }
 
+    /// The end of the list isn't the end of the sky: this list only holds
+    /// what clears your minimum score on this night.
+    private var catalogFooter: some View {
+        VStack(spacing: 8) {
+            Text("That's everything scoring \(Int(state.preferences.minimumScore)) or more with usable time this night.")
+                .font(.scaled(.callout, scale: uiTextScale))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            catalogButton(search: nil)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 22)
+    }
+
+    /// Opens the catalog on this night — carrying the search over when there
+    /// is one, so a target missing here can be looked up there.
+    private func catalogButton(search: String?) -> some View {
+        let trimmed = search?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return Button {
+            state.catalogRequest = AppState.CatalogRequest(nightID: plan.id, search: trimmed.isEmpty ? nil : trimmed)
+            AppWindow.bringForward(id: "catalog", using: openWindow)
+        } label: {
+            Label(trimmed.isEmpty ? "Browse full catalog" : "Search the full catalog for \u{201c}\(trimmed)\u{201d}",
+                  systemImage: "photo.on.rectangle.angled")
+                .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
+        }
+        .buttonStyle(.bordered)
+        .help("All 1,000-plus targets with photos, judged against this night — add any of them to this plan from there")
+    }
+
     private var emptyCandidatesMessage: String {
         if plan.darkWindows.isEmpty {
             return "The sun never gets far enough below the horizon at this latitude and date."
         }
-        if !state.searchText.isEmpty || !state.typeFilter.isEmpty || minimumUsableHours > 0 || fitsFrameOnly {
+        let search = state.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !search.isEmpty && state.typeFilter.isEmpty && minimumUsableHours == 0 && !fitsFrameOnly {
+            return "Nothing on this night's list matches \u{201c}\(search)\u{201d}. The list only holds targets that clear your minimum score with usable time on this night — the full catalog has everything."
+        }
+        if !search.isEmpty || !state.typeFilter.isEmpty || minimumUsableHours > 0 || fitsFrameOnly {
             return "Nothing matches these constraints. Loosen one above."
         }
         return "Nothing clears your minimum score. Hide below score is in Settings."
@@ -521,7 +574,7 @@ struct PlannerWorkspaceView: View {
                 if state.isPlanning {
                     ProgressView().controlSize(.small)
                 }
-                Text("\(candidates.count) targets")
+                Text("\(candidates.count) target\(candidates.count == 1 ? "" : "s")")
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .fixedSize()
@@ -579,6 +632,19 @@ struct PlannerWorkspaceView: View {
             addNote = "No room left in the night for \(targetPlan.target.displayName) — shorten or remove a block first."
             return
         }
+        announce(segment, for: targetPlan)
+    }
+
+    private func adoptBlockAddedElsewhere() {
+        guard let segment = state.blockAddedElsewhere else { return }
+        state.blockAddedElsewhere = nil
+        guard let targetPlan = plan.targets.first(where: { $0.id == segment.targetID }) else { return }
+        announce(segment, for: targetPlan)
+    }
+
+    /// Selects a newly added block and says where it went, and anything
+    /// wrong with where it had to go.
+    private func announce(_ segment: PlanSegment, for targetPlan: TargetPlan) {
         selectedBlockID = segment.id
         state.selectedTargetID = segment.targetID
         var note = "Added \(targetPlan.target.displayName) at \(Format.time(segment.window.start, in: plan.timeZone))–\(Format.time(segment.window.end, in: plan.timeZone))."

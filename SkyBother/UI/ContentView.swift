@@ -128,31 +128,69 @@ extension ContentView {
         // A duplicate of the app menu's Settings item (and Cmd-,) —
         // this is the one settings-adjacent thing that isn't already
         // one click away from the main window otherwise.
+        // Named as well as drawn: an unlabelled picture icon was the only
+        // visible way into a catalog of a thousand-odd targets.
         ToolbarItem {
             Button {
                 openSettings()
             } label: {
                 Label("Settings", systemImage: "gearshape")
+                    .labelStyle(.titleAndIcon)
             }
-            .help("Site, rig and planning preferences")
+            .help("Site, rig and planning preferences (⌘,)")
         }
         ToolbarItem {
             Button {
-                openWindow(id: "catalog")
+                state.catalogRequest = AppState.CatalogRequest(nightID: state.nightBeingPlanned?.id ?? state.selectedNightID)
+                AppWindow.bringForward(id: "catalog", using: openWindow)
             } label: {
-                Label("Target Catalog", systemImage: "photo.on.rectangle.angled")
+                Label("Catalog", systemImage: "photo.on.rectangle.angled")
+                    .labelStyle(.titleAndIcon)
             }
-            .help("Browse the target catalog with photos")
+            .help("Browse every target, with photos, against any night (⌘K)")
         }
         ToolbarItem {
             Button {
-                openWindow(id: "help")
+                AppWindow.bringForward(id: "help", using: openWindow)
             } label: {
                 Label("Help", systemImage: "questionmark.circle")
+                    .labelStyle(.titleAndIcon)
             }
-            .help("What the scores, colours and charts mean")
+            .help("What the scores, colours and charts mean (⌘?)")
         }
     }
+}
+
+/// One of the app's single-copy windows — main, catalog, help — brought to
+/// the front, opening it only when it isn't already open. `openWindow(id:)`
+/// alone opens another copy of a window group every time it's asked.
+@MainActor
+enum AppWindow {
+    static func bringForward(id: String, using openWindow: OpenWindowAction) {
+        NSApp.setActivationPolicy(.regular)
+        if let window = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix(id) == true && $0.isAppWindowShown }) {
+            if window.isMiniaturized { window.deminiaturize(nil) }
+            window.makeKeyAndOrderFront(nil)
+        } else {
+            openWindow(id: id)
+        }
+        NSApp.activate(ignoringOtherApps: true)
+    }
+}
+
+/// The main window, brought to the front from another window — the catalog
+/// handing a target over to Home or the planner.
+@MainActor
+enum MainWindow {
+    static func bringForward(using openWindow: OpenWindowAction) {
+        AppWindow.bringForward(id: "main", using: openWindow)
+    }
+}
+
+private extension NSWindow {
+    /// Open, even if minimised — a closed window lingers in `NSApp.windows`
+    /// for a while and mustn't be mistaken for one that's still there.
+    var isAppWindowShown: Bool { isVisible || isMiniaturized }
 }
 
 struct EmptyStateView: View {

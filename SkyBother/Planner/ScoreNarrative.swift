@@ -73,3 +73,13 @@ func whyNotBullets(factors: [ScoreFactor], limit: Int = 3) -> [String] {
         .prefix(limit)
         .map { "\($0.name) — \($0.detail)" }
 }
+
+/// One sentence for the main reason a target is or isn't recommended —
+/// shared by Home's Selected target panel and the catalog, so the same
+/// target on the same night is described in the same words in both.
+func targetVerdictSentence(_ targetPlan: TargetPlan) -> String {
+    if let primary = primaryFactor(in: targetPlan.factors, actualScore: targetPlan.score), primary.impact > 1 {
+        return "\(targetPlan.verdict.rawValue) — held back most by \(limitationPhrase(for: primary.factor))."
+    }
+    return "\(targetPlan.verdict.rawValue) — nothing in particular holds it back."
+}

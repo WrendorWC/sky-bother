@@ -17,37 +17,48 @@ import SwiftUI
 struct TargetCatalogView: View {
     @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
-    @State private var searchText = ""
-    @State private var typeFilter: Set<TargetType> = []
+    @State private var query = CatalogQuery()
     @State private var selected: Target?
     @State private var editorContext: CustomTargetEditorContext?
-    @State private var sortOption: CatalogSortOption = .alphabetical
+    /// The night the catalog is scoring against, when chosen here. Until
+    /// then it follows the night being planned, or the one open on Home.
+    @State private var chosenNightID: Date?
 
     private var customTargetIDs: Set<String> {
         Set(state.customTargets.map(\.id))
     }
 
+    /// The night every card is judged against.
+    private var night: NightPlan? {
+        let id = chosenNightID ?? state.nightBeingPlanned?.id ?? state.selectedNightID
+        return state.plans.first { $0.id == id } ?? state.plans.first
+    }
+
+    /// That night's results, straight from the planner's existing run — the
+    /// catalog never scores anything itself, so it can't disagree with Home.
+    private var scored: [String: TargetPlan] {
+        Dictionary((night?.targets ?? []).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    private var effectiveQuery: CatalogQuery {
+        var effective = query
+        if night == nil {
+            if effective.sort.needsNight { effective.sort = .alphabetical }
+            effective.goodOnly = false
+            effective.fitsFrameOnly = false
+            effective.minimumUsableHours = 0
+        }
+        return effective
+    }
+
     private var targets: [Target] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let all = BuiltInCatalog.all + state.customTargets
-        let filtered = all.filter { target in
-            if !typeFilter.isEmpty && !typeFilter.contains(target.type) { return false }
-            if !query.isEmpty && !target.searchText.contains(query) { return false }
-            return true
-        }
-        switch sortOption {
-        case .alphabetical:
-            return filtered.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
-        case .size:
-            return filtered.sorted { $0.majorAxisArcminutes > $1.majorAxisArcminutes }
-        case .brightness:
-            return filtered.sorted { $0.magnitude < $1.magnitude }
-        }
+        effectiveQuery.apply(to: BuiltInCatalog.all + state.customTargets, scored: scored)
     }
 
     private let columns = [GridItem(.adaptive(minimum: 180, maximum: 240), spacing: 16)]
 
     var body: some View {
+        let scored = self.scored
         VStack(spacing: 0) {
             toolbar
             Divider()
@@ -55,7 +66,8 @@ struct TargetCatalogView: View {
                 LazyVGrid(columns: columns, spacing: 16) {
                     ForEach(targets) { target in
                         let isCustom = customTargetIDs.contains(target.id)
-                        TargetCatalogCell(target: target, isCustom: isCustom)
+                        TargetCatalogCell(target: target, isCustom: isCustom,
+                                          result: scored[target.id], hasNight: night != nil)
                             .onTapGesture {
                                 if isCustom {
                                     editorContext = CustomTargetEditorContext(existing: target)
@@ -72,71 +84,141 @@ struct TargetCatalogView: View {
         .navigationTitle("Target Catalog")
         .frame(minWidth: 760, minHeight: 560)
         .sheet(item: $selected) { target in
-            TargetCatalogDetail(target: target)
+            TargetCatalogDetail(target: target, night: night)
+                .environmentObject(state)
         }
         .sheet(item: $editorContext) { context in
             CustomTargetEditor(existing: context.existing)
         }
+        .onAppear { applyRequest() }
+        .onChange(of: state.catalogRequest) { _, _ in applyRequest() }
+    }
+
+    /// Opened for a particular night — from the planner, say — the catalog
+    /// switches to it, and to its search if it brought one.
+    private func applyRequest() {
+        guard let request = state.catalogRequest else { return }
+        state.catalogRequest = nil
+        if let nightID = request.nightID { chosenNightID = nightID }
+        if let search = request.search { query.search = search }
     }
 
     private var toolbar: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField("Search the catalog", text: $searchText)
-                    .textFieldStyle(.plain)
-            }
-            .padding(.horizontal, 9)
-            .padding(.vertical, 6)
-            .background(Palette.panel, in: RoundedRectangle(cornerRadius: 7))
-            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.panelBorder))
-            .frame(maxWidth: 280)
-
-            Menu {
-                Button("All Types") { typeFilter.removeAll() }
-                Divider()
-                ForEach(TargetType.allCases) { type in
-                    Toggle(type.displayName, isOn: Binding(
-                        get: { typeFilter.contains(type) },
-                        set: { isOn in
-                            if isOn { typeFilter.insert(type) } else { typeFilter.remove(type) }
-                        }))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                    TextField("Search the catalog", text: $query.search)
+                        .textFieldStyle(.plain)
                 }
-            } label: {
-                Label(typeFilter.isEmpty ? "All Types" : "\(typeFilter.count) Types",
-                      systemImage: "line.3.horizontal.decrease.circle")
-            }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
+                .padding(.horizontal, 9)
+                .padding(.vertical, 6)
+                .background(Palette.panel, in: RoundedRectangle(cornerRadius: 7))
+                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.panelBorder))
+                .frame(maxWidth: 280)
 
-            Menu {
-                Picker("Sort by", selection: $sortOption) {
-                    ForEach(CatalogSortOption.allCases) { option in
-                        Text(option.rawValue).tag(option)
+                Menu {
+                    Button("All Types") { query.types.removeAll() }
+                    Divider()
+                    ForEach(TargetType.allCases) { type in
+                        Toggle(type.displayName, isOn: Binding(
+                            get: { query.types.contains(type) },
+                            set: { isOn in
+                                if isOn { query.types.insert(type) } else { query.types.remove(type) }
+                            }))
                     }
+                } label: {
+                    Label(query.types.isEmpty ? "All Types" : "\(query.types.count) Types",
+                          systemImage: "line.3.horizontal.decrease.circle")
                 }
-                .pickerStyle(.inline)
-            } label: {
-                Label(sortOption.rawValue, systemImage: "arrow.up.arrow.down.circle")
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+
+                Menu {
+                    Picker("Sort by", selection: $query.sort) {
+                        ForEach(CatalogQuery.Sort.allCases) { option in
+                            Text(option.rawValue).tag(option)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                } label: {
+                    Label(effectiveQuery.sort.rawValue, systemImage: "arrow.up.arrow.down.circle")
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+
+                Spacer()
+
+                Text("\(targets.count) target\(targets.count == 1 ? "" : "s")")
+                    .font(.scaled(.callout, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+
+                Button {
+                    editorContext = CustomTargetEditorContext(existing: nil)
+                } label: {
+                    Label("Add Custom Target", systemImage: "plus.circle.fill")
+                }
+                .help("Add a target of your own — anything the built-in catalog doesn't cover")
             }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
 
-            Spacer()
+            // The night every card is judged against, and the filters that
+            // only make sense once there is one.
+            HStack(spacing: 14) {
+                Menu {
+                    ForEach(state.plans) { plan in
+                        Button {
+                            chosenNightID = plan.id
+                        } label: {
+                            Text("\(nightName(plan)) · \(Int(plan.score.rounded())) \(plan.verdict.rawValue)")
+                        }
+                    }
+                } label: {
+                    Label(night.map { "Night: \(nightName($0))" } ?? "No nights yet", systemImage: "moon.stars")
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .disabled(state.plans.isEmpty)
+                .help("The night each card's score, usable time and framing are for")
 
-            Text("\(targets.count) targets")
-                .font(.scaled(.callout, scale: uiTextScale))
-                .foregroundStyle(.secondary)
+                Toggle("Good or better", isOn: $query.goodOnly)
+                    .toggleStyle(.checkbox)
+                    .help("Only targets rated Good, Excellent or Exceptional on this night")
+                Toggle("Fits my frame", isOn: $query.fitsFrameOnly)
+                    .toggleStyle(.checkbox)
+                    .help("Hide targets that overflow the frame or are tiny in it (under 10% of the long side)")
+                Menu {
+                    Picker("Usable for at least", selection: $query.minimumUsableHours) {
+                        Text("Any time").tag(0.0)
+                        Text("1 hour").tag(1.0)
+                        Text("2 hours").tag(2.0)
+                        Text("3 hours").tag(3.0)
+                        Text("4 hours").tag(4.0)
+                    }
+                    .pickerStyle(.inline)
+                } label: {
+                    Label(query.minimumUsableHours == 0 ? "Any usable time" : "At least \(Int(query.minimumUsableHours))h usable",
+                          systemImage: "clock")
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
 
-            Button {
-                editorContext = CustomTargetEditorContext(existing: nil)
-            } label: {
-                Label("Add Custom Target", systemImage: "plus.circle.fill")
+                Spacer()
+
+                if night != nil {
+                    Text("\(state.site.name) · \(state.rig.name)")
+                        .font(.scaled(.caption, scale: uiTextScale))
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
             }
-            .help("Add a target of your own — anything the built-in catalog doesn't cover")
+            .disabled(night == nil)
         }
         .padding(16)
+    }
+
+    private func nightName(_ plan: NightPlan) -> String {
+        "\(Format.weekday(plan.date, in: plan.timeZone)) \(Format.dayAndMonth(plan.date, in: plan.timeZone))"
     }
 }
 
@@ -145,14 +227,6 @@ struct TargetCatalogView: View {
 /// in its own `Identifiable` rather than using `Target?` directly as the
 /// `sheet(item:)` driver, since `nil` there would mean "no sheet" instead of
 /// "new target."
-private enum CatalogSortOption: String, CaseIterable, Identifiable {
-    case alphabetical = "Alphabetical"
-    case size = "Size in the Sky"
-    case brightness = "Brightness"
-
-    var id: String { rawValue }
-}
-
 private struct CustomTargetEditorContext: Identifiable {
     let id = UUID()
     var existing: Target?
@@ -162,11 +236,18 @@ private struct TargetCatalogCell: View {
     @Environment(\.uiTextScale) private var uiTextScale
     var target: Target
     var isCustom: Bool = false
+    /// This target on the catalog's night; nil when it has no usable time.
+    var result: TargetPlan?
+    var hasNight: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
+            // Held to the column's width: a panorama like the Veil's photo
+            // otherwise widened its card over the next one.
             TargetThumbnail(designation: target.designation)
+                .frame(minWidth: 0, maxWidth: .infinity)
                 .frame(height: 140)
+                .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 9))
                 .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Palette.panelBorder))
 
@@ -192,17 +273,61 @@ private struct TargetCatalogCell: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
+
+            if hasNight {
+                // One height whether there's a result or not, so the grid's
+                // rows stay even.
+                nightLine
+                    .frame(maxWidth: .infinity, minHeight: 44 * uiTextScale, alignment: .topLeading)
+            }
         }
         .padding(9)
         .panelStyle(cornerRadius: 12)
         .contentShape(Rectangle())
+    }
+
+    /// Score, verdict and usable time on the night, then framing — the same
+    /// values, in the same words, as Home's panel for this target.
+    @ViewBuilder
+    private var nightLine: some View {
+        if let result {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    ScoreBadge(score: result.score, size: 24)
+                    Text("\(result.verdict.rawValue) · \(result.usableHoursText)")
+                        .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                        .foregroundStyle(Palette.verdict(result.verdict))
+                        .lineLimit(1)
+                }
+                Text(result.fit.framingNote)
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .hoverTooltip(result.fit.framingNote)
+            }
+        } else {
+            Label("No usable time this night", systemImage: "moon.zzz")
+                .font(.scaled(.caption, scale: uiTextScale))
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+        }
     }
 }
 
 struct TargetCatalogDetail: View {
     @Environment(\.uiTextScale) private var uiTextScale
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openWindow) private var openWindow
+    @EnvironmentObject private var state: AppState
     var target: Target
+    /// The night to judge it against. Nil means there's no night to offer —
+    /// the sheet says to pick one rather than guessing.
+    var night: NightPlan? = nil
+
+    /// What happened to the last Add or View, when it couldn't go ahead.
+    @State private var actionNote: String?
+
+    private var result: TargetPlan? { night?.targets.first { $0.id == target.id } }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -228,23 +353,30 @@ struct TargetCatalogDetail: View {
             // VStack's own intrinsic size drive the sheet means it's exactly
             // as tall as this particular target needs, never more.
             VStack(alignment: .leading, spacing: 16) {
-                // Both, where both exist: the survey says what is really
-                // there and how it sits among its neighbours, the photograph
-                // says what it looks like properly exposed in colour. They
-                // answer different questions and neither replaces the other —
-                // which is why the sheet shows them side by side rather than
-                // picking one.
+                // What this means for a real night comes first; the
+                // reference material after it.
+                nightSection
+
+                // Two pictures, never three. Both survey images are the same
+                // Digitized Sky Survey at different zooms, so the framed one
+                // leads — it's what you'd actually get — and the close-up
+                // crop only appears when there's no photograph to show what
+                // the object itself looks like.
                 HStack(alignment: .top, spacing: 12) {
-                    labelledImage("Sky survey") {
-                        TargetSkyView(target: target)
+                    labelledImage("Your frame · sky survey") {
+                        FramingPreview(target: target, rig: state.rig)
                     }
                     if TargetImageCatalog.hasPhoto(for: target.designation) {
                         labelledImage("Photograph") {
                             TargetThumbnail(designation: target.designation, contentMode: .fit)
                         }
+                    } else {
+                        labelledImage("Close-up · sky survey") {
+                            TargetSkyView(target: target)
+                        }
                     }
                 }
-                .frame(height: 300)
+                .frame(height: 240)
 
                 VStack(alignment: .leading, spacing: 8) {
                     factRow("Magnitude", String(format: "%.1f", target.magnitude))
@@ -295,8 +427,120 @@ struct TargetCatalogDetail: View {
             }
             .padding(24)
         }
-        .frame(minWidth: 440, idealWidth: 460, maxWidth: 520)
+        .frame(minWidth: 620, idealWidth: 760, maxWidth: 900)
         .spaceBackground()
+    }
+
+    // MARK: - The night
+
+    private func nightName(_ plan: NightPlan) -> String {
+        "\(Format.weekday(plan.date, in: plan.timeZone)) \(Format.dayAndMonth(plan.date, in: plan.timeZone))"
+    }
+
+    private func times(_ window: TimeWindow, in plan: NightPlan) -> String {
+        "\(Format.time(window.start, in: plan.timeZone))–\(Format.time(window.end, in: plan.timeZone))"
+    }
+
+    @ViewBuilder
+    private var nightSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let night {
+                SectionHeader("On \(nightName(night))")
+                if let result {
+                    HStack(alignment: .top, spacing: 12) {
+                        ScoreBadge(score: result.score, size: 44)
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 8) {
+                                VerdictTag(verdict: result.verdict)
+                                Text([
+                                    "\(result.usableHoursText) usable",
+                                    result.bestWindow.map { "best window \(times($0, in: night))" }
+                                ].compactMap { $0 }.joined(separator: " · "))
+                                    .font(.scaled(.callout, scale: uiTextScale))
+                                    .foregroundStyle(.secondary)
+                            }
+                            Text(targetVerdictSentence(result))
+                                .font(.scaled(.callout, scale: uiTextScale).weight(.medium))
+                            Text(result.fit.framingNote)
+                                .font(.scaled(.callout, scale: uiTextScale))
+                                .foregroundStyle(.secondary)
+                            let planned = state.plannedBlocks(for: result.id, in: night)
+                            if !planned.isEmpty {
+                                Label("Planned · " + planned.map { times($0.window, in: night) }.joined(separator: ", "),
+                                      systemImage: "checkmark.circle.fill")
+                                    .font(.scaled(.callout, scale: uiTextScale))
+                                    .foregroundStyle(Palette.accent)
+                            }
+                        }
+                    }
+                    HStack(spacing: 10) {
+                        Button {
+                            add(result, to: night)
+                        } label: {
+                            Label("Add to \(Format.weekday(night.date, in: night.timeZone))'s plan", systemImage: "plus.circle.fill")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .help("Opens the planner on \(nightName(night)) with a block for this target. Nothing is saved until you press Done there.")
+                        Button {
+                            view(on: night)
+                        } label: {
+                            Label("View on \(Format.weekday(night.date, in: night.timeZone))", systemImage: "scope")
+                        }
+                        .help("Show this target for \(nightName(night)) in the main window. Doesn't change any plan.")
+                    }
+                    .controlSize(.large)
+                } else {
+                    Label("No usable time on \(nightName(night)) — it isn't up, dark and clear at the same time, or your settings leave it out.",
+                          systemImage: "moon.zzz")
+                        .font(.scaled(.callout, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let other = state.nearestUsefulNight(for: target.id, after: night) {
+                        Text("Better on \(nightName(other.night)) · \(Int(other.target.score.rounded())) \(other.target.verdict.rawValue) · \(other.target.usableHoursText) — choose that night in the catalog's Night menu.")
+                            .font(.scaled(.callout, scale: uiTextScale))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                if let actionNote {
+                    Label(actionNote, systemImage: "exclamationmark.triangle.fill")
+                        .font(.scaled(.callout, scale: uiTextScale))
+                        .foregroundStyle(Palette.marginal)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else {
+                SectionHeader("On a night")
+                Text("Pick a night in the catalog's Night menu to see how this target does on it and add it to that night's plan.")
+                    .font(.scaled(.callout, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Palette.panel, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.panelBorder))
+    }
+
+    private func add(_ result: TargetPlan, to night: NightPlan) {
+        switch state.addFromCatalog(result, to: night) {
+        case .added:
+            dismiss()
+            MainWindow.bringForward(using: openWindow)
+        case .noRoom:
+            actionNote = "\(nightName(night))'s plan has no free time left. The planner is open on it — shorten or remove a block, then add this again."
+            MainWindow.bringForward(using: openWindow)
+        case .plannerBusy(let other):
+            actionNote = "The planner is open on \(Format.weekday(other, in: night.timeZone)) \(Format.dayAndMonth(other, in: night.timeZone)). Finish or cancel that plan first."
+        }
+    }
+
+    private func view(on night: NightPlan) {
+        if state.showFromCatalog(target.id, on: night) {
+            dismiss()
+            MainWindow.bringForward(using: openWindow)
+        } else if let busy = state.nightBeingPlanned {
+            actionNote = "The planner is open on \(nightName(busy)). Finish or cancel that plan first."
+        }
     }
 
     private func labelledImage<Content: View>(_ title: String,

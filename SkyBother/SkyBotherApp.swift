@@ -159,7 +159,7 @@ private struct CatalogWindowButton: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button("Target Catalog") { openWindow(id: "catalog") }
+        Button("Target Catalog") { AppWindow.bringForward(id: "catalog", using: openWindow) }
             .keyboardShortcut("k", modifiers: .command)
     }
 }
@@ -168,7 +168,7 @@ private struct HelpWindowButton: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button("Sky Bother Help") { openWindow(id: "help") }
+        Button("Sky Bother Help") { AppWindow.bringForward(id: "help", using: openWindow) }
             .keyboardShortcut("?", modifiers: .command)
     }
 }
