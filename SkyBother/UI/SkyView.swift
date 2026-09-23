@@ -7,23 +7,26 @@ import SwiftUI
 /// just answering "where," not only "when."
 struct SkyView: View {
     @Environment(\.uiTextScale) private var uiTextScale
-    @Environment(\.detailViewportHeight) private var viewportHeight
-    @Environment(\.skyViewReservedBelow) private var viewportReservedBelow
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
     @Binding var scrubTime: Date
-    /// Tonight's suggested schedule, handed down from `NightDetailView`
-    /// (which already computes it for its own "Tonight's Plan" section)
-    /// rather than recomputed here — same slots, same source of truth,
-    /// just also consulted while playback cycles through them.
-    var autoPlanSlots: [AutoPlanSlot] = []
+    /// Owned by the screen around this view, so its own controls — Jump to
+    /// best window, a click on a plan block — can stop playback before
+    /// moving the clock rather than having playback drag it straight back.
+    @Binding var isPlaying: Bool
+    /// The night's plan as it is shown everywhere else: a Manual plan, the
+    /// suggestion, or the planner's unsaved draft. Read only — Sky View
+    /// never changes it.
+    var planSegments: [PlanSegment] = []
+    /// Off for Home's preview: just the dome, no controls, no playback.
+    var showsControls = true
 
     /// Nil until the user picks something other than their active rig —
     /// previewing equipment here never touches `state.rig` itself.
     @State private var framingRigOverride: Rig?
     @State private var cameraRollDegrees: Double = 0
 
-    @State private var isPlaying = false
     @State private var playbackMode: PlaybackMode = .cycleThroughPlan
 
     /// A `static let` rather than an instance property: SwiftUI recomputes
@@ -52,8 +55,8 @@ struct SkyView: View {
 
         var label: String {
             switch self {
-            case .trackSelected: return "Track Selected"
-            case .cycleThroughPlan: return "Cycle Plan"
+            case .trackSelected: return "Stay on selected target"
+            case .cycleThroughPlan: return "Follow planned targets"
             }
         }
     }
@@ -71,7 +74,7 @@ struct SkyView: View {
             playbackMode = .cycleThroughPlan
             return
         }
-        playbackMode = autoPlanSlots.contains { $0.targetPlan.id == selectedID } ? .cycleThroughPlan : .trackSelected
+        playbackMode = planSegments.contains { $0.targetID == selectedID } ? .cycleThroughPlan : .trackSelected
     }
 
     private var daysSinceJ2000: Double { scrubTime.daysSinceJ2000 }
@@ -99,7 +102,14 @@ struct SkyView: View {
         }
         let elapsedReal = Date().timeIntervalSince(anchorWallClock)
         let simulatedSecondsPerRealSecond = window.duration / Self.playbackRealSeconds
-        let projected = anchorScrubTime.addingTimeInterval(elapsedReal * simulatedSecondsPerRealSecond)
+        var projected = anchorScrubTime.addingTimeInterval(elapsedReal * simulatedSecondsPerRealSecond)
+        // With Reduce Motion on, the sky steps a quarter of an hour at a
+        // time instead of gliding.
+        if reduceMotion {
+            let step: TimeInterval = 15 * 60
+            projected = Date(timeIntervalSince1970: (projected.timeIntervalSince1970 / step).rounded(.down) * step)
+            if projected == scrubTime { return }
+        }
         if projected >= window.end {
             scrubTime = window.end
             isPlaying = false
@@ -124,12 +134,9 @@ struct SkyView: View {
     /// to whatever's coming up next, not only what's already open — keeps
     /// the two in step regardless of whether the slots actually touch.
     private func syncSelectionToPlayback() {
-        let sorted = autoPlanSlots.sorted { $0.window.start < $1.window.start }
-        guard let first = sorted.first, let last = sorted.last,
-              scrubTime >= first.window.start, scrubTime < last.window.end else { return }
-        guard let upcoming = sorted.first(where: { $0.window.end > scrubTime }) else { return }
-        if state.selectedTargetID != upcoming.targetPlan.id {
-            state.selectedTargetID = upcoming.targetPlan.id
+        guard let upcoming = SkyViewTimeline.block(at: scrubTime, in: planSegments) else { return }
+        if state.selectedTargetID != upcoming.targetID {
+            state.selectedTargetID = upcoming.targetID
         }
     }
 
@@ -250,46 +257,16 @@ struct SkyView: View {
     /// at the edge of the space, so the sky fills the view and a blocked
     /// sector reads as a bite out of it rather than as the whole sky shrinking.
     private func projectionRadius(forSide side: CGFloat) -> CGFloat {
-        let available = max(side / 2 - SkyView.compassLabelInset, 1)
+        // The preview has no compass labels, so no room is kept for them.
+        let available = max(side / 2 - (showsControls ? SkyView.compassLabelInset : 2), 1)
         // The most open direction, which is what `horizonAltitude` holds.
         let openness = clamp((90 - plan.site.horizonAltitude) / 90, 0.1, 1)
         return available / CGFloat(openness)
     }
 
-    /// How big the sky disc is allowed to get. It is square and lives in a
-    /// vertically scrolling column, so left alone it can only size itself from
-    /// the available width — it would grow with a wider window and ignore a
-    /// taller one entirely, and on a wide display it would run past the bottom
-    /// of the pane and have to be scrolled to be seen whole.
-    ///
-    /// So it is capped by the pane's actual height instead, less the room the
-    /// toggles above and the scrubber below need — and less whatever has to
-    /// stay visible underneath it, which is Tonight's Plan. Filling the pane
-    /// with the disc pushed the plan off the bottom, and that is worst exactly
-    /// where it matters most: playback's Cycle Plan mode hands the selection
-    /// from one planned block to the next, which you cannot watch against a
-    /// plan you have to scroll to reach.
-    ///
-    /// The floor is deliberately low. It used to be the old fixed 840pt
-    /// ceiling, on the grounds that overflowing a short window beat shrinking
-    /// the disc to a coaster — but that reasoning assumed nothing else was
-    /// competing for the space. Now something is, and a disc that swallows the
-    /// plan is the worse outcome, so the floor only guards against the disc
-    /// becoming genuinely unreadable.
-    private var maximumSkySide: CGFloat {
-        let chrome: CGFloat = 150
-        // Scrolling far enough for the disc to reach the top of the pane is
-        // also far enough to bring out the compact header, which floats over
-        // the content rather than scrolling with it and so quietly costs the
-        // viewport a row it never gets back. Without allowing for it the plan
-        // below lands about a row short of fitting.
-        let collapsedHeader: CGFloat = 44
-        return max(400, viewportHeight - chrome - collapsedHeader - viewportReservedBelow)
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            cameraFrameControls
+            if showsControls { cameraFrameControls }
 
             GeometryReader { geometry in
                 let side = min(geometry.size.width, geometry.size.height)
@@ -300,14 +277,16 @@ struct SkyView: View {
                     Canvas { context, _ in
                         draw(context: context, center: center, radius: radius)
                     }
-                    compassLabels(center: center, radius: radius)
+                    if showsControls { compassLabels(center: center, radius: radius) }
                 }
             }
+            // As big as the space allows in both directions, and always whole:
+            // this view has room of its own now, never an unbounded column.
             .aspectRatio(1, contentMode: .fit)
-            .frame(maxWidth: maximumSkySide)
-            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(minHeight: showsControls ? 320 : 0)
 
-            timeScrubber
+            if showsControls { timeScrubber }
         }
         .onAppear { updatePlaybackModeForSelection() }
         .onChange(of: state.selectedTargetID) { _, _ in updatePlaybackModeForSelection() }
@@ -319,37 +298,54 @@ struct SkyView: View {
     /// curved post-projection isn't worth the complexity here, so a slider
     /// is the pragmatic middle ground.
     private var cameraFrameControls: some View {
-        HStack(spacing: 14) {
-            Menu {
-                ForEach(Rig.presets) { preset in
-                    Button(preset.name) { framingRigOverride = preset }
-                }
-                if !state.settings.savedRigs.isEmpty {
-                    Divider()
-                    ForEach(state.settings.savedRigs) { saved in
-                        Button(saved.name) { framingRigOverride = saved }
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 14) {
+                Menu {
+                    ForEach(Rig.presets) { preset in
+                        Button(preset.name) { framingRigOverride = preset }
                     }
+                    if !state.settings.savedRigs.isEmpty {
+                        Divider()
+                        ForEach(state.settings.savedRigs) { saved in
+                            Button(saved.name) { framingRigOverride = saved }
+                        }
+                    }
+                } label: {
+                    Label("Frame: \(framingRig.name)", systemImage: "camera.aperture")
+                        .font(.scaled(.callout, scale: uiTextScale))
                 }
-            } label: {
-                Label(framingRig.name, systemImage: "camera.aperture")
-                    .font(.scaled(.caption, scale: uiTextScale))
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .help("Preview another rig's frame here. Your active rig in Settings doesn't change.")
+
+                Text(framingRig.fieldOfViewSummary)
+                    .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
+                    .foregroundStyle(.secondary)
             }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
 
             HStack(spacing: 6) {
-                Text("Roll")
-                    .font(.scaled(.caption, scale: uiTextScale))
-                    .foregroundStyle(.secondary)
-                Slider(value: $cameraRollDegrees, in: 0...359)
+                // The Frame menu's icon, hidden, so this text starts exactly
+                // where "Frame:" does at any UI scale.
+                Label {
+                    Text("Camera roll")
+                } icon: {
+                    Image(systemName: "camera.aperture").hidden()
+                }
+                .font(.scaled(.callout, scale: uiTextScale))
+                .foregroundStyle(.secondary)
+                Slider(value: $cameraRollDegrees, in: 0...359, step: 1)
                     .frame(width: 120)
-                Text("\(Int(cameraRollDegrees))°")
-                    .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .frame(width: 32, alignment: .trailing)
+                    .accessibilityLabel("Camera roll")
+                    .accessibilityValue("\(Int(cameraRollDegrees)) degrees")
+                // A stepper as well as the slider: exact degrees, and arrow
+                // keys once it has focus.
+                Stepper(value: $cameraRollDegrees, in: 0...359, step: 1) {
+                    Text("\(Int(cameraRollDegrees))°")
+                        .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
+                        .frame(minWidth: 38, alignment: .trailing)
+                }
+                .accessibilityLabel("Camera roll, one degree steps")
             }
-
-            Spacer()
         }
     }
 
@@ -566,8 +562,10 @@ struct SkyView: View {
         }
 
         // Corner brackets rather than a closed box, so the sky inside stays
-        // visible and they can't be mistaken for the frame itself.
-        let half = max(extent + 10, 18 * uiTextScale)
+        // visible and they can't be mistaken for the frame itself. Tighter
+        // and thinner on Home's small preview, where full-size brackets
+        // swamped the dome.
+        let half = showsControls ? max(extent + 10, 18 * uiTextScale) : max(extent + 4, 7)
         let arm = half * 0.5
         var brackets = Path()
         for (dx, dy) in [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)] {
@@ -576,9 +574,14 @@ struct SkyView: View {
             brackets.addLine(to: corner)
             brackets.addLine(to: CGPoint(x: corner.x, y: corner.y - arm * dy))
         }
-        let round = StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round)
-        context.stroke(brackets, with: .color(halo), style: StrokeStyle(lineWidth: 5.5, lineCap: .round, lineJoin: .round))
+        let weight: CGFloat = showsControls ? 2.5 : 1.5
+        let round = StrokeStyle(lineWidth: weight, lineCap: .round, lineJoin: .round)
+        context.stroke(brackets, with: .color(halo), style: StrokeStyle(lineWidth: weight + 3, lineCap: .round, lineJoin: .round))
         context.stroke(brackets, with: .color(Palette.go), style: round)
+
+        // No name on the preview: there's no room for it, and Home already
+        // names the target beside it.
+        guard showsControls else { return }
 
         let name = context.resolve(Text(targetPlan.target.displayName)
             .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
@@ -648,38 +651,42 @@ struct SkyView: View {
                 scrubTime = window.start.addingTimeInterval(newFraction * duration)
             }
         )
-        return VStack(alignment: .leading, spacing: 4) {
-            // `scrubTrack` on its own row, full width: sharing a row with a
-            // `GeometryReader`-based sibling was leaving the button no space
-            // at all, not just crowding it — worth its own row rather than
-            // fighting that layout further.
-            scrubTrack(fraction: fraction)
-            HStack(spacing: 8) {
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 12) {
                 playPauseButton
                 Text(Format.time(scrubTime, in: plan.timeZone))
-                    .font(.scaled(.callout, scale: uiTextScale).monospacedDigit().weight(.semibold))
-                if let selectedID = state.selectedTargetID,
-                   let targetPlan = plan.targets.first(where: { $0.id == selectedID }) {
-                    let position = horizontal(of: targetPlan.target.coordinate)
-                    Text("\(targetPlan.target.displayName) · \(position.altitude > 0 ? "\(Format.degrees(position.altitude)) \(position.compassPoint)" : "below the horizon")")
-                        .font(.scaled(.caption, scale: uiTextScale))
+                    .font(.scaled(.title3, scale: uiTextScale).monospacedDigit().weight(.semibold))
+                    .accessibilityLabel("Sky View time, \(Format.time(scrubTime, in: plan.timeZone))")
+                Spacer(minLength: 8)
+                if !planSegments.isEmpty {
+                    Text("During playback")
+                        .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    Picker("During playback", selection: $playbackMode) {
+                        ForEach(PlaybackMode.allCases) { mode in
+                            Text(mode.label).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
+                    .help("Follow planned targets hands the selection to each planned target as its block comes round. Stay on selected target keeps the selection where it is.")
                 }
-                Spacer()
-                if !autoPlanSlots.isEmpty {
-                    playbackModeToggle
-                }
-                Text("\(Format.time(window.start, in: plan.timeZone))–\(Format.time(window.end, in: plan.timeZone))")
-                    .font(.scaled(.caption, scale: uiTextScale))
-                    .foregroundStyle(.tertiary)
             }
 
-            if cameraFrameCenter != nil {
-                Text("Camera Frame · \(framingRig.fieldOfViewSummary) · \(cameraFrameCenterText)")
-                    .font(.scaled(.caption, scale: uiTextScale))
-                    .foregroundStyle(Palette.go)
-                    .lineLimit(1)
+            // The track, its labelled marks and the plan all share one time
+            // axis, so a block sits directly under the stretch of the night
+            // it covers.
+            scrubTrack(fraction: fraction)
+            scrubberMarks
+            if !planSegments.isEmpty {
+                PlanStripView(plan: plan, segments: planSegments, isEditing: false,
+                              onSelect: { segment in
+                                  isPlaying = false
+                                  scrubTime = segment.window.midpoint
+                              })
+                    .frame(height: 26 * max(1, uiTextScale * 0.9))
+                    .help("Click a block to jump to the middle of it and select its target")
             }
 
             Text("Star map: NASA/Goddard Scientific Visualization Studio, from Gaia DR2 (ESA/Gaia/DPAC), Hipparcos and Tycho-2")
@@ -688,6 +695,37 @@ struct SkyView: View {
                 .lineLimit(1)
         }
         .onReceive(Self.playbackTimer) { _ in advancePlayback() }
+    }
+
+    /// Evening, dark, midnight, the selected target's peak, dawn and morning
+    /// under the track — whichever fit without overlapping, most important
+    /// first.
+    private var scrubberMarks: some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let axis = TimeAxis(window: plan.chartWindow, width: width)
+            let inset = 26 * uiTextScale
+            ForEach(visibleMarks(axis: axis), id: \.date) { mark in
+                Text(mark.label)
+                    .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .fixedSize()
+                    .position(x: min(max(axis.x(for: mark.date), inset), max(inset, width - inset)),
+                              y: geometry.size.height / 2)
+            }
+        }
+        .frame(height: 16 * uiTextScale)
+        .accessibilityHidden(true)
+    }
+
+    private func visibleMarks(axis: TimeAxis) -> [SkyViewTimeline.Mark] {
+        let spacing = 78 * uiTextScale
+        var kept: [SkyViewTimeline.Mark] = []
+        for mark in SkyViewTimeline.marks(for: plan, target: selectedTargetPlan).sorted(by: { $0.priority < $1.priority }) {
+            let x = axis.x(for: mark.date)
+            if kept.allSatisfy({ abs(axis.x(for: $0.date) - x) >= spacing }) { kept.append(mark) }
+        }
+        return kept
     }
 
     /// A plain `Slider` looked right but didn't line up with the same
@@ -759,51 +797,14 @@ struct SkyView: View {
                 isPlaying = true
             }
         } label: {
-            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
-                .frame(width: 22, height: 22)
-                // Without this, only the glyph's own opaque pixels are
-                // tappable — the surrounding filled circle is purely a
-                // `.background`, not part of the button's hit-test region,
-                // so most of a visually "big enough" button did nothing.
-                .contentShape(Circle())
+            Label(isPlaying ? "Pause" : "Play", systemImage: isPlaying ? "pause.fill" : "play.fill")
+                .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
+                .frame(minWidth: 64)
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(.white)
-        .background(Palette.accent, in: Circle())
-        // The Slider beside it is the one genuinely flexible view in this
-        // row — without this, a narrow window can let the HStack compress
-        // this fixed-size button down toward nothing to give the slider
-        // more room, rather than shrinking the slider (which has plenty of
-        // room to give) first.
+        .buttonStyle(.borderedProminent)
+        .keyboardShortcut(.space, modifiers: [])
+        .help(isPlaying ? "Pause (Space)" : "Play the night forward, about 25 seconds from sunset to sunrise (Space)")
         .fixedSize()
-    }
-
-    /// "Track Selected" holds the current selection fixed while time scrubs;
-    /// "Cycle Plan" hands selection off from one planned target to the next
-    /// as playback crosses into each slot's own window, so the detail pane
-    /// follows the plan rather than staring at one object all night.
-    private var playbackModeToggle: some View {
-        HStack(spacing: 6) {
-            playbackModeChip(.trackSelected)
-            playbackModeChip(.cycleThroughPlan)
-        }
-    }
-
-    private func playbackModeChip(_ mode: PlaybackMode) -> some View {
-        let isActive = playbackMode == mode
-        return Button {
-            playbackMode = mode
-        } label: {
-            Text(mode.label)
-                .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 3)
-        .background(isActive ? Palette.accent.opacity(0.22) : Color.clear, in: Capsule())
-        .overlay(Capsule().strokeBorder(Palette.accent.opacity(isActive ? 0.55 : 0.3)))
-        .foregroundStyle(isActive ? Palette.accent : .secondary)
     }
 
 }

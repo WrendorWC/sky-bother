@@ -99,9 +99,13 @@ final class AppState: ObservableObject {
     enum MainView: Equatable {
         case home
         case planner
+        case skyView
     }
 
     @Published private(set) var mainView: MainView = .home
+    /// Where Sky View's Back button goes: Home, or the planner it was opened
+    /// from with its draft still open.
+    @Published private(set) var skyViewReturn: MainView = .home
     @Published var searchText: String = ""
     @Published var typeFilter: Set<TargetType> = []
 
@@ -563,9 +567,9 @@ final class AppState: ObservableObject {
 
     func suggestedPlan(for night: NightPlan) -> [PlanSegment] {
         suggestedSlots(for: night).map {
-            PlanSegment(targetID: $0.targetPlan.id,
-                        targetName: $0.targetPlan.target.displayName,
-                        window: $0.window)
+            PlanSegment.suggested(targetID: $0.targetPlan.id,
+                                  targetName: $0.targetPlan.target.displayName,
+                                  window: $0.window)
         }
     }
 
@@ -601,6 +605,18 @@ final class AppState: ObservableObject {
         selectedNightID = night.id
         beginEditingPlan(for: night)
         mainView = .planner
+    }
+
+    /// Opens Sky View on a night, from Home or from the planner. Looking at
+    /// the sky never touches the plan, the draft included.
+    func openSkyView(for night: NightPlan) {
+        if mainView != .planner { selectedNightID = night.id }
+        skyViewReturn = mainView == .planner ? .planner : .home
+        mainView = .skyView
+    }
+
+    func closeSkyView() {
+        mainView = skyViewReturn == .planner && planDraft != nil ? .planner : .home
     }
 
     /// Back to Home. Whatever the draft held must already have been saved or

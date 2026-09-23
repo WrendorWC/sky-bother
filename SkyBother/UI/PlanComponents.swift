@@ -99,45 +99,8 @@ struct PlanBlockRow: View {
     private var unshootableCause: String {
         guard let targetPlan else { return "target not available" }
         let fragments = segment.unusableFragments(against: targetPlan)
-        return PlanBlockRow.cause(of: fragments, for: targetPlan, in: plan,
-                                  minimumAltitude: state.preferences.minimumUsefulAltitude)
-    }
-
-    /// Why a stretch of a block can't be shot, checked every ten minutes
-    /// across it against what the target and the night were doing then —
-    /// in the order the reasons first bite, at most two of them.
-    static func cause(of fragments: [TimeWindow], for targetPlan: TargetPlan, in plan: NightPlan,
-                      minimumAltitude: Double) -> String {
-        var causes: [String] = []
-        for fragment in fragments {
-            var moment = fragment.start
-            while moment < fragment.end {
-                let position = SkyCoordinates.horizontal(targetPlan.target.coordinate,
-                                                         daysSinceJ2000: moment.daysSinceJ2000,
-                                                         latitude: plan.site.latitude,
-                                                         longitude: plan.site.longitude)
-                let isDark = plan.darkWindows.contains { $0.contains(moment) }
-                let isClear = !plan.hasWeather || plan.clearDarkWindows.contains { $0.contains(moment) }
-                let cause: String?
-                if position.altitude <= 0 {
-                    cause = "below the horizon"
-                } else if position.altitude < plan.site.blockedAltitude(azimuth: position.azimuth) {
-                    cause = "behind your blocked horizon to the \(position.compassPoint)"
-                } else if position.altitude < minimumAltitude {
-                    cause = "below your \(Format.degrees(minimumAltitude)) minimum altitude"
-                } else if !isDark {
-                    cause = "not dark enough"
-                } else if !isClear {
-                    cause = "cloud forecast"
-                } else {
-                    cause = nil
-                }
-                if let cause, !causes.contains(cause) { causes.append(cause) }
-                moment = moment.addingTimeInterval(10 * 60)
-            }
-        }
-        guard !causes.isEmpty else { return "outside the target's usable time" }
-        return causes.prefix(2).joined(separator: ", then ")
+        return Shootability.causes(of: fragments, for: targetPlan.target, in: plan,
+                                   minimumAltitude: state.preferences.minimumUsefulAltitude)
     }
 }
 

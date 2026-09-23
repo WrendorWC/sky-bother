@@ -21,3 +21,28 @@ extension TargetPlan {
                    altitudeTrace: [])
     }
 }
+
+extension NightPlan {
+    /// A night on UTC from 18:00 to 06:00, dark from 20:00 to 04:00 —
+    /// enough shape for timing tests without running the planner.
+    static func fixture(evening: Date, targets: [TargetPlan] = []) -> NightPlan {
+        func at(_ hours: Double) -> Date { evening.addingTimeInterval(hours * 3600) }
+        let dark = TimeWindow(start: at(2), end: at(10))
+        return NightPlan(date: evening,
+                         site: Site(name: "Test", latitude: 40, longitude: 0, elevationMeters: 0,
+                                    timeZoneIdentifier: "UTC", bortleClass: 4,
+                                    horizonAltitude: 0, horizonProfile: nil),
+                         chartWindow: TimeWindow(start: at(0), end: at(12)),
+                         sunset: at(0), sunrise: at(12),
+                         civilDusk: at(0.5), civilDawn: at(11.5),
+                         nauticalDusk: at(1.2), nauticalDawn: at(10.8),
+                         astronomicalDusk: at(2), astronomicalDawn: at(10),
+                         darkWindows: [dark], clearDarkWindows: [dark], moonlessDarkWindows: [dark],
+                         isCloudedOut: false, samples: [],
+                         moon: MoonSummary(illuminatedFraction: 0, phaseName: "New Moon", symbolName: "moon",
+                                           isWaxing: true, upWindows: [], maximumAltitude: 0,
+                                           minutesUpDuringDarkness: 0, interference: 0),
+                         hasWeather: false, meanCloudDuringDark: 0, minimumTemperature: 10,
+                         minimumDewSpread: 5, maximumGust: 5, score: 70, factors: [], targets: targets)
+    }
+}

@@ -21,6 +21,36 @@ struct PlanSegment: Codable, Hashable, Identifiable, Sendable {
 }
 
 extension PlanSegment {
+    /// A block of the app's suggestion. Its identity comes from what it is —
+    /// the target and when it starts — rather than being random, because the
+    /// suggestion is rebuilt every time it's read: with random ids, two reads
+    /// of the same plan never agreed on which block was which.
+    static func suggested(targetID: String, targetName: String, window: TimeWindow) -> PlanSegment {
+        PlanSegment(id: stableID(for: "\(targetID)|\(window.start.timeIntervalSince1970)"),
+                    targetID: targetID, targetName: targetName, window: window)
+    }
+
+    /// Two FNV-1a hashes of the key, with different seeds, as the 16 bytes of
+    /// a UUID. Not cryptographic, and doesn't need to be.
+    private static func stableID(for key: String) -> UUID {
+        func fnv(_ seed: UInt64) -> UInt64 {
+            var hash = seed
+            for byte in key.utf8 {
+                hash ^= UInt64(byte)
+                hash = hash &* 0x100000001b3
+            }
+            return hash
+        }
+        let a = fnv(0xcbf29ce484222325), b = fnv(0x84222325cbf29ce4)
+        var bytes = [UInt8](repeating: 0, count: 16)
+        for i in 0..<8 {
+            bytes[i] = UInt8(truncatingIfNeeded: a >> (8 * UInt64(i)))
+            bytes[8 + i] = UInt8(truncatingIfNeeded: b >> (8 * UInt64(i)))
+        }
+        return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+                           bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]))
+    }
+
     /// The parts of this block during which the target isn't actually
     /// shootable — below the horizon, not dark enough, or forecast cloudy.
     /// Empty when the whole block is good.

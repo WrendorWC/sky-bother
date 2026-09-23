@@ -148,47 +148,6 @@ struct FlowLayout: Layout {
     }
 }
 
-/// How tall the night-detail pane actually is on screen — the scroll
-/// viewport, which tracks the window, not the scrolled content, which does
-/// not. Sky View is the only thing that needs it: it is square and lives in a
-/// vertically scrolling column, where height is unbounded and a square view
-/// can only ever size itself from its width. Without this it would either
-/// stop growing at some arbitrary cap or grow so tall on a wide window that
-/// you had to scroll to see the bottom of the sky.
-///
-/// Zero means nobody has measured it, which is the honest default: readers
-/// fall back to sizing on width alone rather than collapsing to nothing.
-private struct DetailViewportHeightKey: EnvironmentKey {
-    static let defaultValue: CGFloat = 0
-}
-
-/// How much of the pane, in points, has to stay visible *below* Sky View —
-/// Tonight's Plan, in practice.
-///
-/// Sky View sits above the plan in one scrolling column, so sizing it to fill
-/// the pane pushes the plan off the bottom. That is worst exactly when it
-/// matters most: playback's Cycle Plan mode walks the selection from one
-/// planned block to the next, and you cannot watch it do that against a plan
-/// you have to scroll to see.
-///
-/// Zero means nobody has measured it, and Sky View then sizes as though
-/// nothing needed the room.
-private struct SkyViewReservedBelowKey: EnvironmentKey {
-    static let defaultValue: CGFloat = 0
-}
-
-extension EnvironmentValues {
-    var detailViewportHeight: CGFloat {
-        get { self[DetailViewportHeightKey.self] }
-        set { self[DetailViewportHeightKey.self] = newValue }
-    }
-
-    var skyViewReservedBelow: CGFloat {
-        get { self[SkyViewReservedBelowKey.self] }
-        set { self[SkyViewReservedBelowKey.self] = newValue }
-    }
-}
-
 extension Font {
     /// A semantic style's usual macOS point size, multiplied by the app's
     /// text-size preference. Callers keep chaining `.weight(...)`,
@@ -1115,5 +1074,63 @@ extension View {
     /// while `isEnabled` — see `EscapeCatcher`.
     func onEscapeKey(isEnabled: Bool = true, perform action: @escaping () -> Void) -> some View {
         background(EscapeCatcher(isEnabled: isEnabled, action: action))
+    }
+}
+
+/// Two panes side by side with a draggable divider, the trailing one at a
+/// width the caller keeps (usually in `@AppStorage`, so it's remembered).
+/// `HSplitView` would do the dragging, but it ignores an ideal width and
+/// opened the side panel at its maximum, splitting the window in half.
+struct ResizableSplit<Leading: View, Trailing: View>: View {
+    @Binding var trailingWidth: Double
+    var trailingRange: ClosedRange<CGFloat>
+    /// The leading pane never gets narrower than this; the trailing one gives
+    /// way first when the window shrinks.
+    var leadingMinimum: CGFloat
+    @ViewBuilder var leading: Leading
+    @ViewBuilder var trailing: Trailing
+
+    @State private var dragStartWidth: CGFloat?
+
+    var body: some View {
+        GeometryReader { geometry in
+            let upper = max(trailingRange.lowerBound, min(trailingRange.upperBound, geometry.size.width - leadingMinimum))
+            let width = min(max(CGFloat(trailingWidth), trailingRange.lowerBound), upper)
+            HStack(spacing: 0) {
+                leading
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                divider(currentWidth: width, upper: upper)
+                trailing
+                    .frame(width: width)
+                    .frame(maxHeight: .infinity)
+            }
+        }
+    }
+
+    private func divider(currentWidth: CGFloat, upper: CGFloat) -> some View {
+        Rectangle()
+            .fill(Palette.panelBorder)
+            .frame(width: 1)
+            .frame(maxHeight: .infinity)
+            // A wider invisible strip to grab than the line itself.
+            .overlay(
+                Color.clear
+                    .frame(width: 9)
+                    .contentShape(Rectangle())
+                    .onHover { inside in
+                        if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
+                    }
+                    .gesture(
+                        DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                            .onChanged { value in
+                                let start = dragStartWidth ?? currentWidth
+                                dragStartWidth = start
+                                let proposed = start - value.translation.width
+                                trailingWidth = Double(min(max(proposed, trailingRange.lowerBound), upper))
+                            }
+                            .onEnded { _ in dragStartWidth = nil }
+                    )
+            )
+            .accessibilityHidden(true)
     }
 }

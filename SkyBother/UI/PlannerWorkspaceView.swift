@@ -29,6 +29,8 @@ struct PlannerWorkspaceView: View {
     @State private var isConfirmingRevert = false
     @State private var compactPane: CompactPane = .candidates
     @FocusState private var isTimelineFocused: Bool
+    /// Remembered between launches: how wide you like the inspector.
+    @AppStorage("plannerInspectorWidth") private var inspectorWidthSetting: Double = 400
 
     private enum CompactPane: String, CaseIterable, Identifiable {
         case candidates = "Candidates"
@@ -142,6 +144,13 @@ struct PlannerWorkspaceView: View {
                     .hoverTooltip(nightLine)
             }
             Spacer(minLength: 12)
+            Button {
+                state.openSkyView(for: plan)
+            } label: {
+                Label("Sky View", systemImage: "circle.dashed.inset.filled")
+                    .font(.scaled(.body, scale: uiTextScale))
+            }
+            .help("See this plan move across the sky. Your unsaved changes stay open here.")
             VStack(alignment: .trailing, spacing: 3) {
                 Label(plan.site.name, systemImage: "mappin.and.ellipse")
                 Label(state.rig.name, systemImage: "camera.aperture")
@@ -271,7 +280,7 @@ struct PlannerWorkspaceView: View {
         let fragments = segment.unusableFragments(against: targetPlan)
         guard fragments.totalMinutes > 0 else { return nil }
         guard let targetPlan else { return "not available at all this night" }
-        return "\(Format.duration(minutes: fragments.totalMinutes)) unshootable — \(PlanBlockRow.cause(of: fragments, for: targetPlan, in: plan, minimumAltitude: state.preferences.minimumUsefulAltitude))"
+        return "\(Format.duration(minutes: fragments.totalMinutes)) unshootable — \(Shootability.causes(of: fragments, for: targetPlan.target, in: plan, minimumAltitude: state.preferences.minimumUsefulAltitude))"
     }
 
     private var unshootableMinutes: Double {
@@ -366,14 +375,15 @@ struct PlannerWorkspaceView: View {
         GeometryReader { geometry in
             // The inspector grows with the UI scale; side by side only while
             // the candidate rows still get enough room beside it.
-            let inspectorWidth = min(560, max(340 * uiTextScale, geometry.size.width * 0.38))
-            if geometry.size.width - inspectorWidth >= 480 * uiTextScale {
-                HStack(spacing: 0) {
+            let inspectorMinimum = 320 * max(1, uiTextScale * 0.9)
+            if geometry.size.width - inspectorMinimum >= 480 * uiTextScale {
+                // Drag the divider to trade list width for inspector width.
+                ResizableSplit(trailingWidth: $inspectorWidthSetting,
+                               trailingRange: inspectorMinimum...760,
+                               leadingMinimum: 480 * uiTextScale) {
                     candidatesPane
-                        .frame(maxWidth: .infinity)
-                    Divider()
+                } trailing: {
                     inspectorPane
-                        .frame(width: inspectorWidth)
                 }
             } else {
                 // Narrow, or a large UI scale: one pane at a time rather than

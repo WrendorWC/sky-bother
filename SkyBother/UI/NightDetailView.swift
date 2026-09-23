@@ -10,7 +10,6 @@ struct NightDetailView: View {
     /// progress, otherwise the middle of astronomical darkness, since that's
     /// the part of the night actually worth looking at.
     @State private var scrubTime: Date
-    @State private var isSkyViewExpanded = false
     @State private var isHeaderCollapsed = false
     /// The easter egg: the header's moon opens tonight's Moon, properly drawn.
     @State private var isShowingMoon = false
@@ -33,12 +32,6 @@ struct NightDetailView: View {
     /// can scroll back to it on tap.
     private let topAnchorID = "nightDetailTop"
 
-    /// The pane's own height on screen, republished down the tree for Sky
-    /// View — see `EnvironmentValues.detailViewportHeight`.
-    @State private var viewportHeight: CGFloat = 0
-    /// Measured so Sky View can leave room for it rather than pushing it off
-    /// the bottom of the pane — see `EnvironmentValues.skyViewReservedBelow`.
-    @State private var planSectionHeight: CGFloat = 0
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -71,18 +64,6 @@ struct NightDetailView: View {
             }
         }
         .animation(.easeInOut(duration: 0.16), value: isHeaderCollapsed)
-        // Measured on the pane itself rather than on the scrolled content:
-        // this is the size of the window's hole, which is what a square view
-        // inside an unbounded scrolling column has no other way to learn.
-        .background(
-            GeometryReader { geometry in
-                Color.clear
-                    .onAppear { viewportHeight = geometry.size.height }
-                    .onChange(of: geometry.size.height) { _, height in viewportHeight = height }
-            }
-        )
-        .environment(\.detailViewportHeight, viewportHeight)
-        .environment(\.skyViewReservedBelow, planSectionHeight)
         // The hero card below already owns the selected night's identity
         // (date, verdict, best target) in a much bigger typeface — repeating
         // the date here just gave the same fact two competing headings. The
@@ -201,41 +182,44 @@ struct NightDetailView: View {
 
             legend
 
-            skySection
-
             autoPlanSection
-                .background(
-                    GeometryReader { geometry in
-                        Color.clear
-                            .onAppear { planSectionHeight = geometry.size.height }
-                            .onChange(of: geometry.size.height) { _, height in planSectionHeight = height }
-                    }
-                )
         }
     }
 
     // MARK: - Sky view
 
-    /// Collapsed by default — this is a new, optional lens on the same
-    /// night, not a replacement for the density Phase 1B already tuned for
-    /// people who just want the deep-sky planner.
-    private var skySection: some View {
-        DisclosureGroup(isExpanded: $isSkyViewExpanded) {
-            SkyView(plan: plan, scrubTime: $scrubTime, autoPlanSlots: autoPlan)
-                .padding(.top, 12)
+    /// Sky View is the most striking thing in the app, so the summary shows
+    /// it rather than naming it: this night's own sky, drawn small, in the
+    /// middle of the best imaging window. The picture is the button.
+    private var skyDomeButton: some View {
+        Button {
+            state.openSkyView(for: plan)
         } label: {
-            SectionHeader("Sky view")
-                // DisclosureGroup only toggles on its own triangle by
-                // default — the label itself isn't otherwise clickable.
-                .contentShape(Rectangle())
-                .onTapGesture { isSkyViewExpanded.toggle() }
+            VStack(spacing: 6) {
+                SkyView(plan: plan, scrubTime: .constant(skyPreviewTime), isPlaying: .constant(false),
+                        planSegments: planSegments, showsControls: false)
+                    .frame(width: 104 * uiTextScale, height: 104 * uiTextScale)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                Label("Open Sky View", systemImage: "circle.dashed.inset.filled")
+                    .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                    .foregroundStyle(Palette.accent)
+                    .fixedSize()
+            }
+            .contentShape(Rectangle())
         }
-        .tint(Palette.accent)
+        .buttonStyle(.plain)
+        .help("See this night's sky, your frame and the plan moving through it")
+        .accessibilityLabel("Open Sky View for \(Format.longDate(plan.date, in: plan.timeZone))")
+    }
+
+    /// When the preview is drawn: the middle of the best imaging window, when
+    /// the sky is properly dark, or failing that the middle of the night.
+    private var skyPreviewTime: Date {
+        plan.bestImagingWindow?.midpoint ?? plan.chartWindow.midpoint
     }
 
     // MARK: - Plan summary
-
-    private var autoPlan: [AutoPlanSlot] { state.suggestedSlots(for: plan) }
 
     /// Your own plan once you have one, and the app's suggestion until then.
     /// Home only ever reads it; changing it happens in the planner.
@@ -341,6 +325,7 @@ struct NightDetailView: View {
     /// The 2-3-second answer: is tonight worth it, when, at what, and why
     /// not more. Everything below this is the detail that backs it up.
     private var missionSummary: some View {
+        HStack(alignment: .center, spacing: 16) {
         VStack(alignment: .leading, spacing: 12) {
         HStack(alignment: .center, spacing: 16) {
             ScoreBadge(score: plan.score, size: 58)
@@ -414,10 +399,6 @@ struct NightDetailView: View {
                 }
                 .hoverTooltip("The forecast writes this night off. The list below shows what would have been up if it clears.")
             }
-            MoonPhaseDisc(illuminatedFraction: plan.moon.illuminatedFraction, isWaxing: plan.moon.isWaxing, diameter: 34)
-                .hoverTooltip("\(plan.moon.illuminationPercent)% \(plan.moon.phaseName.lowercased())")
-                .onTapGesture { isShowingMoon = true }
-                .sheet(isPresented: $isShowingMoon) { MoonCard(plan: plan) }
         }
         // The night's one-sentence limitation beside the one thing to do
         // next, on a row of their own so neither squeezes the headline.
@@ -442,6 +423,8 @@ struct NightDetailView: View {
             .help("Choose targets and build this night's session")
         }
         }
+        skyDomeButton
+        }
         .padding(16)
         .panelStyle(cornerRadius: 14)
         .animation(.easeInOut(duration: 0.3), value: plan.id)
@@ -464,9 +447,15 @@ struct NightDetailView: View {
             LabelledValue(label: "Moon down",
                           value: plan.moonlessDarkHours > 0.02 ? Format.hours(plan.moonlessDarkHours) : "none",
                           systemImage: plan.moon.symbolName)
+            // The Moon card used to hang off a moon disc in the summary; that
+            // corner is Sky View's now, and the dome draws the Moon anyway.
             LabelledValue(label: "Moon",
                           value: "\(plan.moon.illuminationPercent)% \(plan.moon.phaseName.lowercased())",
                           systemImage: "circle.lefthalf.filled")
+                .contentShape(Rectangle())
+                .onTapGesture { isShowingMoon = true }
+                .hoverTooltip("Click to see this night's Moon")
+                .sheet(isPresented: $isShowingMoon) { MoonCard(plan: plan) }
             if plan.hasWeather {
                 LabelledValue(label: "Cloud in the dark",
                               value: "\(Int(plan.meanCloudDuringDark))%",

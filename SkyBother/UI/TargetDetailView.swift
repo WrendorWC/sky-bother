@@ -110,6 +110,14 @@ struct TargetDetailView: View {
                     .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             }
+            Button {
+                state.openSkyView(for: plan)
+            } label: {
+                Label("Show in Sky View", systemImage: "circle.dashed.inset.filled")
+            }
+            .buttonStyle(.link)
+            .font(.scaled(.callout, scale: uiTextScale))
+            .help("Where \(target.displayName) is through the night, with your frame on it")
             if let onAddToPlan {
                 Button(action: onAddToPlan) {
                     Label(plannedBlocks.isEmpty ? "Add to plan" : "Add another block", systemImage: "plus.circle.fill")

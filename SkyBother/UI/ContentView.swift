@@ -32,6 +32,12 @@ struct ContentView: View {
         if state.needsLocationSetup {
             LocationOnboardingView()
                 .navigationTitle("Sky Bother?")
+        } else if state.mainView == .skyView, let plan = skyViewNight {
+            SkyViewScreen(plan: plan)
+                .id(plan.id)
+                .toolbarTitleDisplayMode(.inline)
+                .forcedToolbarBackground(Palette.spaceTop)
+                .toolbar { windowToolbar }
         } else if state.mainView == .planner, let plan = plannerNight {
             PlannerWorkspaceView(plan: plan)
                 .toolbarTitleDisplayMode(.inline)
@@ -107,6 +113,12 @@ extension ContentView {
     private var plannerNight: NightPlan? {
         guard let draft = state.planDraft else { return nil }
         return state.plans.first { $0.planKey == draft.planKey }
+    }
+
+    /// The night Sky View is showing: the planner's while it was opened from
+    /// there, otherwise the one selected on Home.
+    private var skyViewNight: NightPlan? {
+        state.skyViewReturn == .planner ? plannerNight : state.selectedPlan
     }
 
     /// The same three buttons in the same places whichever view fills the

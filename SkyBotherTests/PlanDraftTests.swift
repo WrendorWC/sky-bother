@@ -222,4 +222,18 @@ final class PlanDraftTests: XCTestCase {
         XCTAssertFalse(draft.isDirty)
         XCTAssertEqual(draft.segments, draft.original)
     }
+
+    /// The suggestion is rebuilt on every read, so its blocks need the same
+    /// identity each time or nothing can tell which block is which.
+    func testSuggestedBlocksKeepTheirIdentityAcrossReads() {
+        let window = TimeWindow(start: at(0), end: at(120))
+        let first = PlanSegment.suggested(targetID: "m31", targetName: "M31", window: window)
+        let again = PlanSegment.suggested(targetID: "m31", targetName: "M31", window: window)
+        let other = PlanSegment.suggested(targetID: "m33", targetName: "M33", window: window)
+        let later = PlanSegment.suggested(targetID: "m31", targetName: "M31",
+                                          window: TimeWindow(start: at(5), end: at(120)))
+        XCTAssertEqual(first.id, again.id)
+        XCTAssertNotEqual(first.id, other.id)
+        XCTAssertNotEqual(first.id, later.id)
+    }
 }
