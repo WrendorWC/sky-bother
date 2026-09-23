@@ -334,10 +334,15 @@ struct FramingPreview: View {
 
     @Environment(\.uiTextScale) private var uiTextScale
 
-    /// Real sky for this patch, once it has arrived. Nil means either it
-    /// hasn't yet or there's no network, and the drawing falls back to the
-    /// invented star field it always used.
+    /// Real sky for this patch, once it has arrived. Until then the panel
+    /// shows a placeholder: it used to draw an invented star field with the
+    /// catalogued size as an ellipse over it, which looked like a finished
+    /// picture of something it wasn't and disagreed with the real sky that
+    /// replaced it a second later.
     @State private var skyImage: NSImage?
+    /// Set when the fetch came back with nothing — offline, most likely —
+    /// so the placeholder can say so instead of waiting forever.
+    @State private var skyUnavailable = false
     @State private var measured: CGSize = .zero
 
     private var frameWidth: Double { rig.fieldOfViewWidthArcminutes }
@@ -413,8 +418,13 @@ struct FramingPreview: View {
                 // so the preview sat on the drawn star field with a perfectly
                 // good picture in the cache. A failure should leave what is on
                 // screen alone rather than replace it with nothing.
-                guard !Task.isCancelled, let image else { return }
+                guard !Task.isCancelled else { return }
+                guard let image else {
+                    if skyImage == nil { skyUnavailable = true }
+                    return
+                }
                 skyImage = image
+                skyUnavailable = false
             }
     }
 
@@ -431,31 +441,12 @@ struct FramingPreview: View {
                 // for exactly this angular width, so it needs no fitting.
                 context.draw(Image(nsImage: skyImage),
                              in: CGRect(origin: .zero, size: size))
-            } else {
-                // A faint starfield and grid so this reads as a finished sky
-                // visualization rather than an empty technical diagram — drawn
-                // first, well under the target ellipse and frame in opacity, and
-                // before anything else so it never competes with them.
-                drawBackgroundField(context: context, size: size, seed: target.designation)
-            }
 
-            let objectRect = CGRect(x: centre.x - objectWidth * scale / 2,
-                                    y: centre.y - objectHeight * scale / 2,
-                                    width: objectWidth * scale,
-                                    height: objectHeight * scale)
-
-            if skyImage != nil {
-                // No size ellipse over real sky. It was drawn from the
-                // catalogued axes, and for a great many objects those describe
-                // something far smaller than the part worth photographing — an
-                // open cluster inside a nebula is catalogued as the cluster —
-                // so the outline sat comically inside what you could plainly
-                // see, asserting an edge that isn't there. The image says how
-                // big the thing is and doesn't need contradicting.
-                //
-                // A centre tick stays, because the survey is shallow and a
-                // faint target can be nearly invisible in it. That marks where
-                // to look without claiming how far it extends.
+                // A centre tick, because the survey is shallow and a faint
+                // target can be nearly invisible in it. That marks where to
+                // look without claiming how far it extends — the catalogued
+                // axes describe something far smaller than the part worth
+                // photographing for a great many objects.
                 let tick: CGFloat = 7
                 let gap: CGFloat = 4
                 var marks = Path()
@@ -468,19 +459,6 @@ struct FramingPreview: View {
                 marks.move(to: CGPoint(x: centre.x, y: centre.y + gap))
                 marks.addLine(to: CGPoint(x: centre.x, y: centre.y + gap + tick))
                 context.stroke(marks, with: .color(Palette.worthwhile.opacity(0.8)), lineWidth: 1.5)
-            } else if let photo = TargetImageCatalog.nsImage(for: target.designation) {
-                context.drawLayer { layer in
-                    layer.clip(to: Path(ellipseIn: objectRect))
-                    layer.draw(Image(nsImage: photo), in: aspectFilled(photo.size, into: objectRect))
-                    layer.fill(Path(ellipseIn: objectRect), with: .color(.black.opacity(0.1)))
-                }
-                context.stroke(Path(ellipseIn: objectRect),
-                               with: .color(Palette.worthwhile.opacity(0.9)), lineWidth: 2)
-            } else {
-                context.fill(Path(ellipseIn: objectRect),
-                             with: .color(Palette.worthwhile.opacity(0.38)))
-                context.stroke(Path(ellipseIn: objectRect),
-                               with: .color(Palette.worthwhile.opacity(0.85)), lineWidth: 1.5)
             }
 
             let frameRect = CGRect(x: centre.x - frameWidth * scale / 2,
@@ -490,20 +468,24 @@ struct FramingPreview: View {
             context.stroke(Path(frameRect),
                            with: .color(fits ? Palette.go : Palette.marginal),
                            style: StrokeStyle(lineWidth: 2, dash: fits ? [] : [5, 4]))
-
-            // Only where the ellipse it labels is actually drawn. Over real
-            // sky the catalogued size is still worth knowing, but it belongs
-            // in the notes underneath rather than stamped across a picture
-            // that disagrees with it.
-            if skyImage == nil {
-                context.draw(Text(target.sizeSummary)
-                                .font(.system(size: 14 * uiTextScale, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white),
-                             at: CGPoint(x: centre.x, y: min(size.height - 11, objectRect.maxY + 13)),
-                             anchor: .center)
-            }
             }
             .background(Palette.spaceTop, in: RoundedRectangle(cornerRadius: 10))
+            .overlay {
+                if skyImage == nil {
+                    VStack(spacing: 8) {
+                        if skyUnavailable {
+                            Image(systemName: "wifi.slash")
+                                .font(.system(size: 20 * uiTextScale))
+                            Text("Sky image unavailable")
+                        } else {
+                            ProgressView().controlSize(.small)
+                            Text("Fetching sky\u{2026}")
+                        }
+                    }
+                    .font(.system(size: 12 * uiTextScale))
+                    .foregroundStyle(.tertiary)
+                }
+            }
             .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.panelBorder, lineWidth: 1.5))
 
             // Pinned to the panel corner rather than the (scaled, variable-position)
@@ -525,44 +507,6 @@ struct FramingPreview: View {
         }
     }
 
-    /// The rect an image should be drawn in to fill `bounds` while preserving
-    /// its own aspect ratio (and spilling past the bounds on one axis), the way
-    /// `.aspectRatio(contentMode: .fill)` would for a SwiftUI `Image`.
-    private func aspectFilled(_ imageSize: CGSize, into bounds: CGRect) -> CGRect {
-        guard imageSize.width > 0, imageSize.height > 0 else { return bounds }
-        let imageAspect = imageSize.width / imageSize.height
-        let boundsAspect = bounds.width / bounds.height
-        if imageAspect > boundsAspect {
-            let width = bounds.height * imageAspect
-            return CGRect(x: bounds.midX - width / 2, y: bounds.minY, width: width, height: bounds.height)
-        } else {
-            let height = bounds.width / imageAspect
-            return CGRect(x: bounds.minX, y: bounds.midY - height / 2, width: bounds.width, height: height)
-        }
-    }
-
-    /// A sparse starfield plus a faint alignment grid, so the panel reads as
-    /// a finished sky visualization rather than an empty diagram. Stars are
-    /// seeded from the target's designation rather than `Double.random`, so
-    /// they're stable across the many redraws a `Canvas` does on every hover
-    /// and scrub — unseeded randomness would visibly flicker.
-    private func drawBackgroundField(context: GraphicsContext, size: CGSize, seed: String) {
-        let centre = CGPoint(x: size.width / 2, y: size.height / 2)
-        for fraction: CGFloat in [0.25, 0.45, 0.68] {
-            let r = min(size.width, size.height) / 2 * fraction
-            context.stroke(Path(ellipseIn: CGRect(x: centre.x - r, y: centre.y - r, width: r * 2, height: r * 2)),
-                           with: .color(.white.opacity(0.045)), lineWidth: 1)
-        }
-        var cross = Path()
-        cross.move(to: CGPoint(x: 0, y: centre.y))
-        cross.addLine(to: CGPoint(x: size.width, y: centre.y))
-        cross.move(to: CGPoint(x: centre.x, y: 0))
-        cross.addLine(to: CGPoint(x: centre.x, y: size.height))
-        context.stroke(cross, with: .color(.white.opacity(0.04)), lineWidth: 1)
-
-        // Shared with TargetThumbnail's "no photo" placeholder (Components.swift)
-        // so the app has one starfield visual language rather than two.
-        drawStarfield(context: context, size: size, seed: seed)
-    }
 }
+
 
