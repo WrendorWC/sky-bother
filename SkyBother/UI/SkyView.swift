@@ -28,6 +28,12 @@ struct SkyView: View {
     @State private var cameraRollDegrees: Double = 0
 
     @State private var playbackMode: PlaybackMode = .cycleThroughPlan
+    /// The target being faded out after the selection moved on, and when
+    /// that started — so one target dissolves into the next instead of
+    /// jumping, most noticeably as playback hands over between plan blocks.
+    @State private var fadingOut: TargetPlan?
+    @State private var fadeStart: Date = .distantPast
+    private static let fadeDuration: TimeInterval = 0.7
 
     /// A `static let` rather than an instance property: SwiftUI recomputes
     /// `body` (and therefore reinitialises every stored property of this
@@ -296,8 +302,11 @@ struct SkyView: View {
                 let center = fit.center
 
                 ZStack {
-                    Canvas { context, _ in
-                        draw(context: context, center: center, radius: radius)
+                    // Ticks only while a fade is running.
+                    TimelineView(.animation(paused: fadingOut == nil)) { timeline in
+                        Canvas { context, _ in
+                            draw(context: context, center: center, radius: radius, now: timeline.date)
+                        }
                     }
                     if showsControls { compassLabels(center: center, radius: radius) }
                 }
@@ -310,7 +319,10 @@ struct SkyView: View {
             if showsControls { timeScrubber }
         }
         .onAppear { updatePlaybackModeForSelection() }
-        .onChange(of: state.selectedTargetID) { _, _ in updatePlaybackModeForSelection() }
+        .onChange(of: state.selectedTargetID) { old, _ in
+            updatePlaybackModeForSelection()
+            startFade(from: old)
+        }
         .onDisappear { isPlaying = false }
     }
 
@@ -407,7 +419,7 @@ struct SkyView: View {
         return path
     }
 
-    private func draw(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
+    private func draw(context: GraphicsContext, center: CGPoint, radius: CGFloat, now: Date = Date()) {
         guard radius > 0 else { return }
         var context = context
         let rim = horizonPath(center: center, radius: radius)
@@ -442,9 +454,39 @@ struct SkyView: View {
                         with: .color(Palette.moonlight))
         }
 
+        // The outgoing target fades as the new one comes up, over the same
+        // stretch, so the two cross rather than one popping over the other.
+        let progress = fadingOut == nil ? 1 : min(1, max(0, now.timeIntervalSince(fadeStart) / Self.fadeDuration))
+        if let fadingOut, progress < 1, fadingOut.id != selectedTargetPlan?.id {
+            var outgoing = context
+            outgoing.opacity = 1 - progress
+            drawSelectedTargetPath(context: outgoing, center: center, radius: radius, targetPlan: fadingOut)
+            drawActiveTarget(context: outgoing, center: center, radius: radius, targetPlan: fadingOut)
+        }
         if let selectedTargetPlan {
-            drawSelectedTargetPath(context: context, center: center, radius: radius, targetPlan: selectedTargetPlan)
-            drawActiveTarget(context: context, center: center, radius: radius, targetPlan: selectedTargetPlan)
+            var incoming = context
+            incoming.opacity = progress
+            drawSelectedTargetPath(context: incoming, center: center, radius: radius, targetPlan: selectedTargetPlan)
+            drawActiveTarget(context: incoming, center: center, radius: radius, targetPlan: selectedTargetPlan)
+        }
+    }
+
+    /// Starts crossfading away from the target that was just deselected.
+    /// With Reduce Motion on, the switch stays instant.
+    private func startFade(from oldID: String?) {
+        guard !reduceMotion, showsControls,
+              let oldID, let old = plan.targets.first(where: { $0.id == oldID }) else {
+            fadingOut = nil
+            return
+        }
+        fadingOut = old
+        fadeStart = Date()
+        Task {
+            try? await Task.sleep(nanoseconds: UInt64(Self.fadeDuration * 1_000_000_000))
+            // Only if no newer switch has started its own fade meanwhile.
+            if fadingOut?.id == old.id, Date().timeIntervalSince(fadeStart) >= Self.fadeDuration {
+                fadingOut = nil
+            }
         }
     }
 
@@ -549,7 +591,9 @@ struct SkyView: View {
     /// `isCameraFrameTooCloseToZenith`). The reticle is square to the screen,
     /// so it has no such problem and is drawn whenever the target is up.
     private func drawActiveTarget(context: GraphicsContext, center: CGPoint, radius: CGFloat, targetPlan: TargetPlan) {
-        guard let frameCenter = cameraFrameCenter,
+        let frameCenter = horizontal(of: targetPlan.target.coordinate)
+        let isCameraFrameTooCloseToZenith = frameCenter.altitude > Self.nearZenithThreshold
+        guard
               frameCenter.altitude > plan.site.blockedAltitude(azimuth: frameCenter.azimuth) else { return }
         let middle = screenPoint(for: frameCenter, center: center, radius: radius)
         let halo = Color.black.opacity(0.6)
