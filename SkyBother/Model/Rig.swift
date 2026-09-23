@@ -294,6 +294,19 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                             hasNarrowbandFilter: true, supportsMosaic: true,
                             zenithAvoidanceAltitude: 80)
 
+    /// 90mm f/3.8 (340mm) folded optics, OmniVision OV50Q40 1/1.3" 50MP
+    /// sensor. Deep-sky frames are 2x2 binned: 4096 x 3072 at 2.394um, which
+    /// is 9.81 x 7.35mm. That computes to a 2.06-degree diagonal, matching the
+    /// published figure. Alt-az with physical sensor rotation; Ha/OIII
+    /// dual-band filter in both editions; mosaics up to 1.8x each way.
+    /// Launched September 2026.
+    static let dwarfDraco = Rig(name: "DwarfLab Dwarf Draco",
+                                apertureMillimeters: 90, focalLengthMillimeters: 340,
+                                sensorWidthMillimeters: 9.81, sensorHeightMillimeters: 7.35,
+                                pixelSizeMicrons: 2.394, mountType: .altAzimuth,
+                                hasNarrowbandFilter: true, supportsMosaic: true,
+                                zenithAvoidanceAltitude: 80)
+
     /// 24mm f/4.2 telephoto lens, Sony IMX415 (1.45um, 3840 x 2160).
     /// Replaced by the Dwarf 3 in late 2024 but still widely owned.
     static let dwarf2 = Rig(name: "DwarfLab Dwarf II",
@@ -367,7 +380,7 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
         celestronOrigin, celestronOriginMarkII,
         unistellarEVscope2, unistellarEquinox2, unistellarOdyssey,
         vesperaII, vespera3, vesperaPro2, stellina,
-        dwarf3, dwarf2, dwarfMini,
+        dwarfDraco, dwarf3, dwarf2, dwarfMini,
         cameraOnTracker, refractor80, sct8,
         apsc10mm, apsc16mm, fullFrame24mm,
         seestarS50ProWide, seestarS30Wide, seestarS30ProWide

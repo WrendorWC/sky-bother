@@ -80,4 +80,15 @@ final class SetupTests: XCTestCase {
         XCTAssertEqual(Rig.dwarf3.presetGroup, .smartTelescope)
         XCTAssertEqual(Rig.refractor80.presetGroup, .cameraAndOptics)
     }
+
+    /// The Draco's published field is about 2.06° on the diagonal.
+    func testDracoMatchesItsPublishedField() {
+        let rig = Rig.dwarfDraco
+        let diagonal = (rig.fieldOfViewWidthDegrees * rig.fieldOfViewWidthDegrees
+                        + rig.fieldOfViewHeightDegrees * rig.fieldOfViewHeightDegrees).squareRoot()
+        XCTAssertEqual(diagonal, 2.06, accuracy: 0.02)
+        XCTAssertEqual(rig.focalRatio, 3.8, accuracy: 0.05)
+        XCTAssertEqual(rig.presetGroup, .smartTelescope)
+        XCTAssertTrue(Rig.presets.contains { $0.name == rig.name })
+    }
 }
