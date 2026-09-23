@@ -74,4 +74,18 @@ final class SessionRecordTests: XCTestCase {
         let old = try JSONDecoder().decode(StoredSettings.self, from: JSONSerialization.data(withJSONObject: json))
         XCTAssertTrue(old.sessionRecords.isEmpty)
     }
+
+    /// Very large previews ask the survey for a capped size, which it can
+    /// answer before the request times out.
+    func testCutoutRequestsAreCapped() {
+        let big = SkyCutout(rightAscensionDegrees: 314, declinationDegrees: 31.7, widthDegrees: 3.3,
+                            pixelWidth: 2864, pixelHeight: 1910)
+        XCTAssertLessThanOrEqual(max(big.pixelWidth, big.pixelHeight), SkyCutout.maximumPixels)
+        XCTAssertEqual(Double(big.pixelWidth) / Double(big.pixelHeight), 2864.0 / 1910.0, accuracy: 0.05)
+
+        let small = SkyCutout(rightAscensionDegrees: 314, declinationDegrees: 31.7, widthDegrees: 3.3,
+                              pixelWidth: 640, pixelHeight: 448)
+        XCTAssertEqual(small.pixelWidth, 640)
+        XCTAssertEqual(small.pixelHeight, 448)
+    }
 }

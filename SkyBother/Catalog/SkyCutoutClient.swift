@@ -22,9 +22,20 @@ struct SkyCutout: Hashable, Sendable {
         // To the nearest 64 pixels: a window dragged a few points wider is the
         // same picture, and re-fetching it on every frame of a drag would be
         // both slow and rude to a service that costs nothing to use.
-        self.pixelWidth = max(64, (pixelWidth / 64) * 64)
-        self.pixelHeight = max(64, (pixelHeight / 64) * 64)
+        //
+        // Capped as well. The survey is shallow, so beyond this there's no
+        // more detail to fetch, only more pixels, and the service slows
+        // sharply with size: a 2816×1856 request took 35 s, past the 30 s
+        // timeout, so session mode's large preview never filled in. The
+        // image is drawn to fit its rectangle, so a smaller one scales up.
+        let longest = max(pixelWidth, pixelHeight, 1)
+        let shrink = min(1, Double(Self.maximumPixels) / Double(longest))
+        self.pixelWidth = max(64, Int((Double(pixelWidth) * shrink / 64).rounded()) * 64)
+        self.pixelHeight = max(64, Int((Double(pixelHeight) * shrink / 64).rounded()) * 64)
     }
+
+    /// Longest side ever requested.
+    static let maximumPixels = 1600
 
     /// Stable, readable, and safe as a filename.
     var cacheKey: String {
