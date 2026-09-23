@@ -60,7 +60,11 @@ struct SettingsView: View {
             PlanningSettings()
                 .tabItem { Label("Planning", systemImage: "slider.horizontal.3") }
         }
-        .frame(width: 640, height: 580)
+        // Resizable both ways: the panes scroll, so a smaller window only
+        // means less at once.
+        .frame(minWidth: 560, idealWidth: 640, maxWidth: .infinity,
+               minHeight: 320, idealHeight: 580, maxHeight: .infinity)
+        .background(ResizableWindow())
         .onChange(of: state.settings) { _, _ in
             state.requestReplan()
         }
@@ -84,11 +88,11 @@ private struct LocationSettings: View {
             if !isInGuidedSetup {
             Section {
                 HStack {
-                    Text("Step through site, horizon, rig and goal again.")
+                    Text("Step through site, horizon, rig and goal.")
                         .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button("Run guided setup…") {
+                    Button("Run Guided Setup…") {
                         state.restartSetup()
                         // Setup appears in the main window; Settings would
                         // otherwise sit on top of it.

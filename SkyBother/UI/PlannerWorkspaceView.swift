@@ -31,7 +31,8 @@ struct PlannerWorkspaceView: View {
     @State private var compactPane: CompactPane = .candidates
     @FocusState private var isTimelineFocused: Bool
     /// Remembered between launches: how wide you like the inspector.
-    @AppStorage("plannerInspectorWidth") private var inspectorWidthSetting: Double = 400
+    /// 0 until you drag the divider: the default then follows the UI scale.
+    @AppStorage("plannerInspectorWidth") private var inspectorWidthSetting: Double = 0
 
     private enum CompactPane: String, CaseIterable, Identifiable {
         case candidates = "Candidates"
@@ -383,8 +384,9 @@ struct PlannerWorkspaceView: View {
             let inspectorMinimum = 320 * max(1, uiTextScale * 0.9)
             if geometry.size.width - inspectorMinimum >= 480 * uiTextScale {
                 // Drag the divider to trade list width for inspector width.
-                ResizableSplit(trailingWidth: $inspectorWidthSetting,
-                               trailingRange: inspectorMinimum...760,
+                ResizableSplit(trailingWidth: Binding(get: { inspectorWidthSetting > 0 ? inspectorWidthSetting : 400 * uiTextScale },
+                                                      set: { inspectorWidthSetting = $0 }),
+                               trailingRange: inspectorMinimum...1100,
                                leadingMinimum: 480 * uiTextScale) {
                     candidatesPane
                 } trailing: {
@@ -522,8 +524,7 @@ struct PlannerWorkspaceView: View {
                     Label(state.typeFilter.isEmpty ? "All Types" : "\(state.typeFilter.count) Types",
                           systemImage: "line.3.horizontal.decrease.circle")
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
+                .scaledMenuStyle(uiTextScale)
 
                 Menu {
                     Picker("Sort by", selection: $sortOption) {
@@ -535,8 +536,7 @@ struct PlannerWorkspaceView: View {
                 } label: {
                     Label(sortOption.rawValue, systemImage: "arrow.up.arrow.down.circle")
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
+                .scaledMenuStyle(uiTextScale)
             }
 
             HStack(spacing: 14) {
@@ -553,20 +553,24 @@ struct PlannerWorkspaceView: View {
                     Label(minimumUsableHours == 0 ? "Any usable time" : "At least \(Int(minimumUsableHours))h usable",
                           systemImage: "clock")
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
+                .scaledMenuStyle(uiTextScale)
                 .help("Only show targets usable for at least this long this night")
 
                 Toggle("Fits my frame", isOn: $fitsFrameOnly)
                     .toggleStyle(.checkbox)
                     .help("Hide targets that overflow the frame or are tiny in it (under 10% of the long side)")
 
-                Picker("Suggestion favours", selection: $state.preferences.planEmphasis) {
-                    ForEach(PlanEmphasis.allCases, id: \.self) { emphasis in
-                        Text(emphasis.title).tag(emphasis)
+                Menu {
+                    Picker("Suggestion favours", selection: $state.preferences.planEmphasis) {
+                        ForEach(PlanEmphasis.allCases, id: \.self) { emphasis in
+                            Text(emphasis.title).tag(emphasis)
+                        }
                     }
+                    .pickerStyle(.inline)
+                } label: {
+                    Label("Suggestion: \(state.preferences.planEmphasis.title.lowercased())", systemImage: "wand.and.stars")
                 }
-                .fixedSize()
+                .scaledMenuStyle(uiTextScale)
                 .help("How the suggested plan is built. Your edits are kept.")
 
                 Spacer(minLength: 0)
@@ -670,29 +674,31 @@ struct PlannerWorkspaceView: View {
             if let reset = state.recentReset, reset.planKey == plan.planKey {
                 Text("Manual plan removed.")
                     .foregroundStyle(.secondary)
-                Button("Undo") { state.undoPlanReset() }
+                Button { state.undoPlanReset() } label: { Text("Undo").font(.scaled(.callout, scale: uiTextScale)) }
                     .buttonStyle(.link)
             }
 
             Spacer(minLength: 12)
 
             if state.isManualPlan(for: plan) {
-                Button("Reset manual plan") { isConfirmingReset = true }
+                Button { isConfirmingReset = true } label: { Text("Reset manual plan").font(.scaled(.callout, scale: uiTextScale)) }
                     .help("Replace your manual plan with the current suggestion")
             }
-            Button("Clear draft") {
+            Button {
                 state.clearDraft()
                 selectedBlockID = nil
                 addNote = "Draft cleared."
+            } label: {
+                Text("Clear draft").font(.scaled(.callout, scale: uiTextScale))
             }
             .disabled(segments.isEmpty)
             .help("Empty the plan. Nothing is saved until Done.")
 
-            Button("Cancel") { leave() }
+            Button { leave() } label: { Text("Cancel").font(.scaled(.callout, scale: uiTextScale)) }
                 .help("Close without saving")
 
             Button(action: done) {
-                Text("Done").frame(minWidth: 60)
+                Text("Done").font(.scaled(.callout, scale: uiTextScale).weight(.semibold)).frame(minWidth: 60)
             }
             .buttonStyle(.borderedProminent)
             .keyboardShortcut(.return, modifiers: .command)

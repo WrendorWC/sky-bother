@@ -151,10 +151,10 @@ struct NightListView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Spacer(minLength: 4)
-                Button("Edit setup") { state.restartSetup() }
+                Button("Guided Setup") { state.restartSetup() }
                     .buttonStyle(.link)
                     .disabled(state.planDraft != nil)
-                    .help("Run guided setup again")
+                    .help("Run Guided Setup")
             }
             .font(.scaled(.caption, scale: uiTextScale))
         }

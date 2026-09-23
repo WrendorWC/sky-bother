@@ -46,7 +46,7 @@ struct SetupFlowView: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Advanced setup")
+                    Text("Advanced Setup")
                         .font(.scaled(.title3, scale: uiTextScale).weight(.bold))
                     Text("Changes apply immediately.")
                         .font(.scaled(.caption, scale: uiTextScale))
@@ -75,7 +75,7 @@ struct SetupFlowView: View {
             Button {
                 isShowingAdvanced = true
             } label: {
-                Label("Advanced setup…", systemImage: "slider.horizontal.3")
+                Label("Advanced Setup…", systemImage: "slider.horizontal.3")
             }
             .help("Enter every setting by hand")
             if state.settings.hasSetLocation {

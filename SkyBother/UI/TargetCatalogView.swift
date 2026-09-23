@@ -132,8 +132,7 @@ struct TargetCatalogView: View {
                     Label(query.types.isEmpty ? "All Types" : "\(query.types.count) Types",
                           systemImage: "line.3.horizontal.decrease.circle")
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
+                .scaledMenuStyle(uiTextScale)
 
                 Menu {
                     Picker("Sort by", selection: $query.sort) {
@@ -145,8 +144,7 @@ struct TargetCatalogView: View {
                 } label: {
                     Label(effectiveQuery.sort.rawValue, systemImage: "arrow.up.arrow.down.circle")
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
+                .scaledMenuStyle(uiTextScale)
 
                 Spacer()
 
@@ -158,6 +156,7 @@ struct TargetCatalogView: View {
                     editorContext = CustomTargetEditorContext(existing: nil)
                 } label: {
                     Label("Add Custom Target", systemImage: "plus.circle.fill")
+                        .font(.scaled(.callout, scale: uiTextScale))
                 }
                 .help("Add a target that isn't in the catalog")
             }
@@ -176,8 +175,7 @@ struct TargetCatalogView: View {
                 } label: {
                     Label(night.map { "Night: \(nightName($0))" } ?? "No nights yet", systemImage: "moon.stars")
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
+                .scaledMenuStyle(uiTextScale)
                 .disabled(state.plans.isEmpty)
                 .help("The night each card is scored for")
 
@@ -200,8 +198,7 @@ struct TargetCatalogView: View {
                     Label(query.minimumUsableHours == 0 ? "Any usable time" : "At least \(Int(query.minimumUsableHours))h usable",
                           systemImage: "clock")
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
+                .scaledMenuStyle(uiTextScale)
 
                 Spacer()
 
@@ -214,6 +211,7 @@ struct TargetCatalogView: View {
             }
             .disabled(night == nil)
         }
+        .font(.scaled(.callout, scale: uiTextScale))
         .padding(16)
     }
 
@@ -478,6 +476,7 @@ struct TargetCatalogDetail: View {
                             add(result, to: night)
                         } label: {
                             Label("Add to \(Format.weekday(night.date, in: night.timeZone))'s plan", systemImage: "plus.circle.fill")
+                                .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
                         }
                         .buttonStyle(.borderedProminent)
                         .help("Opens the planner with this target added")
@@ -485,6 +484,7 @@ struct TargetCatalogDetail: View {
                             view(on: night)
                         } label: {
                             Label("View on \(Format.weekday(night.date, in: night.timeZone))", systemImage: "scope")
+                                .font(.scaled(.body, scale: uiTextScale))
                         }
                         .help("Show this target in the main window")
                     }

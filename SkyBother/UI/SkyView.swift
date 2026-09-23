@@ -314,8 +314,7 @@ struct SkyView: View {
                     Label("Frame: \(framingRig.name)", systemImage: "camera.aperture")
                         .font(.scaled(.callout, scale: uiTextScale))
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
+                .scaledMenuStyle(uiTextScale)
                 .help("Preview another rig's frame")
 
                 Text(framingRig.fieldOfViewSummary)
@@ -662,13 +661,24 @@ struct SkyView: View {
                     Text("During playback")
                         .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
-                    Picker("During playback", selection: $playbackMode) {
+                    // Drawn here rather than as a segmented control, which
+                    // stays at the system size whatever the UI scale.
+                    HStack(spacing: 6) {
                         ForEach(PlaybackMode.allCases) { mode in
-                            Text(mode.label).tag(mode)
+                            let isOn = playbackMode == mode
+                            Button { playbackMode = mode } label: {
+                                Text(mode.label)
+                                    .font(.scaled(.callout, scale: uiTextScale).weight(isOn ? .semibold : .regular))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(isOn ? Palette.accent.opacity(0.3) : Color.clear, in: Capsule())
+                                    .overlay(Capsule().strokeBorder(isOn ? Palette.accent : Palette.panelBorder))
+                                    .contentShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityAddTraits(isOn ? .isSelected : [])
                         }
                     }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
                     .fixedSize()
                     .help("What happens to the selection as playback crosses plan blocks")
                 }

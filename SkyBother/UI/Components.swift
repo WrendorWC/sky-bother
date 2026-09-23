@@ -1134,3 +1134,29 @@ struct ResizableSplit<Leading: View, Trailing: View>: View {
             .accessibilityHidden(true)
     }
 }
+
+extension View {
+    /// A menu whose label SwiftUI draws itself, so it follows the UI scale.
+    /// The borderless menu style hands its label to AppKit, which keeps it at
+    /// the system size however large everything around it has grown.
+    func scaledMenuStyle(_ scale: CGFloat) -> some View {
+        menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.visible)
+            .foregroundStyle(Palette.accent)
+            .font(.scaled(.callout, scale: scale))
+            .fixedSize()
+    }
+}
+
+/// Makes the window this view sits in resizable. SwiftUI's Settings window
+/// is created fixed-size, and `windowResizability` doesn't change that.
+struct ResizableWindow: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { NSView() }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        DispatchQueue.main.async {
+            view.window?.styleMask.insert(.resizable)
+        }
+    }
+}

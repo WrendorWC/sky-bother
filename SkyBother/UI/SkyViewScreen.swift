@@ -15,7 +15,8 @@ struct SkyViewScreen: View {
     @State private var isPlaying = false
     @State private var isShowingMoon = false
     /// Remembered between launches: how wide you like the side panel.
-    @AppStorage("skyViewPanelWidth") private var panelWidth: Double = 340
+    /// 0 until you drag the divider: the default then follows the UI scale.
+    @AppStorage("skyViewPanelWidth") private var panelWidth: Double = 0
 
     init(plan: NightPlan) {
         self.plan = plan
@@ -40,8 +41,9 @@ struct SkyViewScreen: View {
             Divider()
             // Drag the divider to give the side panel more or less room; the
             // dome takes whatever is left.
-            ResizableSplit(trailingWidth: $panelWidth,
-                           trailingRange: (280 * max(1, uiTextScale * 0.9))...720,
+            ResizableSplit(trailingWidth: Binding(get: { panelWidth > 0 ? panelWidth : 340 * uiTextScale },
+                                                  set: { panelWidth = $0 }),
+                           trailingRange: (280 * max(1, uiTextScale * 0.9))...1100,
                            leadingMinimum: 480) {
                 SkyView(plan: plan, scrubTime: $scrubTime, isPlaying: $isPlaying, planSegments: segments)
                     .padding(18)
@@ -155,8 +157,9 @@ struct SkyViewScreen: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if let best = plan.bestTarget {
-                Button("Select \(best.target.displayName)") { state.selectedTargetID = best.id }
-                    .font(.scaled(.callout, scale: uiTextScale))
+                Button { state.selectedTargetID = best.id } label: {
+                    Text("Select \(best.target.displayName)").font(.scaled(.callout, scale: uiTextScale))
+                }
             }
         }
     }

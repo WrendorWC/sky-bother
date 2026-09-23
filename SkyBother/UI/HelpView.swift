@@ -27,9 +27,9 @@ struct HelpTopic: Identifiable {
 enum HelpContent {
     static let topics: [HelpTopic] = [
         HelpTopic(title: "Getting Started", systemImage: "sparkles", sections: [
-            HelpSection(body: "Guided setup has five steps: site, horizon, rig, goal and your first plan. Only the site is required; the other steps have defaults and a Skip button. Progress is saved, so quitting part-way resumes at the same step."),
-            HelpSection(heading: "Advanced Setup", body: "“Advanced setup…” at the top of guided setup opens every setting at once: exact coordinates and elevation, the horizon by direction, optics numbers, mount and filters, and all planning thresholds. It uses the same controls as Settings."),
-            HelpSection(heading: "Running It Again", body: "Use “Edit setup” at the foot of the night list, or “Run guided setup…” in Settings → Location. It isn’t available while the planner has unsaved changes.")
+            HelpSection(body: "Guided Setup has five steps: site, horizon, rig, goal and your first plan. Only the site is required; the other steps have defaults and a Skip button. Progress is saved, so quitting part-way resumes at the same step."),
+            HelpSection(heading: "Advanced Setup", body: "“Advanced Setup…” at the top of Guided Setup opens every setting at once: exact coordinates and elevation, the horizon by direction, optics numbers, mount and filters, and all planning thresholds. It uses the same controls as Settings."),
+            HelpSection(heading: "Running It Later", body: "Use “Guided Setup” at the foot of the night list, or “Run Guided Setup…” in Settings → Location. It isn’t available while the planner has unsaved changes.")
         ]),
 
         HelpTopic(title: "Scores & Verdicts", systemImage: "target", sections: [

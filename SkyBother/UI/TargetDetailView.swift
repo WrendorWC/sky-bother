@@ -121,6 +121,7 @@ struct TargetDetailView: View {
             if let onAddToPlan {
                 Button(action: onAddToPlan) {
                     Label(plannedBlocks.isEmpty ? "Add to plan" : "Add another block", systemImage: "plus.circle.fill")
+                        .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
