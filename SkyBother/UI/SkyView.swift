@@ -33,6 +33,8 @@ struct SkyView: View {
     /// jumping, most noticeably as playback hands over between plan blocks.
     @State private var fadingOut: TargetPlan?
     @State private var fadeStart: Date = .distantPast
+    /// True while any fade — in, out or across — is running.
+    @State private var isFading = false
     private static let fadeDuration: TimeInterval = 0.7
 
     /// A `static let` rather than an instance property: SwiftUI recomputes
@@ -140,7 +142,15 @@ struct SkyView: View {
     /// to whatever's coming up next, not only what's already open — keeps
     /// the two in step regardless of whether the slots actually touch.
     private func syncSelectionToPlayback() {
-        guard let upcoming = SkyViewTimeline.block(at: scrubTime, in: planSegments) else { return }
+        guard let upcoming = SkyViewTimeline.block(at: scrubTime, in: planSegments) else {
+            // Past the last block the session is over: let its target fade
+            // away rather than sit on the dome until sunrise.
+            if let last = planSegments.chronological.last, scrubTime >= last.window.end,
+               let selected = state.selectedTargetID, planSegments.contains(where: { $0.targetID == selected }) {
+                state.selectedTargetID = nil
+            }
+            return
+        }
         if state.selectedTargetID != upcoming.targetID {
             state.selectedTargetID = upcoming.targetID
         }
@@ -303,7 +313,7 @@ struct SkyView: View {
 
                 ZStack {
                     // Ticks only while a fade is running.
-                    TimelineView(.animation(paused: fadingOut == nil)) { timeline in
+                    TimelineView(.animation(paused: !isFading)) { timeline in
                         Canvas { context, _ in
                             draw(context: context, center: center, radius: radius, now: timeline.date)
                         }
@@ -456,7 +466,7 @@ struct SkyView: View {
 
         // The outgoing target fades as the new one comes up, over the same
         // stretch, so the two cross rather than one popping over the other.
-        let progress = fadingOut == nil ? 1 : min(1, max(0, now.timeIntervalSince(fadeStart) / Self.fadeDuration))
+        let progress = isFading ? min(1, max(0, now.timeIntervalSince(fadeStart) / Self.fadeDuration)) : 1
         if let fadingOut, progress < 1, fadingOut.id != selectedTargetPlan?.id {
             var outgoing = context
             outgoing.opacity = 1 - progress
@@ -471,21 +481,25 @@ struct SkyView: View {
         }
     }
 
-    /// Starts crossfading away from the target that was just deselected.
-    /// With Reduce Motion on, the switch stays instant.
+    /// Fades between the old selection and the new one: across when both
+    /// exist, in from nothing, or out to nothing. With Reduce Motion on, the
+    /// switch stays instant.
     private func startFade(from oldID: String?) {
-        guard !reduceMotion, showsControls,
-              let oldID, let old = plan.targets.first(where: { $0.id == oldID }) else {
+        guard !reduceMotion, showsControls else {
             fadingOut = nil
+            isFading = false
             return
         }
-        fadingOut = old
-        fadeStart = Date()
+        fadingOut = oldID.flatMap { id in plan.targets.first { $0.id == id } }
+        let started = Date()
+        fadeStart = started
+        isFading = true
         Task {
             try? await Task.sleep(nanoseconds: UInt64(Self.fadeDuration * 1_000_000_000))
             // Only if no newer switch has started its own fade meanwhile.
-            if fadingOut?.id == old.id, Date().timeIntervalSince(fadeStart) >= Self.fadeDuration {
+            if fadeStart == started {
                 fadingOut = nil
+                isFading = false
             }
         }
     }
