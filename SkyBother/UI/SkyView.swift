@@ -244,24 +244,46 @@ struct SkyView: View {
     /// it and are centred on that point, so about half a line of text again.
     private static let compassLabelInset: CGFloat = 26
 
-    /// The radius of a *full* 90° hemisphere — the scale of the projection,
-    /// in points per 90° of altitude, which is what every drawing helper here
-    /// wants.
+    /// The scale and centre that make the visible sky as big as the space
+    /// allows. `radius` is that of a *full* 90° hemisphere — the projection's
+    /// scale, which every drawing helper here wants.
     ///
-    /// It is deliberately larger than the space available, because the sky
-    /// below your blocked horizon is never drawn: with a 20° horizon the rim
-    /// sits at 78% of this, and sizing the projection to the square directly
-    /// would leave that missing 22% as dead margin on all four sides — the
-    /// disc floating in the middle of a box far bigger than itself. Scaling by
-    /// the most open direction instead puts the widest part of the rim right
-    /// at the edge of the space, so the sky fills the view and a blocked
-    /// sector reads as a bite out of it rather than as the whole sky shrinking.
-    private func projectionRadius(forSide side: CGFloat) -> CGFloat {
-        // The preview has no compass labels, so no room is kept for them.
-        let available = max(side / 2 - (showsControls ? SkyView.compassLabelInset : 2), 1)
-        // The most open direction, which is what `horizonAltitude` holds.
-        let openness = clamp((90 - plan.site.horizonAltitude) / 90, 0.1, 1)
-        return available / CGFloat(openness)
+    /// What gets fitted is the visible shape itself, not the full hemisphere:
+    /// sky below your blocked horizon is never drawn, so sizing for it left
+    /// dead margin — worst on the side with the tallest trees, since the
+    /// zenith was always put in the middle. Fitting the shape's own bounds
+    /// and centring those instead lets a heavily blocked sky fill the view,
+    /// with the zenith wherever the shape puts it.
+    private func domeFit(in size: CGSize) -> (radius: CGFloat, center: CGPoint) {
+        let inset = showsControls ? SkyView.compassLabelInset : 2
+        let bounds = visibleShapeBounds
+        let availableWidth = max(size.width - inset * 2, 1)
+        let availableHeight = max(size.height - inset * 2, 1)
+        let radius = max(1, min(availableWidth / max(bounds.width, 0.01),
+                                availableHeight / max(bounds.height, 0.01)))
+        let center = CGPoint(x: size.width / 2 - bounds.midX * radius,
+                             y: size.height / 2 - bounds.midY * radius)
+        return (radius, center)
+    }
+
+    /// The visible sky's outline in projection units — a full hemisphere is
+    /// the unit circle — traced the same way `horizonPath` draws it.
+    private var visibleShapeBounds: CGRect {
+        var minX = CGFloat.infinity, maxX = -CGFloat.infinity
+        var minY = CGFloat.infinity, maxY = -CGFloat.infinity
+        for sector in Site.horizonDirections.indices {
+            let sectorAzimuth = Double(sector) * 45
+            let reach = visibleRadius(1, azimuth: sectorAzimuth)
+            for step in 0...9 {
+                let azimuth = sectorAzimuth - 22.5 + Double(step) * 5
+                let point = SkyProjection.project(HorizontalCoordinate(altitude: 0, azimuth: azimuth))
+                let x = CGFloat(point.x) * reach, y = CGFloat(point.y) * reach
+                minX = min(minX, x); maxX = max(maxX, x)
+                minY = min(minY, y); maxY = max(maxY, y)
+            }
+        }
+        guard minX.isFinite, maxX > minX, maxY > minY else { return CGRect(x: -1, y: -1, width: 2, height: 2) }
+        return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
     }
 
     var body: some View {
@@ -269,9 +291,9 @@ struct SkyView: View {
             if showsControls { cameraFrameControls }
 
             GeometryReader { geometry in
-                let side = min(geometry.size.width, geometry.size.height)
-                let radius = projectionRadius(forSide: side)
-                let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
+                let fit = domeFit(in: geometry.size)
+                let radius = fit.radius
+                let center = fit.center
 
                 ZStack {
                     Canvas { context, _ in
@@ -280,9 +302,8 @@ struct SkyView: View {
                     if showsControls { compassLabels(center: center, radius: radius) }
                 }
             }
-            // As big as the space allows in both directions, and always whole:
-            // this view has room of its own now, never an unbounded column.
-            .aspectRatio(1, contentMode: .fit)
+            // All the room there is, in both directions: `domeFit` shapes
+            // the sky to it, so no square box is imposed here.
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .frame(minHeight: showsControls ? 320 : 0)
 
