@@ -60,3 +60,43 @@ targets:
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
+
+  # Unit tests for the app's plain logic. Deliberately not hosted in the app:
+  # a test host would launch Sky Bother itself, which quits on sight of the
+  # installed copy already running (AppDelegate.terminateIfAlreadyRunning) and
+  # would fetch forecasts and read the real settings file besides. Compiling
+  # the sources straight into the bundle avoids all of that. SkyBotherApp.swift
+  # is left out because it holds @main; nothing else refers to what's in it.
+  SkyBotherTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: SkyBother
+        excludes:
+          - SkyBotherApp.swift
+          - Catalog/Images
+          - Catalog/SkyThumbnails
+          - Assets.xcassets
+          - "**/*.json"
+          - "**/*.jpg"
+      - path: SkyBotherTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.skybother.SkyBotherTests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+
+schemes:
+  SkyBother:
+    build:
+      targets:
+        SkyBother: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - SkyBotherTests
+    archive:
+      config: Release

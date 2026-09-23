@@ -13,11 +13,8 @@ struct NightDetailView: View {
     @State private var isSkyViewExpanded = false
     @State private var sortOption: TargetSortOption = .relevance
     @State private var isHeaderCollapsed = false
-    /// Whether the plan strip is a drag surface rather than a picture.
-    /// Transient on purpose — the *plan* is saved, but whether you currently
-    /// have it open for editing is no more a preference than which target is
-    /// selected.
-    @State private var isEditingPlan = false
+    /// Asks before Reset throws away a Manual plan.
+    @State private var isConfirmingReset = false
     /// The easter egg: the header's moon opens tonight's Moon, properly drawn.
     @State private var isShowingMoon = false
     /// True while the scroll view is actively moving — see the note on
@@ -296,33 +293,16 @@ struct NightDetailView: View {
 
     // MARK: - Auto-plan
 
-    private var autoPlan: [AutoPlanSlot] {
-        // Nothing to suggest for a night that's clouded out. `Planner` keeps a
-        // target list for such a night on purpose — re-planned ignoring cloud,
-        // so the list can say "this is what you'd have had" rather than look
-        // broken — but a running order built out of those is a schedule for a
-        // night that isn't happening, and reads as though the app hasn't
-        // noticed the forecast.
-        guard !plan.isCloudedOut else { return [] }
-        return AutoPlanner.plan(for: plan, minimumScore: state.preferences.minimumScore,
-                                sessionCapMinutes: sessionCapMinutes,
-                                minimumSlotMinutes: state.preferences.minimumSessionMinutes)
-    }
+    private var autoPlan: [AutoPlanSlot] { state.suggestedSlots(for: plan) }
 
-    /// What the strip actually shows: your own plan once you have one, and the
-    /// app's suggestion until then. `nil` from the store is meaningfully
-    /// different from an empty array — the first means "still following the
-    /// suggestion", the second means "I cleared this night on purpose" — which
-    /// is why a cleared night doesn't quietly fill itself back in.
-    private var planSegments: [PlanSegment] {
-        state.storedPlan(for: plan) ?? autoPlan.map {
-            PlanSegment(targetID: $0.targetPlan.id,
-                        targetName: $0.targetPlan.target.displayName,
-                        window: $0.window)
-        }
-    }
+    /// Whether the plan strip is a drag surface rather than a picture.
+    private var isEditingPlan: Bool { state.isEditingPlan(for: plan) }
 
-    private var isOwnPlan: Bool { state.storedPlan(for: plan) != nil }
+    /// What the strip shows: the draft while editing, your own plan once you
+    /// have one, and the app's suggestion until then.
+    private var planSegments: [PlanSegment] { state.displayedPlan(for: plan) }
+
+    private var isOwnPlan: Bool { state.isManualPlan(for: plan) }
 
     /// Minutes in the plan that its targets can't actually be shot in — the
     /// one number worth putting in the header, since a hand-built plan is
@@ -350,18 +330,41 @@ struct NightDetailView: View {
                         .foregroundStyle(unshootableMinutes > 0 ? Palette.marginal : .secondary)
                 }
                 if isEditingPlan {
+                    planButton("Cancel") { state.cancelEditingPlan() }
+                        .help("Close the editor and discard these changes (Esc)")
+                        .onEscapeKey { state.cancelEditingPlan() }
                     if !segments.isEmpty {
-                        planButton("Clear") { state.clearPlan(for: plan) }
-                    }
-                    if isOwnPlan {
-                        planButton("Reset") { state.revertPlanToSuggested(for: plan) }
+                        planButton("Clear") { state.clearDraft() }
+                            .help("Empty the plan. Nothing is saved until Done; Cancel brings it back.")
                     }
                 }
-                planButton(isEditingPlan ? "Done" : "Edit plan",
-                           systemImage: isEditingPlan ? "checkmark.circle.fill" : "slider.horizontal.below.rectangle") {
-                    if !isEditingPlan { state.beginEditingPlan(for: plan, seededWith: autoPlan) }
-                    isEditingPlan.toggle()
+                if isOwnPlan {
+                    planButton("Reset manual plan") { isConfirmingReset = true }
+                        .help("Remove your manual plan and go back to the app's current suggestion")
                 }
+                if isEditingPlan {
+                    planButton(state.planDraft?.isDirty == true ? "Done" : "Close",
+                               systemImage: "checkmark.circle.fill") {
+                        state.finishEditingPlan()
+                    }
+                    .help(state.planDraft?.isDirty == true
+                          ? "Save these changes as your manual plan"
+                          : "No changes to save — the plan stays as it was")
+                } else {
+                    planButton("Edit plan", systemImage: "slider.horizontal.below.rectangle") {
+                        state.beginEditingPlan(for: plan)
+                    }
+                }
+            }
+            .confirmationDialog(resetTitle, isPresented: $isConfirmingReset) {
+                Button("Reset manual plan", role: .destructive) { state.resetPlanToSuggested(for: plan) }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Your manual plan for this night will be removed and replaced by the app's current suggestion, built from the latest forecast and your settings.")
+            }
+
+            if let reset = state.recentReset, reset.planKey == plan.planKey {
+                resetUndoBanner
             }
 
             if segments.isEmpty {
@@ -370,7 +373,7 @@ struct NightDetailView: View {
                     .foregroundStyle(.secondary)
             } else {
                 PlanStripView(plan: plan, segments: segments, isEditing: isEditingPlan) { edited in
-                    state.setPlan(edited, for: plan)
+                    state.updateDraft(edited)
                 }
                 // One height in both modes. Growing on entering edit mode
                 // shoved everything below it down the page at the exact moment
@@ -416,7 +419,7 @@ struct NightDetailView: View {
             )
             .help(manual
                   ? "You have edited this night. It stays exactly as you left it — the app won't re-plan it."
-                  : "The app's own suggestion. Editing it, or pressing Edit plan, makes it yours.")
+                  : "The app's own suggestion. It follows the forecast and your settings until you change it and press Done.")
     }
 
     private var emptyPlanMessage: String {
@@ -427,6 +430,25 @@ struct NightDetailView: View {
             return "Nothing planned. Press + beside any target below to drop it into the night, then drag it where you want it."
         }
         return "Nothing tonight clears your minimum score for long enough to build a session around."
+    }
+
+    private var resetTitle: String {
+        "Reset the plan for \(Format.longDate(plan.date, in: plan.timeZone))?"
+    }
+
+    /// Offered after a Reset until the next edit to any plan — see
+    /// `AppState.recentReset`. Not on a timer: a short one expired before a
+    /// person reading the message could reach the button.
+    private var resetUndoBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.uturn.backward.circle")
+                .foregroundStyle(.secondary)
+            Text("Manual plan removed. This night follows the suggestion again.")
+                .font(.scaled(.caption, scale: uiTextScale))
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            planButton("Undo") { state.undoPlanReset() }
+        }
     }
 
     private func planSummary(_ segments: [PlanSegment]) -> String {
@@ -482,7 +504,7 @@ struct NightDetailView: View {
             }
             if isEditingPlan {
                 Button {
-                    state.removePlanSegment(id: segment.id, from: plan)
+                    state.removeDraftSegment(id: segment.id)
                 } label: {
                     Image(systemName: "minus.circle")
                 }
@@ -825,7 +847,9 @@ struct NightDetailView: View {
                 // button to show. Pressing it twice is a legitimate
                 // thing to do and gives you two blocks.
                 Button {
-                    state.addPlanSegment(for: targetPlan, to: plan)
+                    if let added = state.addDraftSegment(for: targetPlan, in: plan) {
+                        state.selectedTargetID = added.targetID
+                    }
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.scaled(.title3, scale: uiTextScale))

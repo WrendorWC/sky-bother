@@ -1,0 +1,1835 @@
+<!doctype html>
+<html lang="en" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Sky Bother Revised Ui</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="Sky Bother Revised Ui" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-visualize-standalone&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;Sky Bother Revised Ui&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(
+    --background,
+    var(--color-background-primary, light-dark(rgb(255 255 255), rgb(24 24 24)))
+  ) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --color-background-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --card: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --card-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --popover: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255), rgb(45 45 45))
+  );
+  --popover-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --primary: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --primary-foreground: var(
+    --color-text-inverse,
+    light-dark(rgb(255 255 255), rgb(13 13 13))
+  );
+  --secondary: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%))
+  );
+  --secondary-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: var(
+    --color-text-secondary,
+    light-dark(rgb(26 28 31 / 49.4%), rgb(255 255 255 / 49.8%))
+  );
+  --accent: var(
+    --color-background-info,
+    light-dark(rgb(229 242 255), rgb(13 39 63))
+  );
+  --accent-foreground: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --destructive: var(
+    --color-text-warning,
+    light-dark(rgb(226 85 7), rgb(255 133 73))
+  );
+  --border: var(
+    --color-border-secondary,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+  --input: var(
+    --color-border-primary,
+    light-dark(
+      rgb(26 28 31 / 11.8%),
+      color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+    )
+  );
+  --ring: var(
+    --color-ring-primary,
+    light-dark(rgb(51 156 255), rgb(131 195 255 / 76%))
+  );
+  --font-size-base: var(--font-text-md-size, 14px);
+  --blue: light-dark(rgb(51 156 255), rgb(51 156 255));
+  --orange: light-dark(rgb(226 85 7), rgb(251 106 34));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+  --red: light-dark(rgb(224 46 42), rgb(255 103 100));
+  --purple: light-dark(rgb(146 79 247), rgb(173 123 249));
+  --yellow: light-dark(rgb(255 195 0), rgb(255 210 64));
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --icon-size: 16px;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --corner-shape: round;
+  --radius: var(--border-radius-lg, 10px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  /* Preserve MCP aliases for older inline renderers without creating :root cycles. */
+  --color-background-primary: var(
+    --background,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --color-text-primary: var(
+    --foreground,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --color-border-secondary: var(
+    --border,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+
+  margin: 0;
+  padding: var(--visualize-paint-gutter, 0px);
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans) !important;
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium, 500);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: var(--corner-shape);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget &gt; :not(.card, .progress) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+hr {
+  width: 100%;
+  height: 1px;
+  margin-block: 6px;
+  border: 0;
+  background: var(--border);
+}
+
+.nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress {
+  display: flex;
+  height: 8px;
+  margin-block: calc((var(--line-height-normal, 1.5em) - 8px) / 2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.progress-bar:only-child {
+  border-radius: var(--radius-full);
+}
+
+.progress-bar {
+  height: 100%;
+  flex-shrink: 0;
+  border: 0;
+  background: var(--viz-series-1);
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.nav-link,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn,
+.nav-link {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover,
+.nav-link:not(:disabled):not([aria-disabled=&quot;true&quot;]):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.nav-pills .nav-link {
+  min-width: 0;
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.nav-justified .nav-link {
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.nav-pills .nav-link.active {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+.btn:disabled,
+.nav-link:disabled,
+.nav-link[aria-disabled=&quot;true&quot;] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: var(--corner-shape);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+  [aria-pressed=&quot;true&quot;],
+  [aria-selected=&quot;true&quot;],
+  .is-selected
+) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .btn,
+  .nav-link,
+  .form-control,
+  .form-select {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Keep small-screen WebKit from zooming when a text field receives focus. */
+  .form-control,
+  .form-select {
+    font-size: max(16px, var(--font-size-normal));
+  }
+
+  .form-control[type=&quot;file&quot;]::file-selector-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-control-color[type=&quot;color&quot;] {
+    width: 44px;
+    height: 44px;
+  }
+
+  .form-control:is(
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;week&quot;]
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 8px;
+  }
+
+  .form-check {
+    min-height: 44px;
+    padding-inline: 15px;
+  }
+
+  .form-check-input {
+    position: relative;
+  }
+
+  .form-check-input::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    content: &quot;&quot;;
+    transform: translate(-50%, -50%);
+  }
+
+  .form-check-label {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .form-range {
+    height: 44px;
+    touch-action: pan-y;
+  }
+
+  .form-range::-webkit-slider-runnable-track {
+    height: 44px;
+  }
+
+  .form-range::-moz-range-track {
+    height: 44px;
+  }
+
+  .form-range::-webkit-slider-thumb {
+    margin-top: 12px;
+  }
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+/* Model-authored chart rules can otherwise stretch icons after these styles load. */
+svg.lucide {
+  display: block;
+  width: var(--icon-size) !important;
+  height: var(--icon-size) !important;
+  flex: none;
+  margin: 0 !important;
+  stroke-width: 1.6;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;sky-bother-walkthrough&quot;&gt;
+  &lt;div class=&quot;nav nav-pills&quot; role=&quot;tablist&quot; aria-label=&quot;Sky Bother mockup screens&quot;&gt;
+    &lt;button class=&quot;nav-link active&quot; id=&quot;sb-tab-home&quot; role=&quot;tab&quot; aria-controls=&quot;sb-screen-home&quot; aria-selected=&quot;true&quot; type=&quot;button&quot;&gt;1 Home&lt;/button&gt;
+    &lt;button class=&quot;nav-link&quot; id=&quot;sb-tab-plan&quot; role=&quot;tab&quot; aria-controls=&quot;sb-screen-plan&quot; aria-selected=&quot;false&quot; type=&quot;button&quot;&gt;2 Planner&lt;/button&gt;
+    &lt;button class=&quot;nav-link&quot; id=&quot;sb-tab-sky&quot; role=&quot;tab&quot; aria-controls=&quot;sb-screen-sky&quot; aria-selected=&quot;false&quot; type=&quot;button&quot;&gt;3 Sky View&lt;/button&gt;
+    &lt;button class=&quot;nav-link&quot; id=&quot;sb-tab-catalog&quot; role=&quot;tab&quot; aria-controls=&quot;sb-screen-catalog&quot; aria-selected=&quot;false&quot; type=&quot;button&quot;&gt;4 Catalog&lt;/button&gt;
+    &lt;button class=&quot;nav-link&quot; id=&quot;sb-tab-setup&quot; role=&quot;tab&quot; aria-controls=&quot;sb-screen-setup&quot; aria-selected=&quot;false&quot; type=&quot;button&quot;&gt;5 Setup&lt;/button&gt;
+    &lt;button class=&quot;nav-link&quot; id=&quot;sb-tab-session&quot; role=&quot;tab&quot; aria-controls=&quot;sb-screen-session&quot; aria-selected=&quot;false&quot; type=&quot;button&quot;&gt;6 Session&lt;/button&gt;
+  &lt;/div&gt;
+
+  &lt;section id=&quot;sb-screen-home&quot; class=&quot;sb-screen&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;sb-tab-home&quot;&gt;
+    &lt;div class=&quot;sb-window&quot; aria-label=&quot;Revised Sky Bother home screen&quot;&gt;
+      &lt;header class=&quot;sb-titlebar&quot;&gt;
+        &lt;div class=&quot;sb-title&quot;&gt;&lt;span class=&quot;sb-logo&quot;&gt;✦&lt;/span&gt;&lt;span&gt;Sky Bother&lt;/span&gt;&lt;span class=&quot;sb-context&quot;&gt;Home Back Yard&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;sb-title-actions&quot;&gt;&lt;button type=&quot;button&quot;&gt;Refresh&lt;/button&gt;&lt;button type=&quot;button&quot;&gt;Catalog&lt;/button&gt;&lt;button type=&quot;button&quot;&gt;Settings&lt;/button&gt;&lt;/div&gt;
+      &lt;/header&gt;
+      &lt;div class=&quot;sb-home-grid&quot;&gt;
+        &lt;aside class=&quot;sb-night-rail&quot; aria-label=&quot;Upcoming nights&quot;&gt;
+          &lt;div class=&quot;sb-section-label&quot;&gt;Nights&lt;/div&gt;
+          &lt;button class=&quot;sb-night&quot;&gt;&lt;span class=&quot;sb-score poor&quot;&gt;18&lt;/span&gt;&lt;span&gt;&lt;b&gt;Tonight&lt;/b&gt;&lt;small&gt;87% moon · 33% cloud&lt;/small&gt;&lt;/span&gt;&lt;/button&gt;
+          &lt;button class=&quot;sb-night&quot;&gt;&lt;span class=&quot;sb-score good&quot;&gt;70&lt;/span&gt;&lt;span&gt;&lt;b&gt;Wed Sep 23&lt;/b&gt;&lt;small&gt;7h 20m · 13% cloud&lt;/small&gt;&lt;/span&gt;&lt;/button&gt;
+          &lt;button class=&quot;sb-night&quot;&gt;&lt;span class=&quot;sb-score good&quot;&gt;63&lt;/span&gt;&lt;span&gt;&lt;b&gt;Thu Sep 24&lt;/b&gt;&lt;small&gt;7h 15m · 18% cloud&lt;/small&gt;&lt;/span&gt;&lt;/button&gt;
+          &lt;button class=&quot;sb-night is-selected&quot;&gt;&lt;span class=&quot;sb-score marginal&quot;&gt;60&lt;/span&gt;&lt;span&gt;&lt;b&gt;Fri Sep 25&lt;/b&gt;&lt;small&gt;9h · 8% cloud&lt;/small&gt;&lt;/span&gt;&lt;/button&gt;
+          &lt;button class=&quot;sb-night&quot;&gt;&lt;span class=&quot;sb-score marginal&quot;&gt;59&lt;/span&gt;&lt;span&gt;&lt;b&gt;Sat Sep 26&lt;/b&gt;&lt;small&gt;10h 5m · 10% cloud&lt;/small&gt;&lt;/span&gt;&lt;/button&gt;
+          &lt;div class=&quot;sb-nearby&quot;&gt;
+            &lt;span class=&quot;sb-section-label&quot;&gt;Better site nearby&lt;/span&gt;
+            &lt;b&gt;Wesley Chapel District Park&lt;/b&gt;
+            &lt;small&gt;Horizon improves from 52° to 3° toward the south&lt;/small&gt;
+            &lt;button type=&quot;button&quot;&gt;Compare site&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/aside&gt;
+
+        &lt;main class=&quot;sb-home-main&quot;&gt;
+          &lt;div class=&quot;sb-night-summary&quot;&gt;
+            &lt;span class=&quot;sb-score marginal large&quot;&gt;60&lt;/span&gt;
+            &lt;div&gt;&lt;h2&gt;Friday September 25&lt;/h2&gt;&lt;div class=&quot;sb-verdict marginal-text&quot;&gt;Marginal because the full moon dominates&lt;/div&gt;&lt;p&gt;Best imaging 21:24–06:24&lt;/p&gt;&lt;/div&gt;
+            &lt;button type=&quot;button&quot; class=&quot;sb-primary&quot; data-go=&quot;plan&quot;&gt;Open planner&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;sb-conditions&quot;&gt;
+            &lt;span&gt;&lt;small&gt;Astronomical dark&lt;/small&gt;&lt;b&gt;20:40–06:01&lt;/b&gt;&lt;/span&gt;
+            &lt;span&gt;&lt;small&gt;Moon&lt;/small&gt;&lt;b&gt;100% · up all night&lt;/b&gt;&lt;/span&gt;
+            &lt;span&gt;&lt;small&gt;Cloud in dark&lt;/small&gt;&lt;b&gt;8%&lt;/b&gt;&lt;/span&gt;
+            &lt;span&gt;&lt;small&gt;Dew risk&lt;/small&gt;&lt;b&gt;High after 23:12&lt;/b&gt;&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;sb-chart&quot; aria-label=&quot;Night timeline showing darkness moonlight cloud and selected target altitude&quot;&gt;
+            &lt;div class=&quot;sb-chart-labels&quot;&gt;&lt;span&gt;19:00&lt;/span&gt;&lt;span&gt;22:00&lt;/span&gt;&lt;span&gt;01:00&lt;/span&gt;&lt;span&gt;04:00&lt;/span&gt;&lt;span&gt;07:00&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&quot;sb-dark-band&quot;&gt;&lt;/div&gt;&lt;div class=&quot;sb-moon-band&quot;&gt;&lt;/div&gt;&lt;div class=&quot;sb-altitude-line&quot;&gt;&lt;/div&gt;
+            &lt;span class=&quot;sb-chart-note&quot;&gt;NGC 1514 peaks 05:17 · 87°&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;section class=&quot;sb-plan-summary&quot;&gt;
+            &lt;div class=&quot;sb-section-head&quot;&gt;&lt;div&gt;&lt;span class=&quot;sb-section-label&quot;&gt;Tonight’s plan&lt;/span&gt;&lt;span class=&quot;sb-badge&quot;&gt;Suggested&lt;/span&gt;&lt;/div&gt;&lt;button type=&quot;button&quot; data-go=&quot;plan&quot;&gt;Edit plan&lt;/button&gt;&lt;/div&gt;
+            &lt;div class=&quot;sb-gantt&quot;&gt;&lt;span style=&quot;flex:2&quot;&gt;NGC 7008&lt;/span&gt;&lt;span style=&quot;flex:3.5&quot;&gt;Little Dumbbell&lt;/span&gt;&lt;span style=&quot;flex:3.5&quot;&gt;Flaming Star Nebula&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&quot;sb-plan-row&quot;&gt;&lt;span class=&quot;sb-score excellent&quot;&gt;79&lt;/span&gt;&lt;div&gt;&lt;b&gt;NGC 7008&lt;/b&gt;&lt;small&gt;Barely resolved · about 37 pixels&lt;/small&gt;&lt;/div&gt;&lt;time&gt;21:25–23:25&lt;/time&gt;&lt;/div&gt;
+            &lt;div class=&quot;sb-plan-row&quot;&gt;&lt;span class=&quot;sb-score excellent&quot;&gt;80&lt;/span&gt;&lt;div&gt;&lt;b&gt;Little Dumbbell&lt;/b&gt;&lt;small&gt;Small in frame · 2% of long side&lt;/small&gt;&lt;/div&gt;&lt;time&gt;23:25–02:55&lt;/time&gt;&lt;/div&gt;
+            &lt;div class=&quot;sb-plan-row&quot;&gt;&lt;span class=&quot;sb-score exceptional&quot;&gt;87&lt;/span&gt;&lt;div&gt;&lt;b&gt;Flaming Star Nebula&lt;/b&gt;&lt;small&gt;Good framing · 25% of long side&lt;/small&gt;&lt;/div&gt;&lt;time&gt;02:55–06:25&lt;/time&gt;&lt;/div&gt;
+          &lt;/section&gt;
+        &lt;/main&gt;
+
+        &lt;aside class=&quot;sb-inspector&quot;&gt;
+          &lt;span class=&quot;sb-section-label&quot;&gt;Selected target&lt;/span&gt;
+          &lt;div class=&quot;sb-inspector-title&quot;&gt;&lt;div&gt;&lt;h2 class=&quot;sb-selected-name&quot;&gt;NGC 1514&lt;/h2&gt;&lt;p&gt;Planetary nebula in Taurus&lt;/p&gt;&lt;/div&gt;&lt;span class=&quot;sb-score exceptional large sb-selected-score&quot;&gt;82&lt;/span&gt;&lt;/div&gt;
+          &lt;div class=&quot;sb-target-verdict&quot;&gt;&lt;b&gt;Excellent&lt;/b&gt;&lt;span&gt;4h 35m usable · best 01:49–06:24&lt;/span&gt;&lt;/div&gt;
+          &lt;div class=&quot;sb-frame-preview&quot;&gt;&lt;div class=&quot;sb-frame-box&quot;&gt;&lt;/div&gt;&lt;span&gt;1.38° × 2.45°&lt;/span&gt;&lt;/div&gt;
+          &lt;h3&gt;Why this score&lt;/h3&gt;
+          &lt;p class=&quot;sb-warning sb-selected-reason&quot;&gt;Main limitation · Small in frame for this rig&lt;/p&gt;
+          &lt;div class=&quot;sb-meter&quot;&gt;&lt;span&gt;Time on target&lt;/span&gt;&lt;b style=&quot;width:100%&quot;&gt;&lt;/b&gt;&lt;em&gt;Exceptional&lt;/em&gt;&lt;/div&gt;
+          &lt;div class=&quot;sb-meter&quot;&gt;&lt;span&gt;Sky darkness&lt;/span&gt;&lt;b style=&quot;width:82%&quot;&gt;&lt;/b&gt;&lt;em&gt;Excellent&lt;/em&gt;&lt;/div&gt;
+          &lt;div class=&quot;sb-meter&quot;&gt;&lt;span&gt;Cloud cover&lt;/span&gt;&lt;b style=&quot;width:98%&quot;&gt;&lt;/b&gt;&lt;em&gt;Exceptional&lt;/em&gt;&lt;/div&gt;
+          &lt;details&gt;&lt;summary&gt;Technical details&lt;/summary&gt;&lt;p&gt;57 pixels across · 2.30 arcsec per pixel · peak altitude 87° · moon separation 66°&lt;/p&gt;&lt;/details&gt;
+        &lt;/aside&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;section id=&quot;sb-screen-plan&quot; class=&quot;sb-screen&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;sb-tab-plan&quot; hidden&gt;
+    &lt;div class=&quot;sb-window&quot; aria-label=&quot;Revised dedicated planning workspace&quot;&gt;
+      &lt;header class=&quot;sb-titlebar&quot;&gt;
+        &lt;div class=&quot;sb-title&quot;&gt;&lt;button type=&quot;button&quot; data-go=&quot;home&quot;&gt;← Home&lt;/button&gt;&lt;span&gt;Friday September 25&lt;/span&gt;&lt;span class=&quot;sb-context&quot;&gt;Back Yard · Seestar S50 Pro&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;sb-title-actions&quot;&gt;&lt;button type=&quot;button&quot;&gt;Cancel&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;sb-primary&quot;&gt;Done&lt;/button&gt;&lt;/div&gt;
+      &lt;/header&gt;
+      &lt;div class=&quot;sb-planner&quot;&gt;
+        &lt;div class=&quot;sb-plan-context&quot;&gt;&lt;span class=&quot;sb-score marginal&quot;&gt;60&lt;/span&gt;&lt;div&gt;&lt;b&gt;Marginal&lt;/b&gt;&lt;small&gt;Best imaging 21:24–06:24 · Full moon is the main limitation&lt;/small&gt;&lt;/div&gt;&lt;span class=&quot;sb-save-state&quot;&gt;No unsaved changes&lt;/span&gt;&lt;/div&gt;
+        &lt;section class=&quot;sb-timeline-editor&quot;&gt;
+          &lt;div class=&quot;sb-section-head&quot;&gt;&lt;span class=&quot;sb-section-label&quot;&gt;Session timeline&lt;/span&gt;&lt;span&gt;3 blocks · 9h · 0m unshootable&lt;/span&gt;&lt;/div&gt;
+          &lt;div class=&quot;sb-time-axis&quot;&gt;&lt;span&gt;21:00&lt;/span&gt;&lt;span&gt;23:00&lt;/span&gt;&lt;span&gt;01:00&lt;/span&gt;&lt;span&gt;03:00&lt;/span&gt;&lt;span&gt;05:00&lt;/span&gt;&lt;span&gt;06:30&lt;/span&gt;&lt;/div&gt;
+          &lt;div class=&quot;sb-gantt editable&quot;&gt;&lt;span style=&quot;flex:2&quot;&gt;NGC 7008&lt;small&gt;21:25–23:25&lt;/small&gt;&lt;/span&gt;&lt;span style=&quot;flex:3.5&quot;&gt;Little Dumbbell&lt;small&gt;23:25–02:55&lt;/small&gt;&lt;/span&gt;&lt;span style=&quot;flex:3.5&quot;&gt;Flaming Star Nebula&lt;small&gt;02:55–06:25&lt;/small&gt;&lt;/span&gt;&lt;/div&gt;
+          &lt;small&gt;Drag a block to move it · Drag either edge to resize · Hatched time is allowed but flagged&lt;/small&gt;
+        &lt;/section&gt;
+        &lt;div class=&quot;sb-planner-lower&quot;&gt;
+          &lt;section class=&quot;sb-candidates&quot;&gt;
+            &lt;div class=&quot;sb-filter-row&quot;&gt;&lt;input aria-label=&quot;Search planning candidates&quot; placeholder=&quot;Search targets&quot;&gt;&lt;select aria-label=&quot;Target type&quot;&gt;&lt;option&gt;All types&lt;/option&gt;&lt;option&gt;Nebulae&lt;/option&gt;&lt;option&gt;Galaxies&lt;/option&gt;&lt;/select&gt;&lt;select aria-label=&quot;Sort targets&quot;&gt;&lt;option&gt;Most relevant&lt;/option&gt;&lt;option&gt;Best score&lt;/option&gt;&lt;option&gt;Longest window&lt;/option&gt;&lt;/select&gt;&lt;/div&gt;
+            &lt;button class=&quot;sb-candidate sb-target&quot; data-name=&quot;Flaming Star Nebula&quot; data-score=&quot;87&quot; data-reason=&quot;Main limitation · Full moon reduces contrast&quot;&gt;&lt;span class=&quot;sb-score exceptional&quot;&gt;87&lt;/span&gt;&lt;span&gt;&lt;b&gt;Flaming Star Nebula&lt;/b&gt;&lt;small&gt;05:57 best · 25% frame · 3h 30m&lt;/small&gt;&lt;/span&gt;&lt;em&gt;Planned&lt;/em&gt;&lt;/button&gt;
+            &lt;button class=&quot;sb-candidate sb-target is-selected&quot; data-name=&quot;NGC 1514&quot; data-score=&quot;82&quot; data-reason=&quot;Main limitation · Small in frame for this rig&quot;&gt;&lt;span class=&quot;sb-score exceptional&quot;&gt;82&lt;/span&gt;&lt;span&gt;&lt;b&gt;NGC 1514&lt;/b&gt;&lt;small&gt;05:57 best · 1% frame · 4h 35m&lt;/small&gt;&lt;/span&gt;&lt;i data-lucide=&quot;plus&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;
+            &lt;button class=&quot;sb-candidate sb-target&quot; data-name=&quot;Little Dumbbell&quot; data-score=&quot;80&quot; data-reason=&quot;Main limitation · Small in frame at 2%&quot;&gt;&lt;span class=&quot;sb-score excellent&quot;&gt;80&lt;/span&gt;&lt;span&gt;&lt;b&gt;Little Dumbbell&lt;/b&gt;&lt;small&gt;05:57 best · 2% frame · 6h 55m&lt;/small&gt;&lt;/span&gt;&lt;em&gt;Planned&lt;/em&gt;&lt;/button&gt;
+            &lt;button class=&quot;sb-candidate sb-target&quot; data-name=&quot;Cocoon Nebula&quot; data-score=&quot;78&quot; data-reason=&quot;Main limitation · Moonlight lowers contrast&quot;&gt;&lt;span class=&quot;sb-score excellent&quot;&gt;78&lt;/span&gt;&lt;span&gt;&lt;b&gt;Cocoon Nebula&lt;/b&gt;&lt;small&gt;02:02 best · 7% frame · 5h 10m&lt;/small&gt;&lt;/span&gt;&lt;i data-lucide=&quot;plus&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;
+          &lt;/section&gt;
+          &lt;aside class=&quot;sb-inspector planner-inspector&quot;&gt;
+            &lt;span class=&quot;sb-section-label&quot;&gt;Selected target&lt;/span&gt;&lt;h2 class=&quot;sb-selected-name&quot;&gt;NGC 1514&lt;/h2&gt;&lt;div class=&quot;sb-target-verdict&quot;&gt;&lt;b&gt;Excellent &lt;span class=&quot;sb-selected-score&quot;&gt;82&lt;/span&gt;&lt;/b&gt;&lt;span&gt;4h 35m usable&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&quot;sb-mini-availability&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;b&gt;&lt;/b&gt;&lt;/div&gt;
+            &lt;div class=&quot;sb-frame-preview compact&quot;&gt;&lt;div class=&quot;sb-frame-box&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+            &lt;p class=&quot;sb-warning sb-selected-reason&quot;&gt;Main limitation · Small in frame for this rig&lt;/p&gt;
+            &lt;button type=&quot;button&quot; class=&quot;sb-primary sb-add&quot;&gt;Add to plan&lt;/button&gt;
+          &lt;/aside&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;section id=&quot;sb-screen-sky&quot; class=&quot;sb-screen&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;sb-tab-sky&quot; hidden&gt;
+    &lt;div class=&quot;sb-window&quot; aria-label=&quot;Revised Sky View workspace&quot;&gt;
+      &lt;header class=&quot;sb-titlebar&quot;&gt;&lt;div class=&quot;sb-title&quot;&gt;&lt;button type=&quot;button&quot; data-go=&quot;home&quot;&gt;← Home&lt;/button&gt;&lt;span&gt;Sky View&lt;/span&gt;&lt;span class=&quot;sb-context&quot;&gt;Friday September 25 · NGC 1514&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;sb-title-actions&quot;&gt;&lt;button type=&quot;button&quot;&gt;Seestar S50 Pro&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;sb-primary sb-jump&quot;&gt;Jump to best window&lt;/button&gt;&lt;/div&gt;&lt;/header&gt;
+      &lt;div class=&quot;sb-sky-layout&quot;&gt;
+        &lt;section class=&quot;sb-sky-stage&quot;&gt;
+          &lt;svg viewBox=&quot;0 0 760 470&quot; role=&quot;img&quot; aria-label=&quot;Sky dome showing NGC 1514 path rising to 87 degrees in the west northwest&quot;&gt;
+            &lt;title&gt;NGC 1514 through the night&lt;/title&gt;&lt;desc&gt;The target rises in the east, peaks at 87 degrees around 05:17, then moves west northwest.&lt;/desc&gt;
+            &lt;path class=&quot;dome&quot; d=&quot;M80 400 A300 300 0 0 1 680 400 Z&quot;&gt;&lt;/path&gt;
+            &lt;path class=&quot;ring&quot; d=&quot;M155 400 A225 225 0 0 1 605 400&quot;&gt;&lt;/path&gt;&lt;path class=&quot;ring&quot; d=&quot;M230 400 A150 150 0 0 1 530 400&quot;&gt;&lt;/path&gt;
+            &lt;path class=&quot;target-path&quot; d=&quot;M90 420 C210 350 270 265 380 185 C470 120 560 132 685 255&quot;&gt;&lt;/path&gt;
+            &lt;circle class=&quot;target-dot&quot; cx=&quot;520&quot; cy=&quot;135&quot; r=&quot;10&quot;&gt;&lt;/circle&gt;&lt;rect class=&quot;camera-frame&quot; x=&quot;492&quot; y=&quot;103&quot; width=&quot;56&quot; height=&quot;64&quot;&gt;&lt;/rect&gt;
+            &lt;text x=&quot;548&quot; y=&quot;128&quot;&gt;05:17 · 87° · WNW&lt;/text&gt;&lt;text x=&quot;80&quot; y=&quot;440&quot;&gt;E&lt;/text&gt;&lt;text x=&quot;370&quot; y=&quot;88&quot;&gt;N&lt;/text&gt;&lt;text x=&quot;675&quot; y=&quot;440&quot;&gt;W&lt;/text&gt;
+          &lt;/svg&gt;
+          &lt;div class=&quot;sb-sky-controls&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;sb-primary sb-play&quot;&gt;Play&lt;/button&gt;&lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;100&quot; value=&quot;20&quot; aria-label=&quot;Simulated time&quot;&gt;&lt;time class=&quot;sb-sky-time&quot;&gt;21:24&lt;/time&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt; Follow plan&lt;/label&gt;&lt;/div&gt;
+          &lt;div class=&quot;sb-time-axis&quot;&gt;&lt;span&gt;18:52&lt;/span&gt;&lt;span&gt;21:24 dark&lt;/span&gt;&lt;span&gt;00:00&lt;/span&gt;&lt;span&gt;05:17 peak&lt;/span&gt;&lt;span&gt;06:24 dawn&lt;/span&gt;&lt;span&gt;07:49&lt;/span&gt;&lt;/div&gt;
+        &lt;/section&gt;
+        &lt;aside class=&quot;sb-inspector sky-inspector&quot;&gt;&lt;span class=&quot;sb-section-label&quot;&gt;Current view&lt;/span&gt;&lt;h1 class=&quot;sb-sky-time&quot;&gt;21:24&lt;/h1&gt;&lt;h2&gt;NGC 1514&lt;/h2&gt;&lt;div class=&quot;sb-status-text&quot;&gt;Altitude 12° · East · rising&lt;/div&gt;&lt;div class=&quot;sb-frame-preview tall&quot;&gt;&lt;div class=&quot;sb-frame-box&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;p class=&quot;sb-warning&quot;&gt;Below your 30° minimum until 22:46&lt;/p&gt;&lt;div class=&quot;sb-sky-plan&quot;&gt;&lt;span&gt;21:25&lt;/span&gt;&lt;b&gt;NGC 7008&lt;/b&gt;&lt;span&gt;23:25&lt;/span&gt;&lt;b&gt;Little Dumbbell&lt;/b&gt;&lt;span&gt;02:55&lt;/span&gt;&lt;b&gt;Flaming Star Nebula&lt;/b&gt;&lt;/div&gt;&lt;/aside&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;section id=&quot;sb-screen-catalog&quot; class=&quot;sb-screen&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;sb-tab-catalog&quot; hidden&gt;
+    &lt;div class=&quot;sb-window&quot; aria-label=&quot;Revised target catalog&quot;&gt;
+      &lt;header class=&quot;sb-titlebar&quot;&gt;&lt;div class=&quot;sb-title&quot;&gt;&lt;button type=&quot;button&quot; data-go=&quot;home&quot;&gt;← Home&lt;/button&gt;&lt;span&gt;Target Catalog&lt;/span&gt;&lt;span class=&quot;sb-context&quot;&gt;Friday Sep 25 · Back Yard · Seestar S50 Pro&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;sb-title-actions&quot;&gt;&lt;button type=&quot;button&quot;&gt;Add custom target&lt;/button&gt;&lt;/div&gt;&lt;/header&gt;
+      &lt;div class=&quot;sb-catalog-tools&quot;&gt;&lt;input placeholder=&quot;Search 1,159 targets&quot; aria-label=&quot;Search target catalog&quot;&gt;&lt;select aria-label=&quot;Catalog filter&quot;&gt;&lt;option&gt;Good tonight&lt;/option&gt;&lt;option&gt;All targets&lt;/option&gt;&lt;option&gt;Fits my frame&lt;/option&gt;&lt;/select&gt;&lt;select aria-label=&quot;Catalog sort&quot;&gt;&lt;option&gt;Best tonight&lt;/option&gt;&lt;option&gt;Alphabetical&lt;/option&gt;&lt;option&gt;Longest window&lt;/option&gt;&lt;/select&gt;&lt;/div&gt;
+      &lt;div class=&quot;sb-catalog-grid&quot;&gt;
+        &lt;button class=&quot;sb-catalog-card&quot;&gt;&lt;span class=&quot;sb-space-image galaxy&quot;&gt;&lt;/span&gt;&lt;span&gt;&lt;b&gt;Andromeda Galaxy&lt;/b&gt;&lt;small&gt;M31 · Galaxy&lt;/small&gt;&lt;/span&gt;&lt;em&gt;64 Good · too large&lt;/em&gt;&lt;/button&gt;
+        &lt;button class=&quot;sb-catalog-card&quot;&gt;&lt;span class=&quot;sb-space-image nebula&quot;&gt;&lt;/span&gt;&lt;span&gt;&lt;b&gt;Flaming Star Nebula&lt;/b&gt;&lt;small&gt;IC 405 · Emission&lt;/small&gt;&lt;/span&gt;&lt;em&gt;87 Excellent · 3h 30m&lt;/em&gt;&lt;/button&gt;
+        &lt;button class=&quot;sb-catalog-card&quot;&gt;&lt;span class=&quot;sb-space-image planetary&quot;&gt;&lt;/span&gt;&lt;span&gt;&lt;b&gt;NGC 1514&lt;/b&gt;&lt;small&gt;Planetary nebula&lt;/small&gt;&lt;/span&gt;&lt;em&gt;82 Excellent · 4h 35m&lt;/em&gt;&lt;/button&gt;
+        &lt;button class=&quot;sb-catalog-card&quot;&gt;&lt;span class=&quot;sb-space-image cluster&quot;&gt;&lt;/span&gt;&lt;span&gt;&lt;b&gt;Double Cluster&lt;/b&gt;&lt;small&gt;NGC 869 · Open cluster&lt;/small&gt;&lt;/span&gt;&lt;em&gt;78 Excellent · 6h 15m&lt;/em&gt;&lt;/button&gt;
+        &lt;button class=&quot;sb-catalog-card&quot;&gt;&lt;span class=&quot;sb-space-image veil&quot;&gt;&lt;/span&gt;&lt;span&gt;&lt;b&gt;Eastern Veil&lt;/b&gt;&lt;small&gt;NGC 6992 · Remnant&lt;/small&gt;&lt;/span&gt;&lt;em&gt;77 Excellent · 3h 35m&lt;/em&gt;&lt;/button&gt;
+        &lt;button class=&quot;sb-catalog-card&quot;&gt;&lt;span class=&quot;sb-space-image cocoon&quot;&gt;&lt;/span&gt;&lt;span&gt;&lt;b&gt;Cocoon Nebula&lt;/b&gt;&lt;small&gt;IC 5146 · Emission&lt;/small&gt;&lt;/span&gt;&lt;em&gt;78 Excellent · 5h 10m&lt;/em&gt;&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;sb-catalog-detail&quot;&gt;&lt;div&gt;&lt;span class=&quot;sb-section-label&quot;&gt;Selected target&lt;/span&gt;&lt;h2&gt;NGC 1514&lt;/h2&gt;&lt;p&gt;Excellent 82 · Best window 01:49–06:24 · Small in frame for this rig&lt;/p&gt;&lt;/div&gt;&lt;div class=&quot;sb-title-actions&quot;&gt;&lt;button type=&quot;button&quot; data-go=&quot;sky&quot;&gt;View in Sky View&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;sb-primary&quot; data-go=&quot;plan&quot;&gt;Add to Friday plan&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;section id=&quot;sb-screen-setup&quot; class=&quot;sb-screen&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;sb-tab-setup&quot; hidden&gt;
+    &lt;div class=&quot;sb-window&quot; aria-label=&quot;Guided Sky Bother setup&quot;&gt;
+      &lt;header class=&quot;sb-titlebar&quot;&gt;&lt;div class=&quot;sb-title&quot;&gt;&lt;button type=&quot;button&quot; data-go=&quot;home&quot;&gt;← Home&lt;/button&gt;&lt;span&gt;Set up Sky Bother&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;sb-title-actions&quot;&gt;&lt;button type=&quot;button&quot;&gt;Save and close&lt;/button&gt;&lt;/div&gt;&lt;/header&gt;
+      &lt;div class=&quot;sb-setup&quot;&gt;
+        &lt;div class=&quot;sb-steps&quot; aria-label=&quot;Setup progress&quot;&gt;&lt;button class=&quot;is-active&quot;&gt;1&lt;span&gt;Site&lt;/span&gt;&lt;/button&gt;&lt;i&gt;&lt;/i&gt;&lt;button&gt;2&lt;span&gt;Horizon&lt;/span&gt;&lt;/button&gt;&lt;i&gt;&lt;/i&gt;&lt;button&gt;3&lt;span&gt;Rig&lt;/span&gt;&lt;/button&gt;&lt;i&gt;&lt;/i&gt;&lt;button&gt;4&lt;span&gt;Goal&lt;/span&gt;&lt;/button&gt;&lt;i&gt;&lt;/i&gt;&lt;button&gt;5&lt;span&gt;First plan&lt;/span&gt;&lt;/button&gt;&lt;/div&gt;
+        &lt;section class=&quot;sb-setup-panel&quot;&gt;&lt;span class=&quot;sb-section-label&quot;&gt;Step &lt;b class=&quot;sb-setup-number&quot;&gt;1&lt;/b&gt; of 5&lt;/span&gt;&lt;h1 class=&quot;sb-setup-heading&quot;&gt;Choose your observing site&lt;/h1&gt;&lt;p class=&quot;sb-setup-copy&quot;&gt;Search by town city or landmark. You can fine tune coordinates later.&lt;/p&gt;&lt;div class=&quot;sb-setup-content&quot;&gt;&lt;label&gt;Town city or landmark&lt;input value=&quot;Wesley Chapel Florida&quot;&gt;&lt;/label&gt;&lt;button type=&quot;button&quot;&gt;Search&lt;/button&gt;&lt;button class=&quot;sb-site-choice is-selected&quot;&gt;&lt;b&gt;Home Back Yard&lt;/b&gt;&lt;small&gt;Wesley Chapel · Eastern Time · Bortle 7&lt;/small&gt;&lt;em&gt;Selected&lt;/em&gt;&lt;/button&gt;&lt;button class=&quot;sb-site-choice&quot;&gt;&lt;b&gt;Home Front Yard&lt;/b&gt;&lt;small&gt;Same weather · more open southeast horizon&lt;/small&gt;&lt;em&gt;Choose&lt;/em&gt;&lt;/button&gt;&lt;/div&gt;&lt;div class=&quot;sb-setup-actions&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;sb-back&quot; disabled&gt;Back&lt;/button&gt;&lt;span&gt;Progress saves automatically&lt;/span&gt;&lt;button type=&quot;button&quot; class=&quot;sb-primary sb-continue&quot;&gt;Continue&lt;/button&gt;&lt;/div&gt;&lt;/section&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;section id=&quot;sb-screen-session&quot; class=&quot;sb-screen&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;sb-tab-session&quot; hidden&gt;
+    &lt;div class=&quot;sb-window session-window&quot; aria-label=&quot;Outdoor session mode&quot;&gt;
+      &lt;header class=&quot;sb-titlebar&quot;&gt;&lt;div class=&quot;sb-title&quot;&gt;&lt;button type=&quot;button&quot; data-go=&quot;home&quot;&gt;← Home&lt;/button&gt;&lt;span&gt;Session in progress&lt;/span&gt;&lt;span class=&quot;sb-context&quot;&gt;Friday Sep 25 · Back Yard&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;sb-title-actions&quot;&gt;&lt;button type=&quot;button&quot;&gt;End session&lt;/button&gt;&lt;/div&gt;&lt;/header&gt;
+      &lt;div class=&quot;sb-session&quot;&gt;
+        &lt;section class=&quot;sb-current-target&quot;&gt;&lt;span class=&quot;sb-section-label&quot;&gt;Now imaging&lt;/span&gt;&lt;h1 class=&quot;sb-session-target&quot;&gt;NGC 7008&lt;/h1&gt;&lt;p class=&quot;sb-session-time&quot;&gt;21:25–23:25 · 1h 18m remaining&lt;/p&gt;&lt;div class=&quot;sb-session-progress&quot;&gt;&lt;b style=&quot;width:35%&quot;&gt;&lt;/b&gt;&lt;/div&gt;&lt;div class=&quot;sb-session-frame&quot;&gt;&lt;div class=&quot;sb-space-image planetary&quot;&gt;&lt;/div&gt;&lt;div class=&quot;sb-frame-box&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;sb-session-actions&quot;&gt;&lt;button type=&quot;button&quot;&gt;Skip target&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;sb-primary sb-complete&quot;&gt;Mark complete&lt;/button&gt;&lt;/div&gt;&lt;/section&gt;
+        &lt;aside class=&quot;sb-session-side&quot;&gt;&lt;section&gt;&lt;span class=&quot;sb-section-label&quot;&gt;Conditions&lt;/span&gt;&lt;div class=&quot;sb-condition-line&quot;&gt;&lt;b&gt;Cloud&lt;/b&gt;&lt;span&gt;8% · stable&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;sb-condition-line warning&quot;&gt;&lt;b&gt;Dew&lt;/b&gt;&lt;span&gt;High after 23:12 · heater recommended&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;sb-condition-line&quot;&gt;&lt;b&gt;Wind&lt;/b&gt;&lt;span&gt;Gusts 20 mph&lt;/span&gt;&lt;/div&gt;&lt;/section&gt;&lt;section&gt;&lt;span class=&quot;sb-section-label&quot;&gt;Up next&lt;/span&gt;&lt;div class=&quot;sb-next-target&quot;&gt;&lt;span class=&quot;sb-score excellent&quot;&gt;80&lt;/span&gt;&lt;div&gt;&lt;b&gt;Little Dumbbell&lt;/b&gt;&lt;small&gt;23:25–02:55 · 3h 30m&lt;/small&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;sb-next-target&quot;&gt;&lt;span class=&quot;sb-score exceptional&quot;&gt;87&lt;/span&gt;&lt;div&gt;&lt;b&gt;Flaming Star Nebula&lt;/b&gt;&lt;small&gt;02:55–06:25 · 3h 30m&lt;/small&gt;&lt;/div&gt;&lt;/div&gt;&lt;/section&gt;&lt;section&gt;&lt;span class=&quot;sb-section-label&quot;&gt;Session progress&lt;/span&gt;&lt;p class=&quot;sb-session-count&quot;&gt;1 of 3 targets · 42m captured&lt;/p&gt;&lt;/section&gt;&lt;/aside&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+#sky-bother-walkthrough {
+  --sb-bg: light-dark(#ebe9f1, #080711);
+  --sb-window: light-dark(#f8f7fb, #0e0c18);
+  --sb-surface: light-dark(#ffffff, #171422);
+  --sb-surface-2: light-dark(#f0edf6, #211c30);
+  --sb-border: light-dark(#d6d0df, #373046);
+  --sb-text: light-dark(#211c2a, #f5f1fb);
+  --sb-muted: light-dark(#6f6679, #aaa1b6);
+  --sb-accent: light-dark(#6d4dac, #9373dd);
+  --sb-accent-soft: light-dark(#e5dcf7, #2f2547);
+  --sb-green: light-dark(#147a48, #52d987);
+  --sb-yellow: light-dark(#9b6512, #e8b958);
+  --sb-red: light-dark(#a93d4c, #e06472);
+  --sb-blue: light-dark(#2e6da1, #6aa7d9);
+  --sb-gap: 12px;
+  color: var(--sb-text);
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+#sky-bother-walkthrough * { box-sizing: border-box; }
+#sky-bother-walkthrough button, #sky-bother-walkthrough input, #sky-bother-walkthrough select { font: inherit; }
+#sky-bother-walkthrough .sb-window { background: var(--sb-window); border: 1px solid var(--sb-border); border-radius: 18px; overflow: hidden; min-height: 700px; box-shadow: 0 18px 50px color-mix(in srgb, var(--sb-bg) 75%, transparent); }
+#sky-bother-walkthrough .sb-titlebar { min-height: 58px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; background:var(--sb-surface); border-bottom:1px solid var(--sb-border); }
+#sky-bother-walkthrough .sb-title, #sky-bother-walkthrough .sb-title-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+#sky-bother-walkthrough .sb-title { font-weight:500; }
+#sky-bother-walkthrough .sb-logo { color:var(--sb-accent); font-size:22px; }
+#sky-bother-walkthrough .sb-context, #sky-bother-walkthrough small, #sky-bother-walkthrough .sb-chart-note { color:var(--sb-muted); }
+#sky-bother-walkthrough button { color:var(--sb-text); background:var(--sb-surface-2); border:1px solid var(--sb-border); border-radius:9px; padding:7px 11px; cursor:pointer; }
+#sky-bother-walkthrough button:hover { border-color:var(--sb-accent); }
+#sky-bother-walkthrough .sb-primary { background:var(--sb-accent); color:#fff; border-color:transparent; }
+#sky-bother-walkthrough .sb-section-label { text-transform:uppercase; letter-spacing:.07em; color:var(--sb-accent); font-size:12px; font-weight:500; }
+#sky-bother-walkthrough h1, #sky-bother-walkthrough h2, #sky-bother-walkthrough h3, #sky-bother-walkthrough p { margin:0; }
+#sky-bother-walkthrough h1 { font-size:28px; } #sky-bother-walkthrough h2 { font-size:20px; } #sky-bother-walkthrough h3 { font-size:14px; margin-top:16px; }
+#sky-bother-walkthrough .sb-home-grid { display:grid; grid-template-columns:210px minmax(380px,1fr) minmax(270px,350px); min-height:640px; }
+#sky-bother-walkthrough .sb-night-rail, #sky-bother-walkthrough .sb-inspector { background:var(--sb-surface); padding:16px; }
+#sky-bother-walkthrough .sb-night-rail { border-right:1px solid var(--sb-border); display:flex; flex-direction:column; gap:7px; }
+#sky-bother-walkthrough .sb-inspector { border-left:1px solid var(--sb-border); }
+#sky-bother-walkthrough .sb-night { display:grid; grid-template-columns:42px 1fr; align-items:center; gap:9px; background:transparent; border-color:transparent; text-align:left; width:100%; }
+#sky-bother-walkthrough .sb-night small, #sky-bother-walkthrough .sb-plan-row small, #sky-bother-walkthrough .sb-candidate small, #sky-bother-walkthrough .sb-site-choice small, #sky-bother-walkthrough .sb-next-target small { display:block; margin-top:3px; }
+#sky-bother-walkthrough .sb-night.is-selected, #sky-bother-walkthrough .sb-target.is-selected { background:var(--sb-accent-soft); border-color:var(--sb-accent); }
+#sky-bother-walkthrough .sb-score { width:36px; height:36px; flex:0 0 36px; border-radius:50%; display:inline-grid; place-items:center; border:3px solid currentColor; font-weight:500; }
+#sky-bother-walkthrough .sb-score.large { width:58px; height:58px; font-size:22px; }
+#sky-bother-walkthrough .sb-score.poor { color:var(--sb-red); } #sky-bother-walkthrough .sb-score.marginal, #sky-bother-walkthrough .marginal-text { color:var(--sb-yellow); } #sky-bother-walkthrough .sb-score.good { color:var(--sb-blue); } #sky-bother-walkthrough .sb-score.excellent, #sky-bother-walkthrough .sb-score.exceptional { color:var(--sb-green); }
+#sky-bother-walkthrough .sb-nearby { margin-top:auto; border-top:1px solid var(--sb-border); padding-top:14px; display:grid; gap:8px; }
+#sky-bother-walkthrough .sb-home-main { padding:16px; display:grid; align-content:start; gap:14px; }
+#sky-bother-walkthrough .sb-night-summary { display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center; background:var(--sb-surface); border:1px solid var(--sb-border); border-radius:14px; padding:16px; }
+#sky-bother-walkthrough .sb-night-summary p { margin-top:5px; color:var(--sb-muted); }
+#sky-bother-walkthrough .sb-conditions { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+#sky-bother-walkthrough .sb-conditions span { background:var(--sb-surface); border:1px solid var(--sb-border); padding:10px; border-radius:10px; }
+#sky-bother-walkthrough .sb-conditions small { display:block; margin-bottom:4px; }
+#sky-bother-walkthrough .sb-chart { height:132px; position:relative; overflow:hidden; background:linear-gradient(180deg,color-mix(in srgb,var(--sb-blue) 35%,var(--sb-surface)),var(--sb-surface)); border:1px solid var(--sb-border); border-radius:12px; }
+#sky-bother-walkthrough .sb-dark-band { position:absolute; inset:0 13% 0 15%; background:color-mix(in srgb,var(--sb-surface) 80%,transparent); }
+#sky-bother-walkthrough .sb-moon-band { position:absolute; inset:auto 0 0; height:6px; background:linear-gradient(90deg,var(--sb-yellow),var(--sb-accent)); }
+#sky-bother-walkthrough .sb-altitude-line { position:absolute; left:4%; right:4%; top:55%; height:3px; background:var(--sb-accent); transform:rotate(-5deg); border-radius:4px; }
+#sky-bother-walkthrough .sb-chart-labels { position:absolute; z-index:2; inset:auto 10px 12px; display:flex; justify-content:space-between; font-size:11px; color:var(--sb-muted); }
+#sky-bother-walkthrough .sb-chart-note { position:absolute; right:12px; top:12px; font-size:12px; }
+#sky-bother-walkthrough .sb-section-head { display:flex; justify-content:space-between; gap:10px; align-items:center; }
+#sky-bother-walkthrough .sb-badge { margin-left:8px; color:var(--sb-muted); font-size:12px; }
+#sky-bother-walkthrough .sb-plan-summary { display:grid; gap:8px; }
+#sky-bother-walkthrough .sb-gantt { display:flex; height:40px; gap:2px; border-radius:8px; overflow:hidden; }
+#sky-bother-walkthrough .sb-gantt &gt; span { display:grid; place-items:center; text-align:center; background:var(--sb-green); color:#fff; font-weight:500; padding:5px; }
+#sky-bother-walkthrough .sb-gantt small { display:block; color:#eafff1; }
+#sky-bother-walkthrough .sb-plan-row { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px; background:var(--sb-surface); border:1px solid var(--sb-border); border-radius:10px; padding:9px; }
+#sky-bother-walkthrough .sb-plan-row time { color:var(--sb-muted); }
+#sky-bother-walkthrough .sb-inspector-title { display:flex; justify-content:space-between; gap:12px; margin-top:9px; }
+#sky-bother-walkthrough .sb-inspector-title p { color:var(--sb-muted); margin-top:3px; }
+#sky-bother-walkthrough .sb-target-verdict { display:flex; gap:8px; align-items:center; margin:12px 0; color:var(--sb-green); flex-wrap:wrap; }
+#sky-bother-walkthrough .sb-target-verdict span { color:var(--sb-muted); }
+#sky-bother-walkthrough .sb-frame-preview { height:175px; border-radius:12px; position:relative; background:radial-gradient(circle at 55% 42%,#a1bdd0 0 1px,transparent 2px),radial-gradient(circle at 22% 62%,#e8edf7 0 1px,transparent 2px),radial-gradient(circle at 78% 22%,#8094af 0 1px,transparent 2px),linear-gradient(140deg,#07101e,#121b30 50%,#08101c); border:1px solid var(--sb-border); overflow:hidden; }
+#sky-bother-walkthrough .sb-frame-preview span { position:absolute; top:8px; left:9px; color:var(--sb-green); }
+#sky-bother-walkthrough .sb-frame-box { position:absolute; width:34%; height:72%; left:42%; top:14%; border:2px solid var(--sb-green); }
+#sky-bother-walkthrough .sb-warning { margin:8px 0; color:var(--sb-yellow); }
+#sky-bother-walkthrough .sb-meter { display:grid; grid-template-columns:1fr auto; gap:3px; margin:11px 0; position:relative; }
+#sky-bother-walkthrough .sb-meter b { grid-column:1/3; display:block; height:4px; background:var(--sb-green); border-radius:4px; }
+#sky-bother-walkthrough .sb-meter em { font-style:normal; color:var(--sb-green); font-size:12px; }
+#sky-bother-walkthrough details { border-top:1px solid var(--sb-border); padding-top:10px; margin-top:16px; color:var(--sb-muted); }
+#sky-bother-walkthrough details p { margin-top:8px; }
+
+#sky-bother-walkthrough .sb-planner { padding:14px; display:grid; gap:12px; }
+#sky-bother-walkthrough .sb-plan-context { display:flex; align-items:center; gap:10px; }
+#sky-bother-walkthrough .sb-plan-context small { display:block; }
+#sky-bother-walkthrough .sb-save-state { margin-left:auto; color:var(--sb-muted); }
+#sky-bother-walkthrough .sb-timeline-editor { background:var(--sb-surface); border:1px solid var(--sb-border); border-radius:14px; padding:14px; display:grid; gap:9px; }
+#sky-bother-walkthrough .sb-time-axis { display:flex; justify-content:space-between; color:var(--sb-muted); font-size:11px; }
+#sky-bother-walkthrough .sb-gantt.editable { height:64px; border:2px solid var(--sb-accent); padding:3px; }
+#sky-bother-walkthrough .sb-planner-lower { display:grid; grid-template-columns:minmax(0,1fr) minmax(250px,var(--sb-inspector-width,32%)); gap:12px; }
+#sky-bother-walkthrough .sb-candidates { display:grid; gap:8px; }
+#sky-bother-walkthrough .sb-filter-row { display:grid; grid-template-columns:1fr auto auto; gap:8px; }
+#sky-bother-walkthrough input, #sky-bother-walkthrough select { background:var(--sb-surface-2); color:var(--sb-text); border:1px solid var(--sb-border); border-radius:8px; padding:9px; min-width:0; }
+#sky-bother-walkthrough .sb-candidate { display:grid; grid-template-columns:auto 1fr auto; align-items:center; text-align:left; gap:10px; background:var(--sb-surface); padding:10px; }
+#sky-bother-walkthrough .sb-candidate em { font-style:normal; color:var(--sb-green); }
+#sky-bother-walkthrough .planner-inspector { border:1px solid var(--sb-border); border-radius:14px; }
+#sky-bother-walkthrough .sb-mini-availability { height:34px; background:var(--sb-surface-2); border-radius:8px; position:relative; margin:12px 0; overflow:hidden; }
+#sky-bother-walkthrough .sb-mini-availability span { position:absolute; left:12%; right:7%; top:10px; height:14px; background:color-mix(in srgb,var(--sb-green) 75%,transparent); border-radius:4px; }
+#sky-bother-walkthrough .sb-mini-availability b { position:absolute; left:72%; top:4px; height:26px; width:2px; background:var(--sb-text); }
+#sky-bother-walkthrough .sb-frame-preview.compact { height:120px; }
+#sky-bother-walkthrough .sb-add { width:100%; }
+
+#sky-bother-walkthrough .sb-sky-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(270px,32%); min-height:640px; }
+#sky-bother-walkthrough .sb-sky-stage { padding:18px; background:var(--sb-bg); }
+#sky-bother-walkthrough .sb-sky-stage svg { width:100%; height:auto; min-height:440px; }
+#sky-bother-walkthrough .dome { fill:color-mix(in srgb,var(--sb-blue) 35%,var(--sb-surface)); stroke:var(--sb-blue); stroke-width:2; }
+#sky-bother-walkthrough .ring { fill:none; stroke:color-mix(in srgb,var(--sb-blue) 60%,transparent); stroke-width:1.5; }
+#sky-bother-walkthrough .target-path { fill:none; stroke:var(--sb-accent); stroke-width:4; }
+#sky-bother-walkthrough .target-dot { fill:var(--sb-green); stroke:var(--sb-text); stroke-width:2; }
+#sky-bother-walkthrough .camera-frame { fill:none; stroke:var(--sb-green); stroke-width:2; }
+#sky-bother-walkthrough .sb-sky-stage text { fill:var(--sb-text); font-size:13px; }
+#sky-bother-walkthrough .sb-sky-controls { display:grid; grid-template-columns:auto 1fr auto auto; gap:10px; align-items:center; }
+#sky-bother-walkthrough .sb-sky-controls input { width:100%; }
+#sky-bother-walkthrough .sky-inspector { border-left:1px solid var(--sb-border); }
+#sky-bother-walkthrough .sky-inspector h1 { margin-top:8px; }
+#sky-bother-walkthrough .sb-status-text { color:var(--sb-muted); margin:6px 0 14px; }
+#sky-bother-walkthrough .sb-frame-preview.tall { height:210px; }
+#sky-bother-walkthrough .sb-sky-plan { display:grid; grid-template-columns:auto 1fr; gap:8px; border-top:1px solid var(--sb-border); margin-top:18px; padding-top:12px; }
+#sky-bother-walkthrough .sb-sky-plan span { color:var(--sb-muted); }
+
+#sky-bother-walkthrough .sb-catalog-tools { padding:14px; display:grid; grid-template-columns:1fr auto auto; gap:8px; }
+#sky-bother-walkthrough .sb-catalog-grid { padding:0 14px 14px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+#sky-bother-walkthrough .sb-catalog-card { display:grid; gap:8px; text-align:left; padding:9px; background:var(--sb-surface); }
+#sky-bother-walkthrough .sb-catalog-card b, #sky-bother-walkthrough .sb-catalog-card small { display:block; }
+#sky-bother-walkthrough .sb-catalog-card em { font-style:normal; color:var(--sb-green); }
+#sky-bother-walkthrough .sb-space-image { display:block; width:100%; height:132px; border-radius:8px; background-color:#08101d; }
+#sky-bother-walkthrough .sb-space-image.galaxy { background:radial-gradient(ellipse at center,#fff7d2 0 3%,#c6a9cf 5%,#6c5b91 12%,transparent 35%),radial-gradient(circle at 20% 30%,#fff 0 1px,transparent 2px),#08101d; }
+#sky-bother-walkthrough .sb-space-image.nebula { background:radial-gradient(circle at 55% 45%,#ffe6a7 0 4%,#d65459 11%,#65427d 27%,transparent 48%),#08101d; }
+#sky-bother-walkthrough .sb-space-image.planetary { background:radial-gradient(circle at center,#fff 0 4%,#71c7d8 7%,#396d8d 13%,transparent 23%),radial-gradient(circle at 20% 20%,#fff 0 1px,transparent 2px),#08101d; }
+#sky-bother-walkthrough .sb-space-image.cluster { background:radial-gradient(circle at 40% 45%,#fff 0 1px,transparent 2px),radial-gradient(circle at 55% 55%,#dcecff 0 2px,transparent 3px),radial-gradient(circle at 63% 30%,#fff3cf 0 1px,transparent 2px),#08101d; background-size:18px 18px,27px 27px,31px 31px; }
+#sky-bother-walkthrough .sb-space-image.veil { background:radial-gradient(ellipse at 60% 50%,transparent 0 22%,#db526e 24%,#6d5fd2 29%,transparent 34%),#08101d; }
+#sky-bother-walkthrough .sb-space-image.cocoon { background:radial-gradient(circle at center,#fff0bd 0 4%,#d6814d 10%,#735277 23%,transparent 38%),#08101d; }
+#sky-bother-walkthrough .sb-catalog-detail { margin:0 14px 14px; padding:14px; display:flex; justify-content:space-between; gap:12px; align-items:center; background:var(--sb-accent-soft); border:1px solid var(--sb-accent); border-radius:12px; }
+#sky-bother-walkthrough .sb-catalog-detail p { color:var(--sb-muted); margin-top:5px; }
+
+#sky-bother-walkthrough .sb-setup { padding:22px; display:grid; gap:24px; }
+#sky-bother-walkthrough .sb-steps { display:flex; align-items:center; justify-content:center; }
+#sky-bother-walkthrough .sb-steps button { border-radius:50%; width:42px; height:42px; padding:0; position:relative; }
+#sky-bother-walkthrough .sb-steps button span { position:absolute; top:46px; left:50%; transform:translateX(-50%); white-space:nowrap; color:var(--sb-muted); }
+#sky-bother-walkthrough .sb-steps button.is-active { background:var(--sb-accent); color:#fff; }
+#sky-bother-walkthrough .sb-steps i { width:110px; height:2px; background:var(--sb-border); }
+#sky-bother-walkthrough .sb-setup-panel { width:min(720px,100%); margin:28px auto 0; background:var(--sb-surface); border:1px solid var(--sb-border); border-radius:16px; padding:24px; }
+#sky-bother-walkthrough .sb-setup-heading { margin:8px 0; }
+#sky-bother-walkthrough .sb-setup-copy { color:var(--sb-muted); }
+#sky-bother-walkthrough .sb-setup-content { display:grid; grid-template-columns:1fr auto; gap:10px; margin-top:20px; }
+#sky-bother-walkthrough .sb-setup-content label { display:grid; gap:5px; color:var(--sb-muted); }
+#sky-bother-walkthrough .sb-site-choice { grid-column:1/3; display:grid; grid-template-columns:1fr auto; text-align:left; padding:13px; }
+#sky-bother-walkthrough .sb-site-choice small { grid-column:1; }
+#sky-bother-walkthrough .sb-site-choice em { grid-column:2; grid-row:1/3; align-self:center; color:var(--sb-green); font-style:normal; }
+#sky-bother-walkthrough .sb-site-choice.is-selected { background:var(--sb-accent-soft); border-color:var(--sb-accent); }
+#sky-bother-walkthrough .sb-setup-actions { margin-top:18px; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px; }
+#sky-bother-walkthrough .sb-setup-actions span { text-align:center; color:var(--sb-muted); }
+
+#sky-bother-walkthrough .session-window { background:#08050d; color:#fff4f4; }
+#sky-bother-walkthrough .sb-session { padding:20px; display:grid; grid-template-columns:minmax(0,1.5fr) minmax(280px,.7fr); gap:16px; }
+#sky-bother-walkthrough .sb-current-target, #sky-bother-walkthrough .sb-session-side section { background:#160d13; border:1px solid #44272f; border-radius:14px; padding:18px; }
+#sky-bother-walkthrough .sb-session-target { font-size:42px; margin:10px 0 4px; }
+#sky-bother-walkthrough .sb-session-time { color:#c8a9ae; }
+#sky-bother-walkthrough .sb-session-progress { height:8px; background:#3b2429; border-radius:6px; margin:18px 0; overflow:hidden; }
+#sky-bother-walkthrough .sb-session-progress b { display:block; height:100%; background:#c84444; }
+#sky-bother-walkthrough .sb-session-frame { height:330px; position:relative; overflow:hidden; border-radius:12px; }
+#sky-bother-walkthrough .sb-session-frame .sb-space-image { height:100%; }
+#sky-bother-walkthrough .sb-session-frame .sb-frame-box { border-color:#df6a6a; }
+#sky-bother-walkthrough .sb-session-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+#sky-bother-walkthrough .sb-session-side { display:grid; gap:12px; align-content:start; }
+#sky-bother-walkthrough .sb-condition-line { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid #44272f; }
+#sky-bother-walkthrough .sb-condition-line.warning { color:#efb067; }
+#sky-bother-walkthrough .sb-next-target { display:flex; gap:10px; align-items:center; margin-top:12px; }
+#sky-bother-walkthrough .sb-session-count { margin-top:10px; color:#c8a9ae; }
+
+@media (max-width: 800px) {
+  #sky-bother-walkthrough .sb-window { min-height:0; }
+  #sky-bother-walkthrough .sb-home-grid, #sky-bother-walkthrough .sb-sky-layout, #sky-bother-walkthrough .sb-session { grid-template-columns:1fr; }
+  #sky-bother-walkthrough .sb-night-rail { border-right:0; border-bottom:1px solid var(--sb-border); }
+  #sky-bother-walkthrough .sb-night-rail .sb-night:nth-of-type(n+4), #sky-bother-walkthrough .sb-nearby { display:none; }
+  #sky-bother-walkthrough .sb-inspector, #sky-bother-walkthrough .sky-inspector { border-left:0; border-top:1px solid var(--sb-border); }
+  #sky-bother-walkthrough .sb-planner-lower { grid-template-columns:1fr; }
+  #sky-bother-walkthrough .sb-catalog-grid { grid-template-columns:repeat(2,1fr); }
+  #sky-bother-walkthrough .sb-catalog-tools, #sky-bother-walkthrough .sb-filter-row { grid-template-columns:1fr; }
+  #sky-bother-walkthrough .sb-conditions { grid-template-columns:repeat(2,1fr); }
+  #sky-bother-walkthrough .sb-steps i { width:24px; }
+}
+@media (max-width: 500px) {
+  #sky-bother-walkthrough .sb-titlebar, #sky-bother-walkthrough .sb-catalog-detail { align-items:flex-start; flex-direction:column; }
+  #sky-bother-walkthrough .sb-night-summary { grid-template-columns:auto 1fr; }
+  #sky-bother-walkthrough .sb-night-summary .sb-primary { grid-column:1/3; }
+  #sky-bother-walkthrough .sb-catalog-grid { grid-template-columns:1fr; }
+  #sky-bother-walkthrough .sb-setup { padding:12px; }
+  #sky-bother-walkthrough .sb-setup-panel { padding:16px; }
+  #sky-bother-walkthrough .sb-setup-content { grid-template-columns:1fr; }
+  #sky-bother-walkthrough .sb-site-choice { grid-column:1; }
+  #sky-bother-walkthrough .sb-steps button span { display:none; }
+}
+&lt;/style&gt;
+
+&lt;script&gt;
+(() =&gt; {
+  const root = document.getElementById(&#x27;sky-bother-walkthrough&#x27;);
+  const screenIds = [&#x27;home&#x27;, &#x27;plan&#x27;, &#x27;sky&#x27;, &#x27;catalog&#x27;, &#x27;setup&#x27;, &#x27;session&#x27;];
+  const selectScreen = (name) =&gt; {
+    screenIds.forEach((id) =&gt; {
+      const tab = root.querySelector(`#sb-tab-${id}`);
+      const panel = root.querySelector(`#sb-screen-${id}`);
+      const active = id === name;
+      tab.classList.toggle(&#x27;active&#x27;, active);
+      tab.setAttribute(&#x27;aria-selected&#x27;, String(active));
+      panel.hidden = !active;
+    });
+  };
+  root.querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;).forEach((tab) =&gt; tab.addEventListener(&#x27;click&#x27;, () =&gt; selectScreen(tab.id.replace(&#x27;sb-tab-&#x27;, &#x27;&#x27;))));
+  root.querySelectorAll(&#x27;[data-go]&#x27;).forEach((button) =&gt; button.addEventListener(&#x27;click&#x27;, () =&gt; selectScreen(button.dataset.go)));
+
+  root.querySelectorAll(&#x27;.sb-target&#x27;).forEach((target) =&gt; target.addEventListener(&#x27;click&#x27;, () =&gt; {
+    root.querySelectorAll(&#x27;.sb-target&#x27;).forEach((row) =&gt; row.classList.remove(&#x27;is-selected&#x27;));
+    target.classList.add(&#x27;is-selected&#x27;);
+    root.querySelectorAll(&#x27;.sb-selected-name&#x27;).forEach((node) =&gt; node.textContent = target.dataset.name);
+    root.querySelectorAll(&#x27;.sb-selected-score&#x27;).forEach((node) =&gt; node.textContent = target.dataset.score);
+    root.querySelectorAll(&#x27;.sb-selected-reason&#x27;).forEach((node) =&gt; node.textContent = target.dataset.reason);
+  }));
+
+  const addButton = root.querySelector(&#x27;.sb-add&#x27;);
+  addButton.addEventListener(&#x27;click&#x27;, () =&gt; {
+    addButton.textContent = addButton.textContent === &#x27;Added to plan&#x27; ? &#x27;Add to plan&#x27; : &#x27;Added to plan&#x27;;
+    addButton.disabled = true;
+    root.querySelector(&#x27;.sb-save-state&#x27;).textContent = &#x27;Unsaved changes&#x27;;
+  });
+
+  const play = root.querySelector(&#x27;.sb-play&#x27;);
+  play.addEventListener(&#x27;click&#x27;, () =&gt; { play.textContent = play.textContent === &#x27;Play&#x27; ? &#x27;Pause&#x27; : &#x27;Play&#x27;; });
+  const jump = root.querySelector(&#x27;.sb-jump&#x27;);
+  jump.addEventListener(&#x27;click&#x27;, () =&gt; {
+    root.querySelectorAll(&#x27;.sb-sky-time&#x27;).forEach((node) =&gt; node.textContent = &#x27;05:17&#x27;);
+    root.querySelector(&#x27;.sb-status-text&#x27;).textContent = &#x27;Altitude 87° · WNW · at peak&#x27;;
+    root.querySelector(&#x27;#sb-screen-sky input[type=&quot;range&quot;]&#x27;).value = 80;
+  });
+
+  const setupSteps = [
+    [&#x27;Choose your observing site&#x27;, &#x27;Search by town city or landmark. You can fine tune coordinates later.&#x27;],
+    [&#x27;Describe your horizon&#x27;, &#x27;Start with one simple value or customize the eight compass directions.&#x27;],
+    [&#x27;Choose your imaging rig&#x27;, &#x27;Pick a preset first. Advanced optical values remain available.&#x27;],
+    [&#x27;Choose a planning goal&#x27;, &#x27;Use Quick session, Deep integration, Variety, or Custom.&#x27;],
+    [&#x27;Review your first plan&#x27;, &#x27;See the best upcoming night and why each target was chosen.&#x27;]
+  ];
+  let setupIndex = 0;
+  const renderSetup = () =&gt; {
+    root.querySelector(&#x27;.sb-setup-number&#x27;).textContent = String(setupIndex + 1);
+    root.querySelector(&#x27;.sb-setup-heading&#x27;).textContent = setupSteps[setupIndex][0];
+    root.querySelector(&#x27;.sb-setup-copy&#x27;).textContent = setupSteps[setupIndex][1];
+    root.querySelectorAll(&#x27;.sb-steps button&#x27;).forEach((button, index) =&gt; button.classList.toggle(&#x27;is-active&#x27;, index === setupIndex));
+    root.querySelector(&#x27;.sb-back&#x27;).disabled = setupIndex === 0;
+    root.querySelector(&#x27;.sb-continue&#x27;).textContent = setupIndex === 4 ? &#x27;Finish setup&#x27; : &#x27;Continue&#x27;;
+  };
+  root.querySelector(&#x27;.sb-continue&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; { setupIndex = Math.min(4, setupIndex + 1); renderSetup(); });
+  root.querySelector(&#x27;.sb-back&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; { setupIndex = Math.max(0, setupIndex - 1); renderSetup(); });
+
+  const complete = root.querySelector(&#x27;.sb-complete&#x27;);
+  complete.addEventListener(&#x27;click&#x27;, () =&gt; {
+    root.querySelector(&#x27;.sb-session-target&#x27;).textContent = &#x27;Little Dumbbell&#x27;;
+    root.querySelector(&#x27;.sb-session-time&#x27;).textContent = &#x27;23:25–02:55 · 3h 30m remaining&#x27;;
+    root.querySelector(&#x27;.sb-session-progress b&#x27;).style.width = &#x27;0%&#x27;;
+    root.querySelector(&#x27;.sb-session-count&#x27;).textContent = &#x27;2 of 3 targets · 2h captured&#x27;;
+  });
+
+  const design = { density: &#x27;Comfortable&#x27;, inspectorWidth: 32, accent: &#x27;#9373dd&#x27; };
+  const renderDesign = () =&gt; {
+    root.style.setProperty(&#x27;--sb-gap&#x27;, design.density === &#x27;Compact&#x27; ? &#x27;8px&#x27; : &#x27;12px&#x27;);
+    root.style.setProperty(&#x27;--sb-inspector-width&#x27;, `${design.inspectorWidth}%`);
+    root.style.setProperty(&#x27;--sb-accent&#x27;, design.accent);
+  };
+  renderDesign();
+  if (globalThis.Tweak) {
+    const tweak = new Tweak({ container: root, onChange: renderDesign });
+    tweak.addSelect(design, &#x27;density&#x27;, { label: &#x27;Information density&#x27;, options: [&#x27;Comfortable&#x27;, &#x27;Compact&#x27;], reference: &#x27;layout.density&#x27; });
+    tweak.addSlider(design, &#x27;inspectorWidth&#x27;, { label: &#x27;Inspector width&#x27;, min: 26, max: 40, unit: &#x27;%&#x27;, reference: &#x27;planner.inspector-width&#x27; });
+    tweak.addColorPicker(design, &#x27;accent&#x27;, { label: &#x27;Accent color&#x27;, reference: &#x27;--sb-accent&#x27; });
+  }
+})();
+&lt;/script&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+  let lastPointerWasTouch = false;
+  let pinnedByTouch = false;
+
+  const getTrigger = (target) =&gt;
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest(&quot;[data-tooltip]&quot;)
+      : null;
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    pinnedByTouch = false;
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handlePointer = (event) =&gt; {
+    lastPointerWasTouch =
+      event.type === &quot;pointerdown&quot; &amp;&amp; event.pointerType === &quot;touch&quot;;
+  };
+  const handleTouchClick = (event) =&gt; {
+    const isTouch = event.pointerType === &quot;touch&quot; || lastPointerWasTouch;
+    lastPointerWasTouch = false;
+    if (!isTouch || event.detail === 0) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (
+      trigger == null ||
+      !trigger.isConnected ||
+      getContent(trigger).length === 0 ||
+      (pinnedByTouch &amp;&amp; activeTrigger === trigger)
+    ) {
+      if (pinnedByTouch) {
+        closeTooltip();
+      }
+      return;
+    }
+    openTooltip(trigger);
+    pinnedByTouch = activeTrigger === trigger;
+    window.setTimeout(() =&gt; {
+      if (activeTrigger === trigger &amp;&amp; !trigger.isConnected) {
+        closeTooltip(false);
+      }
+    }, 0);
+  };
+  const handleLeave = (event) =&gt; {
+    if (pinnedByTouch) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    lastPointerWasTouch = false;
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    lastPointerWasTouch = false;
+    document.removeEventListener(&quot;pointerover&quot;, handlePointerOpen);
+    document.removeEventListener(&quot;pointerdown&quot;, handlePointer);
+    document.removeEventListener(&quot;pointercancel&quot;, handlePointer);
+    document.removeEventListener(&quot;click&quot;, handleTouchClick);
+    document.removeEventListener(&quot;pointerout&quot;, handleLeave);
+    document.removeEventListener(&quot;focusin&quot;, handleFocusIn);
+    document.removeEventListener(&quot;focusout&quot;, handleLeave);
+    document.removeEventListener(&quot;keydown&quot;, handleKeyDown);
+    document.removeEventListener(&quot;contextmenu&quot;, handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener(&quot;pointerover&quot;, handlePointerOpen);
+  document.addEventListener(&quot;pointerdown&quot;, handlePointer);
+  document.addEventListener(&quot;pointercancel&quot;, handlePointer);
+  document.addEventListener(&quot;click&quot;, handleTouchClick);
+  document.addEventListener(&quot;pointerout&quot;, handleLeave);
+  document.addEventListener(&quot;focusin&quot;, handleFocusIn);
+  document.addEventListener(&quot;focusout&quot;, handleLeave);
+  document.addEventListener(&quot;keydown&quot;, handleKeyDown);
+  document.addEventListener(&quot;contextmenu&quot;, handleContextMenu);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-tabs&quot;&gt;
+(() =&gt; {
+  const selector = &#x27;.nav[role=&quot;tablist&quot;] [role=&quot;tab&quot;]&#x27;;
+  const disabled = &#x27;:disabled,[aria-disabled=&quot;true&quot;]&#x27;;
+  const selectTab = (selected) =&gt; {
+    const panelId = selected.getAttribute(&quot;aria-controls&quot;);
+    for (const tab of selected.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;)) {
+      const active = tab === selected;
+      tab.classList.toggle(&quot;active&quot;, active);
+      tab.setAttribute(&quot;aria-selected&quot;, String(active));
+      const id = tab.getAttribute(&quot;aria-controls&quot;);
+      const panel = id &amp;&amp; document.getElementById(id);
+      if (panel != null) {
+        panel.hidden = id !== panelId;
+        if (!panel.hidden &amp;&amp; selected.id) {
+          panel.setAttribute(&quot;aria-labelledby&quot;, selected.id);
+        }
+      }
+    }
+  };
+  const interact = (event) =&gt; {
+    const tab = event.target?.closest?.(selector);
+    if (event.defaultPrevented || tab == null || tab.matches(disabled)) {
+      return;
+    }
+    if (event.type === &quot;click&quot;) {
+      selectTab(tab);
+      return;
+    }
+    const tabs = Array.from(
+      tab.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;),
+    ).filter((candidate) =&gt; !candidate.matches(disabled));
+    const current = tabs.indexOf(tab);
+    let next;
+    if (event.key === &quot;ArrowRight&quot; || event.key === &quot;ArrowDown&quot;) {
+      next = (current + 1) % tabs.length;
+    } else if (event.key === &quot;ArrowLeft&quot; || event.key === &quot;ArrowUp&quot;) {
+      next = (current + tabs.length - 1) % tabs.length;
+    } else if (event.key === &quot;Home&quot;) {
+      next = 0;
+    } else if (event.key === &quot;End&quot;) {
+      next = tabs.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    tabs[next].focus();
+    selectTab(tabs[next]);
+  };
+
+  for (const list of document.querySelectorAll(&#x27;.nav[role=&quot;tablist&quot;]&#x27;)) {
+    const selected =
+      list.querySelector(&#x27;[role=&quot;tab&quot;][aria-selected=&quot;true&quot;]&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;].active&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;]&#x27;);
+    if (selected != null) {
+      selectTab(selected);
+    }
+  }
+  document.addEventListener(&quot;click&quot;, interact);
+  document.addEventListener(&quot;keydown&quot;, interact);
+  window.addEventListener(&quot;pagehide&quot;, () =&gt; {
+    document.removeEventListener(&quot;click&quot;, interact);
+    document.removeEventListener(&quot;keydown&quot;, interact);
+  }, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+</body>
+</html>

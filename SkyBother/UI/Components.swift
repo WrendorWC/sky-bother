@@ -1052,3 +1052,68 @@ struct TargetThumbnail: View {
         }
     }
 }
+
+/// Escape as Cancel, for editors that live inside a window rather than in a
+/// sheet. `.keyboardShortcut(.cancelAction)` alone never fired in the plan
+/// editor: SwiftUI puts focus in the window's first text field, and the field
+/// swallows Escape even when it has nothing to clear. So this watches the
+/// window itself, and lets Escape through only to a text field that still has
+/// text in it — clearing that first is what Escape does there anyway.
+private struct EscapeCatcher: NSViewRepresentable {
+    var isEnabled: Bool
+    var action: () -> Void
+
+    func makeNSView(context: Context) -> CatchingView {
+        let view = CatchingView()
+        view.isEnabled = isEnabled
+        view.action = action
+        return view
+    }
+
+    func updateNSView(_ view: CatchingView, context: Context) {
+        view.isEnabled = isEnabled
+        view.action = action
+    }
+
+    static func dismantleNSView(_ view: CatchingView, coordinator: ()) { view.stopMonitoring() }
+
+    final class CatchingView: NSView {
+        var isEnabled = false
+        var action: (() -> Void)?
+        private var monitor: Any?
+
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            stopMonitoring()
+            guard window != nil else { return }
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+                guard let self, self.isEnabled, event.keyCode == 53,
+                      event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty,
+                      let window = self.window, event.window === window
+                else { return event }
+                if let editor = window.firstResponder as? NSTextView, !editor.string.isEmpty {
+                    return event
+                }
+                self.action?()
+                return nil
+            }
+        }
+
+        func stopMonitoring() {
+            if let monitor { NSEvent.removeMonitor(monitor) }
+            monitor = nil
+        }
+
+        deinit { stopMonitoring() }
+    }
+}
+
+extension View {
+    /// Runs `action` when Escape is pressed anywhere in this view's window
+    /// while `isEnabled` — see `EscapeCatcher`.
+    func onEscapeKey(isEnabled: Bool = true, perform action: @escaping () -> Void) -> some View {
+        background(EscapeCatcher(isEnabled: isEnabled, action: action))
+    }
+}

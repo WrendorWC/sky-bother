@@ -532,62 +532,135 @@ final class AppState: ObservableObject {
         settings.sessionPlans[night.planKey]
     }
 
-    var isEditablePlanAvailable: Bool { !plans.isEmpty }
+    func isManualPlan(for night: NightPlan) -> Bool { storedPlan(for: night) != nil }
 
-    /// Takes over a night's plan for hand editing, starting from whatever was
-    /// being suggested. Seeding rather than starting blank is the whole point:
-    /// the scheduler has usually got the shape of the night right, and the
-    /// edits worth making are moving one block and splitting another, not
-    /// rebuilding from nothing.
-    func beginEditingPlan(for night: NightPlan, seededWith slots: [AutoPlanSlot]) {
-        guard settings.sessionPlans[night.planKey] == nil else { return }
-        settings.sessionPlans[night.planKey] = slots.map {
+    /// The app's own running order for a night. Nothing for a night that's
+    /// clouded out: `Planner` keeps a target list for such a night on purpose
+    /// — re-planned ignoring cloud, so the list can say "this is what you'd
+    /// have had" rather than look broken — but a schedule built out of those
+    /// is for a night that isn't happening.
+    func suggestedSlots(for night: NightPlan) -> [AutoPlanSlot] {
+        guard !night.isCloudedOut else { return [] }
+        return AutoPlanner.plan(for: night, minimumScore: preferences.minimumScore,
+                                sessionCapMinutes: preferences.sessionCapMinutes,
+                                minimumSlotMinutes: preferences.minimumSessionMinutes)
+    }
+
+    func suggestedPlan(for night: NightPlan) -> [PlanSegment] {
+        suggestedSlots(for: night).map {
             PlanSegment(targetID: $0.targetPlan.id,
                         targetName: $0.targetPlan.target.displayName,
-                        window: SessionPlanRules.snapped($0.window))
+                        window: $0.window)
         }
     }
 
-    func setPlan(_ segments: [PlanSegment], for night: NightPlan) {
-        settings.sessionPlans[night.planKey] = segments.chronological
+    /// What a night's plan looks like right now: the open draft while it's
+    /// being edited, then your own plan once you have one, and the app's
+    /// suggestion until then.
+    func displayedPlan(for night: NightPlan) -> [PlanSegment] {
+        if let planDraft, planDraft.planKey == night.planKey { return planDraft.segments.chronological }
+        return (storedPlan(for: night) ?? suggestedPlan(for: night)).chronological
     }
 
-    /// Empties the night without handing it back to the scheduler — the entry
-    /// stays, so a cleared night reads as "nothing planned" rather than
-    /// silently reverting to the suggestion the moment it's emptied.
-    func clearPlan(for night: NightPlan) {
-        settings.sessionPlans[night.planKey] = []
+    // MARK: Editing
+
+    /// The plan being edited, if any. Edits change only this until Done.
+    @Published private(set) var planDraft: PlanDraft?
+
+    func isEditingPlan(for night: NightPlan) -> Bool { planDraft?.planKey == night.planKey }
+
+    /// Opens a night's plan for editing, starting from whatever it shows now.
+    /// Starting from the suggestion rather than blank is the point: the
+    /// scheduler has usually got the shape of the night right, and the edits
+    /// worth making are moving one block and splitting another. Nothing is
+    /// saved by opening it.
+    func beginEditingPlan(for night: NightPlan) {
+        guard !isEditingPlan(for: night) else { return }
+        planDraft = PlanDraft(planKey: night.planKey,
+                              displayed: storedPlan(for: night) ?? suggestedPlan(for: night),
+                              isManual: isManualPlan(for: night))
+        recentReset = nil
     }
 
-    /// Discards the hand-built plan entirely, so the night goes back to being
-    /// whatever the scheduler currently suggests.
-    func revertPlanToSuggested(for night: NightPlan) {
-        settings.sessionPlans.removeValue(forKey: night.planKey)
+    /// Replaces the draft's blocks — one finished drag or resize.
+    func updateDraft(_ segments: [PlanSegment]) {
+        planDraft?.segments = segments.chronological
     }
 
     /// Adds a block for a target at the longest stretch of the night nothing
     /// has claimed yet, preferring time the target can actually be shot in.
-    /// Returns false when there's no room left to put one.
+    /// Returns the new block, or nil when there's no room left to put one.
     @discardableResult
-    func addPlanSegment(for targetPlan: TargetPlan, to night: NightPlan) -> Bool {
-        var segments = settings.sessionPlans[night.planKey] ?? []
-        guard let window = SessionPlanRules.placement(for: targetPlan,
-                                                      among: segments,
+    func addDraftSegment(for targetPlan: TargetPlan, in night: NightPlan) -> PlanSegment? {
+        guard var draft = planDraft, draft.planKey == night.planKey,
+              let window = SessionPlanRules.placement(for: targetPlan,
+                                                      among: draft.segments,
                                                       within: night.chartWindow,
                                                       preferredMinutes: preferences.integrationGoalMinutes)
-        else { return false }
-
-        segments.append(PlanSegment(targetID: targetPlan.id,
-                                    targetName: targetPlan.target.displayName,
-                                    window: window))
-        settings.sessionPlans[night.planKey] = segments.chronological
-        return true
+        else { return nil }
+        let segment = PlanSegment(targetID: targetPlan.id,
+                                  targetName: targetPlan.target.displayName,
+                                  window: window)
+        draft.segments = (draft.segments + [segment]).chronological
+        planDraft = draft
+        return segment
     }
 
-    func removePlanSegment(id: UUID, from night: NightPlan) {
-        guard var segments = settings.sessionPlans[night.planKey] else { return }
-        segments.removeAll { $0.id == id }
-        settings.sessionPlans[night.planKey] = segments
+    func removeDraftSegment(id: UUID) {
+        planDraft?.segments.removeAll { $0.id == id }
+    }
+
+    /// Empties the draft. A cleared night, once saved, stays empty rather than
+    /// quietly refilling itself with the suggestion; until then Cancel brings
+    /// everything back.
+    func clearDraft() {
+        planDraft?.segments = []
+    }
+
+    /// Throws the draft away. Nothing was saved, so nothing needs undoing.
+    func cancelEditingPlan() {
+        planDraft = nil
+    }
+
+    /// Saves the draft as the night's Manual plan — but only if it's actually
+    /// different. Otherwise the night stays exactly as it was, Suggested or
+    /// Manual, and nothing is written.
+    func finishEditingPlan() {
+        guard let draft = planDraft else { return }
+        planDraft = nil
+        var plans = settings.sessionPlans
+        if PlanBook.commit(draft, into: &plans) {
+            settings.sessionPlans = plans
+        }
+    }
+
+    // MARK: Reset
+
+    /// The Manual plan the last Reset removed, kept so Undo can put it back.
+    /// Cleared by the next plan edit, so Undo can never restore over newer work.
+    struct PlanReset: Equatable {
+        var planKey: String
+        var segments: [PlanSegment]
+    }
+
+    @Published private(set) var recentReset: PlanReset?
+
+    /// Drops a night's Manual plan so it follows the current suggestion again,
+    /// closing the editor if that night is open in it.
+    func resetPlanToSuggested(for night: NightPlan) {
+        if isEditingPlan(for: night) { planDraft = nil }
+        var plans = settings.sessionPlans
+        guard let removed = PlanBook.reset(night.planKey, in: &plans) else { return }
+        settings.sessionPlans = plans
+        recentReset = PlanReset(planKey: night.planKey, segments: removed)
+    }
+
+    func undoPlanReset() {
+        guard let reset = recentReset else { return }
+        recentReset = nil
+        var plans = settings.sessionPlans
+        PlanBook.undoReset(reset.planKey, restoring: reset.segments, in: &plans)
+        settings.sessionPlans = plans
     }
 
     // MARK: - Site and rig management
