@@ -987,13 +987,9 @@ private struct AutoPlanStripView: View {
                     context.stroke(Path(roundedRect: rect, cornerRadius: 5),
                                    with: .color(isSelected ? Palette.accent : color), lineWidth: isSelected ? 2 : 1)
 
-                    if rect.width > 50 {
-                        context.draw(Text(slot.targetPlan.target.displayName)
-                                        .font(.system(size: 11 * uiTextScale, weight: .semibold))
-                                        .foregroundColor(.white),
-                                     at: CGPoint(x: rect.midX, y: rect.midY),
-                                     anchor: .center)
-                    }
+                    context.drawLabel(slot.targetPlan.target.displayName,
+                                      font: .system(size: 11 * uiTextScale, weight: .semibold),
+                                      in: rect)
                 }
             }
             .contentShape(Rectangle())

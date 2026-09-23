@@ -77,6 +77,37 @@ extension View {
     }
 }
 
+extension GraphicsContext {
+    /// Draws a label centred in a block, shortened with an ellipsis when the
+    /// whole thing wouldn't fit. Canvas text isn't clipped to anything, so a
+    /// long name drawn centred in a narrow block ran out over its neighbours
+    /// and the two names overlapped into nonsense.
+    func drawLabel(_ string: String, font: Font, color: Color = .white,
+                   in rect: CGRect, padding: CGFloat = 6) {
+        let available = rect.width - padding * 2
+        // Narrower than this there is no room for even a word and an
+        // ellipsis, and a block that small reads as its colour alone.
+        guard available > 24 else { return }
+        func resolved(_ text: String) -> ResolvedText {
+            resolve(Text(text).font(font).foregroundColor(color))
+        }
+        func width(_ text: String) -> CGFloat {
+            resolved(text).measure(in: CGSize(width: .greatestFiniteMagnitude, height: rect.height)).width
+        }
+
+        var label = string
+        if width(label) > available {
+            var characters = Array(string)
+            while characters.count > 1 && width(String(characters) + "\u{2026}") > available {
+                characters.removeLast()
+            }
+            guard characters.count > 1 else { return }
+            label = String(characters).trimmingCharacters(in: .whitespaces) + "\u{2026}"
+        }
+        draw(resolved(label), at: CGPoint(x: rect.midX, y: rect.midY), anchor: .center)
+    }
+}
+
 /// Lays its items out left to right and starts a new row when the next one
 /// won't fit, so nothing is ever cut short — whole items move down instead.
 struct FlowLayout: Layout {

@@ -151,12 +151,9 @@ struct PlanStripView: View {
                 drawGrips(context: context, rect: rect)
             }
 
-            if rect.width > 50 {
-                context.draw(Text(segment.targetName)
-                                .font(.system(size: 11 * uiTextScale, weight: .semibold))
-                                .foregroundColor(.white),
-                             at: CGPoint(x: rect.midX, y: rect.midY), anchor: .center)
-            }
+            context.drawLabel(segment.targetName,
+                              font: .system(size: 11 * uiTextScale, weight: .semibold),
+                              in: rect)
         }
     }
 
