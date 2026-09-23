@@ -81,10 +81,8 @@ enum HelpContent {
             HelpSection(heading: "Unshootable Time", body: "Blocks can cover time when the target isn’t up, dark or clear. That part is hatched and its minutes are totalled. A block whose target has no usable time at all is red. Clouded-out nights get no suggestion.")
         ]),
 
-        HelpTopic(title: "Session Mode", systemImage: "play.circle", sections: [
-            HelpSection(body: "“Start session” beside the plan on Home runs the night at the telescope: the current target in large type with its planned times and framing, what’s next, and only the warnings worth acting on. The dim red-black screen is easy on dark-adapted eyes."),
-            HelpSection(heading: "Moving Through the Plan", body: "“Mark started” starts the clock on the current target; “Mark complete” finishes it and moves on; “Skip target” moves on without imaging it. The session follows these, not the clock, so running late or early is fine. What actually happened is recorded separately; the plan itself doesn’t change."),
-            HelpSection(heading: "Leaving and Ending", body: "“Home” leaves the session running — “Resume session” brings it back, even after quitting. “End session” finishes the night and keeps everything recorded; “Reopen session” continues it.")
+        HelpTopic(title: "Session View", systemImage: "play.circle", sections: [
+            HelpSection(body: "“Session view” beside tonight’s plan on Home shows the plan for use at the telescope: what’s on now and how long is left, or what’s next and when it starts; what comes after; dew, cloud and wind; and the framing. It follows the clock, so there’s nothing to press — your telescope’s own app runs the night. The dim red-black screen is easy on dark-adapted eyes. It’s available for tonight only.")
         ]),
 
         HelpTopic(title: "Availability Bars", systemImage: "chart.xyaxis.line", sections: [

@@ -775,50 +775,24 @@ final class AppState: ObservableObject {
 
     // MARK: Session mode
 
-    /// The record for a night, if it has been run in session mode.
-    func sessionRecord(for night: NightPlan) -> SessionRecord? {
-        settings.sessionRecords[night.planKey]
-    }
-
-    /// The night whose session is open in the main window.
+    /// The night shown in the session view.
     @Published private(set) var sessionNightKey: String?
 
-    /// Starts running a night's plan, or picks up a session already under way.
-    func startSession(for night: NightPlan, now: Date = Date()) {
-        guard planDraft == nil else { return }
-        if settings.sessionRecords[night.planKey] != nil {
-            // An ended session reopens rather than being replaced, so nothing
-            // recorded is lost.
-            settings.sessionRecords[night.planKey]?.endedAt = nil
-        } else {
-            let plan = displayedPlan(for: night)
-            guard !plan.isEmpty else { return }
-            settings.sessionRecords[night.planKey] = SessionRecord(planKey: night.planKey, plan: plan, startedAt: now)
-        }
+    /// The session view only makes sense for the night that's happening.
+    func canOpenSession(for night: NightPlan) -> Bool {
+        tonight?.id == night.id && !displayedPlan(for: night).isEmpty
+    }
+
+    func openSession(for night: NightPlan) {
+        guard planDraft == nil, canOpenSession(for: night) else { return }
         selectedNightID = night.id
         sessionNightKey = night.planKey
         mainView = .session
     }
 
-    /// Applies one action to the open session and saves it.
-    func updateSession(_ change: (inout SessionRecord) -> Void) {
-        guard let key = sessionNightKey, var record = settings.sessionRecords[key] else { return }
-        change(&record)
-        settings.sessionRecords[key] = record
-        if let current = record.currentIndex {
-            selectedTargetID = record.entries[current].targetID
-        }
-    }
-
-    /// Back to Home without ending the session; it resumes from Home.
     func leaveSession() {
         sessionNightKey = nil
         mainView = .home
-    }
-
-    func endSession(now: Date = Date()) {
-        updateSession { $0.end(now: now) }
-        leaveSession()
     }
 
     // MARK: From the catalog

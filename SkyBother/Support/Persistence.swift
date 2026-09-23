@@ -26,9 +26,6 @@ struct StoredSettings: Codable, Hashable, Sendable {
     /// and those decode as done: someone who already has a site shouldn't be
     /// walked through setup again on upgrade.
     var setupStep: Int?
-    /// What actually happened on nights run in session mode, by night key.
-    /// Absent from older files, which decode with none.
-    var sessionRecords: [String: SessionRecord] = [:]
 
     /// Oldest night key worth keeping, as `NightPlan.planKey` formats them.
     /// Plain string comparison orders `yyyy-MM-dd` correctly, so callers can
@@ -55,7 +52,7 @@ struct StoredSettings: Codable, Hashable, Sendable {
     // defaults to empty, and `hasSetLocation` falls back to inspecting the
     // decoded site itself — see the reasoning in `init(from:)` below.
     enum CodingKeys: String, CodingKey {
-        case site, rig, preferences, savedSites, savedRigs, customTargets, sessionPlans, hasSetLocation, setupStep, sessionRecords
+        case site, rig, preferences, savedSites, savedRigs, customTargets, sessionPlans, hasSetLocation, setupStep
     }
 
     init(site: Site, rig: Rig, preferences: Preferences, savedSites: [Site], savedRigs: [Rig],
@@ -120,7 +117,6 @@ struct StoredSettings: Codable, Hashable, Sendable {
         hasSetLocation = try container.decodeIfPresent(Bool.self, forKey: .hasSetLocation)
             ?? !(looksLikeRetiredPlaceholder || looksUnconfigured)
         setupStep = try container.decodeIfPresent(Int.self, forKey: .setupStep)
-        sessionRecords = try container.decodeIfPresent([String: SessionRecord].self, forKey: .sessionRecords) ?? [:]
     }
 }
 

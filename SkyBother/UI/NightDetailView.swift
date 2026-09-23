@@ -328,7 +328,7 @@ struct NightDetailView: View {
                     state.openPlanner(for: plan)
                 }
                 .help("Open the planner to change this night's plan")
-                if !segments.isEmpty || state.sessionRecord(for: plan) != nil {
+                if state.canOpenSession(for: plan) {
                     sessionButton
                 }
             }
@@ -359,19 +359,16 @@ struct NightDetailView: View {
         }
     }
 
-    /// Starts running the plan at the telescope, or goes back to a session
-    /// already under way.
+    /// The glanceable at-the-scope view of tonight's plan.
     private var sessionButton: some View {
-        let record = state.sessionRecord(for: plan)
-        let title = record == nil ? "Start session" : (record!.isActive ? "Resume session" : "Reopen session")
-        return Button {
-            state.startSession(for: plan)
+        Button {
+            state.openSession(for: plan)
         } label: {
-            Label(title, systemImage: "play.circle.fill")
+            Label("Session view", systemImage: "play.circle.fill")
                 .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
         }
         .buttonStyle(.bordered)
-        .help(record.map { "\($0.finishedCount) of \($0.entries.count) targets done" } ?? "Run this plan at the telescope")
+        .help("What's on now and next, in large type, for use at the telescope")
     }
 
     /// Says in one word whose plan this is. Without it the two are visually
