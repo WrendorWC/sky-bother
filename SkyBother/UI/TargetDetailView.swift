@@ -9,6 +9,7 @@ struct TargetDetailView: View {
     /// Set in the planner, where the panel can put the target into the plan
     /// being built. Nil on Home, which only ever reads the plan.
     var onAddToPlan: (() -> Void)? = nil
+    var onRemoveFromPlan: (() -> Void)? = nil
     var framingHeight: CGFloat = 250
     /// Off in the planner, whose window title says what the whole window is.
     var setsWindowTitle = true
@@ -129,6 +130,17 @@ struct TargetDetailView: View {
                 .help(plannedBlocks.isEmpty
                       ? "Put a block for this target in the longest free stretch of the night"
                       : "Add another block in the longest free stretch")
+            }
+            if let onRemoveFromPlan, !plannedBlocks.isEmpty {
+                Button(action: onRemoveFromPlan) {
+                    Label("Remove from plan", systemImage: "minus.circle")
+                        .font(.scaled(.body, scale: uiTextScale))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .help(plannedBlocks.count == 1 ? "Take this target out of the plan"
+                      : "Take all \(plannedBlocks.count) of this target's blocks out of the plan")
             }
         }
     }

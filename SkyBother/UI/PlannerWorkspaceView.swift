@@ -249,6 +249,22 @@ struct PlannerWorkspaceView: View {
     /// result of the last Add, or how the strip works.
     @ViewBuilder
     private var timelineStatus: some View {
+        HStack(spacing: 12) {
+            timelineMessage
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if selectedBlock != nil && dragReadout == nil {
+                Button(action: removeSelectedBlock) {
+                    Label("Remove block", systemImage: "minus.circle")
+                        .font(.scaled(.callout, scale: uiTextScale))
+                }
+                .buttonStyle(.bordered)
+                .help("Take the selected block out of the plan (Delete)")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var timelineMessage: some View {
         Group {
             if let dragReadout {
                 Label(blockDescription(dragReadout), systemImage: "arrow.left.and.right")
@@ -256,12 +272,7 @@ struct PlannerWorkspaceView: View {
             } else if let addNote {
                 Label(addNote, systemImage: "plus.circle")
             } else if let selectedBlock {
-                HStack(spacing: 10) {
-                    Label(blockDescription(selectedBlock), systemImage: "rectangle.inset.filled")
-                    Button("Remove block") { removeSelectedBlock() }
-                        .buttonStyle(.link)
-                        .help("Take this block out of the plan (Delete)")
-                }
+                Label(blockDescription(selectedBlock), systemImage: "rectangle.inset.filled")
             } else if segments.isEmpty {
                 Text("Nothing planned yet. Add a target below.")
             } else {
@@ -363,6 +374,16 @@ struct PlannerWorkspaceView: View {
         selectedBlockID = segment.id
         state.selectedTargetID = segment.targetID
         addNote = nil
+    }
+
+    private func remove(_ targetPlan: TargetPlan) {
+        let count = segments.filter { $0.targetID == targetPlan.id }.count
+        guard count > 0 else { return }
+        state.removeDraftSegments(forTarget: targetPlan.id)
+        if let selectedBlockID, !segments.contains(where: { $0.id == selectedBlockID }) {
+            self.selectedBlockID = nil
+        }
+        addNote = count == 1 ? "Removed \(targetPlan.target.displayName)." : "Removed \(count) blocks of \(targetPlan.target.displayName)."
     }
 
     private func removeSelectedBlock() {
@@ -610,6 +631,20 @@ struct PlannerWorkspaceView: View {
                   ? "Add to the longest free stretch of the night"
                   : "Add another block")
             .accessibilityLabel("Add \(targetPlan.target.displayName) to plan")
+            // Always laid out, hidden when unplanned, so every row keeps the
+            // same width and the availability bars stay lined up.
+            Button {
+                remove(targetPlan)
+            } label: {
+                Label("Remove", systemImage: "minus")
+                    .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
+            }
+            .buttonStyle(.bordered)
+            .opacity(planned > 0 ? 1 : 0)
+            .disabled(planned == 0)
+            .accessibilityHidden(planned == 0)
+            .help(planned == 1 ? "Take this target out of the plan" : "Take all \(planned) of this target's blocks out of the plan")
+            .accessibilityLabel("Remove \(targetPlan.target.displayName) from plan")
         }
         .padding(.horizontal, 20)
     }
@@ -619,6 +654,7 @@ struct PlannerWorkspaceView: View {
         if let selectedTarget {
             TargetDetailView(plan: plan, targetPlan: selectedTarget,
                              onAddToPlan: { add(selectedTarget) },
+                             onRemoveFromPlan: { remove(selectedTarget) },
                              framingHeight: 180,
                              setsWindowTitle: false)
                 .id(selectedTarget.id)

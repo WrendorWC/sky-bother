@@ -702,6 +702,12 @@ final class AppState: ObservableObject {
         return segment
     }
 
+    /// Takes every block for a target out of the draft.
+    func removeDraftSegments(forTarget targetID: String) {
+        planDraft?.segments.removeAll { $0.targetID == targetID }
+        recentReset = nil
+    }
+
     func removeDraftSegment(id: UUID) {
         planDraft?.segments.removeAll { $0.id == id }
         recentReset = nil
