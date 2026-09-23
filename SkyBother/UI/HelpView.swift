@@ -81,6 +81,12 @@ enum HelpContent {
             HelpSection(heading: "Unshootable Time", body: "Blocks can cover time when the target isn’t up, dark or clear. That part is hatched and its minutes are totalled. A block whose target has no usable time at all is red. Clouded-out nights get no suggestion.")
         ]),
 
+        HelpTopic(title: "Session Mode", systemImage: "play.circle", sections: [
+            HelpSection(body: "“Start session” beside the plan on Home runs the night at the telescope: the current target in large type with its planned times and framing, what’s next, and only the warnings worth acting on. The dim red-black screen is easy on dark-adapted eyes."),
+            HelpSection(heading: "Moving Through the Plan", body: "“Mark started” starts the clock on the current target; “Mark complete” finishes it and moves on; “Skip target” moves on without imaging it. The session follows these, not the clock, so running late or early is fine. What actually happened is recorded separately; the plan itself doesn’t change."),
+            HelpSection(heading: "Leaving and Ending", body: "“Home” leaves the session running — “Resume session” brings it back, even after quitting. “End session” finishes the night and keeps everything recorded; “Reopen session” continues it.")
+        ]),
+
         HelpTopic(title: "Availability Bars", systemImage: "chart.xyaxis.line", sections: [
             HelpSection(body: "Each candidate has a bar on the same time axis as the timeline. It fills when the target is above your minimum altitude, the sky is dark enough, and cloud is under your maximum. Gaps are usually cloud. The line through it is the target’s altitude; the tick marks its best moment."),
             HelpSection(heading: "Figures", body: "Under each bar, always in this order: best time, peak altitude, how much of the frame it fills, and usable time. An amber triangle marks zenith risk.")

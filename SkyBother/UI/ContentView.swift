@@ -35,6 +35,11 @@ struct ContentView: View {
                 // Home fetches the forecast when it appears; setup has to as
                 // well, or relaunching into setup never gets a first plan.
                 .task { if state.settings.hasSetLocation { await state.refresh() } }
+        } else if state.mainView == .session, let plan = sessionNight {
+            SessionModeView(plan: plan)
+                .toolbarTitleDisplayMode(.inline)
+                .forcedToolbarBackground(Palette.spaceTop)
+                .toolbar { windowToolbar }
         } else if state.mainView == .skyView, let plan = skyViewNight {
             SkyViewScreen(plan: plan)
                 .id(plan.id)
@@ -116,6 +121,11 @@ extension ContentView {
     private var plannerNight: NightPlan? {
         guard let draft = state.planDraft else { return nil }
         return state.plans.first { $0.planKey == draft.planKey }
+    }
+
+    private var sessionNight: NightPlan? {
+        guard let key = state.sessionNightKey else { return nil }
+        return state.plans.first { $0.planKey == key }
     }
 
     /// The night Sky View is showing: the planner's while it was opened from
