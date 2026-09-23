@@ -70,7 +70,7 @@ enum HelpContent {
         ]),
 
         HelpTopic(title: "The Plan", systemImage: "list.number", sections: [
-            HelpSection(body: "Home shows the night’s plan: the app’s suggestion — the best non-overlapping targets above your minimum score — or your own manual plan. Change it in the planner."),
+            HelpSection(body: "Home shows the night’s plan: the app’s suggestion — the best non-overlapping targets above your minimum score — or your own manual plan. Change it in the planner. When the window has room, the best unplanned targets are listed below the plan (“If it clears” on a clouded-out night); click one to see it in the Selected target panel."),
             HelpSection(heading: "Suggested or Manual", body: "A suggested plan updates with the forecast and your settings. It becomes manual only when you change it and press Done; a manual plan then stays as you left it. “Reset manual plan” replaces it with the current suggestion, with Undo until your next edit. Past nights’ plans are removed."),
             HelpSection(heading: "The Planner", body: "Open it with “Plan session” or “Edit plan”. The night, site and rig stay at the top, the timeline below them, then candidates on the left and the selected target on the right. Only the candidate list scrolls. Drag the divider to resize the panels."),
             HelpSection(heading: "Editing", body: "Drag a block to move it, or an edge to resize it; times snap to five minutes. Click a block, then: ← → move it, Shift-arrows change its end, Option-arrows its start, ↑ ↓ select the next block, Delete removes it. Nothing is saved until Done (⌘↩). Esc discards unsaved changes but keeps you in the planner; Cancel and Home leave it, asking first if there are changes."),

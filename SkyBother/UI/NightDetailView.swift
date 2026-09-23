@@ -17,6 +17,10 @@ struct NightDetailView: View {
     /// `NightTimelineView.isScrolling`; this is what actually drives it.
     @State private var isScrolling = false
     @State private var scrollSettleTask: Task<Void, Never>?
+    /// The pane's height and the header's, for deciding how many other
+    /// targets fit underneath without scrolling.
+    @State private var viewportHeight: CGFloat = 0
+    @State private var headerHeight: CGFloat = 0
 
     init(plan: NightPlan) {
         self.plan = plan
@@ -64,6 +68,13 @@ struct NightDetailView: View {
             }
         }
         .animation(.easeInOut(duration: 0.16), value: isHeaderCollapsed)
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear { viewportHeight = geometry.size.height }
+                    .onChange(of: geometry.size.height) { _, height in viewportHeight = height }
+            }
+        )
         // The hero card below already owns the selected night's identity
         // (date, verdict, best target) in a much bigger typeface — repeating
         // the date here just gave the same fact two competing headings. The
@@ -123,11 +134,76 @@ struct NightDetailView: View {
                 header
                     .padding(20)
                     .id(topAnchorID)
+                    .background(
+                        GeometryReader { geometry in
+                            Color.clear
+                                .onAppear { headerHeight = geometry.size.height }
+                                .onChange(of: geometry.size.height) { _, height in headerHeight = height }
+                        }
+                    )
+                otherTargetsSection
             }
         }
         .scrollIndicators(.visible)
         .spaceBackground()
         .background(alignment: .top) { fitProbes }
+    }
+
+    // MARK: - Other targets
+
+    private var otherRowHeight: CGFloat { 84 * uiTextScale }
+
+    /// How many rows fit below the header without scrolling. Zero unless at
+    /// least three do: on a smaller window Home stays as it was.
+    private var otherTargetCount: Int {
+        guard viewportHeight > 0, headerHeight > 0 else { return 0 }
+        let chrome = 90 * uiTextScale   // section title and the planner link
+        let rows = Int((viewportHeight - headerHeight - chrome) / otherRowHeight)
+        return rows >= 3 ? min(rows, 8) : 0
+    }
+
+    /// The night's best targets that aren't already in the plan. Read
+    /// straight from the planner's results rather than the planner's own
+    /// list, which carries whatever search and filters were last used there.
+    private var otherTargets: [TargetPlan] {
+        let planned = Set(planSegments.map(\.targetID))
+        return plan.targets
+            .filter { $0.usableMinutes > 0 && $0.score >= state.preferences.minimumScore && !planned.contains($0.id) }
+            .sorted { $0.score > $1.score }
+    }
+
+    @ViewBuilder
+    private var otherTargetsSection: some View {
+        let count = otherTargetCount
+        let targets = Array(otherTargets.prefix(count))
+        if count > 0 && !targets.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                SectionHeader(plan.isCloudedOut ? "If it clears" : "Other targets of interest")
+                VStack(spacing: 0) {
+                    ForEach(targets) { targetPlan in
+                        TargetRowView(plan: plan, targetPlan: targetPlan,
+                                      isSelected: state.selectedTargetID == targetPlan.id)
+                            .contentShape(Rectangle())
+                            .onTapGesture { state.selectedTargetID = targetPlan.id }
+                        if targetPlan.id != targets.last?.id {
+                            Divider().padding(.leading, 60)
+                        }
+                    }
+                }
+                .padding(.horizontal, 4)
+                .panelStyle()
+                Button {
+                    state.openPlanner(for: plan)
+                } label: {
+                    Label("See all in the planner", systemImage: "list.bullet.rectangle")
+                        .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Palette.accent)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+        }
     }
 
     // MARK: - Fitting the UI scale
