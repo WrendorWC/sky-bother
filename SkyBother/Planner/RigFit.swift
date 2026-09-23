@@ -70,6 +70,21 @@ struct RigFit: Hashable, Sendable {
                 notes.append("Only spans about \(Int(pixelsAcross)) pixels — undersampled, so expect a small, soft target.")
                 framingScore = min(framingScore, 0.4)
             }
+            // Below about forty pixels there is no shape to record, however
+            // bright the thing is: a planetary nebula a few arcseconds across
+            // is a fat star with this rig, and used to score well because its
+            // light is packed into those few pixels. Judged in pixels rather
+            // than as a fraction of the frame, so the same object still scores
+            // properly at a focal length that resolves it. Never quite zero —
+            // the target stays in the list, at the bottom where it belongs.
+            if !target.type.isStarField {
+                framingScore = max(0.002, framingScore * smoothstep(6, 40, pixelsAcross))
+                if pixelsAcross < 15 {
+                    framingNote = String(format: "Too small to resolve — about %.0f pixels across", pixelsAcross)
+                } else if pixelsAcross < 40 {
+                    framingNote = String(format: "Barely resolved — about %.0f pixels across", pixelsAcross)
+                }
+            }
         }
 
         // A dual-band filter is the single biggest upgrade for emission targets

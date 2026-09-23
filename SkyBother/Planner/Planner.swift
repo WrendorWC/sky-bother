@@ -613,10 +613,17 @@ struct Planner: Sendable {
                         value: meanExtinction,
                         weight: 0.09,
                         detail: "Light lost to air mass at the altitudes it reaches"),
+            // Floored low enough to be fatal, for the one framing outcome
+            // that is: a target a handful of pixels across records no shape
+            // at all with this rig, however bright it is. At the shared 0.02
+            // floor a four-pixel planetary nebula still scored in the fifties
+            // — above M13 — because its light is packed into those pixels and
+            // every other factor liked it.
             ScoreFactor(name: "Framing",
                         value: framing,
                         weight: 0.15,
-                        detail: "How the target sits in this rig's field of view"),
+                        detail: "How the target sits in this rig's field of view",
+                        floor: 0.001),
             // Weighted heavier than the other quality factors, and floored two
             // orders of magnitude lower, because it is the only one that can
             // be *fatal*: an hour of cloud or an awkward framing costs you
