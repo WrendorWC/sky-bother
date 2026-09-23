@@ -205,7 +205,44 @@ final class AppState: ObservableObject {
     /// True until the user has chosen a real site. While true, the main window
     /// shows onboarding instead of a plan — there is no sensible default
     /// location to compute one against.
-    var needsLocationSetup: Bool { !settings.hasSetLocation }
+    // MARK: Guided setup
+
+    /// True until guided setup has been finished (or skipped to the end).
+    /// Always true without a site: nothing can be planned for nowhere.
+    var needsSetup: Bool { !settings.hasSetLocation || settings.setupStep != nil }
+
+    static let setupStepCount = 5
+
+    /// The step to show, saved as it changes so a relaunch resumes there.
+    var setupStep: Int {
+        get { min(max(settings.setupStep ?? 0, 0), Self.setupStepCount - 1) }
+        set { settings.setupStep = min(max(newValue, 0), Self.setupStepCount - 1) }
+    }
+
+    /// Setup is done: back to Home, on the best night coming up and its best
+    /// target, so the first thing seen is a real recommendation.
+    func finishSetup() {
+        settings.setupStep = nil
+        mainView = .home
+        if let best = bestUpcomingNight {
+            selectedNightID = best.id
+            selectedTargetID = best.bestTarget?.id
+        }
+    }
+
+    /// Walks through setup again, starting from what's already set.
+    func restartSetup() {
+        guard planDraft == nil else { return }
+        mainView = .home
+        settings.setupStep = 0
+    }
+
+    /// The best-scoring night in the forecast, for setup's first plan.
+    var bestUpcomingNight: NightPlan? { plans.max { $0.score < $1.score } }
+
+    func applyGoalPreset(_ preset: GoalPreset) {
+        preset.apply(to: &settings.preferences)
+    }
 
     var forecastAgeDescription: String? {
         guard forecast.retrievedAt != .distantPast else { return nil }
@@ -956,6 +993,30 @@ final class AppState: ObservableObject {
             settings.savedRigs[index] = rig
         } else {
             settings.savedRigs.append(rig)
+        }
+    }
+
+    /// Keeps the current numbers as a new saved rig, leaving any rig they
+    /// started from untouched.
+    func saveCurrentRigAsNew() {
+        var copy = rig
+        copy.id = UUID()
+        let names = settings.savedRigs.map(\.name)
+        if names.contains(copy.name) {
+            var n = 2
+            while names.contains("\(rig.name) \(n)") { n += 1 }
+            copy.name = "\(rig.name) \(n)"
+        }
+        settings.savedRigs.append(copy)
+        settings.rig = copy
+    }
+
+    /// True when the active rig is exactly one of the built-in presets.
+    var rigIsUnchangedPreset: Bool {
+        Rig.presets.contains { preset in
+            var candidate = rig
+            candidate.id = preset.id
+            return candidate == preset
         }
     }
 

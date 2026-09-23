@@ -140,3 +140,66 @@ extension Preferences {
     /// Display units only; every stored value is metric.
     var temperatureUnit: UnitTemperature { usesImperialUnits ? .fahrenheit : .celsius }
 }
+
+/// Named starting points for how a night gets planned. Not stored: which one
+/// applies is read off the values themselves, so changing either value after
+/// picking a preset simply makes it Custom, with the values kept.
+enum GoalPreset: String, CaseIterable, Identifiable, Sendable {
+    case quickSession
+    case deepIntegration
+    case variety
+    case custom
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .quickSession: return "Quick session"
+        case .deepIntegration: return "Deep integration"
+        case .variety: return "Variety"
+        case .custom: return "Custom"
+        }
+    }
+
+    var summary: String {
+        switch self {
+        case .quickSession: return "About an hour per target."
+        case .deepIntegration: return "Several hours on one or two targets."
+        case .variety: return "Many targets, about an hour each."
+        case .custom: return "Your own time per target."
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .quickSession: return "timer"
+        case .deepIntegration: return "hourglass"
+        case .variety: return "square.grid.2x2"
+        case .custom: return "slider.horizontal.3"
+        }
+    }
+
+    /// The two values a preset sets; nil for Custom, which sets nothing.
+    var values: (integrationGoalMinutes: Double, emphasis: PlanEmphasis)? {
+        switch self {
+        case .quickSession: return (60, .longerIntegration)
+        case .deepIntegration: return (240, .longerIntegration)
+        case .variety: return (120, .moreTargets)
+        case .custom: return nil
+        }
+    }
+
+    static func matching(_ preferences: Preferences) -> GoalPreset {
+        allCases.first { preset in
+            guard let values = preset.values else { return false }
+            return values.integrationGoalMinutes == preferences.integrationGoalMinutes
+                && values.emphasis == preferences.planEmphasis
+        } ?? .custom
+    }
+
+    func apply(to preferences: inout Preferences) {
+        guard let values else { return }
+        preferences.integrationGoalMinutes = values.integrationGoalMinutes
+        preferences.planEmphasis = values.emphasis
+    }
+}

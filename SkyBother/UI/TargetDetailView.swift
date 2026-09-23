@@ -117,7 +117,7 @@ struct TargetDetailView: View {
             }
             .buttonStyle(.link)
             .font(.scaled(.callout, scale: uiTextScale))
-            .help("Where \(target.displayName) is through the night, with your frame on it")
+            .help("See \(target.displayName) on the sky")
             if let onAddToPlan {
                 Button(action: onAddToPlan) {
                     Label(plannedBlocks.isEmpty ? "Add to plan" : "Add another block", systemImage: "plus.circle.fill")
@@ -127,7 +127,7 @@ struct TargetDetailView: View {
                 .controlSize(.large)
                 .help(plannedBlocks.isEmpty
                       ? "Put a block for this target in the longest free stretch of the night"
-                      : "The same target can take more than one block — this adds another in the longest free stretch")
+                      : "Add another block in the longest free stretch")
             }
         }
     }
@@ -271,7 +271,7 @@ struct TargetDetailView: View {
                 .frame(height: framingHeight)
                 .contentShape(Rectangle())
                 .onTapGesture { openWindow(id: "sky", value: target.designation) }
-                .help("Open this patch of sky in its own window — pan, zoom and search")
+                .help("Open this patch of sky to pan, zoom and search")
             Text(targetPlan.fit.framingNote)
                 .font(.scaled(.callout, scale: uiTextScale))
             if let sampling = targetPlan.fit.samplingNote {
@@ -375,7 +375,7 @@ struct TargetDetailView: View {
                 factRow("Peak field rotation", String(format: "%.1f°/h", targetPlan.maximumFieldRotation))
             }
             if let window = targetPlan.bestWindow {
-                factRow("Longest window",
+                factRow("Best window",
                         "\(Format.time(window.start, in: plan.timeZone))–\(Format.time(window.end, in: plan.timeZone))")
             }
         }

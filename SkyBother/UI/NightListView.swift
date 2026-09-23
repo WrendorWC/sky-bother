@@ -146,9 +146,17 @@ struct NightListView: View {
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             }
-            Text("Bortle \(state.site.bortleClass) · \(state.rig.name)")
-                .font(.scaled(.caption, scale: uiTextScale))
-                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                Text("Bortle \(state.site.bortleClass) · \(state.rig.name)")
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                Button("Edit setup") { state.restartSetup() }
+                    .buttonStyle(.link)
+                    .disabled(state.planDraft != nil)
+                    .help("Run guided setup again")
+            }
+            .font(.scaled(.caption, scale: uiTextScale))
         }
     }
 }

@@ -159,7 +159,7 @@ struct TargetCatalogView: View {
                 } label: {
                     Label("Add Custom Target", systemImage: "plus.circle.fill")
                 }
-                .help("Add a target of your own — anything the built-in catalog doesn't cover")
+                .help("Add a target that isn't in the catalog")
             }
 
             // The night every card is judged against, and the filters that
@@ -179,7 +179,7 @@ struct TargetCatalogView: View {
                 .menuStyle(.borderlessButton)
                 .fixedSize()
                 .disabled(state.plans.isEmpty)
-                .help("The night each card's score, usable time and framing are for")
+                .help("The night each card is scored for")
 
                 Toggle("Good or better", isOn: $query.goodOnly)
                     .toggleStyle(.checkbox)
@@ -480,23 +480,23 @@ struct TargetCatalogDetail: View {
                             Label("Add to \(Format.weekday(night.date, in: night.timeZone))'s plan", systemImage: "plus.circle.fill")
                         }
                         .buttonStyle(.borderedProminent)
-                        .help("Opens the planner on \(nightName(night)) with a block for this target. Nothing is saved until you press Done there.")
+                        .help("Opens the planner with this target added")
                         Button {
                             view(on: night)
                         } label: {
                             Label("View on \(Format.weekday(night.date, in: night.timeZone))", systemImage: "scope")
                         }
-                        .help("Show this target for \(nightName(night)) in the main window. Doesn't change any plan.")
+                        .help("Show this target in the main window")
                     }
                     .controlSize(.large)
                 } else {
-                    Label("No usable time on \(nightName(night)) — it isn't up, dark and clear at the same time, or your settings leave it out.",
+                    Label("No usable time on \(nightName(night)).",
                           systemImage: "moon.zzz")
                         .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     if let other = state.nearestUsefulNight(for: target.id, after: night) {
-                        Text("Better on \(nightName(other.night)) · \(Int(other.target.score.rounded())) \(other.target.verdict.rawValue) · \(other.target.usableHoursText) — choose that night in the catalog's Night menu.")
+                        Text("Better on \(nightName(other.night)) · \(Int(other.target.score.rounded())) \(other.target.verdict.rawValue) · \(other.target.usableHoursText)")
                             .font(.scaled(.callout, scale: uiTextScale))
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -509,7 +509,7 @@ struct TargetCatalogDetail: View {
                 }
             } else {
                 SectionHeader("On a night")
-                Text("Pick a night in the catalog's Night menu to see how this target does on it and add it to that night's plan.")
+                Text("Choose a night in the Night menu to see how this target does.")
                     .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -527,10 +527,10 @@ struct TargetCatalogDetail: View {
             dismiss()
             MainWindow.bringForward(using: openWindow)
         case .noRoom:
-            actionNote = "\(nightName(night))'s plan has no free time left. The planner is open on it — shorten or remove a block, then add this again."
+            actionNote = "\(nightName(night))'s plan is full. Shorten or remove a block, then add this again."
             MainWindow.bringForward(using: openWindow)
         case .plannerBusy(let other):
-            actionNote = "The planner is open on \(Format.weekday(other, in: night.timeZone)) \(Format.dayAndMonth(other, in: night.timeZone)). Finish or cancel that plan first."
+            actionNote = "The planner is open on \(Format.weekday(other, in: night.timeZone)) \(Format.dayAndMonth(other, in: night.timeZone)). Finish that plan first."
         }
     }
 
@@ -539,7 +539,7 @@ struct TargetCatalogDetail: View {
             dismiss()
             MainWindow.bringForward(using: openWindow)
         } else if let busy = state.nightBeingPlanned {
-            actionNote = "The planner is open on \(nightName(busy)). Finish or cancel that plan first."
+            actionNote = "The planner is open on \(nightName(busy)). Finish that plan first."
         }
     }
 

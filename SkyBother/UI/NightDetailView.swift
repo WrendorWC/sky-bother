@@ -209,7 +209,7 @@ struct NightDetailView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help("See this night's sky, your frame and the plan moving through it")
+        .help("Open Sky View")
         .accessibilityLabel("Open Sky View for \(Format.longDate(plan.date, in: plan.timeZone))")
     }
 
@@ -289,9 +289,9 @@ struct NightDetailView: View {
 
     private var emptyPlanMessage: String {
         if plan.isCloudedOut {
-            return "Clouded out — nothing to plan. The planner still lists what would have been up if it clears."
+            return "Clouded out — nothing to plan."
         }
-        return "Nothing tonight clears your minimum score for long enough to build a session around. Plan session lets you build one by hand."
+        return "Nothing clears your minimum score for long enough on this night."
     }
 
     private func planSummary(_ segments: [PlanSegment]) -> String {
@@ -375,7 +375,7 @@ struct NightDetailView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .help("Show \(best.target.displayName) in the Selected target panel")
+                    .help("Show details")
                     .accessibilityLabel("Best target, \(bestTargetLine). Show details")
                 }
             }
@@ -397,7 +397,7 @@ struct NightDetailView: View {
                         .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
                         .foregroundStyle(Palette.marginal)
                 }
-                .hoverTooltip("The forecast writes this night off. The list below shows what would have been up if it clears.")
+                .hoverTooltip("The forecast writes this night off.")
             }
         }
         // The night's one-sentence limitation beside the one thing to do
@@ -420,7 +420,7 @@ struct NightDetailView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .help("Choose targets and build this night's session")
+            .help("Build this night's session")
         }
         }
         skyDomeButton

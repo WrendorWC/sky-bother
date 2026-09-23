@@ -143,7 +143,7 @@ struct SkyBrowserView: View {
             // nothing about the old styling said it could be pressed.
             .buttonStyle(.bordered)
             .tint(isIdentifying ? Palette.accent : .secondary)
-            .help("Name what's at the centre of the view, and everything around it the catalogue knows")
+            .help("Name the objects in view")
 
             if isLoading { ProgressView().controlSize(.small) }
             Text(fieldOfViewSummary)

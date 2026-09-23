@@ -2,10 +2,58 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var state: AppState
+    /// Shown inside guided setup as its Advanced setup sheet, where offering
+    /// to run guided setup would be circular.
+    var isInGuidedSetup = false
+
+    private enum Pane: String, CaseIterable, Identifiable {
+        case location = "Location", equipment = "Equipment", planning = "Planning"
+        var id: String { rawValue }
+    }
+    @State private var pane: Pane = .location
 
     var body: some View {
+        if isInGuidedSetup {
+            // A settings-style tab bar doesn't draw inside a sheet, so the
+            // same three panes sit behind a segmented control there.
+            VStack(spacing: 0) {
+                HStack(spacing: 6) {
+                    ForEach(Pane.allCases) { option in
+                        Button {
+                            pane = option
+                        } label: {
+                            Text(option.rawValue)
+                                .fontWeight(pane == option ? .semibold : .regular)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 5)
+                                .background(pane == option ? Palette.accent.opacity(0.3) : Color.clear,
+                                            in: Capsule())
+                                .overlay(Capsule().strokeBorder(pane == option ? Palette.accent : Palette.panelBorder))
+                                .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(pane == option ? .isSelected : [])
+                    }
+                }
+                .padding(10)
+                Group {
+                    switch pane {
+                    case .location: LocationSettings(isInGuidedSetup: true)
+                    case .equipment: EquipmentSettings()
+                    case .planning: PlanningSettings()
+                    }
+                }
+            }
+            .frame(width: 640, height: 580)
+            .onChange(of: state.settings) { _, _ in state.requestReplan() }
+        } else {
+            tabs
+        }
+    }
+
+    private var tabs: some View {
         TabView {
-            LocationSettings()
+            LocationSettings(isInGuidedSetup: isInGuidedSetup)
                 .tabItem { Label("Location", systemImage: "mappin.and.ellipse") }
             EquipmentSettings()
                 .tabItem { Label("Equipment", systemImage: "camera.aperture") }
@@ -24,14 +72,33 @@ struct SettingsView: View {
 private struct LocationSettings: View {
     @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
+    var isInGuidedSetup = false
+    @Environment(\.openWindow) private var openWindow
     @State private var query = ""
     @State private var results: [GeocodingResult] = []
     @State private var isSearching = false
     @State private var searchError: String?
-    @State private var showsHorizonProfile = false
 
     var body: some View {
         Form {
+            if !isInGuidedSetup {
+            Section {
+                HStack {
+                    Text("Step through site, horizon, rig and goal again.")
+                        .font(.scaled(.caption, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Run guided setup…") {
+                        state.restartSetup()
+                        // Setup appears in the main window; Settings would
+                        // otherwise sit on top of it.
+                        NSApp.keyWindow?.close()
+                        MainWindow.bringForward(using: openWindow)
+                    }
+                    .disabled(state.planDraft != nil)
+                }
+            }
+            }
             Section("Find a site") {
                 HStack {
                     TextField("Town, city or landmark", text: $query)
@@ -66,11 +133,6 @@ private struct LocationSettings: View {
 
             Section("Current site") {
                 TextField("Name", text: $state.site.name)
-                HStack {
-                    TextField("Latitude", value: $state.site.latitude, format: .number.precision(.fractionLength(4)))
-                    TextField("Longitude", value: $state.site.longitude, format: .number.precision(.fractionLength(4)))
-                }
-                TextField("Elevation (m)", value: $state.site.elevationMeters, format: .number.precision(.fractionLength(0)))
 
                 Picker("Time zone", selection: $state.site.timeZoneIdentifier) {
                     ForEach(TimeZone.knownTimeZoneIdentifiers, id: \.self) { identifier in
@@ -85,7 +147,14 @@ private struct LocationSettings: View {
                     }
                 }
 
-                horizonControls
+                // Search sets these; typing them is the exception.
+                DisclosureGroup("Coordinates and elevation") {
+                    HStack {
+                        TextField("Latitude (°)", value: $state.site.latitude, format: .number.precision(.fractionLength(4)))
+                        TextField("Longitude (°)", value: $state.site.longitude, format: .number.precision(.fractionLength(4)))
+                    }
+                    TextField("Elevation (m)", value: $state.site.elevationMeters, format: .number.precision(.fractionLength(0)))
+                }
 
                 HStack {
                     Button("Refresh forecast for this site") {
@@ -95,8 +164,13 @@ private struct LocationSettings: View {
                     Button("Save as a separate spot") {
                         state.duplicateCurrentSite()
                     }
-                    .help("Copy this site — same place, same weather, same Bortle class — as a second entry with its own horizon, for a front yard and a back yard that see different amounts of sky")
+                    .help("Copy this site with its own horizon, for a second spot at the same place")
                 }
+            }
+
+            Section("Horizon") {
+                HorizonEditor(site: $state.site)
+                    .padding(.vertical, 4)
             }
 
             if state.settings.savedSites.count > 1 {
@@ -152,71 +226,6 @@ private struct LocationSettings: View {
         }
     }
 
-    // MARK: - Horizon
-
-    /// The baseline slider sets every direction at once; the disclosure below
-    /// it is for the one tree that ruins the rest. That order matters — almost
-    /// every site is "about this open all round, except over there", and
-    /// asking for eight numbers up front to express that would be eight times
-    /// the work for the same answer.
-    @ViewBuilder
-    private var horizonControls: some View {
-        VStack(alignment: .leading) {
-            Slider(value: baselineHorizon, in: 0...60, step: 1) {
-                Text("Blocked horizon")
-            }
-            Text(baselineHorizonCaption)
-                .font(.scaled(.caption, scale: uiTextScale))
-                .foregroundStyle(.secondary)
-        }
-
-        DisclosureGroup(isExpanded: $showsHorizonProfile) {
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(Site.horizonDirections.indices, id: \.self) { index in
-                    HStack(spacing: 8) {
-                        Text(Site.horizonDirections[index])
-                            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold).monospaced())
-                            .foregroundStyle(.secondary)
-                            .frame(width: 26, alignment: .leading)
-                        Slider(value: horizonBinding(forDirectionAt: index), in: 0...60, step: 1)
-                        Text(Format.degrees(state.site.horizonByDirection[index]))
-                            .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
-                            .foregroundStyle(.secondary)
-                            .frame(width: 34, alignment: .trailing)
-                    }
-                }
-            }
-            .padding(.top, 4)
-        } label: {
-            Text("One direction is worse")
-        }
-        // Opened for you when this site already has a tree recorded, so it
-        // isn't hidden behind a triangle you have no reason to click.
-        .task(id: state.site.id) { showsHorizonProfile = state.site.hasDirectionalHorizon }
-    }
-
-    /// Flattens the horizon on every change: this is the "set them all at
-    /// once" control, so it deliberately discards per-direction detail rather
-    /// than trying to shift eight values while preserving their spacing, which
-    /// falls apart the moment one of them hits an end of the range.
-    private var baselineHorizon: Binding<Double> {
-        Binding(get: { state.site.horizonAltitude },
-                set: { state.site.setHorizonEverywhere(to: $0) })
-    }
-
-    private func horizonBinding(forDirectionAt index: Int) -> Binding<Double> {
-        Binding(get: { state.site.horizonByDirection[index] },
-                set: { state.site.setHorizon(to: $0, forDirectionAt: index) })
-    }
-
-    private var baselineHorizonCaption: String {
-        let baseline = Format.degrees(state.site.horizonAltitude)
-        guard state.site.hasDirectionalHorizon else {
-            return "Trees, houses and hills block the sky below \(baseline) all the way round. Targets are ignored under this."
-        }
-        return "Your most open direction is \(baseline); the worst is \(Format.degrees(state.site.worstHorizonAltitude)). Dragging this levels every direction back to one number."
-    }
-
     private func search() async {
         isSearching = true
         searchError = nil
@@ -240,15 +249,22 @@ private struct EquipmentSettings: View {
         Form {
             Section("Presets") {
                 Menu("Load a preset") {
-                    ForEach(Rig.presets) { preset in
-                        Button(preset.name) { state.applyPreset(preset) }
+                    ForEach(Rig.PresetGroup.allCases) { group in
+                        Section(group.rawValue) {
+                            ForEach(Rig.presets.filter { $0.presetGroup == group }) { preset in
+                                Button(preset.name) { state.applyPreset(preset) }
+                            }
+                        }
                     }
                 }
+                Text("Presets fill in every number below.")
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
             }
 
             Section("Your rigs") {
                 if state.settings.savedRigs.isEmpty {
-                    Text("Enter your numbers below, then save the rig here to switch back to it later. This is how you add an instrument that has no built-in preset.")
+                    Text("Enter your numbers below, then save the rig to switch back to it later.")
                         .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 }
@@ -277,20 +293,29 @@ private struct EquipmentSettings: View {
                         .help("Remove this saved rig")
                     }
                 }
-                Button(state.isCurrentRigSaved ? "Update saved rig" : "Save this rig") {
-                    state.saveCurrentRig()
+                HStack {
+                    if state.isCurrentRigSaved {
+                        Button("Update saved rig") { state.saveCurrentRig() }
+                            .help("Overwrite the saved copy of this rig with the numbers below")
+                    }
+                    Button(state.isCurrentRigSaved ? "Save as new rig" : "Save this rig") { state.saveCurrentRigAsNew() }
+                        .help("Keep these numbers as a separate saved rig")
                 }
+                .disabled(!state.rig.validationProblems.isEmpty)
+                Text("Edits apply now. The saved copy changes only with Update saved rig.")
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
             }
 
             Section("Optics") {
                 TextField("Name", text: $state.rig.name)
-                TextField("Aperture (mm)", value: $state.rig.apertureMillimeters, format: .number)
-                TextField("Focal length (mm)", value: $state.rig.focalLengthMillimeters, format: .number)
-                HStack {
-                    TextField("Sensor width (mm)", value: $state.rig.sensorWidthMillimeters, format: .number)
-                    TextField("Sensor height (mm)", value: $state.rig.sensorHeightMillimeters, format: .number)
+                // A preset's numbers are right as they are; tucked away so
+                // they aren't edited by accident. Custom rigs keep them open.
+                if state.rigIsUnchangedPreset {
+                    DisclosureGroup("Advanced: optics numbers") { opticsFields }
+                } else {
+                    opticsFields
                 }
-                TextField("Pixel size (µm)", value: $state.rig.pixelSizeMicrons, format: .number)
             }
 
             Section("Mount and filters") {
@@ -317,14 +342,33 @@ private struct EquipmentSettings: View {
             }
 
             Section("What that gives you") {
-                LabeledContent("Field of view", value: state.rig.fieldOfViewSummary)
-                LabeledContent("Focal ratio", value: String(format: "f/%.1f", state.rig.focalRatio))
-                LabeledContent("Sampling", value: String(format: "%.2f″/pixel", state.rig.arcsecondsPerPixel))
+                let problems = state.rig.validationProblems
+                if problems.isEmpty {
+                    LabeledContent("Field of view", value: "\(state.rig.fieldOfViewSummary) — \(state.rig.fieldOfViewInMoons)")
+                    LabeledContent("Focal ratio", value: String(format: "f/%.1f", state.rig.focalRatio))
+                    LabeledContent("Image scale", value: String(format: "%.2f″ per pixel", state.rig.arcsecondsPerPixel))
+                } else {
+                    ForEach(problems, id: \.self) { problem in
+                        Label(problem, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(Palette.marginal)
+                    }
+                }
             }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .background(Palette.spaceBackground)
+    }
+
+    @ViewBuilder
+    private var opticsFields: some View {
+        TextField("Aperture (mm)", value: $state.rig.apertureMillimeters, format: .number)
+        TextField("Focal length (mm)", value: $state.rig.focalLengthMillimeters, format: .number)
+        HStack {
+            TextField("Sensor width (mm)", value: $state.rig.sensorWidthMillimeters, format: .number)
+            TextField("Sensor height (mm)", value: $state.rig.sensorHeightMillimeters, format: .number)
+        }
+        TextField("Pixel size (µm)", value: $state.rig.pixelSizeMicrons, format: .number)
     }
 }
 
@@ -336,26 +380,42 @@ private struct PlanningSettings: View {
 
     var body: some View {
         Form {
+            Section("Goal") {
+                Picker("Kind of night", selection: goalBinding) {
+                    ForEach(GoalPreset.allCases) { preset in
+                        Text(preset.title).tag(preset)
+                    }
+                }
+                Text(GoalPreset.matching(state.preferences).summary + " Changing the values below makes it Custom.")
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             Section("What counts as usable") {
                 sliderRow(title: "Maximum cloud cover",
                           value: $state.preferences.maximumCloudCover,
                           range: 0...100, step: 5,
-                          caption: "Hours cloudier than \(Int(state.preferences.maximumCloudCover))% are written off.")
+                          display: "\(Int(state.preferences.maximumCloudCover))%",
+                          caption: "Hours cloudier than this are written off.")
 
                 sliderRow(title: "Minimum darkness",
                           value: $state.preferences.minimumDarkness,
                           range: 0.1...1, step: 0.05,
-                          caption: darknessCaption)
+                          display: String(format: "Sun below %.0f°", darknessSunAltitude),
+                          caption: "−18° is full astronomical darkness. Moonlight is scored separately.")
 
                 sliderRow(title: "Minimum altitude",
                           value: $state.preferences.minimumUsefulAltitude,
                           range: 10...60, step: 5,
-                          caption: "Ignore targets below \(Format.degrees(state.preferences.minimumUsefulAltitude)) — that is \(String(format: "%.1f", SkyCoordinates.airMass(altitude: state.preferences.minimumUsefulAltitude))) air masses.")
+                          display: Format.degrees(state.preferences.minimumUsefulAltitude),
+                          caption: "Targets lower than this are ignored — there you look through \(String(format: "%.1f", SkyCoordinates.airMass(altitude: state.preferences.minimumUsefulAltitude))) times as much air as straight up.")
 
                 sliderRow(title: "Integration goal",
                           value: $state.preferences.integrationGoalMinutes,
                           range: 30...480, step: 15,
-                          caption: "A target scores full marks for time once it offers \(Format.duration(minutes: state.preferences.integrationGoalMinutes)).")
+                          display: Format.duration(minutes: state.preferences.integrationGoalMinutes),
+                          caption: "Full marks for time once a target is usable this long.")
 
                 VStack(alignment: .leading, spacing: 4) {
                     Picker("Suggested plan favours", selection: $state.preferences.planEmphasis) {
@@ -374,9 +434,10 @@ private struct PlanningSettings: View {
                 sliderRow(title: "Hide below score",
                           value: $state.preferences.minimumScore,
                           range: 0...80, step: 5,
-                          caption: "Targets scoring under \(Int(state.preferences.minimumScore)) are hidden.")
+                          display: "\(Int(state.preferences.minimumScore)) · \(Verdict.forScore(state.preferences.minimumScore).rawValue)",
+                          caption: hiddenCaption)
 
-                Stepper("Plan \(state.preferences.forecastNights) nights ahead",
+                Stepper("Plan \(state.preferences.forecastNights) night\(state.preferences.forecastNights == 1 ? "" : "s") ahead",
                         value: $state.preferences.forecastNights, in: 1...14)
 
                 Toggle("Include star clusters", isOn: $state.preferences.includeStarClusters)
@@ -395,26 +456,52 @@ private struct PlanningSettings: View {
         let floor = Format.duration(minutes: state.preferences.minimumSessionMinutes)
         switch state.preferences.planEmphasis {
         case .longerIntegration:
-            return "No target is handed more than \(cap) before the others get a turn, and nothing under \(floor) is suggested at all — by the time the mount has slewed and refocused, a shorter slot is gone. Time nobody else wants is still given back afterwards."
+            return "At most \(cap) per target, and nothing shorter than \(floor)."
         case .moreTargets:
-            return "Half your Integration goal — \(cap) — so roughly twice as many targets fit, down to sessions of \(floor). Only changes what the app suggests; a plan you've edited is left alone."
+            return "At most \(cap) per target, so about twice as many fit, down to \(floor)."
         }
     }
 
-    private var darknessCaption: String {
-        // Invert the twilight curve to show which solar altitude this equals.
+    /// The stored darkness is a 0–1 value on the twilight curve; shown as the
+    /// solar altitude it stands for, by inverting that curve.
+    private var darknessSunAltitude: Double {
         let t = pow(clamp(state.preferences.minimumDarkness, 0, 1), 1 / 1.4)
-        let sunAltitude = -(t * 12 + 6)
-        return String(format: "Counts the sky as dark once the sun is below %.0f°. Moonlight is scored separately, per target.", sunAltitude)
+        return -(t * 12 + 6)
+    }
+
+    private var goalBinding: Binding<GoalPreset> {
+        Binding(get: { GoalPreset.matching(state.preferences) },
+                set: { state.applyGoalPreset($0) })
+    }
+
+    /// What the threshold means, and what it's hiding right now.
+    private var hiddenCaption: String {
+        let threshold = Int(state.preferences.minimumScore)
+        guard let night = state.selectedPlan ?? state.tonight else {
+            return "Targets scoring under \(threshold) are hidden."
+        }
+        let hidden = night.targets.filter { $0.score < state.preferences.minimumScore }.count
+        let day = Format.weekday(night.date, in: night.timeZone)
+        return "Hides \(hidden) of \(night.targets.count) targets on \(day)."
     }
 
     private func sliderRow(title: String,
                            value: Binding<Double>,
                            range: ClosedRange<Double>,
                            step: Double,
+                           display: String,
                            caption: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text(display)
+                    .monospacedDigit()
+                    .fontWeight(.semibold)
+            }
             Slider(value: value, in: range, step: step) { Text(title) }
+                .labelsHidden()
+                .accessibilityValue(display)
             Text(caption)
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.secondary)

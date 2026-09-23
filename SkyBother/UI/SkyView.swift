@@ -188,7 +188,7 @@ struct SkyView: View {
         if frameCenter.altitude <= 0 {
             return "below the horizon"
         } else if isCameraFrameTooCloseToZenith {
-            return "too near the zenith to draw meaningfully on this flat view"
+            return "too close to the zenith to draw"
         } else {
             return "\(Int(frameCenter.azimuth.rounded()))° \(frameCenter.compassPoint) · \(Format.degrees(frameCenter.altitude))"
         }
@@ -316,7 +316,7 @@ struct SkyView: View {
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
-                .help("Preview another rig's frame here. Your active rig in Settings doesn't change.")
+                .help("Preview another rig's frame")
 
                 Text(framingRig.fieldOfViewSummary)
                     .font(.scaled(.callout, scale: uiTextScale).monospacedDigit())
@@ -670,7 +670,7 @@ struct SkyView: View {
                     .pickerStyle(.segmented)
                     .labelsHidden()
                     .fixedSize()
-                    .help("Follow planned targets hands the selection to each planned target as its block comes round. Stay on selected target keeps the selection where it is.")
+                    .help("What happens to the selection as playback crosses plan blocks")
                 }
             }
 
@@ -803,7 +803,7 @@ struct SkyView: View {
         }
         .buttonStyle(.borderedProminent)
         .keyboardShortcut(.space, modifiers: [])
-        .help(isPlaying ? "Pause (Space)" : "Play the night forward, about 25 seconds from sunset to sunrise (Space)")
+        .help(isPlaying ? "Pause (Space)" : "Play the night (Space)")
         .fixedSize()
     }
 

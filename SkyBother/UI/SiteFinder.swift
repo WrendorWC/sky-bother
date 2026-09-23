@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// First-run gate. Shown instead of the main window until a real site is
-/// chosen — a fully populated plan for the wrong place is worse than no plan,
-/// so nothing here falls back to an invented default.
-struct LocationOnboardingView: View {
+/// Finding a site by name, or by coordinates for anyone who'd rather type
+/// them — the first step of guided setup. Choosing a result makes it the
+/// active site straight away; nothing here falls back to an invented default.
+struct SiteFinder: View {
     @EnvironmentObject private var state: AppState
     @Environment(\.uiTextScale) private var uiTextScale
 
@@ -20,18 +20,6 @@ struct LocationOnboardingView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 7) {
-                Image(systemName: "moon.stars.fill")
-                    .font(.system(size: 36 * uiTextScale))
-                    .foregroundStyle(Palette.accent)
-                Text("Where are you observing from?")
-                    .font(.scaled(.title, scale: uiTextScale).weight(.semibold))
-                Text("Twilight times, the moon's position and tonight's weather all depend on exactly where you are. Search for your town, or enter coordinates directly.")
-                    .font(.scaled(.body, scale: uiTextScale))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
             if !showsManualEntry {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
@@ -54,6 +42,8 @@ struct LocationOnboardingView: View {
                             ForEach(results) { result in
                                 Button {
                                     state.apply(result)
+                                    results = []
+                                    query = ""
                                 } label: {
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(result.name)
@@ -71,7 +61,7 @@ struct LocationOnboardingView: View {
                         }
                     }
 
-                    Button("Enter coordinates manually instead") { showsManualEntry = true }
+                    Button("Enter coordinates instead") { showsManualEntry = true }
                         .buttonStyle(.link)
                         .font(.scaled(.callout, scale: uiTextScale))
                 }
@@ -104,16 +94,7 @@ struct LocationOnboardingView: View {
                 }
             }
 
-            Spacer(minLength: 0)
-
-            Text("You can fine-tune light pollution, blocked horizon and equipment afterward in Settings (⌘,).")
-                .font(.scaled(.caption, scale: uiTextScale))
-                .foregroundStyle(.tertiary)
         }
-        .padding(34)
-        .frame(maxWidth: 540)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .spaceBackground()
     }
 
     private var manualEntryLooksValid: Bool {
@@ -158,5 +139,6 @@ struct LocationOnboardingView: View {
                         bortleClass: Site.unset.bortleClass,
                         horizonAltitude: Site.unset.horizonAltitude)
         state.finishLocationSetup(withManualSite: site)
+        showsManualEntry = false
     }
 }

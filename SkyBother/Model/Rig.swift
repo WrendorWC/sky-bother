@@ -373,3 +373,45 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
         seestarS50ProWide, seestarS30Wide, seestarS30ProWide
     ].sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 }
+
+extension Rig {
+    /// How presets are grouped for choosing: one-box smart telescopes, and
+    /// everything built from a separate camera and lens or telescope.
+    enum PresetGroup: String, CaseIterable, Identifiable {
+        case smartTelescope = "Smart telescopes"
+        case cameraAndOptics = "Cameras, lenses and telescopes"
+        var id: String { rawValue }
+    }
+
+    var presetGroup: PresetGroup {
+        let smartMakers = ["ZWO Seestar", "Celestron Origin", "Unistellar", "Vaonis", "DwarfLab"]
+        return smartMakers.contains { name.hasPrefix($0) } ? .smartTelescope : .cameraAndOptics
+    }
+
+    /// What's wrong with these numbers, in plain words — empty when they
+    /// describe a rig the planner can work with.
+    var validationProblems: [String] {
+        var problems: [String] = []
+        if name.trimmingCharacters(in: .whitespaces).isEmpty { problems.append("Give the rig a name.") }
+        if apertureMillimeters <= 0 { problems.append("Aperture has to be more than 0 mm.") }
+        if focalLengthMillimeters <= 0 { problems.append("Focal length has to be more than 0 mm.") }
+        // Either side may be the longer one: smart telescopes like the
+        // Seestar hold their sensor upright.
+        if sensorWidthMillimeters <= 0 || sensorHeightMillimeters <= 0 {
+            problems.append("Sensor width and height both have to be more than 0 mm.")
+        }
+        if pixelSizeMicrons <= 0 { problems.append("Pixel size has to be more than 0 µm.") }
+        if apertureMillimeters > 0 && focalLengthMillimeters > 0 && !(0.5...40).contains(focalRatio) {
+            problems.append(String(format: "f/%.1f is outside what real optics use — check aperture and focal length.", focalRatio))
+        }
+        return problems
+    }
+
+    /// The field of view in words a beginner can picture.
+    var fieldOfViewInMoons: String {
+        let moons = max(fieldOfViewWidthDegrees, fieldOfViewHeightDegrees) / 0.52
+        return moons >= 1.5
+            ? String(format: "about %.0f full Moons across the long side", moons)
+            : "about one full Moon across the long side"
+    }
+}

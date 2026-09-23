@@ -100,17 +100,17 @@ struct PlannerWorkspaceView: View {
             }
             Button("Keep editing", role: .cancel) {}
         } message: {
-            Text("Saving makes this night's plan a manual plan. Discarding puts back the plan as it was when you opened the planner.")
+            Text("Saving makes this a manual plan.")
         }
         .confirmationDialog("Discard your changes?", isPresented: $isConfirmingRevert) {
             Button("Discard changes", role: .destructive) {
                 state.revertDraft()
                 selectedBlockID = nil
-                addNote = "Changes discarded — back to the plan as it was when you opened the planner."
+                addNote = "Changes discarded."
             }
             Button("Keep editing", role: .cancel) {}
         } message: {
-            Text("The timeline goes back to the plan as it was when you opened the planner. You stay in the planner.")
+            Text("The plan goes back to how it was when you opened the planner.")
         }
         .confirmationDialog(resetTitle, isPresented: $isConfirmingReset) {
             Button("Reset manual plan", role: .destructive) {
@@ -120,7 +120,7 @@ struct PlannerWorkspaceView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Your saved manual plan for this night will be removed and replaced by the app's current suggestion, built from the latest forecast and your settings.")
+            Text("Your manual plan will be replaced by the current suggestion.")
         }
     }
 
@@ -133,7 +133,7 @@ struct PlannerWorkspaceView: View {
                 Label("Home", systemImage: "chevron.left")
                     .font(.scaled(.body, scale: uiTextScale))
             }
-            .help("Back to Home. With unsaved changes, asks whether to save them.")
+            .help("Back to Home")
 
             ScoreBadge(score: plan.score, size: 40)
             VStack(alignment: .leading, spacing: 3) {
@@ -155,7 +155,7 @@ struct PlannerWorkspaceView: View {
                 Label("Sky View", systemImage: "circle.dashed.inset.filled")
                     .font(.scaled(.body, scale: uiTextScale))
             }
-            .help("See this plan move across the sky. Your unsaved changes stay open here.")
+            .help("See this plan on the sky")
             VStack(alignment: .trailing, spacing: 3) {
                 Label(plan.site.name, systemImage: "mappin.and.ellipse")
                 Label(state.rig.name, systemImage: "camera.aperture")
@@ -262,9 +262,9 @@ struct PlannerWorkspaceView: View {
                         .help("Take this block out of the plan (Delete)")
                 }
             } else if segments.isEmpty {
-                Text("Nothing planned yet. Choose a target below and press Add to plan.")
+                Text("Nothing planned yet. Add a target below.")
             } else {
-                Text("Drag a block to move it · drag either edge to resize · click a block, then use the arrow keys · hatched time is allowed but flagged as unshootable")
+                Text("Drag a block to move it, or an edge to resize. Arrow keys nudge the selected block. Hatching marks unshootable time.")
             }
         }
         .font(.scaled(.caption, scale: uiTextScale))
@@ -451,7 +451,7 @@ struct PlannerWorkspaceView: View {
     /// what clears your minimum score on this night.
     private var catalogFooter: some View {
         VStack(spacing: 8) {
-            Text("That's everything scoring \(Int(state.preferences.minimumScore)) or more with usable time this night.")
+            Text("That's every target scoring \(Int(state.preferences.minimumScore)) or more on this night.")
                 .font(.scaled(.callout, scale: uiTextScale))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -474,7 +474,7 @@ struct PlannerWorkspaceView: View {
                 .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
         }
         .buttonStyle(.bordered)
-        .help("All 1,000-plus targets with photos, judged against this night — add any of them to this plan from there")
+        .help("Every target, scored for this night")
     }
 
     private var emptyCandidatesMessage: String {
@@ -483,12 +483,12 @@ struct PlannerWorkspaceView: View {
         }
         let search = state.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !search.isEmpty && state.typeFilter.isEmpty && minimumUsableHours == 0 && !fitsFrameOnly {
-            return "Nothing on this night's list matches \u{201c}\(search)\u{201d}. The list only holds targets that clear your minimum score with usable time on this night — the full catalog has everything."
+            return "Nothing here matches \u{201c}\(search)\u{201d}. This list only has targets above your minimum score."
         }
         if !search.isEmpty || !state.typeFilter.isEmpty || minimumUsableHours > 0 || fitsFrameOnly {
-            return "Nothing matches these constraints. Loosen one above."
+            return "Nothing matches these filters."
         }
-        return "Nothing clears your minimum score. Hide below score is in Settings."
+        return "Nothing clears your minimum score."
     }
 
     /// The constraints: what the suggestion favours, and which candidates to
@@ -567,7 +567,7 @@ struct PlannerWorkspaceView: View {
                     }
                 }
                 .fixedSize()
-                .help("How the app builds its suggested plan. An untouched suggestion updates straight away; your own edits are kept.")
+                .help("How the suggested plan is built. Your edits are kept.")
 
                 Spacer(minLength: 0)
 
@@ -603,8 +603,8 @@ struct PlannerWorkspaceView: View {
             }
             .buttonStyle(.bordered)
             .help(planned == 0
-                  ? "Add to plan — goes in the longest free stretch of the night"
-                  : "Add another block — the same target can appear more than once")
+                  ? "Add to the longest free stretch of the night"
+                  : "Add another block")
             .accessibilityLabel("Add \(targetPlan.target.displayName) to plan")
         }
         .padding(.horizontal, 20)
@@ -620,7 +620,7 @@ struct PlannerWorkspaceView: View {
                 .id(selectedTarget.id)
         } else {
             EmptyStateView(title: "Pick a candidate",
-                           message: "Select a target to see how it fits this night. Selecting never changes the plan.",
+                           message: "Select a target to see how it fits this night.",
                            systemImage: "scope")
         }
     }
@@ -654,7 +654,7 @@ struct PlannerWorkspaceView: View {
             // stretch the target could use is already taken.
             if targetPlan.usableMinutes > 0,
                segment.unusableMinutes(against: targetPlan) >= segment.window.durationMinutes * 0.5 {
-                note += " Its usable time is already taken by other blocks — drag this one over a neighbour to share it."
+                note += " Its usable time is taken by other blocks."
             }
         }
         addNote = note
@@ -678,18 +678,18 @@ struct PlannerWorkspaceView: View {
 
             if state.isManualPlan(for: plan) {
                 Button("Reset manual plan") { isConfirmingReset = true }
-                    .help("Remove your saved manual plan and go back to the app's current suggestion")
+                    .help("Replace your manual plan with the current suggestion")
             }
             Button("Clear draft") {
                 state.clearDraft()
                 selectedBlockID = nil
-                addNote = "Draft cleared. Nothing is saved until Done; Cancel brings it back."
+                addNote = "Draft cleared."
             }
             .disabled(segments.isEmpty)
             .help("Empty the plan. Nothing is saved until Done.")
 
             Button("Cancel") { leave() }
-                .help("Close the planner without saving. Esc discards unsaved changes but stays here.")
+                .help("Close without saving")
 
             Button(action: done) {
                 Text("Done").frame(minWidth: 60)
@@ -697,8 +697,8 @@ struct PlannerWorkspaceView: View {
             .buttonStyle(.borderedProminent)
             .keyboardShortcut(.return, modifiers: .command)
             .help(isDirty
-                  ? "Save these changes as this night's manual plan (⌘↩)"
-                  : "No changes to save — closes the planner and leaves the plan as it was (⌘↩)")
+                  ? "Save as this night's manual plan (⌘↩)"
+                  : "Close — nothing to save (⌘↩)")
         }
         .font(.scaled(.callout, scale: uiTextScale))
         .controlSize(.large)

@@ -193,11 +193,11 @@ struct NearbySpotPanel: View {
     private func emptyMessage(for result: NearbySpotSearchResult) -> String {
         switch result.goal {
         case .darkerSky where result.siteEstimatedBortleClass <= 3:
-            return "Your sky is already dark — about Bortle \(result.siteEstimatedBortleClass). An open spot with a low horizon is the only upgrade left."
+            return "Your sky is already dark — about Bortle \(result.siteEstimatedBortleClass)."
         case .darkerSky:
-            return "Nothing noticeably darker within \(selectedDistance.label). Try a longer drive — or just an open spot away from direct lights."
+            return "Nothing noticeably darker within \(selectedDistance.label)."
         case .openHorizon:
-            return "No public spot within \(selectedDistance.label) looks at least 5° more open than your \(Format.degrees(result.anchor.typicalHorizonAltitude)) horizon. Try a longer distance."
+            return "No public spot within \(selectedDistance.label) is more open than your \(Format.degrees(result.anchor.typicalHorizonAltitude)) horizon."
         }
     }
 
@@ -219,7 +219,7 @@ struct NearbySpotPanel: View {
                 }
                 .buttonStyle(.link)
                 .font(.scaled(.caption, scale: uiTextScale))
-                .hoverTooltip("Changes Light pollution in Settings → Location for this site")
+                .hoverTooltip("Use this Bortle class for this site")
             }
         }
     }
@@ -259,8 +259,8 @@ struct NearbySpotPanel: View {
                     state.useNearbySpot(spot)
                 }
                 .hoverTooltip(result.goal == .darkerSky
-                              ? "Plan from here instead — saved alongside your current site"
-                              : "Plan from here with its estimated horizon — saved alongside your current site")
+                              ? "Plan from here (saved with your sites)"
+                              : "Plan from here with its estimated horizon (saved with your sites)")
                 if let url = spot.mapsURL {
                     Link(destination: url) {
                         Label("Map", systemImage: "map")

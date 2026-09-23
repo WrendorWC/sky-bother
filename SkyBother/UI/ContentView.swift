@@ -29,9 +29,12 @@ struct ContentView: View {
     }
 
     var body: some View {
-        if state.needsLocationSetup {
-            LocationOnboardingView()
-                .navigationTitle("Sky Bother?")
+        if state.needsSetup {
+            SetupFlowView()
+                .navigationTitle("Set up Sky Bother")
+                // Home fetches the forecast when it appears; setup has to as
+                // well, or relaunching into setup never gets a first plan.
+                .task { if state.settings.hasSetLocation { await state.refresh() } }
         } else if state.mainView == .skyView, let plan = skyViewNight {
             SkyViewScreen(plan: plan)
                 .id(plan.id)
@@ -82,7 +85,7 @@ struct ContentView: View {
                         TargetDetailView(plan: plan, targetPlan: targetPlan)
                     } else {
                         EmptyStateView(title: "No target selected",
-                                       message: "Click the best target or a planned block to see it here, or press Plan session to browse every candidate.",
+                                       message: "Click the best target or a planned block to see it here.",
                                        systemImage: "scope")
                     }
                 }
@@ -147,7 +150,7 @@ extension ContentView {
                 Label("Catalog", systemImage: "photo.on.rectangle.angled")
                     .labelStyle(.titleAndIcon)
             }
-            .help("Browse every target, with photos, against any night (⌘K)")
+            .help("Browse every target (⌘K)")
         }
         ToolbarItem {
             Button {
@@ -156,7 +159,7 @@ extension ContentView {
                 Label("Help", systemImage: "questionmark.circle")
                     .labelStyle(.titleAndIcon)
             }
-            .help("What the scores, colours and charts mean (⌘?)")
+            .help("Help (⌘?)")
         }
     }
 }

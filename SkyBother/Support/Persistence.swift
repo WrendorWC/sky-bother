@@ -21,6 +21,11 @@ struct StoredSettings: Codable, Hashable, Sendable {
     /// onboarding finishes; `site` is meaningless while this is false and must
     /// not be used to fetch weather or build a plan.
     var hasSetLocation: Bool
+    /// Which step of guided setup to resume at, or nil once setup is done.
+    /// Absent from every settings file written before guided setup existed,
+    /// and those decode as done: someone who already has a site shouldn't be
+    /// walked through setup again on upgrade.
+    var setupStep: Int?
 
     /// Oldest night key worth keeping, as `NightPlan.planKey` formats them.
     /// Plain string comparison orders `yyyy-MM-dd` correctly, so callers can
@@ -47,11 +52,12 @@ struct StoredSettings: Codable, Hashable, Sendable {
     // defaults to empty, and `hasSetLocation` falls back to inspecting the
     // decoded site itself — see the reasoning in `init(from:)` below.
     enum CodingKeys: String, CodingKey {
-        case site, rig, preferences, savedSites, savedRigs, customTargets, sessionPlans, hasSetLocation
+        case site, rig, preferences, savedSites, savedRigs, customTargets, sessionPlans, hasSetLocation, setupStep
     }
 
     init(site: Site, rig: Rig, preferences: Preferences, savedSites: [Site], savedRigs: [Rig],
-         customTargets: [Target], sessionPlans: [String: [PlanSegment]] = [:], hasSetLocation: Bool) {
+         customTargets: [Target], sessionPlans: [String: [PlanSegment]] = [:], hasSetLocation: Bool,
+         setupStep: Int? = nil) {
         self.site = site
         self.rig = rig
         self.preferences = preferences
@@ -60,6 +66,7 @@ struct StoredSettings: Codable, Hashable, Sendable {
         self.customTargets = customTargets
         self.sessionPlans = sessionPlans
         self.hasSetLocation = hasSetLocation
+        self.setupStep = setupStep
     }
 
     init(from decoder: Decoder) throws {
@@ -109,6 +116,7 @@ struct StoredSettings: Codable, Hashable, Sendable {
 
         hasSetLocation = try container.decodeIfPresent(Bool.self, forKey: .hasSetLocation)
             ?? !(looksLikeRetiredPlaceholder || looksUnconfigured)
+        setupStep = try container.decodeIfPresent(Int.self, forKey: .setupStep)
     }
 }
 

@@ -128,7 +128,7 @@ struct SkyViewScreen: View {
                                   isWaxing: plan.moon.isWaxing, diameter: 38 * uiTextScale)
                         .contentShape(Circle())
                         .onTapGesture { isShowingMoon = true }
-                        .hoverTooltip("\(plan.moon.illuminationPercent)% \(plan.moon.phaseName.lowercased()) — click for this night's Moon")
+                        .hoverTooltip("\(plan.moon.illuminationPercent)% \(plan.moon.phaseName.lowercased())")
                         .accessibilityLabel("Moon, \(plan.moon.illuminationPercent)% \(plan.moon.phaseName.lowercased())")
                         .accessibilityAddTraits(.isButton)
                         .sheet(isPresented: $isShowingMoon) { MoonCard(plan: plan) }
@@ -150,7 +150,7 @@ struct SkyViewScreen: View {
     private var noSelection: some View {
         VStack(alignment: .leading, spacing: 8) {
             SectionHeader("Selected target")
-            Text("Nothing selected. Click a block in the plan, or start with the night's best target.")
+            Text("Nothing selected.")
                 .font(.scaled(.callout, scale: uiTextScale))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

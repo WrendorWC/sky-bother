@@ -20,8 +20,8 @@ struct PlanOriginBadge: View {
                 Capsule().strokeBorder(isManual ? Palette.accent.opacity(0.45) : Color.clear)
             )
             .help(isManual
-                  ? "Manual plan: you changed this night's plan and saved it. It stays exactly as you left it — forecast updates won't replace it."
-                  : "Suggested plan: the app's own schedule. It updates with the forecast and your settings until you change it and press Done.")
+                  ? "You edited this plan. Forecast updates won't change it."
+                  : "Updates with the forecast and your settings until you edit it.")
     }
 }
 
