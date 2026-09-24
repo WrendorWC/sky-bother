@@ -53,6 +53,10 @@ targets:
         # commands the way the parent folder's own space already requires.
         PRODUCT_NAME: "Sky Bother?"
         INFOPLIST_KEY_CFBundleDisplayName: "Sky Bother?"
+        # macOS asks before an app talks to devices on the local network;
+        # this is the reason it shows, for finding and reading a smart
+        # telescope's live stack in Session View.
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: "Sky Bother looks for your smart telescope on this network so Session View can show its live stack. It only reads the picture; it never controls the telescope."
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_HARDENED_RUNTIME: YES

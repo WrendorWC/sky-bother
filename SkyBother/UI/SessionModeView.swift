@@ -6,11 +6,17 @@ import SwiftUI
 /// adaptation more than a screen must.
 ///
 /// It follows the clock and the plan and needs nothing from you — your
-/// telescope's own app is where the night is actually run.
+/// telescope's own app is where the night is actually run. For a supported
+/// scope it can also show that app's live stack, read-only.
 struct SessionModeView: View {
     @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
+
+    @StateObject private var telescope = LiveTelescope()
+    /// Which picture the frame box shows once the scope has sent one.
+    @State private var showsTelescope = true
+    @State private var isExplainingUnavailable = false
 
     private static let background = Color(red: 0.035, green: 0.02, blue: 0.03)
     private static let panel = Color(red: 0.09, green: 0.05, blue: 0.06)
@@ -47,6 +53,10 @@ struct SessionModeView: View {
         .foregroundStyle(Self.text)
         .background(Self.background)
         .navigationTitle("Session")
+        // A different rig may not be the scope we're connected to.
+        .onChange(of: state.rig.name) { _, _ in telescope.disconnect() }
+        .onChange(of: telescope.frame == nil) { _, isEmpty in if !isEmpty { showsTelescope = true } }
+        .onDisappear { telescope.disconnect() }
     }
 
     // MARK: - Header
@@ -140,8 +150,8 @@ struct SessionModeView: View {
             // Split: what you're capturing, and where it is right now.
             // Two equal boxes, so neither outweighs the other.
             HStack(alignment: .top, spacing: 12) {
-                viewBox("In your frame") {
-                    FramingPreview(target: targetPlan.target, rig: state.rig)
+                viewBox("In your frame", accessory: { telescopeControls }) {
+                    frameBoxContent(targetPlan, now: now)
                 }
                 liveDome(now: now)
             }
@@ -208,17 +218,164 @@ struct SessionModeView: View {
 
     /// A titled box that takes half the width and all the height it's given.
     private func viewBox<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        viewBox(title, accessory: { EmptyView() }, content: content)
+    }
+
+    private func viewBox<Accessory: View, Content: View>(_ title: String,
+                                                         @ViewBuilder accessory: () -> Accessory,
+                                                         @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title.uppercased())
-                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
-                .kerning(0.7)
-                .foregroundStyle(Self.accent)
+            HStack(spacing: 10) {
+                Text(title.uppercased())
+                    .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                    .kerning(0.7)
+                    .foregroundStyle(Self.accent)
+                Spacer(minLength: 0)
+                accessory()
+            }
+            .frame(minHeight: 22 * uiTextScale)
             content()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Self.border))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Telescope live image
+
+    private var availability: LiveImageAvailability { .of(state.rig) }
+
+    /// Connect, or while connected the Planned/Live switch and Disconnect.
+    @ViewBuilder
+    private var telescopeControls: some View {
+        switch availability {
+        case .unsupported(let reason):
+            HStack(spacing: 4) {
+                Button("Connect to Telescope") {}
+                    .disabled(true)
+                // A disabled button gets no hover or focus, so the reason
+                // hangs off this instead: hover, Tab to it, or click it.
+                Button {
+                    isExplainingUnavailable.toggle()
+                } label: {
+                    Image(systemName: "info.circle")
+                }
+                .help(reason)
+                .accessibilityLabel("Why Connect to Telescope is unavailable")
+                .popover(isPresented: $isExplainingUnavailable, arrowEdge: .bottom) {
+                    Text(reason)
+                        .font(.scaled(.callout, scale: uiTextScale))
+                        .frame(width: 280, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(12)
+                }
+            }
+            .buttonStyle(.plain)
+            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+            .foregroundStyle(Self.muted.opacity(0.6))
+        case .supported(let port):
+            if telescope.isActive {
+                HStack(spacing: 10) {
+                    if telescope.frame != nil {
+                        Picker("Show", selection: $showsTelescope) {
+                            Text("Planned Frame").tag(false)
+                            Text("Telescope Live").tag(true)
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .fixedSize()
+                        .controlSize(.small)
+                        .tint(Self.accent)
+                    }
+                    Button("Disconnect") { telescope.disconnect() }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Self.muted)
+                        .help("Stop showing the telescope's picture. Your observing isn't affected.")
+                }
+                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+            } else {
+                Button {
+                    telescope.connect(port: port)
+                } label: {
+                    Label("Connect to Telescope", systemImage: "dot.radiowaves.left.and.right")
+                }
+                .buttonStyle(.plain)
+                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                .foregroundStyle(Self.accent)
+                .help("Show the live stack from your \(state.rig.name) here. Start observing in the Seestar app first; Sky Bother only watches.")
+            }
+        }
+    }
+
+    /// The planned frame until the scope has sent a picture, then whichever
+    /// the switch picks. The plan's framing outline is never drawn over the
+    /// real picture: the two may differ in scale, rotation and extent.
+    @ViewBuilder
+    private func frameBoxContent(_ targetPlan: TargetPlan, now: Date) -> some View {
+        if let frame = telescope.frame, showsTelescope {
+            ZStack(alignment: .bottomLeading) {
+                Color.black
+                Image(decorative: frame.image, scale: 1)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                liveBadge(frame, now: now)
+            }
+        } else {
+            FramingPreview(target: targetPlan.target, rig: state.rig)
+                .overlay(alignment: .bottomLeading) {
+                    if let note = connectionNote {
+                        statusChip(note.text, systemImage: note.icon, color: note.isProblem ? Self.warning : Self.muted)
+                    }
+                }
+        }
+    }
+
+    private func liveBadge(_ frame: LiveFrame, now: Date) -> some View {
+        let age = Self.age(from: frame.receivedAt, to: now)
+        let isPaused = telescope.status == .paused
+        return statusChip(isPaused ? "Paused · last picture \(age) old" : "\(frame.kind.rawValue) · \(age) ago",
+                          systemImage: isPaused ? "pause.circle" : "dot.radiowaves.left.and.right",
+                          color: isPaused ? Self.warning : Self.text)
+    }
+
+    private func statusChip(_ text: String, systemImage: String, color: Color) -> some View {
+        Label(text, systemImage: systemImage)
+            .font(.scaled(.callout, scale: uiTextScale))
+            .foregroundStyle(color)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 8))
+            .padding(12)
+    }
+
+    /// What's happening while there's no picture to show yet.
+    private var connectionNote: (text: String, icon: String, isProblem: Bool)? {
+        switch telescope.status {
+        case .idle, .live:
+            return nil
+        case .searching:
+            return ("Looking for your telescope…", "antenna.radiowaves.left.and.right", false)
+        case .connecting:
+            return ("Connecting…", "antenna.radiowaves.left.and.right", false)
+        case .waitingForStack:
+            return ("Waiting for live stack — start stacking in the Seestar app", "hourglass", false)
+        case .paused:
+            return ("Connection lost — trying again", "wifi.exclamationmark", true)
+        case .notFound:
+            return ("Telescope not found — is it on and on the same Wi-Fi as this Mac? Trying again…",
+                    "wifi.exclamationmark", true)
+        case .failed(let message):
+            return (message, "exclamationmark.triangle", true)
+        }
+    }
+
+    private static func age(from date: Date, to now: Date) -> String {
+        let seconds = max(0, Int(now.timeIntervalSince(date)))
+        if seconds < 60 { return "\(seconds) s" }
+        return Format.duration(minutes: Double(seconds) / 60)
     }
 
     private func countdown(to date: Date, from now: Date) -> String {
