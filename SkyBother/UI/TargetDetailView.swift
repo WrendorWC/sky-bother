@@ -496,6 +496,9 @@ struct FramingPreview: View {
     // landscape sensor but is 90° wrong for a portrait one, like the Seestar
     // S50 Pro's 6.26mm × 11.14mm chip.
     private var frameIsPortrait: Bool { frameHeight > frameWidth }
+
+    /// The rig's field, for noticing it change.
+    private var fieldKey: String { String(format: "%.1fx%.1f", frameWidth, frameHeight) }
     private var objectWidth: Double {
         max(0.2, frameIsPortrait ? target.minorAxisArcminutes : target.majorAxisArcminutes)
     }
@@ -539,7 +542,15 @@ struct FramingPreview: View {
                         .onChange(of: geometry.size) { _, size in measured = size }
                 }
             )
-            .task(id: "\(target.designation)@\(Int(measured.width))x\(Int(measured.height))") {
+            // A different rig is a different patch of sky. The old picture is
+            // dropped at once rather than left stretched under a box drawn
+            // for another field (a wide camera's 20° frame over the telephoto's
+            // 2° picture looked like the frame had changed and the sky hadn't).
+            .onChange(of: fieldKey) { _, _ in
+                skyImage = nil
+                skyUnavailable = false
+            }
+            .task(id: "\(target.designation)@\(Int(measured.width))x\(Int(measured.height))@\(fieldKey)") {
                 guard let request = cutout(for: measured) else { return }
                 // Already on disk: show it on this pass rather than a beat
                 // later in place of the placeholder.
