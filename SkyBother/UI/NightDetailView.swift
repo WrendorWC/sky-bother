@@ -317,7 +317,14 @@ struct NightDetailView: View {
         guard viewportHeight > 0, headerHeight > 0 else { return 0 }
         let chrome = (isWide ? 110 : 90) * uiTextScale   // section title and the planner link
         let rows = Int((viewportHeight - headerHeight - chrome) / otherRowHeight)
-        return rows >= 3 ? min(rows, isWide ? 12 : 8) : 0
+        return rows >= (otherTargetColumns > 1 ? 2 : 3) ? min(rows, isWide ? 12 : 8) * otherTargetColumns : 0
+    }
+
+    /// Two across when the single column is wide enough for two laptop-sized
+    /// rows — a 1080p monitor — rather than rows stretched a thousand points
+    /// wide. The wide layout has its own narrow column and stays at one.
+    private var otherTargetColumns: Int {
+        !isWide && viewportWidth / uiTextScale >= 760 ? 2 : 1
     }
 
     /// The night's best targets that aren't already in the plan. Read
@@ -337,20 +344,21 @@ struct NightDetailView: View {
         if count > 0 && !targets.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 SectionHeader(plan.isCloudedOut ? "If it clears" : "Other targets of interest")
+                let columns = otherTargetColumns
+                let rows = stride(from: 0, to: targets.count, by: columns).map {
+                    Array(targets[$0..<min($0 + columns, targets.count)])
+                }
                 VStack(spacing: 0) {
-                    ForEach(targets) { targetPlan in
-                        TargetRowView(plan: plan, targetPlan: targetPlan,
-                                      isSelected: state.selectedTargetID == targetPlan.id)
-                            .background(
-                                GeometryReader { geometry in
-                                    Color.clear
-                                        .onAppear { measuredRowHeight = geometry.size.height }
-                                        .onChange(of: geometry.size.height) { _, height in measuredRowHeight = height }
-                                }
-                            )
-                            .contentShape(Rectangle())
-                            .onTapGesture { state.selectedTargetID = targetPlan.id }
-                        if targetPlan.id != targets.last?.id {
+                    ForEach(rows.indices, id: \.self) { index in
+                        HStack(alignment: .top, spacing: 12) {
+                            ForEach(rows[index]) { targetPlan in
+                                otherTargetRow(targetPlan)
+                                    .frame(maxWidth: .infinity)
+                            }
+                            // Keeps a lone last row at half width.
+                            if rows[index].count < columns { Color.clear.frame(maxWidth: .infinity) }
+                        }
+                        if index < rows.count - 1 {
                             Divider().padding(.leading, 60)
                         }
                     }
@@ -367,6 +375,20 @@ struct NightDetailView: View {
                 .foregroundStyle(Palette.accent)
             }
         }
+    }
+
+    private func otherTargetRow(_ targetPlan: TargetPlan) -> some View {
+        TargetRowView(plan: plan, targetPlan: targetPlan,
+                      isSelected: state.selectedTargetID == targetPlan.id)
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear { measuredRowHeight = geometry.size.height }
+                        .onChange(of: geometry.size.height) { _, height in measuredRowHeight = height }
+                }
+            )
+            .contentShape(Rectangle())
+            .onTapGesture { state.selectedTargetID = targetPlan.id }
     }
 
     // MARK: - Fitting the UI scale
