@@ -2,11 +2,9 @@ import Foundation
 
 /// One night's plan while it is open for editing.
 ///
-/// Edits land here, in memory, and nowhere else until Done. That is the whole
-/// point of it: opening the editor and closing it again without changing
-/// anything used to turn the app's suggestion into a saved Manual plan, which
-/// then never followed the forecast again. Now a night only becomes Manual
-/// when the plan it holds is actually different.
+/// Edits live here, in memory, until Done, so opening and closing the editor
+/// without a real change never turns the suggestion into a Manual plan (which
+/// would then stop following the forecast).
 struct PlanDraft: Equatable, Sendable {
     /// Which night this is — `NightPlan.planKey`.
     let planKey: String
@@ -17,11 +15,10 @@ struct PlanDraft: Equatable, Sendable {
     var segments: [PlanSegment]
 
     /// Starts from exactly what was on screen — a Manual plan as saved,
-    /// identifiers included, and a suggestion at the scheduler's own times.
-    /// Snapping the suggestion to the five-minute grid here used to push its
-    /// blocks a minute or two past the edge of their target's usable time, so
-    /// merely opening the editor marked them unshootable. Blocks go onto the
-    /// grid when they're dragged, which is when a round number starts to matter.
+    /// identifiers included, and a suggestion at the scheduler's own times. Not
+    /// snapped to the five-minute grid: that can push a block past the edge of
+    /// its target's usable time and mark it unshootable. Blocks go onto the
+    /// grid when dragged.
     init(planKey: String, displayed: [PlanSegment], isManual: Bool) {
         self.planKey = planKey
         self.originalIsManual = isManual

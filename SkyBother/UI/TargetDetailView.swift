@@ -476,11 +476,9 @@ struct FramingPreview: View {
 
     @Environment(\.uiTextScale) private var uiTextScale
 
-    /// Real sky for this patch, once it has arrived. Until then the panel
-    /// shows a placeholder: it used to draw an invented star field with the
-    /// catalogued size as an ellipse over it, which looked like a finished
-    /// picture of something it wasn't and disagreed with the real sky that
-    /// replaced it a second later.
+    /// Real sky for this patch, once it has arrived; a placeholder until then,
+    /// rather than an invented star field that would look finished and then
+    /// disagree with the real one.
     @State private var skyImage: NSImage?
     /// Set when the fetch came back with nothing — offline, most likely —
     /// so the placeholder can say so instead of waiting forever.
@@ -490,13 +488,10 @@ struct FramingPreview: View {
     private var frameWidth: Double { rig.fieldOfViewWidthArcminutes }
     private var frameHeight: Double { rig.fieldOfViewHeightArcminutes }
 
-    // There's no way to know the real position angle on sky at imaging time —
-    // that depends on the moment's field rotation, not just the target — so
-    // this orients the target's long axis along whichever of the frame's two
-    // dimensions is actually longer, the best-case assumption. Hardcoding
-    // that to the frame's *width* (the old behaviour) looks right for every
-    // landscape sensor but is 90° wrong for a portrait one, like the Seestar
-    // S50 Pro's 6.26mm × 11.14mm chip.
+    // The real position angle depends on the field rotation at the time, so the
+    // target's long axis is laid along the frame's longer side — the best case
+    // — whether that's its width or, for a portrait sensor like the Seestar's,
+    // its height.
     private var frameIsPortrait: Bool { frameHeight > frameWidth }
 
     /// Past this, the survey cutouts are a dark patchwork of plates and a
@@ -557,10 +552,9 @@ struct FramingPreview: View {
                         .onChange(of: geometry.size) { _, size in measured = size }
                 }
             )
-            // A different rig is a different patch of sky. The old picture is
-            // dropped at once rather than left stretched under a box drawn
-            // for another field (a wide camera's 20° frame over the telephoto's
-            // 2° picture looked like the frame had changed and the sky hadn't).
+            // A different rig is a different patch of sky: the old picture is
+            // dropped at once rather than shown under a frame drawn for another
+            // field.
             .onChange(of: fieldKey) { _, _ in
                 skyImage = nil
                 skyUnavailable = false

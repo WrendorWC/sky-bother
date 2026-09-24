@@ -9,33 +9,19 @@ struct AutoPlanSlot: Identifiable, Hashable, Sendable {
 }
 
 /// Picks a session plan for the night: an ordered, non-overlapping sequence of
-/// targets — since a single scope can only point at one thing at a time.
+/// targets — a scope can only point at one thing at a time.
 ///
-/// This used to be solved as textbook weighted interval scheduling, maximising
-/// the *sum* of the chosen targets' scores. That reliably backfired: a target's
-/// score is a standalone 0–100 quality rating, not a currency meant to be added
-/// up across picks, so summing let two mediocre targets (52 + 54 = 106) outbid
-/// one genuinely excellent one (94) and quietly bump it from its own plan —
-/// exactly the target the rest of the app was calling out as the night's best.
+/// It fills the night greedily, best score first, rather than maximising the
+/// sum of scores: a score is a 0–100 rating, not a currency, and summing lets
+/// two mediocre targets (52 + 54) outbid one excellent one (94). Each next-best
+/// candidate is trimmed to whatever is left of its usable time rather than
+/// dropped for overlapping, and is dropped only when less than
+/// `minimumSlotMinutes` remains. So the night's best target can never lose its
+/// slot to lower-scoring ones.
 ///
-/// Instead this fills the night greedily, best score first: take the
-/// highest-scoring candidate unconditionally, then keep taking the next-best
-/// one — trimmed to whatever's left of it once every already-claimed window
-/// is cut out, rather than dropped outright the moment it overlaps anything.
-/// A target whose window is only partly claimed still gets the leftover part
-/// of the night; only a target with nothing usable left anywhere (or less
-/// than `minimumSlotMinutes` of it) is actually dropped. The single best
-/// target on a given night can therefore never lose its slot to a pile of
-/// worse ones — the only thing that can cost a candidate time is something
-/// that scores higher and wants the same part of the night.
-///
-/// Every one of a target's usable windows is tried, not just its single
-/// longest ("best") one — many targets peak at a similar time of night, so
-/// the best window is exactly where contention is worst, and a target whose
-/// best window loses out can easily still have a second, perfectly good
-/// window elsewhere that nothing else wants. Only trying the best window
-/// meant later, lower-priority candidates got squeezed out one after
-/// another even when the night had free time they could have used.
+/// Every one of a target's usable windows is tried, not just its longest: many
+/// targets peak around the same time, and a target that loses there can still
+/// have a perfectly good second window nothing else wants.
 enum AutoPlanner {
     /// Below this, a window isn't worth suggesting a setup change for at all.
     /// Callers raise it — see `Preferences.minimumSessionMinutes` — when the

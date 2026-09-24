@@ -420,23 +420,14 @@ private final class TitleBarDragCatcherView: NSView {
         return self
     }
 
-    /// Every click goes to `performDrag(with:)`, including the second of a
-    /// double click, because it already implements the whole standard title
-    /// bar gesture — the drag *and* the System Settings double-click action.
+    /// Single clicks go to `performDrag(with:)`, which drags the window as the
+    /// title bar would.
     ///
-    /// This used to intercept `clickCount == 2` and perform that action
-    /// itself. The first click's `performDrag` went on to recognise the very
-    /// same double click and act on it too, so a double click zoomed the
-    /// window and immediately un-zoomed it. Letting AppKit own the gesture
-    /// end to end is what keeps it happening exactly once, and honours the
-    /// Minimize/None/Zoom preference without this having to read it.
-    ///
-    /// On macOS 27 `performDrag` stopped acting on the double click, and the
-    /// header could only be dragged, never zoomed. So a double click now
-    /// checks back a moment later: if AppKit has done something the window
-    /// will have moved or changed size, and this leaves it be; if not, it
-    /// does what the System Settings preference asks. Checking first is what
-    /// keeps it from happening twice on a system where AppKit still acts.
+    /// A double click checks back a moment later: if the window has moved or
+    /// changed size, AppKit acted on it (as it did before macOS 27) and this
+    /// leaves it be; if not, this does what the System Settings double-click
+    /// preference asks. Acting straight away would zoom twice — zoom, then
+    /// un-zoom — wherever AppKit still handles it.
     override func mouseDown(with event: NSEvent) {
         guard let window else { return super.mouseDown(with: event) }
         guard event.clickCount == 2 else {
@@ -632,9 +623,9 @@ struct ScoreBadge: View {
 
     private var color: Color { Palette.score(score) }
     private var isExceptional: Bool { Verdict.forScore(score) == .exceptional }
-    // Scaled as a whole, not just the number inside it — a badge is a fixed
-    // pixel size, not text SwiftUI can reflow on its own, so Dynamic Type
-    // alone would leave the ring the old size around a bigger digit.
+    // Scaled as a whole, not just the number inside it: a badge is a fixed
+    // size, so scaling only the text would leave a bigger digit in the same
+    // ring.
     private var scaledSize: CGFloat { size * uiTextScale }
 
     var body: some View {
@@ -853,10 +844,8 @@ struct MoonPhaseDisc: View {
             context.fill(discPath, with: .color(darkColor))
 
             // The lit part as one shape — the limb's half-circle and the
-            // terminator's half-ellipse — filled once. It used to be a lit
-            // half plus a cap clipped to the other half, and where the two
-            // clipped edges met, their antialiasing let the dark disc show
-            // through as a hairline down the middle.
+            // terminator's half-ellipse — filled once. Two shapes clipped to
+            // each other leave an antialiased hairline where they meet.
             let f = clamp(illuminatedFraction, 0, 1)
             if f > 0.01 {
                 let side: CGFloat = isWaxing ? 1 : -1
@@ -981,13 +970,9 @@ struct TargetSkyView: View {
 
 /// A target's picture, filling and cropping its space.
 ///
-/// Wikipedia photo first where one exists: a colour image from a real
-/// telescope, which simply looks better than a photographic-plate scan. Where
-/// there isn't one — about 600 of the ~1150 catalogue objects — a Digitized
-/// Sky Survey thumbnail of that patch of sky stands in. The starry
-/// placeholder underneath both is now genuinely rare rather than the common
-/// case it used to be, and means only that a target is outside the survey or
-/// was added by hand.
+/// A Wikipedia photo where one exists, otherwise a Digitized Sky Survey
+/// thumbnail of that patch of sky (about 600 of the ~1,150 objects). The starry
+/// placeholder only shows for a target outside the survey or added by hand.
 struct TargetThumbnail: View {
     @Environment(\.uiTextScale) private var uiTextScale
     var designation: String

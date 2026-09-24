@@ -46,9 +46,8 @@ enum SkyQuality {
                                         targetRespondsToNarrowband: Bool,
                                         rigHasNarrowbandFilter: Bool) -> Double {
         // Close to the Moon is far worse than the other side of the sky, and
-        // the glow climbs steeply in the last few tens of degrees: it used to
-        // stop improving at 20° and count nothing extra nearer in, so a
-        // target 13° from a 75% Moon was judged as if it were 20° away.
+        // the glow climbs steeply in the last few tens of degrees, so inside
+        // 30° the penalty grows past the Moon's own brightness.
         let separationFactor: Double
         if separationFromMoon < 30 {
             separationFactor = 1 + 0.8 * pow((30 - max(separationFromMoon, 0)) / 30, 1.5)

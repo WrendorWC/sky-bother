@@ -94,20 +94,14 @@ struct StoredSettings: Codable, Hashable, Sendable {
             // from under yourself on a relaunch would be the one moment it
             // actually mattered.
             .filter { $0.key >= planCutoff }
-            // Loaded exactly as saved. These used to be snapped to the
-            // five-minute grid on the way in, but a saved plan keeps the
-            // scheduler's own times for any block that was never dragged, and
-            // rounding those pushed them a minute or two past the edge of the
-            // target's usable time — marking them unshootable after every
-            // relaunch, and quietly changing the plan without anyone editing it.
+            // Loaded exactly as saved, not snapped to the five-minute grid:
+            // rounding the scheduler's own times can push a block past the edge
+            // of its target's usable time and change the plan on every launch.
 
-        // A settings file written before this flag existed cannot be taken to
-        // imply the user ever chose a site. The file is rewritten on *any*
-        // settings change — a slider, a rig swap, a unit toggle — so it can
-        // perfectly well hold the hardcoded "Boston, MA" placeholder that
-        // shipped before onboarding existed. Defaulting those to true would
-        // leave exactly the people this feature is for stuck on Boston,
-        // never once asked where they are.
+        // A settings file from before this flag existed doesn't prove a site
+        // was chosen: it may still hold the "Boston, MA" placeholder early
+        // versions shipped with. Those go through setup rather than planning
+        // for Boston.
         let looksLikeRetiredPlaceholder = site.name == "Boston, MA"
             && abs(site.latitude - 42.3601) < 0.0005
             && abs(site.longitude + 71.0589) < 0.0005

@@ -50,13 +50,9 @@ struct SkyView: View {
     /// life of the process no matter how often the view itself is rebuilt.
     private static let frameInterval: TimeInterval = 1.0 / 30.0
     private static let playbackTimer = Timer.publish(every: frameInterval, on: .main, in: .common).autoconnect()
-    /// Real seconds for a full sunset-to-sunrise playthrough, one flat rate
-    /// the whole way — the readable pace an object was already moving at
-    /// while in view. A separate, faster rate for the dead twilight outside
-    /// Tonight's Plan's own span made object-switching keep pace with the
-    /// plan bar better, but the two-rate boundary kept producing exactly the
-    /// kind of subtle timing bug it was trying to fix, tick after tick — not
-    /// worth it for what's ultimately just a nice-to-have.
+    /// Real seconds for a full sunset-to-sunrise playthrough, at one flat rate.
+    /// A faster rate through twilight kept producing timing bugs at the
+    /// boundary between the two rates.
     private static let playbackRealSeconds: Double = 25
 
     private enum PlaybackMode: String, CaseIterable, Identifiable {
@@ -140,18 +136,10 @@ struct SkyView: View {
         }
     }
 
-    /// Slots never overlap (that's `AutoPlanner`'s whole job), so at most one
-    /// ever contains `scrubTime` — nothing to disambiguate between.
-    /// Consecutive slots aren't always back-to-back — a stretch between two
-    /// scheduled targets that nothing's own usable window actually covers
-    /// reads as a real gap, not a bug. Waiting for the *next* slot's window
-    /// to open before switching left the previous target selected through
-    /// that whole gap, which on the Tonight's Plan strip (spanning the same
-    /// timeline) looked like the switch was firing late — sometimes right on
-    /// the boundary, sometimes only once the next slot's own span began.
-    /// Switching the instant the current slot's window *ends* instead —
-    /// to whatever's coming up next, not only what's already open — keeps
-    /// the two in step regardless of whether the slots actually touch.
+    /// Slots never overlap, so at most one contains `scrubTime`. Consecutive
+    /// slots can have a gap between them; the selection moves on the moment the
+    /// current slot ends, to whatever comes next, so it stays in step with the
+    /// plan strip whether or not the slots touch.
     private func syncSelectionToPlayback() {
         let ordered = planSegments.chronological
         guard let first = ordered.first, scrubTime >= first.window.start else { return }
@@ -194,16 +182,11 @@ struct SkyView: View {
         selectedTargetPlan.map { horizontal(of: $0.target.coordinate) }
     }
 
-    /// This view draws the whole sky as a flat disc with the zenith at its
-    /// exact centre — azimuth becomes angle around that centre, so *every*
-    /// azimuth collapses onto the same point right at the zenith. A target
-    /// passing near or through it genuinely does swing azimuth by close to
-    /// 180° (confirmed numerically, not a bug: real geometry, the same
-    /// reason a straight line through the North Pole looks like it reverses
-    /// on a flat polar map). The frame's actual 3D orientation never
-    /// wavers — only the disc renders it as an apparent flip — so rather
-    /// than show that confusing artifact, the frame just isn't drawn this
-    /// close in, the same call already made for dipping below the horizon.
+    /// The dome is flat with the zenith at its centre, so every azimuth meets
+    /// there and a target passing close to it swings nearly 180° in azimuth —
+    /// real geometry, like a line through the pole on a polar map. The frame's
+    /// true orientation doesn't flip, only its drawing would, so it isn't drawn
+    /// this close in, the same as below the horizon.
     private static let nearZenithThreshold: Double = 88
 
     private var isCameraFrameTooCloseToZenith: Bool {
@@ -215,15 +198,10 @@ struct SkyView: View {
         return plan.targets.first { $0.id == selectedID }
     }
 
-    /// One sample every 6 minutes across a full day centred on tonight —
-    /// dense enough for a smooth arc, cheap enough to recompute on every
-    /// scrub (it's only evaluated for the one selected target, not all of
-    /// them). A fixed-coordinate target genuinely traces one full closed
-    /// loop around the pole every day; sampling only the plotted dusk-to-
-    /// dawn window used to cut that loop off at both ends, so the path
-    /// looked like it simply began and ended at nightfall rather than the
-    /// same real circle the target is on all day, most of it just not up
-    /// (or not dark) right now.
+    /// One sample every 6 minutes across a full day centred on tonight: dense
+    /// enough for a smooth arc, cheap enough to recompute on every scrub for
+    /// the one selected target. A full day, not just dusk to dawn, so the path
+    /// shows the whole closed loop the target traces around the pole.
     private struct PathSample {
         var point: SkyProjection.UnitPoint
         var isVisible: Bool
@@ -523,8 +501,8 @@ struct SkyView: View {
         .flatMap { NSImage(contentsOf: $0) }
         .map { Image(nsImage: $0) }
 
-    /// The real sky for this moment, from `SkyDome.metal`, or the old flat
-    /// twilight colour if the map is somehow missing from the bundle.
+    /// The real sky for this moment, from `SkyDome.metal`, or a flat twilight
+    /// colour if the star map is missing from the bundle.
     private func skyShading(center: CGPoint, radius: CGFloat) -> GraphicsContext.Shading {
         guard let starMap = Self.starMap else { return .color(Palette.sky(sunAltitude: sunAltitude)) }
         let sun = sunHorizontal

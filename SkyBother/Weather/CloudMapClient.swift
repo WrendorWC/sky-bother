@@ -31,21 +31,11 @@ struct CloudMapClient {
     // a real orientation aid on a night thick enough to hide the land itself.
     private static let layers = "GOES-East_ABI_GeoColor,Reference_Features"
     private static let coverageLongitudeRange = -155.0...(-5.0)
-    /// GIBS returns a real (but near-empty) JPEG rather than an error for a
-    /// timestamp that hasn't been ingested yet — Reference_Features' roads
-    /// and boundaries still composite onto solid black, so even a blank
-    /// frame carries real, non-trivial bytes. A byte-count floor to catch
-    /// that used to work — verified at the time against Wesley Chapel,
-    /// where a blank frame ran ~17 KB versus ~35 KB real — right up until a
-    /// dense-highway metro proved the premise wrong: a genuinely blank
-    /// frame centred on New York, with nothing to draw but its own much
-    /// busier road network, ran ~31 KB on its own — comfortably past that
-    /// floor with zero actual satellite content, so New York was reliably
-    /// showing this exact black-with-roads placeholder as if it were live
-    /// imagery. Blank-detection now decodes the frame and samples actual
-    /// pixels instead — see `isBlankPlaceholder` — since how much vector
-    /// linework a region happens to have was never a reliable proxy for
-    /// whether the photo underneath it is real.
+    /// GIBS returns a real, near-empty JPEG rather than an error for a time it
+    /// hasn't ingested yet — roads and boundaries on solid black. File size
+    /// can't tell it apart (a blank frame over a dense metro like New York is
+    /// as big as a real one elsewhere), so `isBlankPlaceholder` decodes it and
+    /// samples actual pixels on this grid.
     private static let darkSampleGridSize = 16
     private static let darkPixelThreshold: UInt8 = 20
     private static let blankDarkFraction = 0.7
@@ -139,20 +129,15 @@ struct CloudMapClient {
     private static let maximumUniformFraction = 0.97
     private static let uniformTolerance = 4
 
-    /// Whether a probe frame of the imagery layer alone actually has a picture in it.
+    /// Whether a probe frame of the imagery layer alone actually has a picture
+    /// in it.
     ///
-    /// For a time GIBS has no imagery for, the layer doesn't come back as an
-    /// error, and not reliably in one form either. It used to composite onto
-    /// solid black (what `isBlankPlaceholder` catches); it now comes back either
-    /// fully transparent or as a solid opaque white fill — both seen within the
-    /// same half hour — and in the composite JPEG either one becomes an empty
-    /// white map under the boundary lines, which sailed straight past the black
-    /// check and showed as live imagery. Colour alone can't tell a fill from a
-    /// photo in general (a heavily overcast daytime frame is mostly white too),
-    /// but a real GeoColor frame always has texture — cloud, land, water, city
-    /// lights — while a fill is one flat value. So: mostly transparent, or
-    /// almost perfectly uniform, means no imagery. A 64-pixel PNG of the
-    /// imagery layer alone costs a few hundred bytes.
+    /// For a time GIBS has no imagery for, the layer comes back without an
+    /// error, as solid black, fully transparent or solid white — all of which
+    /// composite into an empty map under the boundary lines. A real GeoColor
+    /// frame always has texture (cloud, land, water, city lights), so mostly
+    /// transparent or almost perfectly uniform means no imagery. A 64-pixel PNG
+    /// of the layer alone costs a few hundred bytes.
     private static func hasImagery(_ data: Data) -> Bool {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
               let image = CGImageSourceCreateImageAtIndex(source, 0, nil)

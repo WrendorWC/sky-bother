@@ -636,15 +636,11 @@ struct Planner: Sendable {
                         detail: "How the target sits in this rig's field of view",
                         floor: 0.001),
             // Weighted heavier than the other quality factors, and floored two
-            // orders of magnitude lower, because it is the only one that can
-            // be *fatal*: an hour of cloud or an awkward framing costs you
-            // some of a night, but a target fainter than the sky it sits on
-            // returns nothing at all, however long you leave the shutter open.
-            // At the old 0.14 and the shared 0.02 floor, a completely
-            // undetectable target still scored around 40 on a typical night
-            // and 58 on a perfect one — comfortably past the default minimum
-            // score, and presented as Marginal or Good. It now lands in Poor,
-            // which is what it is.
+            // orders of magnitude lower, because it's the only one that can be
+            // fatal: cloud or awkward framing costs some of a night, but a
+            // target fainter than its sky returns nothing, however long the
+            // exposure. With a lighter weight and the shared floor, an
+            // undetectable target still scored Marginal or Good.
             ScoreFactor(name: "Detectability",
                         value: detectability,
                         weight: 0.22,
@@ -780,9 +776,9 @@ struct Planner: Sendable {
                                    90 - maximumAltitude, maximumRotation))
         }
 
-        // Shown for a bright Moon close by whatever the filter: the filter's
-        // discount used to keep the sky "dark enough" that this never
-        // appeared, even 13° from a 75% Moon.
+        // Shown for a bright Moon close by, whatever the filter: the filter's
+        // discount alone can make the sky read "dark enough" 13° from a 75%
+        // Moon.
         if closestBrightMoon < 25 {
             warnings.append(String(format: "Within %.0f° of a bright Moon while it's usable", closestBrightMoon))
         } else if minimumSeparation < 35 && meanDarkness < 0.75 {

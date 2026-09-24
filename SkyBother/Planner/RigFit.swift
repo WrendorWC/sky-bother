@@ -72,11 +72,10 @@ struct RigFit: Hashable, Sendable {
             }
             // Below about forty pixels there is no shape to record, however
             // bright the thing is: a planetary nebula a few arcseconds across
-            // is a fat star with this rig, and used to score well because its
-            // light is packed into those few pixels. Judged in pixels rather
-            // than as a fraction of the frame, so the same object still scores
-            // properly at a focal length that resolves it. Never quite zero —
-            // the target stays in the list, at the bottom where it belongs.
+            // is a fat star with this rig. Judged in pixels rather than as a
+            // fraction of the frame, so the same object still scores properly
+            // at a focal length that resolves it. Never quite zero, so the
+            // target stays in the list, at the bottom.
             if !target.type.isStarField {
                 framingScore = max(0.002, framingScore * smoothstep(6, 40, pixelsAcross))
                 if pixelsAcross < 15 {

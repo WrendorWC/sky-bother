@@ -94,20 +94,13 @@ struct SkyBrowserView: View {
         .task(id: IdentifyKey(identifying: isIdentifying, centre: centre, fov: fieldOfViewDegrees)) {
             await identifyCentre()
         }
-        // One task, keyed on the view, with the wait inside it.
+        // One task, keyed on the view, with the wait inside it — not a separate
+        // "settled" flag, which a restarted task can clear before it's ever
+        // read, so the sharp layer never loads.
         //
-        // This used to set a separate "settled" flag, and the flag was cleared
-        // at the top of the very task that set it — so any re-render that
-        // restarted the task put it back to nil, and it was never once true.
-        // The sharp layer was therefore never requested at all, which is why
-        // the view stayed at the resolution of the coarse first pass no matter
-        // how long you waited.
-        //
-        // Each scroll notch is its own field of view, and several in a row
-        // cross several rungs of the size ladder, so the wait is still needed:
-        // it stops a quick zoom ordering a full set of cutouts for every level
-        // it passes through. Cancelling and restarting one task does that
-        // without anything to get stuck.
+        // The wait stops a quick run of zoom steps ordering a full set of
+        // cutouts for every level it passes through; cancelling and restarting
+        // the task does that with nothing to get stuck.
         .task(id: MosaicKey(centre: centre, fov: fieldOfViewDegrees,
                             size: canvasSize, hasBase: shown != nil)) {
             try? await Task.sleep(nanoseconds: 400_000_000)
@@ -169,7 +162,7 @@ struct SkyBrowserView: View {
                     .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
             }
             // A real button rather than bare text: it toggles a mode, and
-            // nothing about the old styling said it could be pressed.
+            // should look pressable.
             .buttonStyle(.bordered)
             .tint(isIdentifying ? Palette.accent : .secondary)
             .help("Name the objects in view")
@@ -375,12 +368,9 @@ struct SkyBrowserView: View {
 
     /// Works out where each mark goes, and which of them can carry a name.
     ///
-    /// Two things this fixes. A mark whose centre is off the edge used to be
-    /// drawn anyway, so its label appeared sliced in half against the top of
-    /// the view. And nothing stopped two labels landing on top of each other —
-    /// "NGC 1893" and "Tadpoles Nebula" were printed over one another and
-    /// neither could be read. A mark that cannot have a legible label keeps
-    /// its circle and loses the text, which still says something is there.
+    /// Marks too near an edge for their label are skipped, rather than drawn
+    /// with the label sliced off, and labels that would overlap another lose
+    /// their text but keep their circle, which still says something is there.
     private func markers(size: CGSize) -> [Marker] {
         // The drag is added to each mark below, so labels move with the sky
         // while it's being dragged rather than staying put on the window.
@@ -698,12 +688,10 @@ struct SkyBrowserView: View {
 
     /// Fetched patches cover half again as much sky as the window shows.
     ///
-    /// Every zoom step used to be a round trip — a second of staring at a
-    /// stretched image for a 12% change — because the fetch matched the view
-    /// exactly, so the smallest movement left it short. With margin in hand,
-    /// several steps of zoom and a decent pan are served by re-projecting what
-    /// is already there, and the network is only involved once the view really
-    /// has left what the image covers.
+    /// Fetched patches cover half again as much sky as the window shows, so
+    /// several zoom steps and a decent pan are served by re-projecting what's
+    /// already there, and the network is only involved once the view has really
+    /// left it.
     private static let fetchMargin = 1.8
 
     /// Whether what's on screen still covers the view well enough to leave
@@ -763,14 +751,9 @@ struct SkyBrowserView: View {
 
     /// How many pixels to ask the renderer for.
     ///
-    /// This is what made a cold view take the better part of twenty seconds.
-    /// Asking at retina resolution *and* for the wider patch that the margin
-    /// needs multiplied out to well past two thousand pixels a side, and the
-    /// service's cost climbs steeply with area: measured against it, 600×400
-    /// comes back in 1.8s, 1024×800 in 3.0s, 1600×1250 in 6.4s and 2048×2048
-    /// in 12.9s. The old code asked for the last of those every time.
-    ///
-    /// So there is a budget on total area instead of a cap per side, spent in
+    /// The service's time climbs steeply with area — measured: 600×400 in 1.8
+    /// s, 1024×800 in 3.0 s, 1600×1250 in 6.4 s, 2048×2048 in 12.9 s — so
+    /// there's a budget on total area rather than a cap per side, spent in
     /// whatever shape the window is. Slightly soft beats waiting.
     private static func pixels(for size: CGSize, magnification: Double, budget: Double = 520_000) -> (Int, Int) {
         let scale = Double(NSScreen.main?.backingScaleFactor ?? 2)
@@ -915,13 +898,10 @@ struct SkyBrowserView: View {
 
     /// Fetches whatever the settled view is missing.
     ///
-    /// Deliberately not called from the drawing closure. It used to be, and
-    /// the guard that stopped a cell being asked for twice was a piece of view
-    /// state mutated mid-render — which does not reliably take effect, so
-    /// every redraw fired the same request again. The log showed one cell
-    /// started five times over fifteen seconds, requests running to forty as
-    /// they queued behind each other and timed out, each timeout prompting
-    /// another. The same collapse the tile fetcher had, by the same route.
+    /// Never call this from the drawing closure: the guard against asking for a
+    /// cell twice is view state, and state changed mid-render doesn't reliably
+    /// stick, so every redraw would fire the same requests again until they
+    /// queue up and time out.
     private func loadMosaic() async {
         guard shown != nil, canvasSize.width > 32, !usesStarMap else { return }
         let wanted = mosaic(for: canvasSize)

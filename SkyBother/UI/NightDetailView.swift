@@ -613,8 +613,8 @@ struct NightDetailView: View {
             LabelledValue(label: "Moon down",
                           value: plan.moonlessDarkHours > 0.02 ? Format.hours(plan.moonlessDarkHours) : "none",
                           systemImage: plan.moon.symbolName)
-            // The Moon card used to hang off a moon disc in the summary; that
-            // corner is Sky View's now, and the dome draws the Moon anyway.
+            // The Moon card opens from Sky View's panel; the dome draws the
+            // Moon itself.
             LabelledValue(label: "Moon",
                           value: "\(plan.moon.illuminationPercent)% \(plan.moon.phaseName.lowercased())",
                           systemImage: "circle.lefthalf.filled")

@@ -46,18 +46,13 @@ struct SkyCutout: Hashable, Sendable {
 
 /// Real sky imagery for a patch of sky, from the Digitized Sky Survey.
 ///
-/// The catalogue gives a target's angular size as a single ellipse, which is
-/// what the framing preview used to draw over an invented star field. That is
-/// honest about scale and misleading about everything else: it says nothing
-/// about the nebulosity that spills past the catalogued extent, the companion
-/// galaxy just outside it, or how crowded the field is — all of which decide
-/// whether a target is worth pointing at.
+/// A real picture shows what a catalogued size can't: nebulosity past the
+/// listed extent, neighbours just outside it, and how crowded the field is —
+/// all of which decide whether a target is worth pointing at.
 ///
-/// Images come from `hips2fits`, which renders a cutout from a HiPS survey
-/// (the IVOA's all-sky tiled image standard) to an exact centre, field of view
-/// and pixel size in a single request. Doing the projection server-side is the
-/// whole reason this is a small piece of code rather than a HEALPix
-/// implementation.
+/// Images come from `hips2fits`, which renders a cutout from a HiPS survey to
+/// an exact centre, field of view and pixel size in one request, so the
+/// projection happens server-side rather than in a HEALPix implementation here.
 struct SkyCutoutClient: Sendable {
     static let shared = SkyCutoutClient()
 

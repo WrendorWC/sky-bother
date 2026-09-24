@@ -17,14 +17,9 @@ enum MountType: String, CaseIterable, Identifiable, Sendable {
 }
 
 extension MountType: Codable {
-    /// Guided vs. unguided equatorial used to be two separate cases, kept
-    /// distinct on the theory that guiding might someday matter to the
-    /// score — it never ended up affecting anything (both only ever fed
-    /// `rotatesField`, identically false for either), so the distinction
-    /// was just a picker choice with no effect. Decoding both old raw
-    /// values into the merged `.equatorial` case means a settings.json
-    /// saved before this change still loads cleanly instead of failing to
-    /// decode.
+    /// Settings saved by older versions may hold "guidedEquatorial" or
+    /// "unguidedEquatorial"; both load as `.equatorial`, since guiding never
+    /// affected anything.
     init(from decoder: Decoder) throws {
         let raw = try decoder.singleValueContainer().decode(String.self)
         switch raw {
@@ -277,11 +272,8 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                                        hasNarrowbandFilter: false, supportsMosaic: false,
                                        zenithAvoidanceAltitude: 80)
 
-    /// 50mm f/5 quadruplet APO, Sony IMX585 (2.9um, 3840 x 2160). The
-    /// sensor dimensions here were previously specified against the
-    /// smaller IMX462 the original Vespera used — Vespera II actually
-    /// ships with IMX585, which is physically larger (11.14 x 6.26mm, not
-    /// 8.4 x 4.7mm), giving a noticeably wider real field of view.
+    /// 50mm f/5 quadruplet APO, Sony IMX585 (2.9um, 3840 x 2160, 11.14 x
+    /// 6.26mm) — larger than the original Vespera's IMX462, so a wider field.
     static let vesperaII = Rig(name: "Vaonis Vespera II",
                                apertureMillimeters: 50, focalLengthMillimeters: 250,
                                sensorWidthMillimeters: 11.14, sensorHeightMillimeters: 6.26,
