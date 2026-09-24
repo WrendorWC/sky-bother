@@ -496,7 +496,10 @@ struct FramingPreview: View {
 
     /// Past this, the survey cutouts are a dark patchwork of plates and a
     /// slow download; the star map Sky View uses shows the Milky Way instead.
-    static let wideFieldArcminutes: Double = 600
+    /// The frame's long side, in arcminutes: 25 degrees, where the map
+    /// (about 11 pixels a degree) still fills this small panel sharply and
+    /// the survey is starting to break up.
+    static let wideFieldArcminutes: Double = 1500
 
     static func usesStarMap(_ rig: Rig) -> Bool {
         max(rig.fieldOfViewWidthArcminutes, rig.fieldOfViewHeightArcminutes) > wideFieldArcminutes

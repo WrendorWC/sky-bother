@@ -70,7 +70,10 @@ struct SkyBrowserView: View {
     private static let maximumFieldOfView = 120.0
     /// Past this the view is drawn from the bundled star map instead of
     /// survey cutouts, which at this scale are a dark patchwork of plates.
-    private static let starMapFieldOfView = 10.0
+    /// Not sooner: the map is about 11 pixels a degree, so at 11 degrees
+    /// across a window it was stretched eight-fold into blur while the
+    /// survey was still sharp. At 30 it's about three-fold, which holds up.
+    private static let starMapFieldOfView = 30.0
     private var usesStarMap: Bool { fieldOfViewDegrees > Self.starMapFieldOfView }
 
     var body: some View {
