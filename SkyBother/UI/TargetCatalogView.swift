@@ -344,12 +344,27 @@ struct TargetCatalogDetail: View {
             .padding(24)
             .padding(.bottom, 0)
 
-            // No ScrollView, no fixed height: fact text length varies a lot
-            // (many targets have none at all, some have a full paragraph),
-            // and the fetch script already caps a fact at 320 characters, so
-            // the tallest this content ever gets is bounded. Letting the
-            // VStack's own intrinsic size drive the sheet means it's exactly
-            // as tall as this particular target needs, never more.
+            // As tall as this target needs when that fits, and scrolling
+            // below the fixed title and Done when it doesn't: on a laptop
+            // the full card was taller than the window, and a sheet that
+            // overflows loses its top — title and Done included.
+            ViewThatFits(in: .vertical) {
+                details
+                ScrollView { details }
+            }
+        }
+        .frame(minWidth: 620, idealWidth: 760, maxWidth: 900)
+        .frame(maxHeight: Self.maximumHeight)
+        .spaceBackground()
+    }
+
+    /// The window the card opens over, less some room around it.
+    private static var maximumHeight: CGFloat {
+        let window = NSApp.keyWindow ?? NSApp.mainWindow
+        return max(360, (window?.contentLayoutRect.height ?? NSScreen.main?.visibleFrame.height ?? 800) - 40)
+    }
+
+    private var details: some View {
             VStack(alignment: .leading, spacing: 16) {
                 // What this means for a real night comes first; the
                 // reference material after it.
@@ -431,9 +446,6 @@ struct TargetCatalogDetail: View {
                 }
             }
             .padding(24)
-        }
-        .frame(minWidth: 620, idealWidth: 760, maxWidth: 900)
-        .spaceBackground()
     }
 
     // MARK: - The night
