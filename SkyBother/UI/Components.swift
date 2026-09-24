@@ -834,39 +834,32 @@ struct MoonPhaseDisc: View {
 
             context.fill(discPath, with: .color(darkColor))
 
+            // The lit part as one shape — the limb's half-circle and the
+            // terminator's half-ellipse — filled once. It used to be a lit
+            // half plus a cap clipped to the other half, and where the two
+            // clipped edges met, their antialiasing let the dark disc show
+            // through as a hairline down the middle.
             let f = clamp(illuminatedFraction, 0, 1)
             if f > 0.01 {
-                let limbRight = isWaxing
-                let limbRect = CGRect(x: limbRight ? center.x : discRect.minX, y: discRect.minY,
-                                      width: r, height: discRect.height)
-                let otherRect = CGRect(x: limbRight ? discRect.minX : center.x, y: discRect.minY,
-                                       width: r, height: discRect.height)
-
-                context.drawLayer { outer in
-                    outer.clip(to: discPath)
-                    outer.fill(Path(limbRect), with: .color(litColor))
-
-                    if f < 0.5 {
-                        // Crescent: the limb half, minus a central cap that
-                        // shrinks to nothing as the sliver grows toward quarter.
-                        let rx = r * (1 - 2 * f)
-                        let capRect = CGRect(x: center.x - rx, y: discRect.minY, width: rx * 2, height: discRect.height)
-                        outer.drawLayer { inner in
-                            inner.clip(to: Path(limbRect))
-                            inner.fill(Path(ellipseIn: capRect), with: .color(darkColor))
-                        }
-                    } else if f < 0.99 {
-                        // Gibbous: the limb half plus a growing cap bulging
-                        // into the other half from the centre line outward.
-                        let rx = r * (2 * f - 1)
-                        let capRect = CGRect(x: center.x - rx, y: discRect.minY, width: rx * 2, height: discRect.height)
-                        outer.drawLayer { inner in
-                            inner.clip(to: Path(otherRect))
-                            inner.fill(Path(ellipseIn: capRect), with: .color(litColor))
-                        }
-                    } else {
-                        outer.fill(Path(otherRect), with: .color(litColor))
-                    }
+                let side: CGFloat = isWaxing ? 1 : -1
+                // The terminator's half-width as a share of the radius: toward
+                // the limb for a crescent, past the centre for a gibbous.
+                let k = CGFloat(1 - 2 * f)
+                let steps = 64
+                var lit = Path()
+                for i in 0...steps {
+                    let theta = -CGFloat.pi / 2 + CGFloat.pi * CGFloat(i) / CGFloat(steps)
+                    let point = CGPoint(x: center.x + side * r * cos(theta), y: center.y + r * sin(theta))
+                    if i == 0 { lit.move(to: point) } else { lit.addLine(to: point) }
+                }
+                for i in 0...steps {
+                    let theta = CGFloat.pi / 2 - CGFloat.pi * CGFloat(i) / CGFloat(steps)
+                    lit.addLine(to: CGPoint(x: center.x + side * k * r * cos(theta), y: center.y + r * sin(theta)))
+                }
+                lit.closeSubpath()
+                context.drawLayer { layer in
+                    layer.clip(to: discPath)
+                    layer.fill(lit, with: .color(litColor))
                 }
             }
 
