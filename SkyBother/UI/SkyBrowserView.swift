@@ -58,7 +58,12 @@ struct SkyBrowserView: View {
     @State private var showsCopied = false
 
     private static let minimumFieldOfView = 0.05
-    private static let maximumFieldOfView = 60.0
+    /// Wide enough for a wide camera's 56-degree frame with room around it.
+    private static let maximumFieldOfView = 120.0
+    /// Past this the view is drawn from the bundled star map instead of
+    /// survey cutouts, which at this scale are a dark patchwork of plates.
+    private static let starMapFieldOfView = 10.0
+    private var usesStarMap: Bool { fieldOfViewDegrees > Self.starMapFieldOfView }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -167,7 +172,11 @@ struct SkyBrowserView: View {
             Text("\(state.rig.name) · \(state.rig.fieldOfViewSummary)")
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.tertiary)
-            if let url = URL(string: SkyCutoutClient.attributionURL) {
+            if usesStarMap {
+                Text("Star map: NASA/Goddard SVS, from Gaia DR2 (ESA/Gaia/DPAC), Hipparcos and Tycho-2")
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(.tertiary)
+            } else if let url = URL(string: SkyCutoutClient.attributionURL) {
                 Link(SkyCutoutClient.attribution, destination: url)
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.tertiary)
@@ -188,7 +197,22 @@ struct SkyBrowserView: View {
                 // landing actually invalidates the view — reading it inside
                 // the drawing closure would not, since that runs at paint
                 // time rather than when the body is evaluated.
-                if let shown {
+                if usesStarMap, let starMap = SkyView.starMap {
+                    // Drawn live on the GPU, so a wide view pans and zooms
+                    // with nothing to wait for.
+                    Canvas { context, drawSize in
+                        context.fill(Path(CGRect(origin: .zero, size: drawSize)),
+                                     with: .shader(ShaderLibrary.wideField(
+                                        .image(starMap),
+                                        .float2(CGPoint(x: drawSize.width / 2 + dragOffset.width,
+                                                        y: drawSize.height / 2 + dragOffset.height)),
+                                        .float(1 / planeScale(viewWidth: drawSize.width)),
+                                        .float(centre.rightAscension),
+                                        .float(centre.declination),
+                                        .float(1.3))))
+                    }
+                    .frame(width: size.width, height: size.height)
+                } else if let shown {
                     Image(nsImage: shown.image)
                         .resizable()
                         .interpolation(.high)
@@ -199,9 +223,10 @@ struct SkyBrowserView: View {
                 // The sharp layer, over the coarse one so nothing is ever
                 // blank while it fills in.
                 let epoch = cellEpoch
+                let drawsCells = !usesStarMap
                 Canvas { context, drawSize in
                     _ = epoch
-                    drawCells(context: context, size: drawSize)
+                    if drawsCells { drawCells(context: context, size: drawSize) }
                 }
                 // Pinned to the view. It shares this overlay with the coarse
                 // image, which is framed several times larger than the window,
@@ -249,9 +274,12 @@ struct SkyBrowserView: View {
     /// The rig's field of view, centred — the whole reason for looking at any
     /// of this being to decide what to point at.
     private func frameOverlay(size: CGSize) -> some View {
-        let pointsPerDegree = size.width / fieldOfViewDegrees
-        let width = state.rig.fieldOfViewWidthArcminutes / 60 * pointsPerDegree
-        let height = state.rig.fieldOfViewHeightArcminutes / 60 * pointsPerDegree
+        // A sensor's edge is at tan(half its field) on the tangent plane,
+        // the projection the sky is drawn in: identical to a linear scale for
+        // a telescope, and right for a wide camera's 56 degrees too.
+        let k = planeScale(viewWidth: size.width)
+        let width = 2 * tan(state.rig.fieldOfViewWidthArcminutes / 120 * .pi / 180) * k
+        let height = 2 * tan(state.rig.fieldOfViewHeightArcminutes / 120 * .pi / 180) * k
         return Rectangle()
             .stroke(Palette.go, lineWidth: 2)
             .frame(width: max(2, width), height: max(2, height))
@@ -369,14 +397,26 @@ struct SkyBrowserView: View {
 
     /// Where a sky coordinate lands on screen, in the same convention as
     /// `settledOffset`: east is left, north is up.
+    ///
+    /// Gnomonic, the projection a camera lens and the survey cutouts both
+    /// use: indistinguishable from a flat patch at telescope fields, and
+    /// still right across a wide camera's 60-odd degrees.
     private func screenOffset(of coordinate: EquatorialCoordinate, size: CGSize) -> CGSize {
-        let pointsPerDegree = Double(size.width) / fieldOfViewDegrees
-        let cosDec = max(0.02, cosDeg(centre.declination))
-        var deltaRA = coordinate.rightAscension - centre.rightAscension
-        if deltaRA > 180 { deltaRA -= 360 }
-        if deltaRA < -180 { deltaRA += 360 }
-        return CGSize(width: -deltaRA * cosDec * pointsPerDegree,
-                      height: -(coordinate.declination - centre.declination) * pointsPerDegree)
+        let k = planeScale(viewWidth: size.width)
+        let d0 = centre.declination * .pi / 180, d = coordinate.declination * .pi / 180
+        let deltaRA = (coordinate.rightAscension - centre.rightAscension) * .pi / 180
+        let cosC = sin(d0) * sin(d) + cos(d0) * cos(d) * cos(deltaRA)
+        // Behind the viewer: nowhere on screen.
+        guard cosC > 0.05 else { return CGSize(width: 1e6, height: 1e6) }
+        let xi = cos(d) * sin(deltaRA) / cosC
+        let eta = (cos(d0) * sin(d) - sin(d0) * cos(d) * cos(deltaRA)) / cosC
+        return CGSize(width: -xi * k, height: -eta * k)
+    }
+
+    /// Points per unit of the tangent plane: the view's width spans the
+    /// field of view at its centre.
+    private func planeScale(viewWidth: CGFloat) -> Double {
+        Double(viewWidth) / fieldOfViewDegrees * 180 / .pi
     }
 
     /// Where the rig's frame is pointing, to type into the telescope's own
@@ -478,9 +518,13 @@ struct SkyBrowserView: View {
         // Enough room for the rig's frame and the object both, so the window
         // opens on something that answers "does this fit?" rather than on an
         // arbitrary magnification.
-        let wanted = max(state.rig.fieldOfViewWidthArcminutes,
-                         state.rig.fieldOfViewHeightArcminutes,
-                         target.majorAxisArcminutes) * 1.6 / 60
+        //
+        // The field of view is the view's width, so a tall frame — a Seestar
+        // is portrait — has to fit the height too, at the window's shape.
+        let aspect = canvasSize.width > 1 && canvasSize.height > 1
+            ? Double(canvasSize.width / canvasSize.height) : 1.5
+        let wanted = max(max(state.rig.fieldOfViewWidthArcminutes, target.majorAxisArcminutes) * 1.6,
+                         state.rig.fieldOfViewHeightArcminutes * 1.35 * aspect) / 60
         fieldOfViewDegrees = clamp(wanted, Self.minimumFieldOfView, Self.maximumFieldOfView)
         label = "\(target.displayName) · \(target.type.displayName)"
         searchText = ""
@@ -687,7 +731,7 @@ struct SkyBrowserView: View {
     }
 
     private func load(size: CGSize) async {
-        guard size.width > 32, size.height > 32 else { return }
+        guard size.width > 32, size.height > 32, !usesStarMap else { return }
         if let shown, isCovered(shown, size: size) { return }
 
         let request = snappedRequest(size: size)
@@ -824,7 +868,7 @@ struct SkyBrowserView: View {
     /// they queued behind each other and timed out, each timeout prompting
     /// another. The same collapse the tile fetcher had, by the same route.
     private func loadMosaic() async {
-        guard shown != nil, canvasSize.width > 32 else { return }
+        guard shown != nil, canvasSize.width > 32, !usesStarMap else { return }
         let wanted = mosaic(for: canvasSize)
 
         // The wheel keeps turning until every cell is in, not just until the
