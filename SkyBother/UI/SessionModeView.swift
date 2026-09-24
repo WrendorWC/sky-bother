@@ -149,7 +149,7 @@ struct SessionModeView: View {
         if let targetPlan {
             // Split: what you're capturing, and where it is right now.
             // Two equal boxes, so neither outweighs the other.
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: 16) {
                 viewBox("In your frame", accessory: { telescopeControls }) {
                     frameBoxContent(targetPlan, now: now)
                 }
@@ -233,7 +233,7 @@ struct SessionModeView: View {
                 Spacer(minLength: 0)
                 accessory()
             }
-            .frame(minHeight: 22 * uiTextScale)
+            .frame(minHeight: 28 * uiTextScale)
             content()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -251,9 +251,12 @@ struct SessionModeView: View {
     private var telescopeControls: some View {
         switch availability {
         case .unsupported(let reason):
-            HStack(spacing: 4) {
-                Button("Connect to Telescope") {}
-                    .disabled(true)
+            HStack(spacing: 6) {
+                Button {} label: {
+                    Label("Connect to Telescope", systemImage: "dot.radiowaves.left.and.right")
+                }
+                .buttonStyle(.bordered)
+                .disabled(true)
                 // A disabled button gets no hover or focus, so the reason
                 // hangs off this instead: hover, Tab to it, or click it.
                 Button {
@@ -263,6 +266,8 @@ struct SessionModeView: View {
                 }
                 .help(reason)
                 .accessibilityLabel("Why Connect to Telescope is unavailable")
+                .buttonStyle(.plain)
+                .foregroundStyle(Self.muted)
                 .popover(isPresented: $isExplainingUnavailable, arrowEdge: .bottom) {
                     Text(reason)
                         .font(.scaled(.callout, scale: uiTextScale))
@@ -271,9 +276,7 @@ struct SessionModeView: View {
                         .padding(12)
                 }
             }
-            .buttonStyle(.plain)
-            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
-            .foregroundStyle(Self.muted.opacity(0.6))
+            .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
         case .supported(let port):
             if telescope.isActive {
                 HStack(spacing: 10) {
@@ -289,20 +292,22 @@ struct SessionModeView: View {
                         .tint(Self.accent)
                     }
                     Button("Disconnect") { telescope.disconnect() }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Self.muted)
+                        .buttonStyle(.bordered)
                         .help("Stop showing the telescope's picture. Your observing isn't affected.")
                 }
-                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
             } else {
+                // A real button, filled in the session red: it's a feature
+                // worth finding, and bare red text ran on into the next
+                // box's title.
                 Button {
                     telescope.connect(port: port)
                 } label: {
                     Label("Connect to Telescope", systemImage: "dot.radiowaves.left.and.right")
+                        .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
                 }
-                .buttonStyle(.plain)
-                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
-                .foregroundStyle(Self.accent)
+                .buttonStyle(.borderedProminent)
+                .tint(Self.accent.opacity(0.75))
                 .help("Show the live stack from your \(state.rig.name) here. Start observing in the Seestar app first; Sky Bother only watches.")
             }
         }
