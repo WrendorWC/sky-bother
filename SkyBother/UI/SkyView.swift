@@ -497,6 +497,9 @@ struct SkyView: View {
 
     /// The whole-sky map, bundled rather than fetched: the dome should never
     /// be blank, and it is one fixed picture that nothing ever changes.
+    /// Credit for the star map, wherever it's drawn.
+    static let starMapCredit = "Star map: NASA/Goddard SVS, from Gaia DR2 (ESA/Gaia/DPAC), Hipparcos and Tycho-2"
+
     static let starMap: Image? = Bundle.main.url(forResource: "StarMap", withExtension: "jpg")
         .flatMap { NSImage(contentsOf: $0) }
         .map { Image(nsImage: $0) }
@@ -849,7 +852,7 @@ struct SkyView: View {
                     .help("Click a block to jump to the middle of it and select its target")
             }
 
-            Text("Star map: NASA/Goddard Scientific Visualization Studio, from Gaia DR2 (ESA/Gaia/DPAC), Hipparcos and Tycho-2")
+            Text(Self.starMapCredit)
                 .font(.scaled(.caption2, scale: uiTextScale))
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)

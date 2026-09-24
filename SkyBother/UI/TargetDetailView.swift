@@ -694,7 +694,7 @@ struct FramingCredit: View {
     var body: some View {
         Group {
             if FramingPreview.usesStarMap(rig) {
-                Label("Star map: NASA/Goddard SVS, from Gaia DR2 (ESA/Gaia/DPAC), Hipparcos and Tycho-2",
+                Label(SkyView.starMapCredit,
                       systemImage: "camera.metering.matrix")
             } else if let url = URL(string: SkyCutoutClient.attributionURL) {
                 Link(destination: url) {
