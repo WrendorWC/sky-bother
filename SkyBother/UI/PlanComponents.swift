@@ -36,6 +36,8 @@ struct PlanBlockRow: View {
     var isSelected: Bool? = nil
     var onRemove: (() -> Void)? = nil
 
+    @State private var isShowingCatalogDetail = false
+
     private var targetPlan: TargetPlan? { plan.targets.first { $0.id == segment.targetID } }
 
     var body: some View {
@@ -68,6 +70,20 @@ struct PlanBlockRow: View {
                 Text(Format.duration(minutes: segment.window.durationMinutes))
                     .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
                     .foregroundStyle(.secondary)
+            }
+            // The same picture, and the same catalog card on a click, as the
+            // other targets listed under the plan.
+            if let target = targetPlan?.target {
+                TargetThumbnail(designation: target.designation)
+                    .frame(width: 44 * uiTextScale, height: 44 * uiTextScale)
+                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.panelBorder))
+                    .contentShape(Rectangle())
+                    .onTapGesture { isShowingCatalogDetail = true }
+                    .help("Open \(target.displayName) in the catalog")
+                    .sheet(isPresented: $isShowingCatalogDetail) {
+                        TargetCatalogDetail(target: target, night: plan)
+                    }
             }
             if let onRemove {
                 Button(action: onRemove) {
