@@ -74,6 +74,8 @@ struct TargetCatalogView: View {
         .spaceBackground()
         .navigationTitle("Target Catalog")
         .frame(minWidth: 760, minHeight: 560)
+        // A thousand-odd targets: as tall as the screen allows.
+        .background(FitWindowToContent(minHeight: 560, fillsScreenHeight: true))
         .sheet(item: $selected) { target in
             TargetCatalogDetail(target: target, night: night)
                 .environmentObject(state)

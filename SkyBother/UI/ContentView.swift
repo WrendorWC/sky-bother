@@ -37,7 +37,7 @@ struct ContentView: View {
     var body: some View {
         if state.needsSetup {
             SetupFlowView()
-                .navigationTitle("Set up Sky Bother")
+                .navigationTitle("Setup Wizard")
                 // Home fetches the forecast when it appears; setup has to as
                 // well, or relaunching into setup never gets a first plan.
                 .task { if state.settings.hasSetLocation { await state.refresh() } }

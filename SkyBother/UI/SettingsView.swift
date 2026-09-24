@@ -2,8 +2,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var state: AppState
-    /// Shown inside guided setup as its Advanced setup sheet, where offering
-    /// to run guided setup would be circular.
+    /// Shown inside the Setup Wizard as its Advanced Setup sheet, where
+    /// offering to run the wizard would be circular.
     var isInGuidedSetup = false
 
     private enum Pane: String, CaseIterable, Identifiable {
@@ -52,6 +52,7 @@ struct SettingsView: View {
     }
 
     private var tabs: some View {
+        // Sized on opening to the tallest pane, up to the screen.
         TabView {
             LocationSettings(isInGuidedSetup: isInGuidedSetup)
                 .tabItem { Label("Location", systemImage: "mappin.and.ellipse") }
@@ -60,6 +61,7 @@ struct SettingsView: View {
             PlanningSettings()
                 .tabItem { Label("Planning", systemImage: "slider.horizontal.3") }
         }
+        .background(FitWindowToContent())
         // Resizable both ways: the panes scroll, so a smaller window only
         // means less at once.
         .frame(minWidth: 560, idealWidth: 640, maxWidth: .infinity,
@@ -85,24 +87,7 @@ private struct LocationSettings: View {
 
     var body: some View {
         Form {
-            if !isInGuidedSetup {
-            Section {
-                HStack {
-                    Text("Step through site, horizon, rig and goal.")
-                        .font(.scaled(.caption, scale: uiTextScale))
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Button("Run Guided Setup…") {
-                        state.restartSetup()
-                        // Setup appears in the main window; Settings would
-                        // otherwise sit on top of it.
-                        NSApp.keyWindow?.close()
-                        MainWindow.bringForward(using: openWindow)
-                    }
-                    .disabled(state.planDraft != nil)
-                }
-            }
-            }
+            if !isInGuidedSetup { SetupWizardBanner() }
             Section("Find a site") {
                 HStack {
                     TextField("Town, city or landmark", text: $query)
@@ -251,6 +236,7 @@ private struct EquipmentSettings: View {
 
     var body: some View {
         Form {
+            SetupWizardBanner()
             Section("Presets") {
                 Menu("Load a Preset") {
                     ForEach(Rig.PresetGroup.allCases) { group in
@@ -384,6 +370,7 @@ private struct PlanningSettings: View {
 
     var body: some View {
         Form {
+            SetupWizardBanner()
             Section("Goal") {
                 Picker("Kind of night", selection: goalBinding) {
                     ForEach(GoalPreset.allCases) { preset in
@@ -510,6 +497,45 @@ private struct PlanningSettings: View {
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// The way back into the Setup Wizard, at the top of every Settings tab:
+/// the quickest route to a sensible setup, for someone new or starting over.
+private struct SetupWizardBanner: View {
+    @Environment(\.uiTextScale) private var uiTextScale
+    @Environment(\.openWindow) private var openWindow
+    @EnvironmentObject private var state: AppState
+
+    var body: some View {
+        Section {
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("New here, or starting over?")
+                        .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
+                    Text("The Setup Wizard walks you through your site, horizon, telescope and goal.")
+                        .font(.scaled(.callout, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 12)
+                Button {
+                    state.restartSetup()
+                    // The wizard runs in the main window; Settings would
+                    // otherwise sit on top of it.
+                    NSApp.keyWindow?.close()
+                    MainWindow.bringForward(using: openWindow)
+                } label: {
+                    Label("Setup Wizard", systemImage: "wand.and.stars")
+                        .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(state.planDraft != nil)
+                .help(state.planDraft != nil ? "Finish or cancel the plan you're editing first" : "Run the Setup Wizard")
+            }
+            .padding(.vertical, 4)
         }
     }
 }

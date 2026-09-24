@@ -1147,6 +1147,84 @@ extension View {
     }
 }
 
+/// Sizes the window this view sits in to its content when it opens: as
+/// tall as the scrolling content wants, up to the screen it's on, so a big
+/// screen never opens Settings or Help short with the rest below the fold.
+/// It finds the window's main scroll view, grows the window by whatever that
+/// scroll view hides, keeps the top edge where it is, and moves the window up
+/// if the bottom would leave the screen. `trigger` refits on a change; nothing
+/// shrinks below `minHeight`. In Settings the panes all live at once, so the
+/// window fits the tallest of them — no tab ever needs dragging taller.
+struct FitWindowToContent: NSViewRepresentable {
+    var trigger: String = ""
+    var minHeight: CGFloat = 320
+    /// For content taller than any screen, like the catalog: just use the
+    /// screen's height.
+    var fillsScreenHeight = false
+
+    func makeNSView(context: Context) -> NSView { NSView() }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        guard context.coordinator.lastTrigger != trigger else { return }
+        context.coordinator.lastTrigger = trigger
+        // A few passes: grouped forms lay out more rows each time they grow.
+        for delay in [0.15, 0.5, 0.9, 1.4] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { fit(view.window) }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var lastTrigger: String? }
+
+    private func fit(_ window: NSWindow?) {
+        guard let window, !window.styleMask.contains(.fullScreen),
+              let screen = window.screen ?? NSScreen.main, let content = window.contentView else { return }
+        let available = screen.visibleFrame
+        var height: CGFloat
+        if fillsScreenHeight {
+            height = available.height
+        } else {
+            guard let scroll = Self.mostHiddenScrollView(in: content),
+                  let document = scroll.documentView else { return }
+            let hidden = Self.hiddenHeight(of: scroll, document: document)
+            height = window.frame.height + hidden
+        }
+        height = min(max(height, minHeight), available.height)
+        guard abs(height - window.frame.height) > 2 else { return }
+        var frame = window.frame
+        frame.origin.y = frame.maxY - height
+        frame.size.height = height
+        if frame.minY < available.minY { frame.origin.y = available.minY }
+        if frame.maxY > available.maxY { frame.origin.y = available.maxY - frame.height }
+        window.setFrame(frame, display: true, animate: false)
+    }
+
+    /// What the scroll view can't show: content can sit under a toolbar (the
+    /// Settings tabs), inside the clip view but covered by its inset.
+    private static func hiddenHeight(of scroll: NSScrollView, document: NSView) -> CGFloat {
+        let insets = scroll.contentView.contentInsets
+        return document.frame.height - (scroll.contentView.bounds.height - insets.top - insets.bottom)
+    }
+
+    /// The scroll view hiding the most content — the pane itself, not a
+    /// window-sized container around it (Settings has one of those, which
+    /// already fits and would stop the window growing).
+    private static func mostHiddenScrollView(in view: NSView) -> NSScrollView? {
+        var best: NSScrollView?
+        var bestHidden: CGFloat = -1
+        func visit(_ view: NSView) {
+            if let scroll = view as? NSScrollView, !scroll.isHidden, scroll.frame.width > 200,
+               let document = scroll.documentView {
+                let hidden = Self.hiddenHeight(of: scroll, document: document)
+                if hidden > bestHidden { bestHidden = hidden; best = scroll }
+            }
+            view.subviews.forEach(visit)
+        }
+        visit(view)
+        return best
+    }
+}
+
 /// Makes the window this view sits in resizable. SwiftUI's Settings window
 /// is created fixed-size, and `windowResizability` doesn't change that.
 struct ResizableWindow: NSViewRepresentable {
