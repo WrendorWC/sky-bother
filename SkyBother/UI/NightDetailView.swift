@@ -417,19 +417,26 @@ struct NightDetailView: View {
     /// not more. Everything below this is the detail that backs it up.
     private var missionSummary: some View {
         HStack(alignment: .center, spacing: 16) {
-        VStack(alignment: .leading, spacing: 12) {
-        HStack(alignment: .center, spacing: 16) {
             ScoreBadge(score: plan.score, size: 58)
-            // Three distinct lines rather than one run-on sentence: the
-            // operational fact (when to shoot), the recommendation (what to
-            // shoot), and the caveat (what's limiting it) each read as their
-            // own thought instead of being flattened into equally-weighted
-            // clauses of a single caption.
+            // Separate lines rather than one run-on sentence: when to shoot,
+            // what to shoot, and what's limiting it each read as their own
+            // thought.
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 9) {
                     Text(Format.longDate(plan.date, in: plan.timeZone))
                         .font(.scaled(.title2, scale: uiTextScale).weight(.bold))
                     VerdictTag(verdict: plan.verdict)
+                    // A tag beside the verdict rather than a badge in its own
+                    // corner, so nothing else in the card moves with it.
+                    if plan.isCloudedOut {
+                        Label("Clouded Out", systemImage: "cloud.rain.fill")
+                            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                            .foregroundStyle(Palette.marginal)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(Palette.marginal.opacity(0.15), in: Capsule())
+                            .hoverTooltip("The forecast writes this night off.")
+                    }
                 }
                 // Capped at 2 lines with that height always reserved, rather
                 // than `.fixedSize(vertical: true)`'s unbounded growth — this
@@ -469,40 +476,17 @@ struct NightDetailView: View {
                     .help("Show details")
                     .accessibilityLabel("Best target, \(bestTargetLine). Show details")
                 }
-            }
-            Spacer(minLength: 0)
-            // A compact badge rather than the full-width banner this used to
-            // be: that banner sat between the header and the timeline, so on
-            // every clouded-out night it inserted or removed a whole block
-            // and shoved the timeline, legend and Tonight's Plan down —
-            // visually noisy on exactly the nights this fires most. Living
-            // here instead, it's just one more fixed-size item in a row that
-            // already reflows around variable content, so nothing below the
-            // card moves.
-            if plan.isCloudedOut {
-                VStack(spacing: 2) {
-                    Image(systemName: "cloud.rain.fill")
-                        .font(.scaled(.title, scale: uiTextScale))
-                        .foregroundStyle(Palette.marginal)
-                    Text("Clouded Out")
-                        .font(.scaled(.caption2, scale: uiTextScale).weight(.semibold))
-                        .foregroundStyle(Palette.marginal)
+                if let limitation = nightLimitationPhrase(for: plan) {
+                    let limitationLine = "Main limitation: \(limitation)"
+                    Label(limitationLine, systemImage: "exclamationmark.circle")
+                        .font(.scaled(.callout, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .hoverTooltip(limitationLine)
                 }
-                .hoverTooltip("The forecast writes this night off.")
             }
-        }
-        // The night's one-sentence limitation beside the one thing to do
-        // next, on a row of their own so neither squeezes the headline.
-        HStack(spacing: 12) {
-            if let limitation = nightLimitationPhrase(for: plan) {
-                let limitationLine = "Main limitation: \(limitation)"
-                Label(limitationLine, systemImage: "exclamationmark.circle")
-                    .font(.scaled(.callout, scale: uiTextScale))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .hoverTooltip(limitationLine)
-            }
-            Spacer(minLength: 8)
+            Spacer(minLength: 12)
+            // The one thing to do next, in the same place every night.
             Button {
                 state.openPlanner(for: plan)
             } label: {
@@ -512,9 +496,7 @@ struct NightDetailView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .help("Build this night's session")
-        }
-        }
-        skyDomeButton
+            skyDomeButton
         }
         .padding(16)
         .panelStyle(cornerRadius: 14)
