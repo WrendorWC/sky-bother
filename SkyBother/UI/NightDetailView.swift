@@ -243,24 +243,6 @@ struct NightDetailView: View {
     /// kept current, any other night's at its best stretch. Click for Sky View.
     private var showsBigDome: Bool { isWide && bigDomeHeight > 260 }
 
-    /// What the big dome points out, best first: the plan's targets, then
-    /// the named showpieces, then the rest of the Messier list, each by
-    /// brightness. Not just tonight's — a showpiece that's only up by day
-    /// still gets marked, and its card says when to catch it. The dome keeps
-    /// as many as fit without overlapping.
-    private var domeHighlights: [Target] {
-        let catalog = BuiltInCatalog.all + state.customTargets
-        let planned = planSegments.chronological.compactMap { segment in
-            catalog.first { $0.id == segment.targetID }
-        }
-        let famous = (BuiltInCatalog.messier + BuiltInCatalog.showpieces).sorted {
-            let a = $0.commonName != nil, b = $1.commonName != nil
-            return a != b ? a : $0.magnitude < $1.magnitude
-        }
-        var seen = Set<String>()
-        return (planned + famous).filter { seen.insert($0.id).inserted }
-    }
-
     @ViewBuilder
     private var bigDome: some View {
         let height = bigDomeHeight
@@ -285,7 +267,7 @@ struct NightDetailView: View {
                     // on the sky opens Sky View.
                     SkyView(plan: plan, scrubTime: .constant(time), isPlaying: .constant(false),
                             planSegments: planSegments, showsControls: false, showsLabels: true,
-                            highlights: domeHighlights,
+                            highlights: state.domeHighlights(planSegments: planSegments),
                             onSelectHighlight: { catalogTarget = $0 })
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .contentShape(Rectangle())

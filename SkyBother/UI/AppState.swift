@@ -829,6 +829,25 @@ final class AppState: ObservableObject {
 
     @Published var skyBrowserRequest: SkyBrowserRequest?
 
+    /// What a sky dome points out, best first: the plan's targets, then the
+    /// named showpieces, then the rest of the Messier list, each by
+    /// brightness. Not just the night's usable targets — a showpiece that's
+    /// only up by day is marked too, and its card says when to catch it. The
+    /// dome keeps as many as fit without overlapping.
+    func domeHighlights(planSegments: [PlanSegment]) -> [Target] {
+        let catalog = BuiltInCatalog.all + customTargets
+        let planned = planSegments.chronological.compactMap { segment in
+            catalog.first { $0.id == segment.targetID }
+        }
+        var seen = Set<String>()
+        return (planned + Self.famousTargets).filter { seen.insert($0.id).inserted }
+    }
+
+    private static let famousTargets: [Target] = (BuiltInCatalog.messier + BuiltInCatalog.showpieces).sorted {
+        let a = $0.commonName != nil, b = $1.commonName != nil
+        return a != b ? a : $0.magnitude < $1.magnitude
+    }
+
     /// A block the catalog just added, for the planner to select and
     /// explain the way it does its own Adds. The planner clears it.
     @Published var blockAddedElsewhere: PlanSegment?

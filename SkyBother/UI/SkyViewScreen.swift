@@ -14,6 +14,8 @@ struct SkyViewScreen: View {
     @State private var scrubTime: Date
     @State private var isPlaying = false
     @State private var isShowingMoon = false
+    /// A marked showpiece, clicked: its catalog card.
+    @State private var catalogTarget: Target?
     /// Remembered between launches: how wide you like the side panel.
     /// 0 until you drag the divider: the default then follows the UI scale.
     @AppStorage("skyViewPanelWidth") private var panelWidth: Double = 0
@@ -45,7 +47,9 @@ struct SkyViewScreen: View {
                                                   set: { panelWidth = $0 }),
                            trailingRange: (280 * max(1, uiTextScale * 0.9))...1100,
                            leadingMinimum: 480) {
-                SkyView(plan: plan, scrubTime: $scrubTime, isPlaying: $isPlaying, planSegments: segments)
+                SkyView(plan: plan, scrubTime: $scrubTime, isPlaying: $isPlaying, planSegments: segments,
+                        highlights: state.domeHighlights(planSegments: segments),
+                        onSelectHighlight: { catalogTarget = $0 })
                     .padding(18)
             } trailing: {
                 sidePanel
@@ -53,6 +57,9 @@ struct SkyViewScreen: View {
         }
         .spaceBackground()
         .navigationTitle("Sky View")
+        .sheet(item: $catalogTarget) { target in
+            TargetCatalogDetail(target: target, night: plan)
+        }
         .onEscapeKey { back() }
     }
 
