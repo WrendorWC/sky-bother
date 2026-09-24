@@ -129,9 +129,11 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
     // sizes for the sensor each model uses. Check them against your own unit and
     // edit in Settings if anything differs — every number here is editable.
 
+    /// 50mm f/5, Sony IMX462 (2.9um). ZWO give 1080 x 1920 and a 0.73 x
+    /// 1.29 degree field: portrait, like every Seestar's main camera.
     static let seestarS50 = Rig(name: "ZWO Seestar S50",
                                 apertureMillimeters: 50, focalLengthMillimeters: 250,
-                                sensorWidthMillimeters: 5.6, sensorHeightMillimeters: 3.2,
+                                sensorWidthMillimeters: 3.13, sensorHeightMillimeters: 5.57,
                                 pixelSizeMicrons: 2.9, mountType: .altAzimuth,
                                 hasNarrowbandFilter: true, supportsMosaic: true,
                                 zenithAvoidanceAltitude: 80)
@@ -148,9 +150,11 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                                    hasNarrowbandFilter: true, supportsMosaic: true,
                                    zenithAvoidanceAltitude: 80)
 
+    /// 30mm f/5, Sony IMX662 (2.9um, 1080 x 1920 portrait), 2.46 degrees
+    /// across the diagonal.
     static let seestarS30 = Rig(name: "ZWO Seestar S30",
                                 apertureMillimeters: 30, focalLengthMillimeters: 150,
-                                sensorWidthMillimeters: 5.6, sensorHeightMillimeters: 3.2,
+                                sensorWidthMillimeters: 3.13, sensorHeightMillimeters: 5.57,
                                 pixelSizeMicrons: 2.9, mountType: .altAzimuth,
                                 hasNarrowbandFilter: true, supportsMosaic: true,
                                 zenithAvoidanceAltitude: 80)
@@ -165,38 +169,64 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                                    hasNarrowbandFilter: true, supportsMosaic: true,
                                    zenithAvoidanceAltitude: 80)
 
-    // The S50 Pro and S30 each also carry a second, wide-angle camera
-    // alongside their main imaging optics — used on the device for
-    // framing/context, and here for starscape/Milky Way planning, which
-    // wants a much shorter focal length than either main camera offers.
-    // ZWO doesn't publish detailed specs for these the way they do the
-    // main optics, so these numbers are a best estimate rather than a
-    // manufacturer figure — check them against your own unit.
+    // The wide-angle cameras beside the main optics, for starscape and
+    // Milky Way planning. The S50 Pro and S30 Pro share one module, and ZWO
+    // publish it: 6mm f/1.75 (3.4mm aperture), Sony IMX586 1/2", 1.6um
+    // binned pixels, 2160 x 3840 portrait, 63 degrees. The chip's full
+    // 6.4mm width at 16:9 is 6.4 x 3.6mm, which on a 6mm lens gives exactly
+    // that 63 degree diagonal (33 x 56 degrees).
     static let seestarS50ProWide = Rig(name: "ZWO Seestar S50 Pro (wide)",
-                                       apertureMillimeters: 7, focalLengthMillimeters: 16,
-                                       sensorWidthMillimeters: 5.6, sensorHeightMillimeters: 3.2,
-                                       pixelSizeMicrons: 2.9, mountType: .altAzimuth,
+                                       apertureMillimeters: 3.4, focalLengthMillimeters: 6,
+                                       sensorWidthMillimeters: 3.6, sensorHeightMillimeters: 6.4,
+                                       pixelSizeMicrons: 1.6, mountType: .altAzimuth,
                                        hasNarrowbandFilter: false, supportsMosaic: false,
                                        zenithAvoidanceAltitude: 80)
 
+    /// The plain S30's wide camera is its own, narrower one. ZWO give only
+    /// its field, 23.2 degrees; the lens here is set to match that across
+    /// the diagonal, on an estimated sensor.
     static let seestarS30Wide = Rig(name: "ZWO Seestar S30 (wide)",
-                                    apertureMillimeters: 7, focalLengthMillimeters: 16,
+                                    apertureMillimeters: 7, focalLengthMillimeters: 15.7,
                                     sensorWidthMillimeters: 5.6, sensorHeightMillimeters: 3.2,
                                     pixelSizeMicrons: 2.9, mountType: .altAzimuth,
                                     hasNarrowbandFilter: false, supportsMosaic: false,
                                     zenithAvoidanceAltitude: 80)
 
-    /// The S30 Pro's wide camera is a different sensor generation from the
-    /// other Seestars' wide cameras (Sony IMX586, 0.8um native pixels, a
-    /// 1/2" sensor — 8000 x 6000 native, physically 6.4 x 4.8mm) rather
-    /// than a rescaled copy of the main camera's sensor. Aperture and focal
-    /// ratio aren't published for this lens; the 6mm focal length is.
+    /// The same wide module as the S50 Pro's.
     static let seestarS30ProWide = Rig(name: "ZWO Seestar S30 Pro (wide)",
-                                       apertureMillimeters: 7, focalLengthMillimeters: 6,
-                                       sensorWidthMillimeters: 6.4, sensorHeightMillimeters: 4.8,
-                                       pixelSizeMicrons: 0.8, mountType: .altAzimuth,
+                                       apertureMillimeters: 3.4, focalLengthMillimeters: 6,
+                                       sensorWidthMillimeters: 3.6, sensorHeightMillimeters: 6.4,
+                                       pixelSizeMicrons: 1.6, mountType: .altAzimuth,
                                        hasNarrowbandFilter: false, supportsMosaic: false,
                                        zenithAvoidanceAltitude: 80)
+
+    /// Presets whose figures were wrong when they shipped, with those old
+    /// optics. A rig picked from one keeps a copy of its numbers, so it
+    /// would never see the fix; one still carrying exactly the old numbers
+    /// is brought up to date, and one you've edited is left alone.
+    private static let correctedPresets: [(old: [Double], preset: Rig)] = [
+        ([7, 16, 5.6, 3.2, 2.9], seestarS50ProWide),
+        ([7, 16, 5.6, 3.2, 2.9], seestarS30Wide),
+        ([7, 6, 6.4, 4.8, 0.8], seestarS30ProWide),
+        ([50, 250, 5.6, 3.2, 2.9], seestarS50),
+        ([30, 150, 5.6, 3.2, 2.9], seestarS30),
+        ([114, 450, 7.4, 4.2, 2.9], unistellarEVscope2),
+        ([114, 450, 7.31, 7.31, 2.9], unistellarEquinox2),
+    ]
+
+    /// This rig, or the corrected preset it was picked from.
+    func updatingCorrectedPreset() -> Rig {
+        let optics = [apertureMillimeters, focalLengthMillimeters, sensorWidthMillimeters,
+                      sensorHeightMillimeters, pixelSizeMicrons]
+        guard let fix = Self.correctedPresets.first(where: { $0.preset.name == name && $0.old == optics }) else {
+            return self
+        }
+        var updated = fix.preset
+        updated.id = id
+        updated.mountType = mountType
+        updated.zenithAvoidanceAltitude = zenithAvoidanceAltitude
+        return updated
+    }
 
     static let celestronOrigin = Rig(name: "Celestron Origin",
                                      apertureMillimeters: 152, focalLengthMillimeters: 335,
@@ -216,18 +246,20 @@ struct Rig: Codable, Hashable, Identifiable, Sendable {
                                            hasNarrowbandFilter: false, supportsMosaic: false,
                                            zenithAvoidanceAltitude: 80)
 
+    /// 114mm f/4, Sony IMX347 (2.9um). Unistellar quote a 47 x 34
+    /// arcminute field, the part of the chip it uses: 6.15 x 4.45mm at 450mm.
     static let unistellarEVscope2 = Rig(name: "Unistellar eVscope 2",
                                         apertureMillimeters: 114, focalLengthMillimeters: 450,
-                                        sensorWidthMillimeters: 7.4, sensorHeightMillimeters: 4.2,
+                                        sensorWidthMillimeters: 6.15, sensorHeightMillimeters: 4.45,
                                         pixelSizeMicrons: 2.9, mountType: .altAzimuth,
                                         hasNarrowbandFilter: false, supportsMosaic: false,
                                         zenithAvoidanceAltitude: 80)
 
-    /// Same 114mm f/4 optical tube as the eVscope 2, with a newer Sony
-    /// IMX347 sensor (2.9um, 2520 x 2520 — square).
+    /// Same 114mm f/4 tube and IMX347 as the eVscope 2, and the same quoted
+    /// 47 x 34 arcminute field.
     static let unistellarEquinox2 = Rig(name: "Unistellar eQuinox 2",
                                         apertureMillimeters: 114, focalLengthMillimeters: 450,
-                                        sensorWidthMillimeters: 7.31, sensorHeightMillimeters: 7.31,
+                                        sensorWidthMillimeters: 6.15, sensorHeightMillimeters: 4.45,
                                         pixelSizeMicrons: 2.9, mountType: .altAzimuth,
                                         hasNarrowbandFilter: false, supportsMosaic: false,
                                         zenithAvoidanceAltitude: 80)

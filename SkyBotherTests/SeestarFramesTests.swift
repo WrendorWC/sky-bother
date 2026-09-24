@@ -114,3 +114,45 @@ final class SeestarFramesTests: XCTestCase {
         if case .supported = LiveImageAvailability.of(other) { XCTFail("no Origin connection exists") }
     }
 }
+
+/// The wide-camera presets against ZWO's published figures, and the fix-up
+/// for rigs picked from the old, wrong ones.
+final class WidePresetTests: XCTestCase {
+    func testS50ProWideMatchesZWO() {
+        let rig = Rig.seestarS50ProWide
+        let diagonal = 2 * atan(hypot(rig.sensorWidthMillimeters, rig.sensorHeightMillimeters)
+                                / (2 * rig.focalLengthMillimeters)) * 180 / .pi
+        XCTAssertEqual(diagonal, 63, accuracy: 0.5)
+        XCTAssertGreaterThan(rig.fieldOfViewHeightDegrees, rig.fieldOfViewWidthDegrees, "portrait")
+        XCTAssertEqual(rig.focalRatio, 1.76, accuracy: 0.02)
+    }
+
+    func testOldWidePresetRigIsCorrected() {
+        var old = Rig.seestarS50ProWide
+        old.apertureMillimeters = 7; old.focalLengthMillimeters = 16
+        old.sensorWidthMillimeters = 5.6; old.sensorHeightMillimeters = 3.2; old.pixelSizeMicrons = 2.9
+        let fixed = old.updatingCorrectedPreset()
+        XCTAssertEqual(fixed.focalLengthMillimeters, 6)
+        XCTAssertEqual(fixed.id, old.id)
+    }
+
+    func testEditedRigIsLeftAlone() {
+        var edited = Rig.seestarS50ProWide
+        edited.apertureMillimeters = 7; edited.focalLengthMillimeters = 12
+        XCTAssertEqual(edited.updatingCorrectedPreset(), edited)
+    }
+}
+
+final class PresetSpecTests: XCTestCase {
+    func testS50IsPortraitAtZWOsField() {
+        XCTAssertEqual(Rig.seestarS50.fieldOfViewWidthDegrees, 0.73, accuracy: 0.02)
+        XCTAssertEqual(Rig.seestarS50.fieldOfViewHeightDegrees, 1.29, accuracy: 0.02)
+    }
+
+    func testUnistellarFieldIs47By34Arcminutes() {
+        for rig in [Rig.unistellarEVscope2, .unistellarEquinox2] {
+            XCTAssertEqual(rig.fieldOfViewWidthDegrees * 60, 47, accuracy: 0.5, rig.name)
+            XCTAssertEqual(rig.fieldOfViewHeightDegrees * 60, 34, accuracy: 0.5, rig.name)
+        }
+    }
+}

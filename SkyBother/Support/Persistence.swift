@@ -72,10 +72,10 @@ struct StoredSettings: Codable, Hashable, Sendable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         site = try container.decode(Site.self, forKey: .site)
-        rig = try container.decode(Rig.self, forKey: .rig)
+        rig = try container.decode(Rig.self, forKey: .rig).updatingCorrectedPreset()
         preferences = try container.decode(Preferences.self, forKey: .preferences)
         savedSites = try container.decode([Site].self, forKey: .savedSites)
-        savedRigs = try container.decode([Rig].self, forKey: .savedRigs)
+        savedRigs = try container.decode([Rig].self, forKey: .savedRigs).map { $0.updatingCorrectedPreset() }
         customTargets = try container.decodeIfPresent([Target].self, forKey: .customTargets) ?? []
         // Built into a local first: referring to `site` from inside these
         // closures while `sessionPlans` is still uninitialised is what the
