@@ -186,6 +186,8 @@ enum Palette {
     static let nautical = Color(red: 0.07, green: 0.10, blue: 0.22)
     static let astronomical = Color(red: 0.025, green: 0.03, blue: 0.075)
     static let moonlight = Color(red: 0.98, green: 0.93, blue: 0.74)
+    /// Warmer and brighter than moonlight, so the two discs never read as the same thing.
+    static let sunlight = Color(red: 1.0, green: 0.86, blue: 0.45)
     static let cloud = Color(red: 0.86, green: 0.89, blue: 0.94)
     /// The Milky Way band in the sky view — dim and cool so it reads as
     /// structure in the background rather than competing with targets.

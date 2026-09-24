@@ -440,6 +440,7 @@ struct SkyView: View {
 
         context.fill(rim, with: skyShading(center: center, radius: radius))
         context.stroke(rim, with: .color(Palette.panelBorder), lineWidth: 1)
+        drawSun(context: context, center: center, radius: radius)
 
         // Everything from here down is confined to the visible dome, so a
         // path or a frame that only partially clears the blocked horizon is
@@ -691,6 +692,30 @@ struct SkyView: View {
         let pointsPerDegree = radius / 90
         let realDiameter = CGFloat(moonAngularDiameterDegrees) * pointsPerDegree
         return min(max(realDiameter, 10), 26)
+    }
+
+    /// The Sun, when it's up: only ever at the dusk and dawn ends of a night,
+    /// or in a daytime look at the sky, but it's what makes the dome blue.
+    /// Same size rule as the Moon, which it matches in the sky. Unlike
+    /// everything else it's drawn even behind your trees, dimmed and out in
+    /// the cut-away where they are: a high horizon can hide it all day, and
+    /// knowing where it is still orients you.
+    private func drawSun(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
+        let sun = sunHorizontal
+        guard sun.altitude > -0.8 else { return }
+        let screen = screenPoint(for: sun, center: center, radius: radius)
+        let diameter = moonDiameter(radius: radius)
+        let disc = Path(ellipseIn: CGRect(x: screen.x - diameter / 2, y: screen.y - diameter / 2,
+                                          width: diameter, height: diameter))
+        if sun.altitude < plan.site.blockedAltitude(azimuth: sun.azimuth) {
+            context.fill(disc, with: .color(Palette.sunlight.opacity(0.55)))
+            return
+        }
+        let glow = diameter * 2.2
+        context.fill(Path(ellipseIn: CGRect(x: screen.x - glow, y: screen.y - glow, width: glow * 2, height: glow * 2)),
+                     with: .radialGradient(Gradient(colors: [Palette.sunlight.opacity(0.55), Palette.sunlight.opacity(0)]),
+                                           center: screen, startRadius: diameter / 2, endRadius: glow))
+        context.fill(disc, with: .color(Palette.sunlight))
     }
 
     private func drawCross(context: GraphicsContext, center: CGPoint, radius: CGFloat,
