@@ -439,9 +439,36 @@ private final class TitleBarDragCatcherView: NSView {
     /// window and immediately un-zoomed it. Letting AppKit own the gesture
     /// end to end is what keeps it happening exactly once, and honours the
     /// Minimize/None/Zoom preference without this having to read it.
+    ///
+    /// On macOS 27 `performDrag` stopped acting on the double click, and the
+    /// header could only be dragged, never zoomed. So a double click now
+    /// checks back a moment later: if AppKit has done something the window
+    /// will have moved or changed size, and this leaves it be; if not, it
+    /// does what the System Settings preference asks. Checking first is what
+    /// keeps it from happening twice on a system where AppKit still acts.
     override func mouseDown(with event: NSEvent) {
         guard let window else { return super.mouseDown(with: event) }
-        window.performDrag(with: event)
+        guard event.clickCount == 2 else {
+            window.performDrag(with: event)
+            return
+        }
+        let before = window.frame
+        let wasMiniaturized = window.isMiniaturized
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak window] in
+            guard let window, window.frame == before, window.isMiniaturized == wasMiniaturized else { return }
+            Self.performDoubleClickAction(on: window)
+        }
+    }
+
+    /// Whatever Desktop & Dock's "Double-click a window's title bar to" says.
+    private static func performDoubleClickAction(on window: NSWindow) {
+        let defaults = UserDefaults.standard
+        switch defaults.string(forKey: "AppleActionOnDoubleClick") {
+        case "Minimize": window.performMiniaturize(nil)
+        case "None": break
+        case nil where defaults.bool(forKey: "AppleMiniaturizeOnDoubleClick"): window.performMiniaturize(nil)
+        default: window.performZoom(nil)
+        }
     }
 
     /// Everything in the header the catcher must stay out of the way of.
