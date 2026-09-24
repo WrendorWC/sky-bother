@@ -22,6 +22,10 @@ struct NightDetailView: View {
     @State private var viewportHeight: CGFloat = 0
     @State private var viewportWidth: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
+    /// The wide layout's left column above the big dome.
+    @State private var leftColumnHeight: CGFloat = 0
+    /// A highlight on the big dome, clicked: its catalog card.
+    @State private var catalogTarget: TargetPlan?
     /// A real other-targets row, once one has been laid out.
     @State private var measuredRowHeight: CGFloat = 0
 
@@ -90,6 +94,13 @@ struct NightDetailView: View {
         // title bar is for the thing the hero doesn't say: where you're
         // observing from.
         .navigationTitle(plan.site.name)
+        // On a big screen the target panel is a whole column; rather than
+        // open on "No target selected", it shows the night's best.
+        .onChange(of: isWide, initial: true) { _, wide in
+            if wide, state.selectedTargetID == nil, let best = plan.bestTarget {
+                state.selectedTargetID = best.id
+            }
+        }
     }
 
     /// Marks scrolling as in-flight and schedules clearing it again after a
@@ -199,7 +210,15 @@ struct NightDetailView: View {
                 timelineWithDew(height: 200 * uiTextScale)
                 legend
             }
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear { leftColumnHeight = geometry.size.height }
+                        .onChange(of: geometry.size.height) { _, height in leftColumnHeight = height }
+                }
+            )
             .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .topLeading) { bigDome }
 
             VStack(alignment: .leading, spacing: 24) {
                 autoPlanSection
@@ -210,6 +229,84 @@ struct NightDetailView: View {
         }
         .padding(20)
         .id(topAnchorID)
+    }
+
+    /// The height left under the wide layout's left column: the window's
+    /// height less the column and the padding round it. It was empty — half
+    /// a 4K window of nothing under the chart.
+    private var bigDomeHeight: CGFloat {
+        viewportHeight - leftColumnHeight - 40 - 24
+    }
+
+    /// The sky, big, in the space under the chart: tonight's as it is now,
+    /// kept current, any other night's at its best stretch. Click for Sky View.
+    private var showsBigDome: Bool { isWide && bigDomeHeight > 260 }
+
+    /// What the big dome points out at `time`: of the targets above your
+    /// horizon right then, the plan's first, then the night's best — five at
+    /// most, none within 15° of another so their names don't pile up (the two
+    /// Veils sit side by side).
+    private func domeHighlights(at time: Date) -> [TargetPlan] {
+        let days = time.daysSinceJ2000
+        func isUp(_ targetPlan: TargetPlan) -> Bool {
+            let position = SkyCoordinates.horizontal(targetPlan.target.coordinate, daysSinceJ2000: days,
+                                                     latitude: plan.site.latitude, longitude: plan.site.longitude)
+            return position.altitude > max(5, plan.site.blockedAltitude(azimuth: position.azimuth))
+        }
+        let planned = Set(planSegments.map(\.targetID))
+        let ranked = plan.targets.filter(isUp).sorted {
+            let a = planned.contains($0.id), b = planned.contains($1.id)
+            return a != b ? a : $0.score > $1.score
+        }
+        var picks: [TargetPlan] = []
+        for target in ranked where target.id != state.selectedTargetID {
+            if picks.count >= 5 { break }
+            if picks.allSatisfy({ SkyCoordinates.separation($0.target.coordinate, target.target.coordinate) > 15 }) {
+                picks.append(target)
+            }
+        }
+        return picks
+    }
+
+    @ViewBuilder
+    private var bigDome: some View {
+        let height = bigDomeHeight
+        if showsBigDome {
+            TimelineView(.periodic(from: .now, by: 60)) { context in
+                let time = isTonight ? context.date : skyPreviewTime
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        SectionHeader(isTonight ? "In the sky now · \(Format.time(time, in: plan.timeZone))"
+                                                : "In the sky · \(Format.time(time, in: plan.timeZone))")
+                        Spacer()
+                        Button {
+                            state.openSkyView(for: plan)
+                        } label: {
+                            Label("Open Sky View", systemImage: "circle.dashed.inset.filled")
+                                .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Palette.accent)
+                    }
+                    // Clicking a marked target opens its card; anywhere else
+                    // on the sky opens Sky View.
+                    SkyView(plan: plan, scrubTime: .constant(time), isPlaying: .constant(false),
+                            planSegments: planSegments, showsControls: false, showsLabels: true,
+                            highlights: domeHighlights(at: time),
+                            onSelectHighlight: { catalogTarget = $0 })
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .contentShape(Rectangle())
+                        .onTapGesture { state.openSkyView(for: plan) }
+                }
+                .padding(14)
+                .panelStyle(cornerRadius: 14)
+            }
+            .frame(height: height)
+            .offset(y: leftColumnHeight + 24)
+            .sheet(item: $catalogTarget) { targetPlan in
+                TargetCatalogDetail(target: targetPlan.target, night: plan)
+            }
+        }
     }
 
     // MARK: - Other targets
@@ -589,7 +686,8 @@ struct NightDetailView: View {
             }
             .controlSize(.large)
             .fixedSize(horizontal: true, vertical: false)
-            skyDomeButton
+            // The big dome below says the same, larger.
+            if !showsBigDome { skyDomeButton }
         }
         .padding(16)
         .panelStyle(cornerRadius: 14)

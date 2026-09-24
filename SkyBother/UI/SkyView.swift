@@ -25,6 +25,11 @@ struct SkyView: View {
     /// live dome in Session View. Implied by `showsControls`.
     var showsLabels: Bool? = nil
     private var labelled: Bool { showsLabels ?? showsControls }
+    /// Targets to mark wherever they are above the horizon, daylight or
+    /// not, each one clickable — Home's big dome points out the night's
+    /// best even while the sky is too bright to show them.
+    var highlights: [TargetPlan] = []
+    var onSelectHighlight: ((TargetPlan) -> Void)? = nil
 
     /// Nil until the user picks something other than their active rig —
     /// previewing equipment here never touches `state.rig` itself.
@@ -297,6 +302,7 @@ struct SkyView: View {
                         }
                     }
                     if labelled { compassLabels(center: center, radius: radius) }
+                    if !highlights.isEmpty { highlightMarkers(center: center, radius: radius) }
                 }
             }
             // All the room there is, in both directions: `domeFit` shapes
@@ -772,6 +778,43 @@ struct SkyView: View {
     /// Each label sits just outside the rim *in its own direction*, so on an
     /// uneven horizon S tracks the bite the tree takes rather than floating
     /// out where the sky would have ended without it.
+    /// Corner brackets and a name for each highlight above your horizon,
+    /// in the accent colour so they don't read as the selected target's
+    /// green frame. Whatever is already selected is left to its own frame.
+    private func highlightMarkers(center: CGPoint, radius: CGFloat) -> some View {
+        let size = 22 * uiTextScale
+        return ZStack {
+            ForEach(highlights.filter { $0.id != state.selectedTargetID }) { targetPlan in
+                let position = horizontal(of: targetPlan.target.coordinate)
+                if position.altitude > plan.site.blockedAltitude(azimuth: position.azimuth) {
+                    let point = screenPoint(for: position, center: center, radius: radius)
+                    Button {
+                        onSelectHighlight?(targetPlan)
+                    } label: {
+                        VStack(spacing: 3) {
+                            HighlightBrackets()
+                                .stroke(Palette.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                                .frame(width: size, height: size)
+                            Text(targetPlan.target.displayName)
+                                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(Color.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 4))
+                                .fixedSize()
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("\(targetPlan.target.displayName) · \(Int(targetPlan.score.rounded())) — open in the catalog")
+                    // The brackets' centre on the object, not the whole stack's:
+                    // the stack's centre sits half the label below it.
+                    .position(x: point.x, y: point.y + (3 + 18 * uiTextScale) / 2)
+                }
+            }
+        }
+    }
+
     private func compassLabels(center: CGPoint, radius: CGFloat) -> some View {
         let points: [(String, Double)] = [("N", 0), ("E", 90), ("S", 180), ("W", 270)]
         return ForEach(points, id: \.0) { label, azimuth in
@@ -1015,4 +1058,21 @@ struct SkyView: View {
         .fixedSize()
     }
 
+}
+
+/// Four corner brackets, the way a viewfinder marks something.
+private struct HighlightBrackets: Shape {
+    func path(in rect: CGRect) -> Path {
+        let arm = rect.width * 0.32
+        var path = Path()
+        for (corner, dx, dy) in [(CGPoint(x: rect.minX, y: rect.minY), 1.0, 1.0),
+                                 (CGPoint(x: rect.maxX, y: rect.minY), -1.0, 1.0),
+                                 (CGPoint(x: rect.minX, y: rect.maxY), 1.0, -1.0),
+                                 (CGPoint(x: rect.maxX, y: rect.maxY), -1.0, -1.0)] {
+            path.move(to: CGPoint(x: corner.x + dx * arm, y: corner.y))
+            path.addLine(to: corner)
+            path.addLine(to: CGPoint(x: corner.x, y: corner.y + dy * arm))
+        }
+        return path
+    }
 }
