@@ -306,7 +306,7 @@ private struct EquipmentSettings: View {
                         .help("Keep these numbers as a separate saved rig")
                 }
                 .disabled(!state.rig.validationProblems.isEmpty)
-                Text("Edits apply now. The saved copy changes only with Update saved rig.")
+                Text("Edits apply now. The saved copy changes only with Update Saved Rig.")
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             }

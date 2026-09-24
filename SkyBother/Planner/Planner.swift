@@ -786,7 +786,7 @@ struct Planner: Sendable {
         if closestBrightMoon < 25 {
             warnings.append(String(format: "Within %.0f° of a bright Moon while it's usable", closestBrightMoon))
         } else if minimumSeparation < 35 && meanDarkness < 0.75 {
-            warnings.append(String(format: "Comes within %.0f° of the moon", minimumSeparation))
+            warnings.append(String(format: "Comes within %.0f° of the Moon", minimumSeparation))
         }
 
         if fit.needsMosaic {

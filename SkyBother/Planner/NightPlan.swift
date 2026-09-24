@@ -204,12 +204,12 @@ struct NightPlan: Identifiable, Hashable, Sendable {
         if moon.interference > 0.35 {
             let moonless = moonlessDarkHours
             if moonless >= 0.5 {
-                parts.append("\(formatHours(moonless)) of it with the moon down")
+                parts.append("\(formatHours(moonless)) of it with the Moon down")
             } else {
-                parts.append("moon \(moon.illuminationPercent)% and up throughout")
+                parts.append("Moon \(moon.illuminationPercent)% lit and up throughout")
             }
         } else if moon.illuminatedFraction < 0.15 {
-            parts.append("essentially no moon")
+            parts.append("essentially no Moon")
         }
         if hasDewRisk { parts.append("dew likely") }
         return parts.joined(separator: ", ")

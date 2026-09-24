@@ -123,7 +123,7 @@ struct TargetDetailView: View {
             .help("See \(target.displayName) on the sky")
             if let onAddToPlan {
                 Button(action: onAddToPlan) {
-                    Label(plannedBlocks.isEmpty ? "Add to plan" : "Add another block", systemImage: "plus.circle.fill")
+                    Label(plannedBlocks.isEmpty ? "Add to Plan" : "Add Another Block", systemImage: "plus.circle.fill")
                         .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
                         .frame(maxWidth: .infinity)
                 }
@@ -354,7 +354,7 @@ struct TargetDetailView: View {
             // Said outright, because it changes the number a lot: without the
             // filter this target would score noticeably lower.
             if target.type.respondsToNarrowband && state.rig.hasNarrowbandFilter {
-                Label("Scored with your dual-band (light-pollution) filter in use. It cuts moonlight and light pollution on this nebula; without it, this would score lower.",
+                Label("Scored with your dual-band (light-pollution) filter in use. It cuts moonlight and light pollution on this target; without it, this would score lower.",
                       systemImage: "camera.filters")
                     .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(.secondary)

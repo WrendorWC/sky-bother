@@ -32,17 +32,20 @@ func primaryFactor(in factors: [ScoreFactor], actualScore: Double) -> (factor: S
 /// can still be the single biggest reason the score isn't higher, and the
 /// phrasing should say so rather than compliment it.
 func limitationPhrase(for factor: ScoreFactor) -> String {
+    // Each one finishes "held back most by …", so each has to be something
+    // a thing can be held back by: "faint against your sky" read as
+    // "held back most by faint against your sky".
     switch factor.name {
-    case "Moon": return "bright moon"
-    case "Clear dark time": return "short dark window"
+    case "Moon": return "a bright Moon"
+    case "Clear dark time": return "a short dark window"
     case "Sky clarity": return "cloud during the dark hours"
-    case "Conditions": return "dew or wind risk"
-    case "Time on target": return "not up for long enough"
-    case "Sky darkness": return "twilight or moonlit sky"
-    case "Cloud cover": return "intermittent clouds during the window"
-    case "Altitude": return "stays low, heavy air mass"
-    case "Framing": return "poor fit for your frame"
-    case "Detectability": return "faint against your sky"
+    case "Conditions": return "dew or wind"
+    case "Time on target": return "how little time it's up"
+    case "Sky darkness": return "twilight or moonlight"
+    case "Cloud cover": return "passing cloud during its window"
+    case "Altitude": return "how low it stays, through thick air"
+    case "Framing": return "how poorly it fits your frame"
+    case "Detectability": return "how faint it is against your sky"
     default: return factor.name.lowercased()
     }
 }

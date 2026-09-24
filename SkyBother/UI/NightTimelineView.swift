@@ -366,7 +366,7 @@ struct NightTimelineView: View {
             Text("darkness \(Int(sample.darkness * 100))%")
                 .font(.scaled(.caption, scale: uiTextScale))
             if sample.moonAltitude > 0 {
-                Text("moon \(Format.degrees(sample.moonAltitude)) up")
+                Text("Moon \(Format.degrees(sample.moonAltitude)) up")
                     .font(.scaled(.caption, scale: uiTextScale))
             }
             if let selectedTarget {

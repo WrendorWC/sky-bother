@@ -612,7 +612,7 @@ struct PlannerWorkspaceView: View {
 
     private var emptyCandidatesMessage: String {
         if plan.darkWindows.isEmpty {
-            return "The sun never gets far enough below the horizon at this latitude and date."
+            return "The Sun never gets far enough below the horizon at this latitude and date."
         }
         let search = state.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !search.isEmpty && state.typeFilter.isEmpty && minimumUsableHours == 0 && !fitsFrameOnly {
@@ -685,7 +685,7 @@ struct PlannerWorkspaceView: View {
                           systemImage: "clock")
                 }
                 .scaledMenuStyle(uiTextScale)
-                .help("Only show targets usable for at least this long this night")
+                .help("Only show targets usable for at least this long on this night")
 
                 Toggle("Fits my frame", isOn: $fitsFrameOnly)
                     .toggleStyle(.checkbox)
@@ -740,7 +740,7 @@ struct PlannerWorkspaceView: View {
             .help(planned == 0
                   ? "Add to the longest free stretch of the night"
                   : "Add another block")
-            .accessibilityLabel("Add \(targetPlan.target.displayName) to plan")
+            .accessibilityLabel("Add \(targetPlan.target.displayName) to the plan")
             // Always laid out, hidden when unplanned, so every row keeps the
             // same width and the availability bars stay lined up.
             Button {
@@ -756,7 +756,7 @@ struct PlannerWorkspaceView: View {
             .disabled(planned == 0)
             .accessibilityHidden(planned == 0)
             .help(planned == 1 ? "Take this target out of the plan" : "Take all \(planned) of this target's blocks out of the plan")
-            .accessibilityLabel("Remove \(targetPlan.target.displayName) from plan")
+            .accessibilityLabel("Remove \(targetPlan.target.displayName) from the plan")
         }
         .padding(.horizontal, 20)
     }

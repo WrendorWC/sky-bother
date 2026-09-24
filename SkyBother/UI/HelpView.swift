@@ -42,7 +42,7 @@ enum HelpContent {
                 HelpSwatch(color: Palette.skip, label: "Below 45 — Poor")
             ]),
             HelpSection(heading: "Night Score", body: "Clear dark time (35%), sky clarity (30%), the Moon (25%) and conditions such as wind and dew (10%). Clear dark time and clarity come from the night’s best imaging window — its longest unbroken stretch of dark sky under your maximum cloud cover — measured against your integration goal."),
-            HelpSection(heading: "Target Score", body: "Time on target (26%), sky darkness (18%), cloud cover (18%), framing (15%), detectability (14%) and altitude (9%). Night and target scores are independent: a good night can still be a poor one for a particular target.")
+            HelpSection(heading: "Target Score", body: "Time on target (24%), detectability (20%), sky darkness (17%), cloud cover (17%), framing (14%) and altitude (8%). Night and target scores are independent: a good night can still be a poor one for a particular target.")
         ]),
 
         HelpTopic(title: "The Night Timeline", systemImage: "chart.bar.xaxis", sections: [
@@ -104,7 +104,7 @@ enum HelpContent {
 
         HelpTopic(title: "Cloud, Moon & Weather", systemImage: "cloud.moon", sections: [
             HelpSection(heading: "Cloud", body: "Cloud figures are weighted by layer: low cloud counts fully, mid-level 85%, high cirrus 50%. Your maximum cloud cover is checked against this figure."),
-            HelpSection(heading: "Moon", body: "The Moon doesn’t shorten the night; it lowers each target’s score depending on phase, the Moon’s altitude and its distance from the target. A dual-band filter reduces the penalty for emission and planetary nebulae and supernova remnants."),
+            HelpSection(heading: "Moon", body: "The Moon doesn’t shorten the night; it lowers each target’s score depending on phase, the Moon’s altitude and its distance from the target, sharply so within about 30°. A dual-band filter reduces the penalty for emission and planetary nebulae and supernova remnants, though less the closer they are to the Moon. A night’s Moon factor covers its best imaging window, the same hours as its clear dark time."),
             HelpSection(heading: "Seeing", body: "Estimated from wind gusts only. Treat it as a hint."),
             HelpSection(heading: "Dew Risk", body: "From the gap between temperature and dew point: over 10°F Low, 6–10°F Moderate, 3–6°F High, 3°F or less Very High. Clear, calm nights raise it one step, because optics cool below the air. The rating is the worst hour of your session.", swatches: [
                 HelpSwatch(color: Palette.dewRisk(.low), label: "Low — dew heater probably unnecessary"),
@@ -127,7 +127,7 @@ enum HelpContent {
         HelpTopic(title: "Planning Settings", systemImage: "slider.horizontal.3", sections: [
             HelpSection(heading: "Goal", body: "Quick session, Deep integration and Variety each set the integration goal and plan emphasis. Changing either value makes it Custom."),
             HelpSection(heading: "Maximum Cloud Cover", body: "Hours cloudier than this don’t count. Around 20% works well."),
-            HelpSection(heading: "Minimum Darkness", body: "The sun altitude at which the sky counts as dark. −18° is full astronomical darkness."),
+            HelpSection(heading: "Minimum Darkness", body: "The Sun’s altitude at which the sky counts as dark. −18° is full astronomical darkness."),
             HelpSection(heading: "Minimum Altitude", body: "Targets lower than this are skipped, even where the horizon is open."),
             HelpSection(heading: "Integration Goal", body: "The usable time a target needs for full marks on time on target."),
             HelpSection(heading: "Hide Below Score", body: "Targets under this score are left out of lists and suggestions. It doesn’t change any score."),
