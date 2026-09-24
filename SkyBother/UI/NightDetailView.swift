@@ -397,7 +397,10 @@ struct NightDetailView: View {
         let segments = planSegments.chronological
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                SectionHeader("Tonight's plan")
+                // Same test as the sidebar's "Tonight" label.
+                SectionHeader(plan.id == state.plans.first?.id
+                              ? "Tonight's plan"
+                              : "\(Format.fullWeekday(plan.date, in: plan.timeZone))'s plan")
                 planOriginBadge
                 Spacer()
                 if !segments.isEmpty {

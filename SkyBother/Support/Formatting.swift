@@ -24,6 +24,14 @@ enum Format {
         return formatter.string(from: date)
     }
 
+    /// "Sunday", for headings that name a night.
+    static func fullWeekday(_ date: Date, in timeZone: TimeZone) -> String {
+        let formatter = DateFormatter()
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "EEEE"
+        return formatter.string(from: date)
+    }
+
     static func dayAndMonth(_ date: Date, in timeZone: TimeZone) -> String {
         let formatter = DateFormatter()
         formatter.timeZone = timeZone
