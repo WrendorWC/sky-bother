@@ -48,6 +48,7 @@ struct ContentView: View {
                 .toolbar { windowToolbar }
         } else if state.mainView == .planner, let plan = plannerNight {
             PlannerWorkspaceView(plan: plan)
+                .id(plan.id)
                 .toolbarTitleDisplayMode(.inline)
                 .forcedToolbarBackground(Palette.spaceTop)
                 .toolbar { windowToolbar }

@@ -27,6 +27,9 @@ struct PlannerWorkspaceView: View {
     @State private var addNote: String?
     @State private var isConfirmingReset = false
     @State private var isConfirmingLeave = false
+    /// A night chosen from the date menu, waiting on what to do with
+    /// unsaved changes to this one.
+    @State private var pendingNight: NightPlan?
     @State private var isConfirmingRevert = false
     @State private var compactPane: CompactPane = .candidates
     @FocusState private var isTimelineFocused: Bool
@@ -86,7 +89,7 @@ struct PlannerWorkspaceView: View {
             actionBar
         }
         .spaceBackground()
-        .navigationTitle("Plan session")
+        .navigationTitle("Plan Session")
         .onEscapeKey { escape() }
         .onChange(of: suggestionKey) { _, _ in state.reseedDraftIfPristine(for: plan) }
         // A block added from the catalog gets the same selection and note as
@@ -100,6 +103,22 @@ struct PlannerWorkspaceView: View {
                 state.closePlanner()
             }
             Button("Keep editing", role: .cancel) {}
+        } message: {
+            Text("Saving makes this a manual plan.")
+        }
+        .confirmationDialog(leaveTitle, isPresented: Binding(get: { pendingNight != nil },
+                                                             set: { if !$0 { pendingNight = nil } })) {
+            Button("Save plan") {
+                state.finishEditingPlan()
+                if let night = pendingNight { state.openPlanner(for: night) }
+                pendingNight = nil
+            }
+            Button("Discard changes", role: .destructive) {
+                state.cancelEditingPlan()
+                if let night = pendingNight { state.openPlanner(for: night) }
+                pendingNight = nil
+            }
+            Button("Keep editing", role: .cancel) { pendingNight = nil }
         } message: {
             Text("Saving makes this a manual plan.")
         }
@@ -139,8 +158,30 @@ struct PlannerWorkspaceView: View {
             ScoreBadge(score: plan.score, size: 40)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 8) {
-                    Text(Format.longDate(plan.date, in: plan.timeZone))
-                        .font(.scaled(.title3, scale: uiTextScale).weight(.bold))
+                    Menu {
+                        ForEach(state.plans) { night in
+                            Button {
+                                switchNight(to: night)
+                            } label: {
+                                Text("\(Format.weekday(night.date, in: night.timeZone)) \(Format.dayAndMonth(night.date, in: night.timeZone)) · \(Int(night.score.rounded())) \(night.verdict.rawValue)")
+                            }
+                            .disabled(night.id == plan.id)
+                        }
+                    } label: {
+                        HStack(spacing: 5) {
+                            Text(Format.longDate(plan.date, in: plan.timeZone))
+                                .font(.scaled(.title3, scale: uiTextScale).weight(.bold))
+                            Image(systemName: "chevron.down")
+                                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                                .foregroundStyle(Palette.accent)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .menuStyle(.button)
+                    .buttonStyle(.plain)
+                    .menuIndicator(.hidden)
+                    .fixedSize()
+                    .help("Plan a different night")
                     VerdictTag(verdict: plan.verdict)
                 }
                 Text(nightLine)
@@ -796,6 +837,18 @@ struct PlannerWorkspaceView: View {
         } else {
             state.cancelEditingPlan()
             state.closePlanner()
+        }
+    }
+
+    /// Moves the planner to another night, asking first if this one has
+    /// unsaved changes.
+    private func switchNight(to night: NightPlan) {
+        guard night.id != plan.id else { return }
+        if isDirty {
+            pendingNight = night
+        } else {
+            state.cancelEditingPlan()
+            state.openPlanner(for: night)
         }
     }
 

@@ -364,7 +364,7 @@ struct NightDetailView: View {
         Button {
             state.openSession(for: plan)
         } label: {
-            Label("Session view", systemImage: "play.circle.fill")
+            Label("Session View", systemImage: "play.circle.fill")
                 .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
         }
         .buttonStyle(.bordered)
@@ -490,7 +490,7 @@ struct NightDetailView: View {
             Button {
                 state.openPlanner(for: plan)
             } label: {
-                Label("Plan session", systemImage: "list.bullet.rectangle")
+                Label("Plan Session", systemImage: "list.bullet.rectangle")
                     .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
             }
             .buttonStyle(.borderedProminent)
