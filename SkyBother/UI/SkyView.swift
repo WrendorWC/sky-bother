@@ -28,8 +28,9 @@ struct SkyView: View {
     /// Targets to mark wherever they are above the horizon, daylight or
     /// not, each one clickable — Home's big dome points out the night's
     /// best even while the sky is too bright to show them.
-    var highlights: [TargetPlan] = []
-    var onSelectHighlight: ((TargetPlan) -> Void)? = nil
+    /// In priority order; as many are marked as fit without overlapping.
+    var highlights: [Target] = []
+    var onSelectHighlight: ((Target) -> Void)? = nil
 
     /// Nil until the user picks something other than their active rig —
     /// previewing equipment here never touches `state.rig` itself.
@@ -784,35 +785,55 @@ struct SkyView: View {
     private func highlightMarkers(center: CGPoint, radius: CGFloat) -> some View {
         let size = 22 * uiTextScale
         return ZStack {
-            ForEach(highlights.filter { $0.id != state.selectedTargetID }) { targetPlan in
-                let position = horizontal(of: targetPlan.target.coordinate)
-                if position.altitude > plan.site.blockedAltitude(azimuth: position.azimuth) {
-                    let point = screenPoint(for: position, center: center, radius: radius)
-                    Button {
-                        onSelectHighlight?(targetPlan)
-                    } label: {
-                        VStack(spacing: 3) {
-                            HighlightBrackets()
-                                .stroke(Palette.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                                .frame(width: size, height: size)
-                            Text(targetPlan.target.displayName)
-                                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 1)
-                                .background(Color.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 4))
-                                .fixedSize()
-                        }
-                        .contentShape(Rectangle())
+            ForEach(placedHighlights(center: center, radius: radius), id: \.target.id) { placed in
+                Button {
+                    onSelectHighlight?(placed.target)
+                } label: {
+                    VStack(spacing: 3) {
+                        HighlightBrackets()
+                            .stroke(Palette.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                            .frame(width: size, height: size)
+                        Text(placed.target.displayName)
+                            .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Color.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 4))
+                            .fixedSize()
                     }
-                    .buttonStyle(.plain)
-                    .help("\(targetPlan.target.displayName) · \(Int(targetPlan.score.rounded())) — open in the catalog")
-                    // The brackets' centre on the object, not the whole stack's:
-                    // the stack's centre sits half the label below it.
-                    .position(x: point.x, y: point.y + (3 + 18 * uiTextScale) / 2)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .help("\(placed.target.fullName) — open in the catalog")
+                // The brackets' centre on the object, not the whole stack's:
+                // the stack's centre sits half the label below it.
+                .position(x: placed.point.x, y: placed.point.y + (3 + 18 * uiTextScale) / 2)
             }
         }
+    }
+
+    /// Highlights above the visible horizon, in priority order, skipping any
+    /// whose brackets and label would overlap one already placed — so a big
+    /// dome carries more of them than a small one.
+    private func placedHighlights(center: CGPoint, radius: CGFloat) -> [(target: Target, point: CGPoint)] {
+        let size = 22 * uiTextScale
+        let font = NSFont.systemFont(ofSize: 10 * uiTextScale, weight: .semibold)
+        var claimed: [CGRect] = []
+        var placed: [(target: Target, point: CGPoint)] = []
+        for target in highlights where target.id != state.selectedTargetID {
+            let position = horizontal(of: target.coordinate)
+            guard position.altitude > max(3, plan.site.blockedAltitude(azimuth: position.azimuth)) else { continue }
+            let point = screenPoint(for: position, center: center, radius: radius)
+            let labelWidth = (target.displayName as NSString).size(withAttributes: [.font: font]).width + 10
+            let footprint = CGRect(x: point.x - max(size, labelWidth) / 2, y: point.y - size / 2,
+                                   width: max(size, labelWidth), height: size + 3 + 18 * uiTextScale)
+                .insetBy(dx: -4, dy: -3)
+            guard !claimed.contains(where: { $0.intersects(footprint) }) else { continue }
+            claimed.append(footprint)
+            placed.append((target, point))
+            if placed.count >= 14 { break }
+        }
+        return placed
     }
 
     private func compassLabels(center: CGPoint, radius: CGFloat) -> some View {

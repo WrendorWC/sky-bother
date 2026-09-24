@@ -25,7 +25,7 @@ struct NightDetailView: View {
     /// The wide layout's left column above the big dome.
     @State private var leftColumnHeight: CGFloat = 0
     /// A highlight on the big dome, clicked: its catalog card.
-    @State private var catalogTarget: TargetPlan?
+    @State private var catalogTarget: Target?
     /// A real other-targets row, once one has been laid out.
     @State private var measuredRowHeight: CGFloat = 0
 
@@ -186,9 +186,10 @@ struct NightDetailView: View {
     /// apart. Past this width (in points at 100%, so it tracks the UI scale)
     /// the plan and the other targets move into a column of their own beside
     /// the summary, conditions and timeline. A laptop never gets here; a
-    /// 32" 4K does. The left column always keeps at least the width this
-    /// whole column has on a full-screen laptop, about 640.
-    private static let wideLayoutMinWidth: CGFloat = 1270
+    /// 27" 1440p and up does. The left column keeps at least the width this
+    /// whole column has on a full-screen laptop (about 530 at 100%), beside
+    /// a 520 plan column.
+    private static let wideLayoutMinWidth: CGFloat = 1120
 
     private var isWide: Bool {
         viewportWidth / uiTextScale >= Self.wideLayoutMinWidth
@@ -197,7 +198,7 @@ struct NightDetailView: View {
     /// The plan column: wide enough for a plan row's name and times to sit
     /// comfortably apart, and no wider.
     private var sideColumnWidth: CGFloat {
-        min(max(viewportWidth * 0.4, 600 * uiTextScale), 700 * uiTextScale)
+        min(max(viewportWidth * 0.4, 520 * uiTextScale), 700 * uiTextScale)
     }
 
     private var wideLayout: some View {
@@ -242,30 +243,22 @@ struct NightDetailView: View {
     /// kept current, any other night's at its best stretch. Click for Sky View.
     private var showsBigDome: Bool { isWide && bigDomeHeight > 260 }
 
-    /// What the big dome points out at `time`: of the targets above your
-    /// horizon right then, the plan's first, then the night's best — five at
-    /// most, none within 15° of another so their names don't pile up (the two
-    /// Veils sit side by side).
-    private func domeHighlights(at time: Date) -> [TargetPlan] {
-        let days = time.daysSinceJ2000
-        func isUp(_ targetPlan: TargetPlan) -> Bool {
-            let position = SkyCoordinates.horizontal(targetPlan.target.coordinate, daysSinceJ2000: days,
-                                                     latitude: plan.site.latitude, longitude: plan.site.longitude)
-            return position.altitude > max(5, plan.site.blockedAltitude(azimuth: position.azimuth))
+    /// What the big dome points out, best first: the plan's targets, then
+    /// the named showpieces, then the rest of the Messier list, each by
+    /// brightness. Not just tonight's — a showpiece that's only up by day
+    /// still gets marked, and its card says when to catch it. The dome keeps
+    /// as many as fit without overlapping.
+    private var domeHighlights: [Target] {
+        let catalog = BuiltInCatalog.all + state.customTargets
+        let planned = planSegments.chronological.compactMap { segment in
+            catalog.first { $0.id == segment.targetID }
         }
-        let planned = Set(planSegments.map(\.targetID))
-        let ranked = plan.targets.filter(isUp).sorted {
-            let a = planned.contains($0.id), b = planned.contains($1.id)
-            return a != b ? a : $0.score > $1.score
+        let famous = (BuiltInCatalog.messier + BuiltInCatalog.showpieces).sorted {
+            let a = $0.commonName != nil, b = $1.commonName != nil
+            return a != b ? a : $0.magnitude < $1.magnitude
         }
-        var picks: [TargetPlan] = []
-        for target in ranked where target.id != state.selectedTargetID {
-            if picks.count >= 5 { break }
-            if picks.allSatisfy({ SkyCoordinates.separation($0.target.coordinate, target.target.coordinate) > 15 }) {
-                picks.append(target)
-            }
-        }
-        return picks
+        var seen = Set<String>()
+        return (planned + famous).filter { seen.insert($0.id).inserted }
     }
 
     @ViewBuilder
@@ -292,7 +285,7 @@ struct NightDetailView: View {
                     // on the sky opens Sky View.
                     SkyView(plan: plan, scrubTime: .constant(time), isPlaying: .constant(false),
                             planSegments: planSegments, showsControls: false, showsLabels: true,
-                            highlights: domeHighlights(at: time),
+                            highlights: domeHighlights,
                             onSelectHighlight: { catalogTarget = $0 })
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .contentShape(Rectangle())
@@ -303,8 +296,8 @@ struct NightDetailView: View {
             }
             .frame(height: height)
             .offset(y: leftColumnHeight + 24)
-            .sheet(item: $catalogTarget) { targetPlan in
-                TargetCatalogDetail(target: targetPlan.target, night: plan)
+            .sheet(item: $catalogTarget) { target in
+                TargetCatalogDetail(target: target, night: plan)
             }
         }
     }
