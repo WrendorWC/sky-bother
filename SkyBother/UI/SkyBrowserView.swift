@@ -51,6 +51,9 @@ struct SkyBrowserView: View {
     /// instantly — so for the length of that animation both were applied at
     /// once. Holding it here lets the release commit both halves together.
     @State private var dragOffset: CGSize = .zero
+    /// How far the current drag had got at its last step, when the star map
+    /// is showing and each step is committed as it happens.
+    @State private var lastDragStep: CGSize = .zero
 
     /// Counts copies so a quick second click restarts the "Copied" tick
     /// rather than having the first one's timer clear it early.
@@ -270,8 +273,29 @@ struct SkyBrowserView: View {
             .contentShape(Rectangle())
             .gesture(
                 DragGesture()
-                    .onChanged { value in dragOffset = value.translation }
+                    .onChanged { value in
+                        if usesStarMap {
+                            // The star map redraws instantly, so the drag moves
+                            // the real centre step by step. Sliding it as a flat
+                            // picture and working out where it had got to on
+                            // release disagreed at wide fields — a flat slide
+                            // isn't how the sky turns 50 degrees out — and the
+                            // view snapped on letting go.
+                            let step = CGSize(width: value.translation.width - lastDragStep.width,
+                                              height: value.translation.height - lastDragStep.height)
+                            lastDragStep = value.translation
+                            var transaction = Transaction()
+                            transaction.disablesAnimations = true
+                            withTransaction(transaction) { pan(by: step, viewWidth: size.width) }
+                        } else {
+                            dragOffset = value.translation
+                        }
+                    }
                     .onEnded { value in
+                        if usesStarMap {
+                            lastDragStep = .zero
+                            return
+                        }
                         // Both in one transaction, with animation off: the
                         // drag offset is only ever released in the same frame
                         // that the centre absorbs it.
@@ -419,7 +443,22 @@ struct SkyBrowserView: View {
     /// Gnomonic, the projection a camera lens and the survey cutouts both
     /// use: indistinguishable from a flat patch at telescope fields, and
     /// still right across a wide camera's 60-odd degrees.
+    ///
+    /// Only for the star map, though. Survey tiles are placed flat, the way
+    /// a drag slides them; placing them gnomonically while the drag slid
+    /// them flat made them jump on release near the pole, the same snap as
+    /// before. The star map is dragged by moving the real centre, so it has
+    /// no such mismatch.
     private func screenOffset(of coordinate: EquatorialCoordinate, size: CGSize) -> CGSize {
+        guard usesStarMap else {
+            let pointsPerDegree = Double(size.width) / fieldOfViewDegrees
+            let cosDec = max(0.02, cosDeg(centre.declination))
+            var deltaRA = coordinate.rightAscension - centre.rightAscension
+            if deltaRA > 180 { deltaRA -= 360 }
+            if deltaRA < -180 { deltaRA += 360 }
+            return CGSize(width: -deltaRA * cosDec * pointsPerDegree,
+                          height: -(coordinate.declination - centre.declination) * pointsPerDegree)
+        }
         let k = planeScale(viewWidth: size.width)
         let d0 = centre.declination * .pi / 180, d = coordinate.declination * .pi / 180
         let deltaRA = (coordinate.rightAscension - centre.rightAscension) * .pi / 180
