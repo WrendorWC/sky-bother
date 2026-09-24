@@ -20,7 +20,10 @@ struct NightDetailView: View {
     /// The pane's height and the header's, for deciding how many other
     /// targets fit underneath without scrolling.
     @State private var viewportHeight: CGFloat = 0
+    @State private var viewportWidth: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
+    /// A real other-targets row, once one has been laid out.
+    @State private var measuredRowHeight: CGFloat = 0
 
     init(plan: NightPlan) {
         self.plan = plan
@@ -71,8 +74,14 @@ struct NightDetailView: View {
         .background(
             GeometryReader { geometry in
                 Color.clear
-                    .onAppear { viewportHeight = geometry.size.height }
-                    .onChange(of: geometry.size.height) { _, height in viewportHeight = height }
+                    .onAppear {
+                        viewportHeight = geometry.size.height
+                        viewportWidth = geometry.size.width
+                    }
+                    .onChange(of: geometry.size) { _, size in
+                        viewportHeight = size.height
+                        viewportWidth = size.width
+                    }
             }
         )
         // The hero card below already owns the selected night's identity
@@ -130,18 +139,18 @@ struct NightDetailView: View {
     // so this column answers "is this night worth it" and nothing more.
     private var plainScrollView: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                header
-                    .padding(20)
-                    .id(topAnchorID)
-                    .background(
-                        GeometryReader { geometry in
-                            Color.clear
-                                .onAppear { headerHeight = geometry.size.height }
-                                .onChange(of: geometry.size.height) { _, height in headerHeight = height }
-                        }
-                    )
-                otherTargetsSection
+            if isWide {
+                wideLayout
+            } else {
+                VStack(alignment: .leading, spacing: 0) {
+                    header
+                        .padding(20)
+                        .id(topAnchorID)
+                        .background(heightReader)
+                    otherTargetsSection
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                }
             }
         }
         .scrollIndicators(.visible)
@@ -149,17 +158,76 @@ struct NightDetailView: View {
         .background(alignment: .top) { fitProbes }
     }
 
+    /// Measures whatever sits above the other targets, for `otherTargetCount`.
+    private var heightReader: some View {
+        GeometryReader { geometry in
+            Color.clear
+                .onAppear { headerHeight = geometry.size.height }
+                .onChange(of: geometry.size.height) { _, height in headerHeight = height }
+        }
+    }
+
+    // MARK: - Wide layout
+
+    /// A big display gives this column two thousand points or more. Stacked
+    /// in one column, everything just stretched across it: the timeline got
+    /// long and thin and each plan row put its name and its times a screen
+    /// apart. Past this width (in points at 100%, so it tracks the UI scale)
+    /// the plan and the other targets move into a column of their own beside
+    /// the summary, conditions and timeline. A laptop never gets here; a
+    /// 32" 4K does. The left column always keeps at least the width this
+    /// whole column has on a full-screen laptop, about 640.
+    private static let wideLayoutMinWidth: CGFloat = 1270
+
+    private var isWide: Bool {
+        viewportWidth / uiTextScale >= Self.wideLayoutMinWidth
+    }
+
+    /// The plan column: wide enough for a plan row's name and times to sit
+    /// comfortably apart, and no wider.
+    private var sideColumnWidth: CGFloat {
+        min(max(viewportWidth * 0.4, 600 * uiTextScale), 700 * uiTextScale)
+    }
+
+    private var wideLayout: some View {
+        HStack(alignment: .top, spacing: 24) {
+            VStack(alignment: .leading, spacing: 14) {
+                missionSummary
+                statistics
+                // Taller with the UI scale here: at a fixed height, this
+                // column's width left the chart a thin ribbon.
+                timelineWithDew(height: 200 * uiTextScale)
+                legend
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 24) {
+                autoPlanSection
+                    .background(heightReader)
+                otherTargetsSection
+            }
+            .frame(width: sideColumnWidth, alignment: .leading)
+        }
+        .padding(20)
+        .id(topAnchorID)
+    }
+
     // MARK: - Other targets
 
-    private var otherRowHeight: CGFloat { 84 * uiTextScale }
+    /// Measured once a row exists: padding that doesn't scale makes a row
+    /// taller than the estimate at small scales, and the last one got cut off.
+    private var otherRowHeight: CGFloat {
+        measuredRowHeight > 0 ? measuredRowHeight + 1 : 84 * uiTextScale
+    }
 
-    /// How many rows fit below the header without scrolling. Zero unless at
-    /// least three do: on a smaller window Home stays as it was.
+    /// How many rows fit below the header without scrolling — below the
+    /// plan, in the wide layout. Zero unless at least three do: on a smaller
+    /// window Home stays as it was.
     private var otherTargetCount: Int {
         guard viewportHeight > 0, headerHeight > 0 else { return 0 }
-        let chrome = 90 * uiTextScale   // section title and the planner link
+        let chrome = (isWide ? 110 : 90) * uiTextScale   // section title and the planner link
         let rows = Int((viewportHeight - headerHeight - chrome) / otherRowHeight)
-        return rows >= 3 ? min(rows, 8) : 0
+        return rows >= 3 ? min(rows, isWide ? 12 : 8) : 0
     }
 
     /// The night's best targets that aren't already in the plan. Read
@@ -183,6 +251,13 @@ struct NightDetailView: View {
                     ForEach(targets) { targetPlan in
                         TargetRowView(plan: plan, targetPlan: targetPlan,
                                       isSelected: state.selectedTargetID == targetPlan.id)
+                            .background(
+                                GeometryReader { geometry in
+                                    Color.clear
+                                        .onAppear { measuredRowHeight = geometry.size.height }
+                                        .onChange(of: geometry.size.height) { _, height in measuredRowHeight = height }
+                                }
+                            )
                             .contentShape(Rectangle())
                             .onTapGesture { state.selectedTargetID = targetPlan.id }
                         if targetPlan.id != targets.last?.id {
@@ -201,8 +276,6 @@ struct NightDetailView: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(Palette.accent)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
         }
     }
 
@@ -218,6 +291,9 @@ struct NightDetailView: View {
             }
         }
         .padding(20)
+        // In the wide layout the plan rows are in the right-hand column.
+        .frame(width: isWide ? sideColumnWidth + 40 : nil)
+        .frame(maxWidth: .infinity, alignment: .trailing)
         // Content width, not the scroll view's: always-visible scroll bars
         // take their width out of what the rows get.
         .padding(.trailing, NSScroller.preferredScrollerStyle == .legacy
@@ -249,16 +325,21 @@ struct NightDetailView: View {
             // stationary cursor) into an animated transaction — fighting the
             // scroll view's own momentum and producing a visible jitter that
             // made it hard to scroll back to the top.
-            VStack(spacing: 5) {
-                NightTimelineView(plan: plan, selectedTarget: selectedTargetPlan, scrubTime: $scrubTime, isScrolling: isScrolling)
-                if plan.hasWeather {
-                    DewRiskStrip(plan: plan, imperial: state.preferences.usesImperialUnits, isScrolling: isScrolling)
-                }
-            }
+            timelineWithDew()
 
             legend
 
             autoPlanSection
+        }
+    }
+
+    private func timelineWithDew(height: CGFloat = 152) -> some View {
+        VStack(spacing: 5) {
+            NightTimelineView(plan: plan, height: height, selectedTarget: selectedTargetPlan,
+                              scrubTime: $scrubTime, isScrolling: isScrolling)
+            if plan.hasWeather {
+                DewRiskStrip(plan: plan, imperial: state.preferences.usesImperialUnits, isScrolling: isScrolling)
+            }
         }
     }
 
