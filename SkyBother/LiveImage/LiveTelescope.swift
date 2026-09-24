@@ -11,16 +11,22 @@ enum LiveImageAvailability: Equatable {
     case supported(port: UInt16)
     case unsupported(String)
 
-    /// Only models tried against real hardware are listed. The rest of the
-    /// Seestar family almost certainly speaks the same protocol, but nobody
-    /// has checked it here yet, and a Connect button that doesn't work is
-    /// worse than one that says why it's off.
+    /// The whole Seestar family: one ZWO app drives them all, and the image
+    /// socket is the same on each. The S50 Pro's telephoto camera is proven
+    /// (firmware 9.31); the S50 and S30 Pro appear in SeeStar-Py's examples
+    /// on the same port, and the S30 is the same design. A wide-camera
+    /// preset reads the wide camera's own stream, which SeeStar-Py documents
+    /// on 4804 but hasn't been tried here. Anything else has no connection
+    /// to offer yet, and says so rather than failing.
     static func of(_ rig: Rig) -> LiveImageAvailability {
         let name = rig.name.trimmingCharacters(in: .whitespaces)
-        if name == Rig.seestarS50Pro.name { return .supported(port: 4800) }
         guard !name.isEmpty else {
             return .unsupported("Select a telescope to check live image availability.")
         }
+        let seestars = [Rig.seestarS50, .seestarS50Pro, .seestarS30, .seestarS30Pro].map(\.name)
+        let wide = [Rig.seestarS50ProWide, .seestarS30Wide, .seestarS30ProWide].map(\.name)
+        if wide.contains(name) { return .supported(port: 4804) }
+        if seestars.contains(name) { return .supported(port: 4800) }
         return .unsupported("Live image connection isn't available for \(name). Your planned frame is still available.")
     }
 }

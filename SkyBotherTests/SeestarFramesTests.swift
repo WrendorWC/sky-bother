@@ -102,9 +102,15 @@ final class SeestarFramesTests: XCTestCase {
         return count > 0 ? output.prefix(count) : nil
     }
 
-    func testOnlyTheS50ProIsOffered() {
-        XCTAssertEqual(LiveImageAvailability.of(.seestarS50Pro), .supported(port: 4800))
-        if case .supported = LiveImageAvailability.of(.seestarS50) { XCTFail("S50 isn't verified yet") }
-        if case .supported = LiveImageAvailability.of(.seestarS50ProWide) { XCTFail("wide camera isn't verified") }
+    func testTheSeestarFamilyIsOffered() {
+        for rig in [Rig.seestarS50, .seestarS50Pro, .seestarS30, .seestarS30Pro] {
+            XCTAssertEqual(LiveImageAvailability.of(rig), .supported(port: 4800), rig.name)
+        }
+        for rig in [Rig.seestarS50ProWide, .seestarS30Wide, .seestarS30ProWide] {
+            XCTAssertEqual(LiveImageAvailability.of(rig), .supported(port: 4804), rig.name)
+        }
+        var other = Rig.seestarS50
+        other.name = "Celestron Origin"
+        if case .supported = LiveImageAvailability.of(other) { XCTFail("no Origin connection exists") }
     }
 }
