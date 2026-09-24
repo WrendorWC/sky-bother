@@ -299,14 +299,8 @@ struct TargetDetailView: View {
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
-            // Required by the survey's own terms, not optional politeness.
-            if let url = URL(string: SkyCutoutClient.attributionURL) {
-                Link(destination: url) {
-                    Label(SkyCutoutClient.attribution, systemImage: "camera.metering.matrix")
-                }
-                .font(.scaled(.caption, scale: uiTextScale))
-                .foregroundStyle(.tertiary)
-            }
+            // Required by the imagery's own terms, not optional politeness.
+            FramingCredit(rig: state.rig)
             if let info = TargetImageCatalog.info(for: target.designation),
                    let source = info.sourceURL, let url = URL(string: source) {
                 Link(destination: url) {
@@ -497,6 +491,16 @@ struct FramingPreview: View {
     // S50 Pro's 6.26mm × 11.14mm chip.
     private var frameIsPortrait: Bool { frameHeight > frameWidth }
 
+    /// Past this, the survey cutouts are a dark patchwork of plates and a
+    /// slow download; the star map Sky View uses shows the Milky Way instead.
+    static let wideFieldArcminutes: Double = 600
+
+    static func usesStarMap(_ rig: Rig) -> Bool {
+        max(rig.fieldOfViewWidthArcminutes, rig.fieldOfViewHeightArcminutes) > wideFieldArcminutes
+    }
+
+    private var usesStarMap: Bool { Self.usesStarMap(rig) }
+
     /// The rig's field, for noticing it change.
     private var fieldKey: String { String(format: "%.1fx%.1f", frameWidth, frameHeight) }
     private var objectWidth: Double {
@@ -551,7 +555,7 @@ struct FramingPreview: View {
                 skyUnavailable = false
             }
             .task(id: "\(target.designation)@\(Int(measured.width))x\(Int(measured.height))@\(fieldKey)") {
-                guard let request = cutout(for: measured) else { return }
+                guard !usesStarMap, let request = cutout(for: measured) else { return }
                 // Already on disk: show it on this pass rather than a beat
                 // later in place of the placeholder.
                 if let ready = SkyCutoutClient.shared.cachedImage(for: request) {
@@ -587,12 +591,28 @@ struct FramingPreview: View {
             let scale = self.scale(for: size)
             let centre = CGPoint(x: size.width / 2, y: size.height / 2)
 
-            if let skyImage {
+            if usesStarMap, let starMap = SkyView.starMap {
+                // The tangent plane a rectilinear lens makes, scaled so the
+                // frame's long edges land exactly on the sensor's.
+                let halfLongDegrees = max(frameWidth, frameHeight) / 120
+                let halfLongPoints = halfLongDegrees * 60 * Double(scale)
+                let planePerPoint = tan(halfLongDegrees * .pi / 180) / halfLongPoints
+                context.fill(Path(CGRect(origin: .zero, size: size)),
+                             with: .shader(ShaderLibrary.wideField(
+                                .image(starMap),
+                                .float2(centre),
+                                .float(planePerPoint),
+                                .float(target.coordinate.rightAscension),
+                                .float(target.coordinate.declination),
+                                .float(1.3))))
+            } else if let skyImage {
                 // Real sky, filling the whole panel: the cutout was requested
                 // for exactly this angular width, so it needs no fitting.
                 context.draw(Image(nsImage: skyImage),
                              in: CGRect(origin: .zero, size: size))
+            }
 
+            if usesStarMap || skyImage != nil {
                 // A centre tick, because the survey is shallow and a faint
                 // target can be nearly invisible in it. That marks where to
                 // look without claiming how far it extends — the catalogued
@@ -622,7 +642,7 @@ struct FramingPreview: View {
             }
             .background(Palette.spaceTop, in: RoundedRectangle(cornerRadius: 10))
             .overlay {
-                if skyImage == nil {
+                if skyImage == nil && !usesStarMap {
                     VStack(spacing: 8) {
                         if skyUnavailable {
                             Image(systemName: "wifi.slash")
@@ -660,4 +680,24 @@ struct FramingPreview: View {
 
 }
 
+/// Whose sky is behind the framing preview: the survey's, or for a wide
+/// field the star map's.
+struct FramingCredit: View {
+    var rig: Rig
+    @Environment(\.uiTextScale) private var uiTextScale
 
+    var body: some View {
+        Group {
+            if FramingPreview.usesStarMap(rig) {
+                Label("Star map: NASA/Goddard SVS, from Gaia DR2 (ESA/Gaia/DPAC), Hipparcos and Tycho-2",
+                      systemImage: "camera.metering.matrix")
+            } else if let url = URL(string: SkyCutoutClient.attributionURL) {
+                Link(destination: url) {
+                    Label(SkyCutoutClient.attribution, systemImage: "camera.metering.matrix")
+                }
+            }
+        }
+        .font(.scaled(.caption, scale: uiTextScale))
+        .foregroundStyle(.tertiary)
+    }
+}

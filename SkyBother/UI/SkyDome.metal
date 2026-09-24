@@ -91,3 +91,36 @@ static float luminance(float3 c) { return dot(c, float3(0.2126, 0.7152, 0.0722))
 
     return half4(half3(stars + glow), 1.0h);
 }
+
+// A flat camera's view of the same map, for framing previews too wide for
+// the survey cutouts to look like anything: gnomonic (the projection a
+// rectilinear lens makes), centred on the target, north up and east to the
+// left like the survey pictures beside it. `planePerPoint` converts points
+// from the centre into the tangent plane, so the frame drawn over it lands
+// on the sensor's real edges.
+[[ stitchable ]] half4 wideField(float2 position,
+                                 texture2d<half> starMap,
+                                 float2 centre,
+                                 float planePerPoint,
+                                 float rightAscension0,
+                                 float declination0,
+                                 float gain) {
+    float xi = -(position.x - centre.x) * planePerPoint;   // east is left
+    float eta = -(position.y - centre.y) * planePerPoint;  // north is up
+    float rho = length(float2(xi, eta));
+    float d0 = declination0 * kDeg;
+    float declination, rightAscension;
+    if (rho < 1e-6) {
+        declination = declination0;
+        rightAscension = rightAscension0;
+    } else {
+        float c = atan(rho);
+        declination = asin(clamp(cos(c) * sin(d0) + eta * sin(c) * cos(d0) / rho, -1.0, 1.0)) / kDeg;
+        rightAscension = rightAscension0
+            + atan2(xi * sin(c), rho * cos(d0) * cos(c) - eta * sin(d0) * sin(c)) / kDeg;
+    }
+    constexpr sampler linearRepeat(coord::normalized, address::repeat, filter::linear);
+    float2 uv = float2(fract(0.5 - rightAscension / 360.0),
+                       clamp(0.5 - declination / 180.0, 0.0005, 0.9995));
+    return half4(half3(float3(starMap.sample(linearRepeat, uv).rgb) * gain), 1.0h);
+}

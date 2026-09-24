@@ -418,14 +418,8 @@ struct TargetCatalogDetail: View {
                     .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Palette.panelBorder))
                 }
 
-                // Credit for the survey imagery, required by its licence.
-                if let url = URL(string: SkyCutoutClient.attributionURL) {
-                    Link(destination: url) {
-                        Label(SkyCutoutClient.attribution, systemImage: "camera.metering.matrix")
-                    }
-                    .font(.scaled(.caption, scale: uiTextScale))
-                    .foregroundStyle(.tertiary)
-                }
+                // Credit for the sky imagery, required by its licence.
+                FramingCredit(rig: state.rig)
 
                 if let info = TargetImageCatalog.info(for: target.designation),
                    let source = info.sourceURL, let url = URL(string: source) {

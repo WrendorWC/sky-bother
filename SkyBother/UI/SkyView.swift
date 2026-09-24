@@ -518,7 +518,7 @@ struct SkyView: View {
 
     /// The whole-sky map, bundled rather than fetched: the dome should never
     /// be blank, and it is one fixed picture that nothing ever changes.
-    private static let starMap: Image? = Bundle.main.url(forResource: "StarMap", withExtension: "jpg")
+    static let starMap: Image? = Bundle.main.url(forResource: "StarMap", withExtension: "jpg")
         .flatMap { NSImage(contentsOf: $0) }
         .map { Image(nsImage: $0) }
 
