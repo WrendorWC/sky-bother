@@ -240,15 +240,6 @@ struct PlannerWorkspaceView: View {
 
             HourAxisLabels(window: plan.chartWindow, timeZone: plan.timeZone)
 
-            // The night's conditions on the same axis, so the reason a block
-            // sits where it does — darkness, cloud, the Moon — is visible
-            // right above it. Hover for the figures.
-            NightTimelineView(plan: plan, height: 16 * max(1, uiTextScale),
-                              showsHourLabels: false, isCompact: true,
-                              onHoverSample: { hoverSample = $0 })
-                .help("Sky conditions: blue to black is twilight to full dark, grey from the top is cloud, the pale wash is moonlight. Hover for figures.")
-                .accessibilityElement()
-                .accessibilityLabel("Sky conditions through the night")
 
             PlanStripView(plan: plan, segments: segments, isEditing: true,
                           selectedSegmentID: selectedBlockID,
@@ -260,7 +251,21 @@ struct PlannerWorkspaceView: View {
                           onCommit: {
                               state.updateDraft($0)
                               addNote = nil
+                          },
+                          drawsBackground: false,
+                          onHoverTime: { time in
+                              hoverSample = time.flatMap { t in
+                                  plan.samples.min { abs($0.date.timeIntervalSince(t)) < abs($1.date.timeIntervalSince(t)) }
+                              }
                           })
+                // The night's conditions behind the blocks — twilight to
+                // dark, cloud from the top, moonlight — dimmed so the blocks
+                // stay in front. Hover for the figures.
+                .background(
+                    NightTimelineView(plan: plan, height: 52 * max(1, uiTextScale * 0.9), showsHourLabels: false, isCompact: true)
+                        .opacity(0.7)
+                        .allowsHitTesting(false)
+                )
                 .frame(height: 52 * max(1, uiTextScale * 0.9))
                 .overlay { selectedBlockRemover }
                 .focusable()
@@ -310,11 +315,11 @@ struct PlannerWorkspaceView: View {
     @ViewBuilder
     private var timelineMessage: some View {
         Group {
-            if let hoverSample {
-                Label(conditionsLine(hoverSample), systemImage: "cloud.moon")
-            } else if let dragReadout {
+            if let dragReadout {
                 Label(blockDescription(dragReadout), systemImage: "arrow.left.and.right")
                     .foregroundStyle(Palette.accent)
+            } else if let hoverSample {
+                Label(conditionsLine(hoverSample), systemImage: "cloud.moon")
             } else if let addNote {
                 Label(addNote, systemImage: "plus.circle")
             } else if let selectedBlock {

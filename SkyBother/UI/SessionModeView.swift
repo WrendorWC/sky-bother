@@ -29,18 +29,19 @@ struct SessionModeView: View {
                 header
                 Divider().overlay(Self.border)
                 let clock = SessionClock(at: context.date, plan: segments)
-                HStack(alignment: .top, spacing: 18) {
+                VStack(spacing: 14) {
                     mainPanel(clock, now: context.date)
-                        .frame(maxWidth: .infinity)
-                    VStack(alignment: .leading, spacing: 14) {
+                        .frame(maxHeight: .infinity)
+                    HStack(alignment: .top, spacing: 14) {
                         conditions(now: context.date)
                         upNext(clock)
                         tonightSummary(now: context.date)
                     }
-                    .frame(width: 360 * uiTextScale)
+                    .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(20)
-                Spacer(minLength: 0)
+                .onAppear { follow(clock) }
+                .onChange(of: (clock.current ?? clock.next)?.targetID) { _, _ in follow(clock) }
             }
         }
         .foregroundStyle(Self.text)
@@ -95,6 +96,8 @@ struct SessionModeView: View {
                 Text("The last block ended at \(segments.last.map { Format.time($0.window.end, in: plan.timeZone) } ?? "").")
                     .font(.scaled(.title3, scale: uiTextScale))
                     .foregroundStyle(Self.muted)
+                liveDome(now: now)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .padding(20)
@@ -134,11 +137,22 @@ struct SessionModeView: View {
                 .foregroundStyle(Self.muted)
         }
         if let targetPlan {
-            // Grows with the window, keeping roughly a photo's shape.
-            FramingPreview(target: targetPlan.target, rig: state.rig)
-                .aspectRatio(1.5, contentMode: .fit)
-                .frame(maxWidth: .infinity, maxHeight: 620 * uiTextScale)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+            // Split: what you're capturing, and where it is right now.
+            HStack(alignment: .top, spacing: 18) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("IN YOUR FRAME")
+                        .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                        .kerning(0.7)
+                        .foregroundStyle(Self.accent)
+                    FramingPreview(target: targetPlan.target, rig: state.rig)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .frame(maxWidth: .infinity)
+                liveDome(now: now)
+                    .frame(maxWidth: .infinity)
+            }
+            .frame(maxHeight: .infinity)
             if isRunning,
                let reason = Shootability.reason(for: targetPlan.target, at: now, in: plan,
                                                 minimumAltitude: state.preferences.minimumUsefulAltitude) {
@@ -146,6 +160,30 @@ struct SessionModeView: View {
                     .font(.scaled(.callout, scale: uiTextScale))
                     .foregroundStyle(Self.warning)
             }
+        }
+    }
+
+    /// The dome marks the selected target, so keep it on the block that's
+    /// on now, or the next one.
+    private func follow(_ clock: SessionClock) {
+        if let id = (clock.current ?? clock.next)?.targetID, state.selectedTargetID != id {
+            state.selectedTargetID = id
+        }
+    }
+
+    /// Where it is right now: the dome at the current minute, with the
+    /// target marked.
+    private func liveDome(now: Date) -> some View {
+        let minute = Date(timeIntervalSince1970: (now.timeIntervalSince1970 / 60).rounded(.down) * 60)
+        return VStack(alignment: .leading, spacing: 6) {
+            Text("IN THE SKY NOW · \(Format.time(minute, in: plan.timeZone))")
+                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                .kerning(0.7)
+                .foregroundStyle(Self.accent)
+            SkyView(plan: plan, scrubTime: .constant(minute), isPlaying: .constant(false),
+                    planSegments: segments, showsControls: false, showsLabels: true)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .allowsHitTesting(false)
         }
     }
 

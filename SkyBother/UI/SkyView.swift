@@ -21,6 +21,10 @@ struct SkyView: View {
     var planSegments: [PlanSegment] = []
     /// Off for Home's preview: just the dome, no controls, no playback.
     var showsControls = true
+    /// Full-size labels, brackets and compass without the controls — the
+    /// live dome in Session View. Implied by `showsControls`.
+    var showsLabels: Bool? = nil
+    private var labelled: Bool { showsLabels ?? showsControls }
 
     /// Nil until the user picks something other than their active rig —
     /// previewing equipment here never touches `state.rig` itself.
@@ -271,7 +275,7 @@ struct SkyView: View {
     /// and centring those instead lets a heavily blocked sky fill the view,
     /// with the zenith wherever the shape puts it.
     private func domeFit(in size: CGSize) -> (radius: CGFloat, center: CGPoint) {
-        let inset = showsControls ? SkyView.compassLabelInset : 2
+        let inset = labelled ? SkyView.compassLabelInset : 2
         let bounds = visibleShapeBounds
         let availableWidth = max(size.width - inset * 2, 1)
         let availableHeight = max(size.height - inset * 2, 1)
@@ -318,7 +322,7 @@ struct SkyView: View {
                             draw(context: context, center: center, radius: radius, now: timeline.date)
                         }
                     }
-                    if showsControls { compassLabels(center: center, radius: radius) }
+                    if labelled { compassLabels(center: center, radius: radius) }
                 }
             }
             // All the room there is, in both directions: `domeFit` shapes
@@ -485,7 +489,7 @@ struct SkyView: View {
     /// exist, in from nothing, or out to nothing. With Reduce Motion on, the
     /// switch stays instant.
     private func startFade(from oldID: String?) {
-        guard !reduceMotion, showsControls else {
+        guard !reduceMotion, labelled else {
             fadingOut = nil
             isFading = false
             return
@@ -643,7 +647,7 @@ struct SkyView: View {
         // visible and they can't be mistaken for the frame itself. Tighter
         // and thinner on Home's small preview, where full-size brackets
         // swamped the dome.
-        let half = showsControls ? max(extent + 10, 18 * uiTextScale) : max(extent + 4, 7)
+        let half = labelled ? max(extent + 10, 18 * uiTextScale) : max(extent + 4, 7)
         let arm = half * 0.5
         var brackets = Path()
         for (dx, dy) in [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)] {
@@ -652,14 +656,14 @@ struct SkyView: View {
             brackets.addLine(to: corner)
             brackets.addLine(to: CGPoint(x: corner.x, y: corner.y - arm * dy))
         }
-        let weight: CGFloat = showsControls ? 2.5 : 1.5
+        let weight: CGFloat = labelled ? 2.5 : 1.5
         let round = StrokeStyle(lineWidth: weight, lineCap: .round, lineJoin: .round)
         context.stroke(brackets, with: .color(halo), style: StrokeStyle(lineWidth: weight + 3, lineCap: .round, lineJoin: .round))
         context.stroke(brackets, with: .color(Palette.go), style: round)
 
         // No name on the preview: there's no room for it, and Home already
         // names the target beside it.
-        guard showsControls else { return }
+        guard labelled else { return }
 
         let name = context.resolve(Text(targetPlan.target.displayName)
             .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))

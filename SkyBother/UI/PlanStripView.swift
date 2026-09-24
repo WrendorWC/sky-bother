@@ -29,6 +29,11 @@ struct PlanStripView: View {
     /// Called once per gesture, on release — not continuously, so a drag
     /// doesn't redraw everything that depends on the plan sixty times a second.
     var onCommit: ([PlanSegment]) -> Void = { _ in }
+    /// Off when something is drawn behind the strip — the planner shows the
+    /// night's conditions there.
+    var drawsBackground = true
+    /// The time under the pointer, or nil when it leaves.
+    var onHoverTime: ((Date?) -> Void)? = nil
 
     /// How close to an edge counts as grabbing the edge rather than the block.
     private static let edgeGrabWidth: CGFloat = 10
@@ -66,10 +71,13 @@ struct PlanStripView: View {
             .contentShape(Rectangle())
             .gesture(gesture(axis: axis))
             .onContinuousHover(coordinateSpace: .local) { phase in
-                guard isEditing else { return }
                 switch phase {
-                case .active(let location): apply(hover: hover(at: location, axis: axis))
-                case .ended: apply(hover: .none)
+                case .active(let location):
+                    onHoverTime?(axis.date(for: location.x))
+                    if isEditing { apply(hover: hover(at: location, axis: axis)) }
+                case .ended:
+                    onHoverTime?(nil)
+                    if isEditing { apply(hover: .none) }
                 }
             }
         }
@@ -122,8 +130,10 @@ struct PlanStripView: View {
     // MARK: - Drawing
 
     private func draw(context: GraphicsContext, size: CGSize, axis: TimeAxis) {
-        context.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 6),
-                     with: .color(Palette.spaceTop))
+        if drawsBackground {
+            context.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 6),
+                         with: .color(Palette.spaceTop))
+        }
 
         // Two consecutive targets often land within a point or two of each
         // other on the score colour scale, so a shared edge alone can vanish
