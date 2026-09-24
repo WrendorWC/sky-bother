@@ -819,6 +819,16 @@ final class AppState: ObservableObject {
 
     @Published var catalogRequest: CatalogRequest?
 
+    /// Asks the sky browser to show a target afresh — centred and fitted —
+    /// even when its window is already open on it. A new request every
+    /// time, so asking twice for the same target still counts.
+    struct SkyBrowserRequest: Equatable {
+        var designation: String
+        var id = UUID()
+    }
+
+    @Published var skyBrowserRequest: SkyBrowserRequest?
+
     /// A block the catalog just added, for the planner to select and
     /// explain the way it does its own Adds. The planner clears it.
     @Published var blockAddedElsewhere: PlanSegment?

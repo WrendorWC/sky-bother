@@ -286,7 +286,10 @@ struct TargetDetailView: View {
                 // big screen.
                 .frame(height: framingHeight * max(1, uiTextScale))
                 .contentShape(Rectangle())
-                .onTapGesture { openWindow(id: "sky", value: target.designation) }
+                .onTapGesture {
+                    state.skyBrowserRequest = AppState.SkyBrowserRequest(designation: target.designation)
+                    openWindow(id: "sky", value: target.designation)
+                }
                 .help("Open this patch of sky to pan, zoom and search")
             Text(targetPlan.fit.framingNote)
                 .font(.scaled(.callout, scale: uiTextScale))

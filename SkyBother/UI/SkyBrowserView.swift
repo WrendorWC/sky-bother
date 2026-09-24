@@ -55,9 +55,14 @@ struct SkyBrowserView: View {
     /// Counts copies so a quick second click restarts the "Copied" tick
     /// rather than having the first one's timer clear it early.
     @State private var copyCount = 0
+    /// This view's own window, to bring forward when it's asked for again:
+    /// `openWindow` finds an already-open one but leaves it behind.
+    @State private var window: NSWindow?
     @State private var showsCopied = false
 
-    private static let minimumFieldOfView = 0.05
+    /// About where the survey runs out of detail: it's roughly 1" a pixel,
+    /// and closer than this only magnifies blur and the seams between tiles.
+    private static let minimumFieldOfView = 0.25
     /// Wide enough for a wide camera's 56-degree frame with room around it.
     private static let maximumFieldOfView = 120.0
     /// Past this the view is drawn from the bundled star map instead of
@@ -79,6 +84,7 @@ struct SkyBrowserView: View {
             footer
         }
         .background(Palette.spaceBackground)
+        .background(WindowReader(window: $window))
         .task(id: IdentifyKey(identifying: isIdentifying, centre: centre, fov: fieldOfViewDegrees)) {
             await identifyCentre()
         }
@@ -106,6 +112,18 @@ struct SkyBrowserView: View {
         // after it has already appeared still centres on it instead of sitting
         // wherever it opened.
         .task(id: designation) { startingPoint() }
+        // Clicking the frame again for a window that's already open: back to
+        // the target, fitted, wherever it had been left.
+        .onChange(of: state.skyBrowserRequest) { _, request in
+            guard let request, request.designation == designation else { return }
+            startingPoint()
+            // After the click that asked has finished making its own window key.
+            DispatchQueue.main.async { window?.makeKeyAndOrderFront(nil) }
+        }
+        // A different rig is a different frame; fit it.
+        .onChange(of: "\(state.rig.fieldOfViewWidthArcminutes)x\(state.rig.fieldOfViewHeightArcminutes)") { _, _ in
+            startingPoint()
+        }
     }
 
     // MARK: - Chrome
@@ -993,5 +1011,22 @@ private struct ScrollCatcher: NSViewRepresentable {
 private extension View {
     func onScroll(_ action: @escaping (Double) -> Void) -> some View {
         background(ScrollCatcher(onScroll: action))
+    }
+}
+
+/// Hands a SwiftUI view the window it ended up in.
+private struct WindowReader: NSViewRepresentable {
+    @Binding var window: NSWindow?
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async { window = view.window }
+        return view
+    }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        if window !== view.window {
+            DispatchQueue.main.async { window = view.window }
+        }
     }
 }
