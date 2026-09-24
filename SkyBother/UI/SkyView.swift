@@ -94,6 +94,13 @@ struct SkyView: View {
     /// Wall-clock time and `scrubTime` at the moment Play was last pressed —
     /// what every tick projects forward from. See `advancePlayback` for why
     /// this replaced accumulating a per-tick delta.
+    /// Following the real clock rather than the night: the dome turns as
+    /// you watch. Any other move in time leaves it, landing where you moved.
+    @State private var isFollowingNow = false
+    /// Where the night view was before Now, to go back to.
+    @State private var timeBeforeNow: Date?
+    private static let nowTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
     @State private var playbackAnchorWallClock: Date?
     @State private var playbackAnchorScrubTime: Date?
 
@@ -761,7 +768,8 @@ struct SkyView: View {
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 12) {
                 playPauseButton
-                Text(Format.time(scrubTime, in: plan.timeZone))
+                nowButton
+                Text(isFollowingNow ? "Now · \(Format.time(scrubTime, in: plan.timeZone))" : Format.time(scrubTime, in: plan.timeZone))
                     .font(.scaled(.title3, scale: uiTextScale).monospacedDigit().weight(.semibold))
                     .accessibilityLabel("Sky View time, \(Format.time(scrubTime, in: plan.timeZone))")
                 Spacer(minLength: 8)
@@ -795,8 +803,13 @@ struct SkyView: View {
             // The track, its labelled marks and the plan all share one time
             // axis, so a block sits directly under the stretch of the night
             // it covers.
-            scrubTrack(fraction: fraction)
-            scrubberMarks
+            // The night's track means little while following a daytime
+            // clock, so it steps back; it's still there to drag.
+            Group {
+                scrubTrack(fraction: fraction)
+                scrubberMarks
+            }
+            .opacity(isFollowingNow && !window.contains(scrubTime) ? 0.4 : 1)
             if !planSegments.isEmpty {
                 PlanStripView(plan: plan, segments: planSegments, isEditing: false,
                               onSelect: { segment in
@@ -813,6 +826,51 @@ struct SkyView: View {
                 .lineLimit(1)
         }
         .onReceive(Self.playbackTimer) { _ in advancePlayback() }
+        .onReceive(Self.nowTimer) { _ in
+            if isFollowingNow { scrubTime = Date() }
+        }
+        // Dragging, a plan block, Jump to Best Window: anything that moves
+        // time away from the clock ends Now there.
+        .onChange(of: scrubTime) { _, time in
+            if isFollowingNow, abs(time.timeIntervalSinceNow) > 5 {
+                isFollowingNow = false
+                timeBeforeNow = nil
+            }
+        }
+        .onChange(of: isPlaying) { _, playing in
+            if playing { isFollowingNow = false; timeBeforeNow = nil }
+        }
+    }
+
+    /// Now, and pressed again, back to the night where you were.
+    @ViewBuilder
+    private var nowButton: some View {
+        let label = Label(isFollowingNow ? "Back to Night" : "Now",
+                          systemImage: isFollowingNow ? "moon.stars" : "clock")
+            .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
+        Group {
+            if isFollowingNow {
+                Button(action: toggleNow) { label }.buttonStyle(.borderedProminent)
+            } else {
+                Button(action: toggleNow) { label }.buttonStyle(.bordered)
+            }
+        }
+        .fixedSize()
+        .help(isFollowingNow ? "Back to the night, where you were" : "Show the sky as it is right now, and keep it turning with the clock")
+    }
+
+    private func toggleNow() {
+        if isFollowingNow {
+            isFollowingNow = false
+            let back = timeBeforeNow.map { plan.chartWindow.contains($0) ? $0 : plan.chartWindow.start }
+            timeBeforeNow = nil
+            scrubTime = back ?? plan.chartWindow.start
+        } else {
+            isPlaying = false
+            timeBeforeNow = scrubTime
+            isFollowingNow = true
+            scrubTime = Date()
+        }
     }
 
     /// Evening, dark, midnight, the selected target's peak, dawn and morning
