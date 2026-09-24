@@ -22,6 +22,8 @@ struct PlannerWorkspaceView: View {
     @State private var selectedBlockID: UUID?
     /// The block mid-drag, as it would land if dropped now.
     @State private var dragReadout: PlanSegment?
+    /// The sky at the point under the pointer on the conditions strip.
+    @State private var hoverSample: NightSample?
     /// What the last Add did, in words — where the block went and anything
     /// wrong with it.
     @State private var addNote: String?
@@ -238,6 +240,16 @@ struct PlannerWorkspaceView: View {
 
             HourAxisLabels(window: plan.chartWindow, timeZone: plan.timeZone)
 
+            // The night's conditions on the same axis, so the reason a block
+            // sits where it does — darkness, cloud, the Moon — is visible
+            // right above it. Hover for the figures.
+            NightTimelineView(plan: plan, height: 16 * max(1, uiTextScale),
+                              showsHourLabels: false, isCompact: true,
+                              onHoverSample: { hoverSample = $0 })
+                .help("Sky conditions: blue to black is twilight to full dark, grey from the top is cloud, the pale wash is moonlight. Hover for figures.")
+                .accessibilityElement()
+                .accessibilityLabel("Sky conditions through the night")
+
             PlanStripView(plan: plan, segments: segments, isEditing: true,
                           selectedSegmentID: selectedBlockID,
                           onSelect: { segment in
@@ -298,7 +310,9 @@ struct PlannerWorkspaceView: View {
     @ViewBuilder
     private var timelineMessage: some View {
         Group {
-            if let dragReadout {
+            if let hoverSample {
+                Label(conditionsLine(hoverSample), systemImage: "cloud.moon")
+            } else if let dragReadout {
                 Label(blockDescription(dragReadout), systemImage: "arrow.left.and.right")
                     .foregroundStyle(Palette.accent)
             } else if let addNote {
@@ -342,6 +356,20 @@ struct PlannerWorkspaceView: View {
                 }
             }
         }
+    }
+
+    private func conditionsLine(_ sample: NightSample) -> String {
+        let sky: String
+        switch sample.sunAltitude {
+        case ..<(-18): sky = "Astronomical dark"
+        case ..<(-12): sky = "Nautical twilight"
+        case ..<(-6): sky = "Civil twilight"
+        default: sky = "Daylight"
+        }
+        var parts = [Format.time(sample.date, in: plan.timeZone), sky]
+        if plan.hasWeather { parts.append("Cloud \(Int(sample.cloudCover.rounded()))%") }
+        parts.append(sample.moonAltitude > 0 ? "Moon \(Format.degrees(sample.moonAltitude)) up" : "Moon down")
+        return parts.joined(separator: " · ")
     }
 
     private func blockDescription(_ segment: PlanSegment) -> String {

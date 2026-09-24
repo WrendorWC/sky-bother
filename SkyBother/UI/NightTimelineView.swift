@@ -32,6 +32,11 @@ struct NightTimelineView: View {
     /// meaningful mid-scroll anyway, since it wasn't reflecting a
     /// deliberate point of interest.
     var isScrolling: Bool = false
+    /// A thin strip for the planner: the same layers with no text on them,
+    /// and hover handed to the caller instead of drawn as a card, which a
+    /// strip this short would clip.
+    var isCompact: Bool = false
+    var onHoverSample: ((NightSample?) -> Void)? = nil
 
     @State private var hoverLocation: CGPoint?
 
@@ -57,7 +62,7 @@ struct NightTimelineView: View {
                     }
                 }
 
-                if let hoverLocation {
+                if let hoverLocation, !isCompact {
                     hoverReadout(at: hoverLocation, axis: axis, size: geometry.size)
                 }
             }
@@ -65,8 +70,12 @@ struct NightTimelineView: View {
             .onContinuousHover { phase in
                 guard !isScrolling else { hoverLocation = nil; return }
                 switch phase {
-                case .active(let location): hoverLocation = location
-                case .ended: hoverLocation = nil
+                case .active(let location):
+                    hoverLocation = location
+                    onHoverSample?(nearestSample(to: axis.date(for: location.x)))
+                case .ended:
+                    hoverLocation = nil
+                    onHoverSample?(nil)
                 }
             }
             .onChange(of: isScrolling) { _, scrolling in
@@ -271,6 +280,7 @@ struct NightTimelineView: View {
             path.move(to: CGPoint(x: x, y: 0))
             path.addLine(to: CGPoint(x: x, y: size.height))
             context.stroke(path, with: .color(.white.opacity(0.42)), style: style)
+            guard !isCompact else { continue }
             context.draw(Text(label).font(.system(size: 9 * uiTextScale)).foregroundColor(.white.opacity(0.7)),
                          at: CGPoint(x: x + 15, y: 10))
         }
@@ -306,6 +316,7 @@ struct NightTimelineView: View {
         path.move(to: CGPoint(x: x, y: 0))
         path.addLine(to: CGPoint(x: x, y: size.height))
         context.stroke(path, with: .color(Palette.skip.opacity(0.9)), lineWidth: 1.5)
+        guard !isCompact else { return }
         context.draw(Text("now").font(.system(size: 9 * uiTextScale, weight: .semibold)).foregroundColor(Palette.skip),
                      at: CGPoint(x: x + 15, y: size.height - 24))
     }
