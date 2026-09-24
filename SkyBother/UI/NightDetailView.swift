@@ -353,8 +353,12 @@ struct NightDetailView: View {
             state.openSkyView(for: plan)
         } label: {
             VStack(spacing: 6) {
-                SkyView(plan: plan, scrubTime: .constant(skyPreviewTime), isPlaying: .constant(false),
-                        planSegments: planSegments, showsControls: false)
+                // Tonight's is the sky right now, kept current; any other
+                // night's, its best stretch.
+                TimelineView(.periodic(from: .now, by: 60)) { context in
+                    SkyView(plan: plan, scrubTime: .constant(isTonight ? context.date : skyPreviewTime),
+                            isPlaying: .constant(false), planSegments: planSegments, showsControls: false)
+                }
                     .frame(width: 104 * uiTextScale, height: 104 * uiTextScale)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
@@ -369,6 +373,9 @@ struct NightDetailView: View {
         .help("Open Sky View")
         .accessibilityLabel("Open Sky View for \(Format.longDate(plan.date, in: plan.timeZone))")
     }
+
+    /// Same test as the sidebar's "Tonight" label.
+    private var isTonight: Bool { plan.id == state.plans.first?.id }
 
     /// When the preview is drawn: the middle of the best imaging window, when
     /// the sky is properly dark, or failing that the middle of the night.
