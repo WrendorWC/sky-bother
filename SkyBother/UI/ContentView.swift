@@ -14,10 +14,16 @@ struct ContentView: View {
     // 270 rather than 250: with scroll bars set to always show, 250 left the
     // night rows' stats no room to sit on one line.
     static let sidebarMinWidth: CGFloat = 270
-    static let contentMinWidth: CGFloat = 540
+    /// Enough for the night's summary card, whose date, verdict, buttons and
+    /// small dome sit in one row: at 540 its title wrapped a few letters to a
+    /// line.
+    static let contentMinWidth: CGFloat = 640
     static let detailMinWidth: CGFloat = 360
-    /// Room for the two column dividers on top of the columns themselves.
-    static let minWindowWidth = sidebarMinWidth + contentMinWidth + detailMinWidth + 10
+    /// Room for the two column dividers on top of the columns themselves,
+    /// and for the sidebar being wider than its minimum: it grows with the
+    /// UI scale (see `sidebarWidth`), to about 290 at the scale a window this
+    /// small gets.
+    static let minWindowWidth = sidebarMinWidth + contentMinWidth + detailMinWidth + 10 + 30
 
     /// Wide enough for the night rows at the current UI scale. Fixed, the
     /// sidebar was what stopped the automatic scale growing on a big window:

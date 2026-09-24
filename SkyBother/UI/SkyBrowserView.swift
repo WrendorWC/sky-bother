@@ -93,6 +93,8 @@ struct SkyBrowserView: View {
             footer
         }
         .background(Palette.spaceBackground)
+        // Room for the toolbar's search, name and zoom controls on one line.
+        .frame(minWidth: 720, minHeight: 480)
         .navigationTitle(windowTitle)
         .background(WindowReader(window: $window))
         .task(id: IdentifyKey(identifying: isIdentifying, centre: centre, fov: fieldOfViewDegrees)) {
