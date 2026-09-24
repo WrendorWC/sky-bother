@@ -303,7 +303,15 @@ struct SkyView: View {
                         }
                     }
                     if labelled { compassLabels(center: center, radius: radius) }
-                    if !highlights.isEmpty { highlightMarkers(center: center, radius: radius) }
+                    // Faded out while the night plays: the plan's own targets are
+                    // the story then, and markers coming and going as objects
+                    // rise and set was just jitter. Back on pause.
+                    if !highlights.isEmpty {
+                        highlightMarkers(center: center, radius: radius)
+                            .opacity(isPlaying ? 0 : 1)
+                            .allowsHitTesting(!isPlaying)
+                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.5), value: isPlaying)
+                    }
                 }
             }
             // All the room there is, in both directions: `domeFit` shapes
@@ -819,6 +827,13 @@ struct SkyView: View {
         let size = 22 * uiTextScale
         let font = NSFont.systemFont(ofSize: 10 * uiTextScale, weight: .semibold)
         var claimed: [CGRect] = []
+        // The selected target's own frame and label come first; markers keep
+        // clear of them (the two Veils sit side by side).
+        if let selected = selectedTargetPlan {
+            let point = screenPoint(for: horizontal(of: selected.target.coordinate), center: center, radius: radius)
+            let width = max(size * 1.6, (selected.target.displayName as NSString).size(withAttributes: [.font: font]).width + 16)
+            claimed.append(CGRect(x: point.x - width / 2, y: point.y - size, width: width, height: size * 2 + 18 * uiTextScale))
+        }
         var placed: [(target: Target, point: CGPoint)] = []
         for target in highlights where target.id != state.selectedTargetID {
             let position = horizontal(of: target.coordinate)
