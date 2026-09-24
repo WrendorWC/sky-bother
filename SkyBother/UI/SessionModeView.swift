@@ -174,6 +174,35 @@ struct SessionModeView: View {
                 .padding(10)
                 .background(Color.black.opacity(0.35))
                 .allowsHitTesting(false)
+                .overlay(alignment: .bottomLeading) { hiddenTargetNote(at: minute) }
+        }
+    }
+
+    /// The dome only draws what you can see, so when the target is below the
+    /// horizon or behind your trees, say where it is and when it clears.
+    @ViewBuilder
+    private func hiddenTargetNote(at now: Date) -> some View {
+        if let id = state.selectedTargetID,
+           let targetPlan = plan.targets.first(where: { $0.id == id }) {
+            let position = SkyCoordinates.horizontal(targetPlan.target.coordinate,
+                                                     daysSinceJ2000: now.daysSinceJ2000,
+                                                     latitude: plan.site.latitude,
+                                                     longitude: plan.site.longitude)
+            let blocked = plan.site.blockedAltitude(azimuth: position.azimuth)
+            if position.altitude < blocked {
+                let whereItIs = position.altitude <= 0
+                    ? "below the horizon"
+                    : "behind your trees to the \(position.compassPoint) (\(Format.degrees(position.altitude)) up)"
+                let clears = SkyViewTimeline.nextUsable(after: now, for: targetPlan)
+                    .map { " — usable from \(Format.time($0.start, in: plan.timeZone))" } ?? ""
+                Label("\(targetPlan.target.displayName) is \(whereItIs)\(clears)", systemImage: "eye.slash")
+                    .font(.scaled(.callout, scale: uiTextScale))
+                    .foregroundStyle(Self.warning)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 8))
+                    .padding(12)
+            }
         }
     }
 
@@ -244,10 +273,7 @@ struct SessionModeView: View {
                     .foregroundStyle(Self.muted)
             }
             conditionLine("Sky", skyText(sunAltitude: sun), warn: false)
-            conditionLine("Moon", moon.altitude > 0
-                          ? "\(plan.moon.illuminationPercent)% lit · \(Format.degrees(moon.altitude)) up in the \(moon.compassPoint)"
-                          : "\(plan.moon.illuminationPercent)% lit · below the horizon",
-                          warn: false)
+            conditionLine("Moon", moonText(moon), warn: false)
             if let dew, dew.level >= .high {
                 conditionLine("Dew", "\(dew.level.name) from \(Format.time(dew.peakStart, in: plan.timeZone)) — heater recommended",
                               warn: true)
@@ -258,6 +284,16 @@ struct SessionModeView: View {
             }
         }
         .font(.scaled(.callout, scale: uiTextScale))
+    }
+
+    private func moonText(_ moon: HorizontalCoordinate) -> String {
+        let lit = "\(plan.moon.illuminationPercent)% lit"
+        guard moon.altitude > 0 else { return "\(lit) · below the horizon" }
+        let place = "\(Format.degrees(moon.altitude)) up in the \(moon.compassPoint)"
+        // The dome doesn't draw what your trees hide, so say so here.
+        return moon.altitude < plan.site.blockedAltitude(azimuth: moon.azimuth)
+            ? "\(lit) · \(place), behind your trees"
+            : "\(lit) · \(place)"
     }
 
     private func windText(_ weather: HourlyWeather, imperial: Bool) -> String {
