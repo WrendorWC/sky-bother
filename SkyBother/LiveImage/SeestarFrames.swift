@@ -111,7 +111,6 @@ enum SeestarFrames {
     enum DecodeError: Error {
         case notAnImage
         case unknownFormat(bytes: Int, width: Int, height: Int)
-        case badZip
     }
 
     /// A displayable picture of a stack frame. A JPEG stack is used as it

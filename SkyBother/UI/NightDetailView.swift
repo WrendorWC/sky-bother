@@ -880,66 +880,6 @@ struct TargetRowView: View {
     }
 }
 
-/// A Gantt-style strip of the auto-planned session, sharing the night
-/// timeline's time axis so it lines up with everything above it.
-private struct AutoPlanStripView: View {
-    @EnvironmentObject private var state: AppState
-    @Environment(\.uiTextScale) private var uiTextScale
-    var plan: NightPlan
-    var slots: [AutoPlanSlot]
-
-    var body: some View {
-        GeometryReader { geometry in
-            let axis = TimeAxis(window: plan.chartWindow, width: geometry.size.width)
-            Canvas { context, size in
-                // A dark track first, so the gap between segments below reads
-                // clearly no matter what sits behind this view.
-                context.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 6),
-                             with: .color(Palette.spaceTop))
-
-                // Two consecutive targets often land within a point or two of
-                // each other on the score-color scale, so a shared edge alone
-                // can vanish entirely. A real gap reads as a boundary no
-                // matter how close the colours are, which a same-colour
-                // stroke never reliably does.
-                let gap: CGFloat = 3
-                for slot in slots {
-                    let startX = axis.x(for: slot.window.start)
-                    let endX = axis.x(for: slot.window.end)
-                    let rect = CGRect(x: startX + gap / 2, y: 0,
-                                      width: max(2, (endX - startX) - gap), height: size.height)
-                    let color = Palette.score(slot.targetPlan.score)
-                    let isSelected = state.selectedTargetID == slot.targetPlan.id
-                    // Selection outline uses the app's one accent colour
-                    // rather than plain white, so this strip agrees with the
-                    // sidebar, target list and timeline about what
-                    // "selected" looks like instead of inventing its own.
-                    context.fill(Path(roundedRect: rect, cornerRadius: 5),
-                                 with: .color(color.opacity(isSelected ? 0.95 : 0.75)))
-                    context.stroke(Path(roundedRect: rect, cornerRadius: 5),
-                                   with: .color(isSelected ? Palette.accent : color), lineWidth: isSelected ? 2 : 1)
-
-                    context.drawLabel(slot.targetPlan.target.displayName,
-                                      font: .system(size: 11 * uiTextScale, weight: .semibold),
-                                      in: rect)
-                }
-            }
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0, coordinateSpace: .local)
-                    .onEnded { value in
-                        let x = value.location.x
-                        if let hit = slots.first(where: { x >= axis.x(for: $0.window.start) && x <= axis.x(for: $0.window.end) }) {
-                            state.selectedTargetID = hit.targetPlan.id
-                        }
-                    }
-            )
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.panelBorder))
-    }
-}
-
 /// Dew risk in the statistics row: a coloured level, and the tightest
 /// temperature/dew-point spread in the session with when it comes.
 private struct DewRiskValue: View {

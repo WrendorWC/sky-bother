@@ -55,7 +55,6 @@ struct HourlyWeather: Codable, Hashable, Identifiable, Sendable {
     /// frost on the corrector plate.
     var dewPointSpread: Double { temperatureCelsius - dewPointCelsius }
 
-    var isPrecipitationLikely: Bool { precipitationProbability >= 40 }
 }
 
 struct WeatherForecast: Codable, Hashable, Sendable {
@@ -71,11 +70,6 @@ struct WeatherForecast: Codable, Hashable, Sendable {
                                        elevationMeters: 0, retrievedAt: .distantPast)
 
     var isEmpty: Bool { hours.isEmpty }
-
-    var coveredRange: TimeWindow? {
-        guard let first = hours.first, let last = hours.last else { return nil }
-        return TimeWindow(start: first.date, end: last.date.addingTimeInterval(3600))
-    }
 
     /// Linear interpolation between the bracketing hours. Returns nil when the
     /// date falls outside the forecast, which is how the planner knows to mark a

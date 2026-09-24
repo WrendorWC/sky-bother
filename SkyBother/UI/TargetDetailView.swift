@@ -337,10 +337,6 @@ struct TargetDetailView: View {
 
     // MARK: - Why this score
 
-    private var primaryFactorResult: (factor: ScoreFactor, impact: Double)? {
-        primaryFactor(in: targetPlan.factors, actualScore: targetPlan.score)
-    }
-
     private var scoring: some View {
         VStack(alignment: .leading, spacing: 10) {
             // The main limitation is already the overview's one sentence;

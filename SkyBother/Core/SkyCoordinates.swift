@@ -72,7 +72,7 @@ enum SkyCoordinates {
     }
 
     /// Converts equatorial coordinates to the observer's horizon frame.
-    /// Returns *geometric* altitude — apply `refractedAltitude` for the apparent value.
+    /// Returns *geometric* altitude, without atmospheric refraction.
     static func horizontal(_ coordinate: EquatorialCoordinate,
                            daysSinceJ2000 d: Double,
                            latitude: Double,
@@ -88,24 +88,6 @@ enum SkyCoordinates {
         let azimuth = atan2Deg(-cosDeg(dec) * sinDeg(hourAngle),
                                sinDeg(dec) * cosDeg(latitude) - cosDeg(dec) * sinDeg(latitude) * cosDeg(hourAngle))
         return HorizontalCoordinate(altitude: altitude, azimuth: normalize360(azimuth))
-    }
-
-    /// Hour angle at which an object reaches `altitude`, in degrees, or nil if it
-    /// never does (circumpolar above, or never rises).
-    static func hourAngleAtAltitude(_ altitude: Double, declination: Double, latitude: Double) -> Double? {
-        let numerator = sinDeg(altitude) - sinDeg(latitude) * sinDeg(declination)
-        let denominator = cosDeg(latitude) * cosDeg(declination)
-        guard abs(denominator) > 1e-9 else { return nil }
-        let cosH = numerator / denominator
-        guard cosH >= -1, cosH <= 1 else { return nil }
-        return acosDeg(cosH)
-    }
-
-    /// Bennett's refraction formula. Input and output in degrees.
-    static func refractedAltitude(_ trueAltitude: Double) -> Double {
-        guard trueAltitude > -2 else { return trueAltitude }
-        let r = 1.02 / tanDeg(trueAltitude + 10.3 / (trueAltitude + 5.11)) / 60.0
-        return trueAltitude + r
     }
 
     /// Kasten & Young (1989) relative air mass. Returns a large value near and

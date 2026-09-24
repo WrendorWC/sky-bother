@@ -9,14 +9,6 @@ enum Format {
         return formatter.string(from: date)
     }
 
-    static func timeWithMeridiem(_ date: Date, in timeZone: TimeZone) -> String {
-        let formatter = DateFormatter()
-        formatter.timeZone = timeZone
-        formatter.locale = .current
-        formatter.setLocalizedDateFormatFromTemplate("j:mm")
-        return formatter.string(from: date)
-    }
-
     static func weekday(_ date: Date, in timeZone: TimeZone) -> String {
         let formatter = DateFormatter()
         formatter.timeZone = timeZone
@@ -53,10 +45,6 @@ enum Format {
         formatter.allowedUnits = [.useMB, .useGB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: value)
-    }
-
-    static func arcseconds(_ value: Double) -> String {
-        value < 10 ? String(format: "%.1f\u{2033}", value) : String(format: "%.0f\u{2033}", value)
     }
 
     static func duration(minutes: Double) -> String {
@@ -96,11 +84,6 @@ enum Format {
     static func degrees(_ value: Double) -> String {
         guard value.isFinite else { return "—" }
         return String(format: "%.0f°", value)
-    }
-
-    static func percent(_ value: Double) -> String {
-        guard value.isFinite else { return "—" }
-        return "\(Int((value * 100).rounded()))%"
     }
 
     /// Right ascension as hours, minutes; declination as signed degrees, arcmin.

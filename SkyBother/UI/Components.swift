@@ -189,14 +189,6 @@ enum Palette {
     /// Warmer and brighter than moonlight, so the two discs never read as the same thing.
     static let sunlight = Color(red: 1.0, green: 0.86, blue: 0.45)
     static let cloud = Color(red: 0.86, green: 0.89, blue: 0.94)
-    /// The Milky Way band in the sky view — dim and cool so it reads as
-    /// structure in the background rather than competing with targets.
-    static let milkyWay = Color(red: 0.80, green: 0.84, blue: 0.92)
-    /// A camera's framed field of view in the sky view — a clean,
-    /// near-white "viewfinder" line, a distinct category from quality
-    /// colours, selection violet, the Core's warm accent and the Milky
-    /// Way's dim off-white.
-    static let cameraFrame = Color(red: 0.95, green: 0.97, blue: 0.98)
 
     static let go = Color(red: 0.24, green: 0.78, blue: 0.47)
     static let worthwhile = Color(red: 0.30, green: 0.66, blue: 0.90)
@@ -219,7 +211,6 @@ enum Palette {
     /// The app's own accent — a nebula violet, used for the tint and for
     /// anything that isn't already carrying a verdict colour.
     static let accent = Color(red: 0.62, green: 0.52, blue: 0.98)
-    static let accentWarm = Color(red: 0.98, green: 0.55, blue: 0.62)
 
     /// Deep-space background, applied behind every window so the app reads as
     /// one dark, colour-tinted surface instead of the flat system background.

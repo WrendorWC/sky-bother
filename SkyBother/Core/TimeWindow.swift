@@ -11,7 +11,6 @@ struct TimeWindow: Codable, Hashable, Identifiable, Sendable {
 
     var duration: TimeInterval { max(0, end.timeIntervalSince(start)) }
     var durationMinutes: Double { duration / 60 }
-    var durationHours: Double { duration / 3600 }
     var isEmpty: Bool { duration <= 0 }
     var midpoint: Date { start.addingTimeInterval(duration / 2) }
 
@@ -29,11 +28,6 @@ struct TimeWindow: Codable, Hashable, Identifiable, Sendable {
         let e = min(end, other.end)
         guard e > s else { return nil }
         return TimeWindow(start: s, end: e)
-    }
-
-    /// Total overlap with a set of windows, in minutes.
-    func overlapMinutes(with others: [TimeWindow]) -> Double {
-        others.compactMap { intersection(with: $0)?.durationMinutes }.reduce(0, +)
     }
 
     /// This window with any portion overlapping `other` cut out — zero

@@ -47,22 +47,5 @@ enum Sun {
             }
         }
 
-        var duskLabel: String {
-            switch self {
-            case .sunrise, .sunset: return "Sunset"
-            case .civil: return "Civil dusk"
-            case .nautical: return "Nautical dusk"
-            case .astronomical: return "Astronomical dark"
-            }
-        }
-
-        var dawnLabel: String {
-            switch self {
-            case .sunrise, .sunset: return "Sunrise"
-            case .civil: return "Civil dawn"
-            case .nautical: return "Nautical dawn"
-            case .astronomical: return "Dark ends"
-            }
-        }
     }
 }

@@ -210,17 +210,6 @@ struct SkyView: View {
         (cameraFrameCenter?.altitude ?? 0) > Self.nearZenithThreshold
     }
 
-    private var cameraFrameCenterText: String {
-        guard let frameCenter = cameraFrameCenter else { return "" }
-        if frameCenter.altitude <= 0 {
-            return "below the horizon"
-        } else if isCameraFrameTooCloseToZenith {
-            return "too close to the zenith to draw"
-        } else {
-            return "\(Int(frameCenter.azimuth.rounded()))° \(frameCenter.compassPoint) · \(Format.degrees(frameCenter.altitude))"
-        }
-    }
-
     private var selectedTargetPlan: TargetPlan? {
         guard let selectedID = state.selectedTargetID else { return nil }
         return plan.targets.first { $0.id == selectedID }

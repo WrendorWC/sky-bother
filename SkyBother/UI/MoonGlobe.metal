@@ -13,8 +13,6 @@ using namespace metal;
 //
 // Screen space here: x to the right, y up, z towards the viewer.
 
-constant float kDeg = M_PI_F / 180.0;
-
 [[ stitchable ]] half4 moonGlobe(float2 position,
                                  texture2d<half> surface,
                                  float2 centre,

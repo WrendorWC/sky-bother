@@ -382,13 +382,8 @@ struct SkyBrowserView: View {
     /// neither could be read. A mark that cannot have a legible label keeps
     /// its circle and loses the text, which still says something is there.
     private func markers(size: CGSize) -> [Marker] {
-        // The drag belongs in here too. The sky image is placed at
-        // `size/2 + dragOffset` and these were placed at `size/2`, so while a
-        // drag was in progress the sky slid under the pointer and every label
-        // stayed nailed to the window — which is exactly what panning
-        // throwing everything off looks like.
-        let middle = CGPoint(x: size.width / 2 + dragOffset.width,
-                             y: size.height / 2 + dragOffset.height)
+        // The drag is added to each mark below, so labels move with the sky
+        // while it's being dragged rather than staying put on the window.
         var claimed: [CGRect] = []
         var result: [Marker] = []
 

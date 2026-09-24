@@ -19,13 +19,6 @@ func normalize360(_ x: Double) -> Double {
     return r < 0 ? r + 360 : r
 }
 
-/// Wraps an angle into [-180, 180).
-func normalize180(_ x: Double) -> Double {
-    var r = normalize360(x)
-    if r >= 180 { r -= 360 }
-    return r
-}
-
 func clamp(_ x: Double, _ low: Double, _ high: Double) -> Double {
     min(high, max(low, x))
 }

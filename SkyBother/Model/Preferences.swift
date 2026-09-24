@@ -29,8 +29,6 @@ struct Preferences: Codable, Hashable, Sendable {
     var includeOversizedTargets: Bool = true
     /// Include star clusters, which some people don't count as targets.
     var includeStarClusters: Bool = true
-    /// Warn when the temperature/dew-point spread falls below this many degrees C.
-    var dewWarningSpread: Double = 2.5
     /// Show temperatures in Fahrenheit and wind in mph.
     var usesImperialUnits: Bool = false
     /// Whether to mark zenith-risk spans (Sky View's amber path, the
@@ -131,7 +129,6 @@ extension Preferences {
         minimumUsefulAltitude = value(.minimumUsefulAltitude, fallback.minimumUsefulAltitude)
         includeOversizedTargets = value(.includeOversizedTargets, fallback.includeOversizedTargets)
         includeStarClusters = value(.includeStarClusters, fallback.includeStarClusters)
-        dewWarningSpread = value(.dewWarningSpread, fallback.dewWarningSpread)
         usesImperialUnits = value(.usesImperialUnits, fallback.usesImperialUnits)
         showsZenithRiskWarnings = value(.showsZenithRiskWarnings, fallback.showsZenithRiskWarnings)
         textScale = value(.textScale, fallback.textScale)
@@ -139,11 +136,6 @@ extension Preferences {
         planEmphasis = value(.planEmphasis, fallback.planEmphasis)
         showsClouds = value(.showsClouds, fallback.showsClouds)
     }
-}
-
-extension Preferences {
-    /// Display units only; every stored value is metric.
-    var temperatureUnit: UnitTemperature { usesImperialUnits ? .fahrenheit : .celsius }
 }
 
 /// Named starting points for how a night gets planned. Not stored: which one

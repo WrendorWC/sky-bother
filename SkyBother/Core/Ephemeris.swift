@@ -78,34 +78,6 @@ enum Ephemeris {
         return low.addingTimeInterval(high.timeIntervalSince(low) / 2)
     }
 
-    /// First time in the range at which the altitude crosses `threshold` in the
-    /// given direction, or nil if it never does.
-    static func firstCrossing(threshold: Double,
-                              rising: Bool,
-                              from start: Date,
-                              to end: Date,
-                              stepMinutes: Double = 2,
-                              altitude: (Date) -> Double) -> Date? {
-        guard end > start else { return nil }
-        var previousDate = start
-        var previousValue = altitude(start) - threshold
-        let stepCount = max(1, Int((end.timeIntervalSince(start) / 60 / stepMinutes).rounded(.up)))
-
-        for i in 1...stepCount {
-            let date = min(end, start.addingMinutes(Double(i) * stepMinutes))
-            let value = altitude(date) - threshold
-            let crossedUp = previousValue < 0 && value >= 0
-            let crossedDown = previousValue >= 0 && value < 0
-            if (rising && crossedUp) || (!rising && crossedDown) {
-                return refineCrossing(threshold: threshold, earlier: previousDate, later: date, altitude: altitude)
-            }
-            previousDate = date
-            previousValue = value
-            if date >= end { break }
-        }
-        return nil
-    }
-
     /// Highest altitude reached in the range and when it happens (transit, for an
     /// object that culminates during the night).
     static func maximum(from start: Date,
