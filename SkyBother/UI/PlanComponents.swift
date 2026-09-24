@@ -130,3 +130,61 @@ struct HourAxisLabels: View {
         .accessibilityHidden(true)
     }
 }
+
+/// View Session, the same on Home and in the planner. Quiet but plainly a
+/// button outside the night's session; while a session is on, or should be
+/// (a block running, or the gap between two), as bold as Plan Session with a
+/// slow green pulse round it, since that's when it's the thing to press.
+struct ViewSessionButton: View {
+    @Environment(\.uiTextScale) private var uiTextScale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @EnvironmentObject private var state: AppState
+    var plan: NightPlan
+    var fillsWidth = false
+    var action: () -> Void
+
+    @State private var isPulsing = false
+
+    var body: some View {
+        // Once a minute is plenty to notice a block starting.
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            let phase = SessionClock(at: context.date, plan: state.displayedPlan(for: plan)).phase
+            let isOn = phase == .running || phase == .between
+            button(isOn: isOn)
+        }
+    }
+
+    @ViewBuilder
+    private func button(isOn: Bool) -> some View {
+        let base = Button(action: action) {
+            Label("View Session", systemImage: "play.circle.fill")
+                .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
+                .frame(maxWidth: fillsWidth ? .infinity : nil)
+        }
+        .help(isOn ? "Your session is on now: what's up and what's next, in large type, for use at the telescope"
+                   : "What's on now and next, in large type, for use at the telescope")
+        if isOn {
+            base
+                .buttonStyle(.borderedProminent)
+                .overlay {
+                    Capsule()
+                        .strokeBorder(Palette.exceptional, lineWidth: 2)
+                        .padding(-4)
+                        .opacity(reduceMotion ? 0.9 : (isPulsing ? 1 : 0.25))
+                        .shadow(color: Palette.exceptional.opacity(isPulsing ? 0.7 : 0), radius: 6)
+                        .allowsHitTesting(false)
+                }
+                .onAppear {
+                    guard !reduceMotion else { return }
+                    withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { isPulsing = true }
+                }
+                .onDisappear { isPulsing = false }
+        } else {
+            // Plan Session's fill at partial strength: same shape and size,
+            // clearly a button, clearly second to it.
+            base
+                .buttonStyle(.borderedProminent)
+                .tint(Palette.accent.opacity(0.26))
+        }
+    }
+}

@@ -412,9 +412,6 @@ struct NightDetailView: View {
                     state.openPlanner(for: plan)
                 }
                 .help("Open the planner to change this night's plan")
-                if state.canOpenSession(for: plan) {
-                    sessionButton
-                }
             }
 
             if segments.isEmpty {
@@ -445,14 +442,7 @@ struct NightDetailView: View {
 
     /// The glanceable at-the-scope view of tonight's plan.
     private var sessionButton: some View {
-        Button {
-            state.openSession(for: plan)
-        } label: {
-            Label("Session View", systemImage: "play.circle.fill")
-                .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
-        }
-        .buttonStyle(.bordered)
-        .help("What's on now and next, in large type, for use at the telescope")
+        ViewSessionButton(plan: plan, fillsWidth: true) { state.openSession(for: plan) }
     }
 
     /// Says in one word whose plan this is. Without it the two are visually
@@ -570,16 +560,25 @@ struct NightDetailView: View {
                 }
             }
             Spacer(minLength: 12)
-            // The one thing to do next, in the same place every night.
-            Button {
-                state.openPlanner(for: plan)
-            } label: {
-                Label("Plan Session", systemImage: "list.bullet.rectangle")
-                    .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
+            // The one thing to do next, in the same place every night; and
+            // tonight, the screen for running it at the telescope, right
+            // under it and the same width.
+            VStack(spacing: 8) {
+                Button {
+                    state.openPlanner(for: plan)
+                } label: {
+                    Label("Plan Session", systemImage: "list.bullet.rectangle")
+                        .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .help("Build this night's session")
+                if state.canOpenSession(for: plan) {
+                    sessionButton
+                }
             }
-            .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .help("Build this night's session")
+            .fixedSize(horizontal: true, vertical: false)
             skyDomeButton
         }
         .padding(16)

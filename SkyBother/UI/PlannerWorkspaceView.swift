@@ -29,6 +29,7 @@ struct PlannerWorkspaceView: View {
     @State private var addNote: String?
     @State private var isConfirmingReset = false
     @State private var isConfirmingLeave = false
+    @State private var isConfirmingSession = false
     /// A night chosen from the date menu, waiting on what to do with
     /// unsaved changes to this one.
     @State private var pendingNight: NightPlan?
@@ -124,6 +125,19 @@ struct PlannerWorkspaceView: View {
         } message: {
             Text("Saving makes this a manual plan.")
         }
+        .confirmationDialog(leaveTitle, isPresented: $isConfirmingSession) {
+            Button("Save Plan") {
+                state.finishEditingPlan()
+                openSession()
+            }
+            Button("Discard Changes", role: .destructive) {
+                state.cancelEditingPlan()
+                openSession()
+            }
+            Button("Keep Editing", role: .cancel) {}
+        } message: {
+            Text("Session View runs the saved plan. Saving makes this a manual plan.")
+        }
         .confirmationDialog("Discard your changes?", isPresented: $isConfirmingRevert) {
             Button("Discard Changes", role: .destructive) {
                 state.revertDraft()
@@ -200,6 +214,10 @@ struct PlannerWorkspaceView: View {
                     .font(.scaled(.body, scale: uiTextScale))
             }
             .help("See this plan on the sky")
+            if state.tonight?.id == plan.id {
+                ViewSessionButton(plan: plan, action: viewSession)
+                    .disabled(segments.isEmpty)
+            }
             VStack(alignment: .trailing, spacing: 3) {
                 Label(plan.site.name, systemImage: "mappin.and.ellipse")
                 Label(state.rig.name, systemImage: "camera.aperture")
@@ -888,5 +906,26 @@ struct PlannerWorkspaceView: View {
     private func done() {
         state.finishEditingPlan()
         state.closePlanner()
+    }
+
+    /// Session View runs the saved plan, so unsaved changes are settled
+    /// first, the same way leaving settles them.
+    private func viewSession() {
+        if isDirty {
+            isConfirmingSession = true
+        } else {
+            state.cancelEditingPlan()
+            openSession()
+        }
+    }
+
+    /// The draft is already saved or discarded here. Discarding can leave
+    /// the night with no plan to run, and then it's Home instead.
+    private func openSession() {
+        if state.canOpenSession(for: plan) {
+            state.openSession(for: plan)
+        } else {
+            state.closePlanner()
+        }
     }
 }
