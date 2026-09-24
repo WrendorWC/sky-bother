@@ -146,17 +146,17 @@ struct SkyView: View {
     /// to whatever's coming up next, not only what's already open — keeps
     /// the two in step regardless of whether the slots actually touch.
     private func syncSelectionToPlayback() {
-        guard let upcoming = SkyViewTimeline.block(at: scrubTime, in: planSegments) else {
-            // Past the last block the session is over: let its target fade
-            // away rather than sit on the dome until sunrise.
-            if let last = planSegments.chronological.last, scrubTime >= last.window.end,
-               let selected = state.selectedTargetID, planSegments.contains(where: { $0.targetID == selected }) {
-                state.selectedTargetID = nil
+        let ordered = planSegments.chronological
+        guard let first = ordered.first, scrubTime >= first.window.start else { return }
+        if let running = ordered.first(where: { $0.window.contains(scrubTime) }) {
+            if state.selectedTargetID != running.targetID {
+                state.selectedTargetID = running.targetID
             }
-            return
-        }
-        if state.selectedTargetID != upcoming.targetID {
-            state.selectedTargetID = upcoming.targetID
+        } else if let selected = state.selectedTargetID,
+                  planSegments.contains(where: { $0.targetID == selected }) {
+            // In a gap between blocks, or past the last one: nothing is
+            // being shot, so the target fades away until the next block.
+            state.selectedTargetID = nil
         }
     }
 
