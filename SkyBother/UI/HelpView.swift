@@ -235,6 +235,6 @@ private struct HelpTopicView: View {
             .frame(maxWidth: .infinity)
         }
         .spaceBackground()
-        .navigationTitle(topic.title)
+        .navigationTitle("Help — \(topic.title)")
     }
 }

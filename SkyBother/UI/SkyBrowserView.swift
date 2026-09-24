@@ -23,6 +23,9 @@ struct SkyBrowserView: View {
     @State private var fieldOfViewDegrees: Double = 2.0
     @State private var searchText = ""
     @State private var label: String = ""
+    /// The window's title: the object last gone to, kept while you pan
+    /// away from it.
+    @State private var windowTitle = "Sky Browser"
     @State private var isIdentifying = false
     /// What sits at the centre of the view, once asked for.
     @State private var centreName: String?
@@ -90,6 +93,7 @@ struct SkyBrowserView: View {
             footer
         }
         .background(Palette.spaceBackground)
+        .navigationTitle(windowTitle)
         .background(WindowReader(window: $window))
         .task(id: IdentifyKey(identifying: isIdentifying, centre: centre, fov: fieldOfViewDegrees)) {
             await identifyCentre()
@@ -190,7 +194,7 @@ struct SkyBrowserView: View {
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(.tertiary)
             if usesStarMap {
-                Text("Star map: NASA/Goddard SVS, from Gaia DR2 (ESA/Gaia/DPAC), Hipparcos and Tycho-2")
+                Text(SkyView.starMapCredit)
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.tertiary)
             } else if let url = URL(string: SkyCutoutClient.attributionURL) {
@@ -572,6 +576,7 @@ struct SkyBrowserView: View {
                          state.rig.fieldOfViewHeightArcminutes * 1.35 * aspect) / 60
         fieldOfViewDegrees = clamp(wanted, Self.minimumFieldOfView, Self.maximumFieldOfView)
         label = "\(target.displayName) · \(target.type.displayName)"
+        windowTitle = "Sky Browser — \(target.displayName)"
         searchText = ""
     }
 
