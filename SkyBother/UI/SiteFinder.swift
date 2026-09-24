@@ -61,7 +61,7 @@ struct SiteFinder: View {
                         }
                     }
 
-                    Button("Enter coordinates instead") { showsManualEntry = true }
+                    Button("Enter Coordinates Instead") { showsManualEntry = true }
                         .buttonStyle(.link)
                         .font(.scaled(.callout, scale: uiTextScale))
                 }
@@ -86,9 +86,9 @@ struct SiteFinder: View {
                             .foregroundStyle(Palette.skip)
                     }
                     HStack {
-                        Button("Use these coordinates") { submitManualSite() }
+                        Button("Use These Coordinates") { submitManualSite() }
                             .disabled(!manualEntryLooksValid)
-                        Button("Search instead") { showsManualEntry = false }
+                        Button("Search Instead") { showsManualEntry = false }
                             .buttonStyle(.link)
                     }
                 }

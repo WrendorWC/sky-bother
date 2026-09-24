@@ -195,7 +195,7 @@ struct NightDetailView: View {
                 Button {
                     state.openPlanner(for: plan)
                 } label: {
-                    Label("See all in the planner", systemImage: "list.bullet.rectangle")
+                    Label("See All in the Planner", systemImage: "list.bullet.rectangle")
                         .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
                 }
                 .buttonStyle(.plain)
@@ -324,7 +324,7 @@ struct NightDetailView: View {
                         .font(.scaled(.caption, scale: uiTextScale))
                         .foregroundStyle(unshootableMinutes > 0 ? Palette.marginal : .secondary)
                 }
-                planButton("Edit plan", systemImage: "slider.horizontal.below.rectangle") {
+                planButton("Edit Plan", systemImage: "slider.horizontal.below.rectangle") {
                     state.openPlanner(for: plan)
                 }
                 .help("Open the planner to change this night's plan")

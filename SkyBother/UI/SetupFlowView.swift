@@ -79,7 +79,7 @@ struct SetupFlowView: View {
             }
             .help("Enter every setting by hand")
             if state.settings.hasSetLocation {
-                Button("Save and close") { state.finishSetup() }
+                Button("Save and Close") { state.finishSetup() }
                     .help("Finish setup with the current settings")
             }
         }
@@ -150,7 +150,7 @@ struct SetupFlowView: View {
                 Button {
                     state.finishSetup()
                 } label: {
-                    Text("Go to my plan").frame(minWidth: 100)
+                    Text("Go to My Plan").frame(minWidth: 100)
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(state.plans.isEmpty)
@@ -481,7 +481,7 @@ private struct FirstPlanStep: View {
                 HStack(spacing: 10) {
                     Text("Couldn't fetch the forecast.")
                         .foregroundStyle(.secondary)
-                    Button("Try again") { Task { await state.refresh(force: true) } }
+                    Button("Try Again") { Task { await state.refresh(force: true) } }
                 }
                 .font(.scaled(.callout, scale: uiTextScale))
             }

@@ -488,7 +488,7 @@ struct TargetCatalogDetail: View {
                         Button {
                             add(result, to: night)
                         } label: {
-                            Label("Add to \(Format.weekday(night.date, in: night.timeZone))'s plan", systemImage: "plus.circle.fill")
+                            Label("Add to \(Format.weekday(night.date, in: night.timeZone))'s Plan", systemImage: "plus.circle.fill")
                                 .font(.scaled(.body, scale: uiTextScale).weight(.semibold))
                         }
                         .buttonStyle(.borderedProminent)

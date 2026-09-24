@@ -71,7 +71,7 @@ struct HorizonEditor: View {
         }
         .confirmationDialog("Set every direction to \(Format.degrees(site.horizonAltitude))?",
                             isPresented: $isConfirmingLevel) {
-            Button("Set every direction to \(Format.degrees(site.horizonAltitude))") {
+            Button("Set Every Direction to \(Format.degrees(site.horizonAltitude))") {
                 site.setHorizonEverywhere(to: site.horizonAltitude)
                 levellingAgreed = true
             }
@@ -90,7 +90,7 @@ struct HorizonEditor: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Blocked by direction: \(Format.degrees(site.horizonAltitude)) at its most open, \(Format.degrees(site.worstHorizonAltitude)) at its worst.")
                     .font(.scaled(.callout, scale: uiTextScale))
-                Button("Use one value all the way round…") { isConfirmingLevel = true }
+                Button("Use One Value All the Way Round…") { isConfirmingLevel = true }
                     .help("Replace the values for each direction with one")
             }
         } else {

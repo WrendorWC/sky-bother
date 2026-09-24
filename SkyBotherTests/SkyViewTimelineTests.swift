@@ -1,6 +1,6 @@
 import XCTest
 
-/// Sky View's clock: where Jump to best window lands, which planned block is
+/// Sky View's clock: where Jump to Best Window lands, which planned block is
 /// selected while following the plan, and the labelled scrubber marks.
 final class SkyViewTimelineTests: XCTestCase {
 
@@ -29,7 +29,7 @@ final class SkyViewTimelineTests: XCTestCase {
         XCTAssertEqual(block("a", 2, 5).window.midpoint, at(3.5))
     }
 
-    // MARK: - Jump to best window
+    // MARK: - Jump to Best Window
 
     func testJumpLandsOnTheBestMomentInsideTheBestWindow() {
         var target = TargetPlan.fixture(id: "m31", windows: [TimeWindow(start: at(3), end: at(8))])

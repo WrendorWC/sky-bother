@@ -98,7 +98,7 @@ struct SkyViewScreen: View {
             isPlaying = false
             scrubTime = bestWindowTime
         } label: {
-            Label("Jump to best window", systemImage: "scope")
+            Label("Jump to Best Window", systemImage: "scope")
                 .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
         }
         .disabled(bestWindowTime == nil)

@@ -136,7 +136,7 @@ struct SkyBrowserView: View {
             Button {
                 isIdentifying.toggle()
             } label: {
-                Label("What's this?", systemImage: isIdentifying ? "tag.fill" : "tag")
+                Label("What's This?", systemImage: isIdentifying ? "tag.fill" : "tag")
                     .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
             }
             // A real button rather than bare text: it toggles a mode, and

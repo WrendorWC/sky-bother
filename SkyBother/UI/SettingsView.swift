@@ -161,11 +161,11 @@ private struct LocationSettings: View {
                 }
 
                 HStack {
-                    Button("Refresh forecast for this site") {
+                    Button("Refresh Forecast for This Site") {
                         Task { await state.refresh(force: true) }
                     }
                     Spacer()
-                    Button("Save as a separate spot") {
+                    Button("Save as a Separate Spot") {
                         state.duplicateCurrentSite()
                     }
                     .help("Copy this site with its own horizon, for a second spot at the same place")
@@ -252,7 +252,7 @@ private struct EquipmentSettings: View {
     var body: some View {
         Form {
             Section("Presets") {
-                Menu("Load a preset") {
+                Menu("Load a Preset") {
                     ForEach(Rig.PresetGroup.allCases) { group in
                         Section(group.rawValue) {
                             ForEach(Rig.presets.filter { $0.presetGroup == group }) { preset in
@@ -299,10 +299,10 @@ private struct EquipmentSettings: View {
                 }
                 HStack {
                     if state.isCurrentRigSaved {
-                        Button("Update saved rig") { state.saveCurrentRig() }
+                        Button("Update Saved Rig") { state.saveCurrentRig() }
                             .help("Overwrite the saved copy of this rig with the numbers below")
                     }
-                    Button(state.isCurrentRigSaved ? "Save as new rig" : "Save this rig") { state.saveCurrentRigAsNew() }
+                    Button(state.isCurrentRigSaved ? "Save as New Rig" : "Save This Rig") { state.saveCurrentRigAsNew() }
                         .help("Keep these numbers as a separate saved rig")
                 }
                 .disabled(!state.rig.validationProblems.isEmpty)

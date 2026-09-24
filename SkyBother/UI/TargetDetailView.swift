@@ -135,7 +135,7 @@ struct TargetDetailView: View {
             }
             if let onRemoveFromPlan, !plannedBlocks.isEmpty {
                 Button(action: onRemoveFromPlan) {
-                    Text("Remove from plan")
+                    Text("Remove from Plan")
                         .font(.scaled(.caption, scale: uiTextScale))
                 }
                 .buttonStyle(.link)

@@ -290,7 +290,7 @@ struct MenuBarSummaryView: View {
             Divider()
 
             HStack {
-                Button("Open main window") {
+                Button("Open Main Window") {
                     // Back to a normal Dock app before activating, so the app's
                     // menu bar menus come back along with the window.
                     NSApp.setActivationPolicy(.regular)

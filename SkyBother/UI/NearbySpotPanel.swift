@@ -371,7 +371,7 @@ private struct ParkHoursLine: View {
                     .hoverTooltip("Posted hours: \(hours.raw) — from OpenStreetMap")
             }
             if let website {
-                Link("Check hours", destination: website)
+                Link("Check Hours", destination: website)
                     .hoverTooltip("Open this place's website")
             }
         }

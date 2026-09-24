@@ -99,43 +99,43 @@ struct PlannerWorkspaceView: View {
         .onAppear { adoptBlockAddedElsewhere() }
         .onChange(of: state.blockAddedElsewhere) { _, _ in adoptBlockAddedElsewhere() }
         .confirmationDialog(leaveTitle, isPresented: $isConfirmingLeave) {
-            Button("Save plan") { done() }
-            Button("Discard changes", role: .destructive) {
+            Button("Save Plan") { done() }
+            Button("Discard Changes", role: .destructive) {
                 state.cancelEditingPlan()
                 state.closePlanner()
             }
-            Button("Keep editing", role: .cancel) {}
+            Button("Keep Editing", role: .cancel) {}
         } message: {
             Text("Saving makes this a manual plan.")
         }
         .confirmationDialog(leaveTitle, isPresented: Binding(get: { pendingNight != nil },
                                                              set: { if !$0 { pendingNight = nil } })) {
-            Button("Save plan") {
+            Button("Save Plan") {
                 state.finishEditingPlan()
                 if let night = pendingNight { state.openPlanner(for: night) }
                 pendingNight = nil
             }
-            Button("Discard changes", role: .destructive) {
+            Button("Discard Changes", role: .destructive) {
                 state.cancelEditingPlan()
                 if let night = pendingNight { state.openPlanner(for: night) }
                 pendingNight = nil
             }
-            Button("Keep editing", role: .cancel) { pendingNight = nil }
+            Button("Keep Editing", role: .cancel) { pendingNight = nil }
         } message: {
             Text("Saving makes this a manual plan.")
         }
         .confirmationDialog("Discard your changes?", isPresented: $isConfirmingRevert) {
-            Button("Discard changes", role: .destructive) {
+            Button("Discard Changes", role: .destructive) {
                 state.revertDraft()
                 selectedBlockID = nil
                 addNote = "Changes discarded."
             }
-            Button("Keep editing", role: .cancel) {}
+            Button("Keep Editing", role: .cancel) {}
         } message: {
             Text("The plan goes back to how it was when you opened the planner.")
         }
         .confirmationDialog(resetTitle, isPresented: $isConfirmingReset) {
-            Button("Reset manual plan", role: .destructive) {
+            Button("Reset Manual Plan", role: .destructive) {
                 state.resetPlanToSuggested(for: plan)
                 selectedBlockID = nil
                 addNote = nil
@@ -584,7 +584,7 @@ struct PlannerWorkspaceView: View {
             state.catalogRequest = AppState.CatalogRequest(nightID: plan.id, search: trimmed.isEmpty ? nil : trimmed)
             AppWindow.bringForward(id: "catalog", using: openWindow)
         } label: {
-            Label(trimmed.isEmpty ? "Browse full catalog" : "Search the full catalog for \u{201c}\(trimmed)\u{201d}",
+            Label(trimmed.isEmpty ? "Browse Full Catalog" : "Search the Full Catalog for \u{201c}\(trimmed)\u{201d}",
                   systemImage: "photo.on.rectangle.angled")
                 .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
         }
@@ -811,7 +811,7 @@ struct PlannerWorkspaceView: View {
             Spacer(minLength: 12)
 
             if state.isManualPlan(for: plan) {
-                Button { isConfirmingReset = true } label: { Text("Reset manual plan").font(.scaled(.callout, scale: uiTextScale)) }
+                Button { isConfirmingReset = true } label: { Text("Reset Manual Plan").font(.scaled(.callout, scale: uiTextScale)) }
                     .help("Replace your manual plan with the current suggestion")
             }
             Button {
@@ -819,7 +819,7 @@ struct PlannerWorkspaceView: View {
                 selectedBlockID = nil
                 addNote = "Draft cleared."
             } label: {
-                Text("Clear draft").font(.scaled(.callout, scale: uiTextScale))
+                Text("Clear Draft").font(.scaled(.callout, scale: uiTextScale))
             }
             .disabled(segments.isEmpty)
             .help("Empty the plan. Nothing is saved until Done.")
