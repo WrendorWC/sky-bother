@@ -34,8 +34,8 @@ struct SessionModeView: View {
                         .frame(maxHeight: .infinity)
                     HStack(alignment: .top, spacing: 14) {
                         conditions(now: context.date)
-                        upNext(clock)
-                        tonightSummary(now: context.date)
+                        about(clock)
+                        upNext(clock, now: context.date)
                     }
                     .fixedSize(horizontal: false, vertical: true)
                 }
@@ -138,19 +138,12 @@ struct SessionModeView: View {
         }
         if let targetPlan {
             // Split: what you're capturing, and where it is right now.
-            HStack(alignment: .top, spacing: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("IN YOUR FRAME")
-                        .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
-                        .kerning(0.7)
-                        .foregroundStyle(Self.accent)
+            // Two equal boxes, so neither outweighs the other.
+            HStack(alignment: .top, spacing: 12) {
+                viewBox("In your frame") {
                     FramingPreview(target: targetPlan.target, rig: state.rig)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-                .frame(maxWidth: .infinity)
                 liveDome(now: now)
-                    .frame(maxWidth: .infinity)
             }
             .frame(maxHeight: .infinity)
             if isRunning,
@@ -175,16 +168,28 @@ struct SessionModeView: View {
     /// target marked.
     private func liveDome(now: Date) -> some View {
         let minute = Date(timeIntervalSince1970: (now.timeIntervalSince1970 / 60).rounded(.down) * 60)
-        return VStack(alignment: .leading, spacing: 6) {
-            Text("IN THE SKY NOW · \(Format.time(minute, in: plan.timeZone))")
+        return viewBox("In the sky now · \(Format.time(minute, in: plan.timeZone))") {
+            SkyView(plan: plan, scrubTime: .constant(minute), isPlaying: .constant(false),
+                    planSegments: segments, showsControls: false, showsLabels: true)
+                .padding(10)
+                .background(Color.black.opacity(0.35))
+                .allowsHitTesting(false)
+        }
+    }
+
+    /// A titled box that takes half the width and all the height it's given.
+    private func viewBox<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title.uppercased())
                 .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
                 .kerning(0.7)
                 .foregroundStyle(Self.accent)
-            SkyView(plan: plan, scrubTime: .constant(minute), isPlaying: .constant(false),
-                    planSegments: segments, showsControls: false, showsLabels: true)
+            content()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .allowsHitTesting(false)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Self.border))
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func countdown(to date: Date, from now: Date) -> String {
@@ -207,30 +212,95 @@ struct SessionModeView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Self.border))
     }
 
-    /// Only what you might act on: dew, cloud now, and wind.
+    /// The sky and the weather at this minute, and the one warning worth
+    /// acting on tonight.
     private func conditions(now: Date) -> some View {
-        let session = TimeWindow(start: plan.chartWindow.contains(now) ? now : plan.chartWindow.start,
-                                 end: plan.chartWindow.end)
+        let imperial = state.preferences.usesImperialUnits
+        let tonight = plan.chartWindow.contains(now)
+        let weather = tonight ? state.forecast.interpolated(at: now) : nil
+        let session = TimeWindow(start: tonight ? now : plan.chartWindow.start, end: plan.chartWindow.end)
         let dew = plan.hasWeather ? DewRisk.assess(samples: plan.samples, over: session) : nil
-        let sample = plan.samples.min { abs($0.date.timeIntervalSince(now)) < abs($1.date.timeIntervalSince(now)) }
-        let cloudNow = plan.chartWindow.contains(now) ? sample.map { Int($0.cloudCover) } : nil
-        return sidePanel("Conditions") {
-            if !plan.hasWeather {
+        let moon = SkyCoordinates.horizontal(Moon.position(daysSinceJ2000: now.daysSinceJ2000).coordinate,
+                                             daysSinceJ2000: now.daysSinceJ2000,
+                                             latitude: plan.site.latitude, longitude: plan.site.longitude)
+        let sun = Sun.altitude(daysSinceJ2000: now.daysSinceJ2000,
+                               latitude: plan.site.latitude, longitude: plan.site.longitude)
+        return sidePanel("Right now") {
+            if let weather {
+                conditionLine("Temperature", Format.temperature(celsius: weather.temperatureCelsius, imperial: imperial)
+                              + " · dew point " + Format.temperature(celsius: weather.dewPointCelsius, imperial: imperial),
+                              warn: weather.dewPointSpread < 2)
+                conditionLine("Humidity", "\(Int(weather.relativeHumidity.rounded()))%",
+                              warn: weather.relativeHumidity > 90)
+                conditionLine("Wind", windText(weather, imperial: imperial),
+                              warn: weather.windGustsKilometersPerHour > 30)
+                conditionLine("Cloud", cloudText(weather),
+                              warn: weather.effectiveCloudCover > state.preferences.maximumCloudCover)
+                if weather.precipitationProbability >= 20 {
+                    conditionLine("Rain chance", "\(Int(weather.precipitationProbability.rounded()))%", warn: true)
+                }
+            } else if !plan.hasWeather {
                 Text("No forecast for this night.")
                     .foregroundStyle(Self.muted)
+            }
+            conditionLine("Sky", skyText(sunAltitude: sun), warn: false)
+            conditionLine("Moon", moon.altitude > 0
+                          ? "\(plan.moon.illuminationPercent)% lit · \(Format.degrees(moon.altitude)) up in the \(moon.compassPoint)"
+                          : "\(plan.moon.illuminationPercent)% lit · below the horizon",
+                          warn: false)
+            if let dew, dew.level >= .high {
+                conditionLine("Dew", "\(dew.level.name) from \(Format.time(dew.peakStart, in: plan.timeZone)) — heater recommended",
+                              warn: true)
+            }
+            if let dawn = plan.astronomicalDawn, now < dawn {
+                conditionLine("Dark until", "\(Format.time(dawn, in: plan.timeZone)) · \(Format.duration(minutes: dawn.timeIntervalSince(now) / 60)) left",
+                              warn: false)
+            }
+        }
+        .font(.scaled(.callout, scale: uiTextScale))
+    }
+
+    private func windText(_ weather: HourlyWeather, imperial: Bool) -> String {
+        var text = Format.wind(kilometersPerHour: weather.windSpeedKilometersPerHour, imperial: imperial)
+        if let direction = weather.windDirectionDegrees {
+            text = "\(HorizontalCoordinate(altitude: 0, azimuth: direction).compassPoint) " + text
+        }
+        return text + " · gusts " + Format.wind(kilometersPerHour: weather.windGustsKilometersPerHour, imperial: imperial)
+    }
+
+    private func cloudText(_ weather: HourlyWeather) -> String {
+        "\(Int(weather.effectiveCloudCover.rounded()))% · low \(Int(weather.cloudCoverLow))%, mid \(Int(weather.cloudCoverMid))%, high \(Int(weather.cloudCoverHigh))%"
+    }
+
+    private func skyText(sunAltitude: Double) -> String {
+        switch sunAltitude {
+        case ..<(-18): return "Astronomical dark"
+        case ..<(-12): return "Nautical twilight"
+        case ..<(-6): return "Civil twilight"
+        case ..<0: return "Twilight"
+        default: return "Daylight"
+        }
+    }
+
+    /// What's worth knowing about the target on now, or next.
+    private func about(_ clock: SessionClock) -> some View {
+        let block = clock.current ?? clock.next
+        let designation = block.flatMap { b in plan.targets.first { $0.id == b.targetID }?.target.designation } ?? block?.targetID
+        var facts = designation.map { CuratedFacts.facts(for: $0) } ?? []
+        if facts.isEmpty, let designation, let fact = TargetFactCatalog.fact(for: designation) {
+            facts = [fact]
+        }
+        return sidePanel(block.map { "About \($0.targetName)" } ?? "About") {
+            if facts.isEmpty {
+                Text("Nothing more on record for this one.")
+                    .foregroundStyle(Self.muted)
             } else {
-                if let cloudNow {
-                    conditionLine("Cloud now", "\(cloudNow)%", warn: Double(cloudNow) > state.preferences.maximumCloudCover)
+                ForEach(facts, id: \.self) { fact in
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•").foregroundStyle(Self.accent)
+                        Text(fact).fixedSize(horizontal: false, vertical: true)
+                    }
                 }
-                if let dew {
-                    conditionLine("Dew", dew.level >= .high
-                                  ? "\(dew.level.name) from \(Format.time(dew.peakStart, in: plan.timeZone)) — heater recommended"
-                                  : dew.level.name,
-                                  warn: dew.level >= .high)
-                }
-                conditionLine("Gusts", Format.wind(kilometersPerHour: plan.maximumGust,
-                                                  imperial: state.preferences.usesImperialUnits),
-                              warn: plan.maximumGust > 30)
             }
         }
         .font(.scaled(.callout, scale: uiTextScale))
@@ -246,7 +316,7 @@ struct SessionModeView: View {
         }
     }
 
-    private func upNext(_ clock: SessionClock) -> some View {
+    private func upNext(_ clock: SessionClock, now: Date) -> some View {
         // When the main panel is already showing the next block, list what
         // comes after it.
         let list = clock.phase == .running ? clock.upcoming : Array(clock.upcoming.dropFirst())
@@ -269,20 +339,27 @@ struct SessionModeView: View {
                     }
                 }
             }
+            tonightSummary(now: now)
+                .padding(.top, 4)
         }
         .font(.scaled(.callout, scale: uiTextScale))
     }
 
+    @ViewBuilder
     private func tonightSummary(now: Date) -> some View {
         let first = segments.first?.window.start
         let last = segments.last?.window.end
-        return sidePanel("Tonight") {
+        Divider().overlay(Self.border)
+        VStack(alignment: .leading, spacing: 2) {
+            Text("TONIGHT")
+                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                .kerning(0.7)
+                .foregroundStyle(Self.accent)
             Text("\(segments.count) block\(segments.count == 1 ? "" : "s")\(first.flatMap { f in last.map { " · \(Format.time(f, in: plan.timeZone))–\(Format.time($0, in: plan.timeZone))" } } ?? "")")
             if let last, now < last {
                 Text("\(Format.duration(minutes: last.timeIntervalSince(max(now, first ?? now)) / 60)) of imaging left")
                     .foregroundStyle(Self.muted)
             }
         }
-        .font(.scaled(.callout, scale: uiTextScale))
     }
 }

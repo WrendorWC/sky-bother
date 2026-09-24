@@ -75,6 +75,7 @@ struct MetNorwayClient {
                         let fogAreaFraction: Double?
                         let windSpeed: Double?
                         let windSpeedOfGust: Double?
+                        let windFromDirection: Double?
 
                         enum CodingKeys: String, CodingKey {
                             case airTemperature = "air_temperature"
@@ -87,6 +88,7 @@ struct MetNorwayClient {
                             case fogAreaFraction = "fog_area_fraction"
                             case windSpeed = "wind_speed"
                             case windSpeedOfGust = "wind_speed_of_gust"
+                            case windFromDirection = "wind_from_direction"
                         }
                     }
                     let details: Details
@@ -153,7 +155,8 @@ struct MetNorwayClient {
                     windGustsKilometersPerHour: gustKmh,
                     // No visibility figure is published; fog fraction stands in.
                     visibilityMeters: clamp(20000 * (1 - fog / 100), 1000, 20000),
-                    precipitationProbability: precipitationProbability))
+                    precipitationProbability: precipitationProbability,
+                    windDirectionDegrees: details.windFromDirection))
             }
 
             return WeatherForecast(hours: hours.sorted { $0.date < $1.date },

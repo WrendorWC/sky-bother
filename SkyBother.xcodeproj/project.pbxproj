@@ -64,6 +64,7 @@
 		525A31CBF3FB33E9AEAD3CC5 /* MoonCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40ED508ABC0DA40A267BF2B5 /* MoonCard.swift */; };
 		560CA39EC4C9C7277A5FD6F2 /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FDA99227F7CBC18F634F3AD /* WeatherModels.swift */; };
 		58873061F3C8F87E2DE745C5 /* OpenMeteoClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0676B078C685FB1C8DCA19EB /* OpenMeteoClient.swift */; };
+		5A613E4BB19E4599C3C72F27 /* CuratedFacts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C659F64C48216AFB1032D273 /* CuratedFacts.swift */; };
 		5AB7588ACDD6A1FFB587B0C9 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EF533F0EAA07F58C2317C4A /* HelpView.swift */; };
 		5E7123D04489157F9BF1A90C /* SkyCoordinates.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A123B8D06CD7F1E48A51CF /* SkyCoordinates.swift */; };
 		5E85BD93C3B3AC409B52338D /* TargetFacts.json in Resources */ = {isa = PBXBuildFile; fileRef = 8F6F76D10491E125AC07D893 /* TargetFacts.json */; };
@@ -120,6 +121,7 @@
 		B444DC27F4EB9609C662B763 /* Angles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4443A05DD710F60E39F0AF3B /* Angles.swift */; };
 		B64C10EA181B808276EDB428 /* Images in Resources */ = {isa = PBXBuildFile; fileRef = B58706DA975CF9D40CE33ED0 /* Images */; };
 		B655973F7E0808D98C3CE753 /* MoonGlobe.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9ED26EE0C4965A40B990D525 /* MoonGlobe.metal */; };
+		B7440E65D65B7273BBEE123E /* CuratedFacts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C659F64C48216AFB1032D273 /* CuratedFacts.swift */; };
 		B7974615B6B0E7E32ACCCD35 /* SkyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E00C215DAED2F778E792A08 /* SkyView.swift */; };
 		B93C4FA8052E328BEEB072A0 /* SkyDome.metal in Sources */ = {isa = PBXBuildFile; fileRef = 378A0F752FD63B0C235E9A6B /* SkyDome.metal */; };
 		BB0313067263374F685CE5F1 /* SkyGlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE3702C19A7134A7E3312CE /* SkyGlow.swift */; };
@@ -248,6 +250,7 @@
 		C52C0F2598A5F7776EEE3A6E /* Moon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Moon.swift; sourceTree = "<group>"; };
 		C53869FB54C79F4BE1F6B74D /* LandCoverClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandCoverClient.swift; sourceTree = "<group>"; };
 		C5FF58CDCB84E27B67895123 /* SessionModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionModeView.swift; sourceTree = "<group>"; };
+		C659F64C48216AFB1032D273 /* CuratedFacts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuratedFacts.swift; sourceTree = "<group>"; };
 		C79FBF03E53065D44D73BD96 /* JulianDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JulianDate.swift; sourceTree = "<group>"; };
 		D5A43221B5BB9C9C070310D8 /* SkyQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyQuality.swift; sourceTree = "<group>"; };
 		DBB0607BD112BCCCEADD74AA /* TargetImageCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetImageCatalog.swift; sourceTree = "<group>"; };
@@ -358,6 +361,7 @@
 			isa = PBXGroup;
 			children = (
 				A2298B98269426A86EE03028 /* BuiltInCatalog.swift */,
+				C659F64C48216AFB1032D273 /* CuratedFacts.swift */,
 				6CE5CF299A94A6F5FA50D5E9 /* ExtendedCatalog.json */,
 				B58706DA975CF9D40CE33ED0 /* Images */,
 				A750DF9618DEE6723EF61C88 /* MoonMap.jpg */,
@@ -556,6 +560,7 @@
 				7B97B9D4B095C723A9C77CE4 /* Components.swift in Sources */,
 				CA3E88DDD147614D983171AC /* Constellation.swift in Sources */,
 				E7E81802BB4469198C880D09 /* ContentView.swift in Sources */,
+				5A613E4BB19E4599C3C72F27 /* CuratedFacts.swift in Sources */,
 				CB9E6C5F22ED9AD7DC87757A /* DarkSkyFinder.swift in Sources */,
 				19B20CF22174534852E2B1F5 /* DewRisk.swift in Sources */,
 				F8355B8854989ED06666701F /* Ephemeris.swift in Sources */,
@@ -637,6 +642,7 @@
 				052B01A944B3A6016D8B9FE7 /* Components.swift in Sources */,
 				E411FEDB0A384E05CDA99691 /* Constellation.swift in Sources */,
 				964E681B54B225B637355B79 /* ContentView.swift in Sources */,
+				B7440E65D65B7273BBEE123E /* CuratedFacts.swift in Sources */,
 				130D5D7B93D4E1D4727F01B5 /* DarkSkyFinder.swift in Sources */,
 				A7882D6487E9F9505FAEA77D /* DewRisk.swift in Sources */,
 				1BC39FC4A3C67381096D88F9 /* Ephemeris.swift in Sources */,

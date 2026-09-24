@@ -15,6 +15,9 @@ struct HourlyWeather: Codable, Hashable, Identifiable, Sendable {
     var windGustsKilometersPerHour: Double
     var visibilityMeters: Double
     var precipitationProbability: Double
+    /// Where the wind blows from, degrees clockwise from north. Optional:
+    /// forecasts cached before it was fetched have none.
+    var windDirectionDegrees: Double? = nil
 
     var id: Date { date }
 
@@ -108,6 +111,9 @@ struct WeatherForecast: Codable, Hashable, Sendable {
                              windSpeedKilometersPerHour: mix(a.windSpeedKilometersPerHour, b.windSpeedKilometersPerHour),
                              windGustsKilometersPerHour: mix(a.windGustsKilometersPerHour, b.windGustsKilometersPerHour),
                              visibilityMeters: mix(a.visibilityMeters, b.visibilityMeters),
-                             precipitationProbability: mix(a.precipitationProbability, b.precipitationProbability))
+                             precipitationProbability: mix(a.precipitationProbability, b.precipitationProbability),
+                             // The nearer hour's, not an average: averaging
+                             // 350° and 10° would give 180°.
+                             windDirectionDegrees: t < 0.5 ? a.windDirectionDegrees : b.windDirectionDegrees)
     }
 }

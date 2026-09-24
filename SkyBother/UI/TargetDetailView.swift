@@ -57,6 +57,8 @@ struct TargetDetailView: View {
             // Directly under the overview: these change what you'd do.
             if targetPlan.verdict == .marginal || targetPlan.verdict == .poor { whyNot }
             if !targetPlan.warnings.isEmpty { warnings }
+            let curated = CuratedFacts.facts(for: target.designation)
+            if !curated.isEmpty { curatedFacts(curated) }
 
             DisclosureGroup(isExpanded: $isShowingScore) {
                 scoring.padding(.top, 8)
@@ -352,6 +354,21 @@ struct TargetDetailView: View {
                 }
             }
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func curatedFacts(_ facts: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            SectionHeader("Did you know")
+            ForEach(facts, id: \.self) { fact in
+                HStack(alignment: .top, spacing: 7) {
+                    Text("•").foregroundStyle(Palette.accent)
+                    Text(fact)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .font(.scaled(.callout, scale: uiTextScale))
+            }
         }
     }
 

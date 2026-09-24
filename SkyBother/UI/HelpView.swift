@@ -82,7 +82,7 @@ enum HelpContent {
         ]),
 
         HelpTopic(title: "Session View", systemImage: "play.circle", sections: [
-            HelpSection(body: "“Session View” beside tonight’s plan on Home shows the plan for use at the telescope: what’s on now and how long is left, or what’s next and when it starts; side by side, your frame on the target and the sky dome as it is right now, with the target marked; then what comes after, and dew, cloud and wind. It follows the clock, so there’s nothing to press — your telescope’s own app runs the night. The dim red-black screen is easy on dark-adapted eyes. It’s available for tonight only.")
+            HelpSection(body: "“Session View” beside tonight’s plan on Home shows the plan for use at the telescope: what’s on now and how long is left, or what’s next and when it starts; side by side, your frame on the target and the sky dome as it is right now, with the target marked; then the weather and sky at this minute — temperature and dew point, humidity, wind and its direction, cloud by layer, the Moon and how long darkness lasts — a few facts about the target, and what comes after. It follows the clock, so there’s nothing to press — your telescope’s own app runs the night. The dim red-black screen is easy on dark-adapted eyes. It’s available for tonight only.")
         ]),
 
         HelpTopic(title: "Availability Bars", systemImage: "chart.xyaxis.line", sections: [

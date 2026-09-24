@@ -24,7 +24,8 @@ struct OpenMeteoClient {
     static let hourlyVariables = [
         "cloud_cover", "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high",
         "temperature_2m", "dew_point_2m", "relative_humidity_2m",
-        "wind_speed_10m", "wind_gusts_10m", "visibility", "precipitation_probability"
+        "wind_speed_10m", "wind_gusts_10m", "visibility", "precipitation_probability",
+        "wind_direction_10m"
     ]
 
     /// Both models in one request. `best_match` is Open-Meteo's own pick —
@@ -182,7 +183,9 @@ struct OpenMeteoClient {
                     windSpeedKilometersPerHour: value("wind_speed_10m", fallback: 5),
                     windGustsKilometersPerHour: value("wind_gusts_10m", fallback: 10),
                     visibilityMeters: value("visibility", fallback: 20000),
-                    precipitationProbability: value("precipitation_probability", fallback: 0)))
+                    precipitationProbability: value("precipitation_probability", fallback: 0),
+                    windDirectionDegrees: hourly.value("wind_direction_10m", model: "ncep_nbm_conus", at: index)
+                        ?? regular("wind_direction_10m")))
             }
 
             return WeatherForecast(hours: hours.sorted { $0.date < $1.date },

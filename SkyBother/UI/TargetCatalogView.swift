@@ -385,6 +385,19 @@ struct TargetCatalogDetail: View {
                     }
                 }
 
+                let curated = CuratedFacts.facts(for: target.designation)
+                if !curated.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(curated, id: \.self) { fact in
+                            HStack(alignment: .top, spacing: 7) {
+                                Text("•").foregroundStyle(Palette.accent)
+                                Text(fact).fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    .font(.scaled(.callout, scale: uiTextScale))
+                }
+
                 if let factInfo = TargetFactCatalog.info(for: target.designation) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(factInfo.fact)
