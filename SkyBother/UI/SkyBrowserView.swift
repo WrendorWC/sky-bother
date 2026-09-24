@@ -218,7 +218,10 @@ struct SkyBrowserView: View {
                 // landing actually invalidates the view — reading it inside
                 // the drawing closure would not, since that runs at paint
                 // time rather than when the body is evaluated.
-                if usesStarMap, let starMap = SkyView.starMap {
+                // The star map is always underneath: wide, it's the view; narrow,
+                // it fills whatever the survey hasn't arrived for yet, instead
+                // of a dark void around the first small cutout.
+                if let starMap = SkyView.starMap {
                     // Drawn live on the GPU, so a wide view pans and zooms
                     // with nothing to wait for.
                     Canvas { context, drawSize in
@@ -230,10 +233,14 @@ struct SkyBrowserView: View {
                                         .float(1 / planeScale(viewWidth: drawSize.width)),
                                         .float(centre.rightAscension),
                                         .float(centre.declination),
-                                        .float(1.3))))
+                                        // Dimmer as a stand-in under the survey,
+                                        // whose sky is much darker, so the first
+                                        // cutout doesn't sit in a bright frame.
+                                        .float(usesStarMap ? 1.3 : 0.45))))
                     }
                     .frame(width: size.width, height: size.height)
-                } else if let shown {
+                }
+                if !usesStarMap, let shown {
                     Image(nsImage: shown.image)
                         .resizable()
                         .interpolation(.high)
