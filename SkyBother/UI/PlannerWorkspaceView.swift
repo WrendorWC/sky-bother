@@ -297,7 +297,7 @@ struct PlannerWorkspaceView: View {
                     .buttonStyle(.plain)
                     .help("Remove this block (Delete)")
                     .accessibilityLabel("Remove block for \(block.targetName)")
-                    .position(x: right - size / 2 - 4, y: size / 2 + 3)
+                    .position(x: right - size / 2 - 12, y: size / 2 + 3)
                 }
             }
         }
@@ -656,10 +656,9 @@ struct PlannerWorkspaceView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
-                    .frame(width: 18 * uiTextScale, height: 18 * uiTextScale)
-                    .contentShape(Rectangle())
+                    .frame(height: 16 * uiTextScale)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.bordered)
             .foregroundStyle(.secondary)
             .opacity(planned > 0 ? 1 : 0)
             .disabled(planned == 0)

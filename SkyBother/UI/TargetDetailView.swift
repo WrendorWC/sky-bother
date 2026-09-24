@@ -280,7 +280,9 @@ struct TargetDetailView: View {
             // "Why this score" got pushed below the fold. Same geometry, just
             // less of it.
             FramingPreview(target: target, rig: state.rig)
-                .frame(height: framingHeight)
+                // Taller as the UI scale grows, so it keeps its share of a
+                // big screen.
+                .frame(height: framingHeight * max(1, uiTextScale))
                 .contentShape(Rectangle())
                 .onTapGesture { openWindow(id: "sky", value: target.designation) }
                 .help("Open this patch of sky to pan, zoom and search")
