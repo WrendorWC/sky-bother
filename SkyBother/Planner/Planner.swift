@@ -413,6 +413,9 @@ struct Planner: Sendable {
         var transitTime: Date?
         var transitAltitude = -90.0
         var minimumSeparation = 180.0
+        /// Nearest approach to the Moon while it's up and bright, in usable
+        /// time: the case worth a warning whatever the filter.
+        var closestBrightMoon = 180.0
         var maximumRotation = 0.0
         var effectiveMoonSum = 0.0
         // Time this target loses purely to something on the ground being in
@@ -481,6 +484,9 @@ struct Planner: Sendable {
             let extinction = SkyQuality.extinctionFactor(altitude: horizontal.altitude)
             extinctionSum += extinction
             minimumSeparation = min(minimumSeparation, separation)
+            if context.moonBrightness > 0.15 {
+                closestBrightMoon = min(closestBrightMoon, separation)
+            }
 
             if rig.mountType.rotatesField {
                 maximumRotation = max(maximumRotation,
@@ -525,6 +531,7 @@ struct Planner: Sendable {
         let zenithRiskWindows = makeWindows(from: zenithRiskFlags, contexts: contexts)
 
         let factors = targetFactors(usableMinutes: usableMinutes,
+                                    usesFilter: target.type.respondsToNarrowband && rig.hasNarrowbandFilter,
                                     meanDarkness: meanDarkness,
                                     meanClear: meanClear,
                                     meanExtinction: meanExtinction,
@@ -536,6 +543,7 @@ struct Planner: Sendable {
                                       fit: fit,
                                       maximumAltitude: maximumAltitude,
                                       minimumSeparation: minimumSeparation,
+                                      closestBrightMoon: closestBrightMoon,
                                       maximumRotation: maximumRotation,
                                       meanDarkness: meanDarkness,
                                       obstructedMinutes: Double(obstructedCount) * sampleStepMinutes,
@@ -587,6 +595,7 @@ struct Planner: Sendable {
     // MARK: - Scoring
 
     private func targetFactors(usableMinutes: Double,
+                               usesFilter: Bool,
                                meanDarkness: Double,
                                meanClear: Double,
                                meanExtinction: Double,
@@ -604,7 +613,9 @@ struct Planner: Sendable {
             ScoreFactor(name: "Sky darkness",
                         value: meanDarkness,
                         weight: 0.18,
-                        detail: "Twilight and moonlight, averaged over the window"),
+                        detail: usesFilter
+                            ? "Twilight and moonlight, averaged over the window, with your dual-band filter cutting moonlight"
+                            : "Twilight and moonlight, averaged over the window"),
             ScoreFactor(name: "Cloud cover",
                         value: hasWeather ? meanClear : 0.6,
                         weight: 0.18,
@@ -637,7 +648,9 @@ struct Planner: Sendable {
             ScoreFactor(name: "Detectability",
                         value: detectability,
                         weight: 0.22,
-                        detail: "Surface brightness against the sky background",
+                        detail: usesFilter
+                            ? "Surface brightness against the sky background, with your dual-band filter cutting light pollution"
+                            : "Surface brightness against the sky background",
                         floor: 0.001)
         ]
     }
@@ -673,6 +686,21 @@ struct Planner: Sendable {
             clarity = 0.6
         }
 
+        // The Moon over the same stretch as the time and the clarity. Averaged
+        // over the whole dark night it missed the common case of cloud that
+        // clears late — just as a waning Moon climbs — and a night whose only
+        // clear hours were under a high 75% Moon scored "Excellent".
+        let moonInterference: Double
+        if !inWindow.isEmpty {
+            let weights = inWindow.map { SkyQuality.twilightFactor(sunAltitude: $0.sunAltitude) }
+            let total = weights.reduce(0, +)
+            moonInterference = total > 0
+                ? clamp(zip(inWindow, weights).reduce(0.0) { $0 + $1.0.moonBrightness * $1.1 } / total, 0, 1)
+                : moon.interference
+        } else {
+            moonInterference = moon.interference
+        }
+
         var comfort = 1.0
         if hasWeather {
             let dewTerm = minimumDewSpread.isNaN ? 1 : smoothstep(0, 4, minimumDewSpread)
@@ -690,9 +718,11 @@ struct Planner: Sendable {
                         weight: 0.30,
                         detail: hasWeather ? "Cloud cover during the longest clear stretch" : "Beyond the forecast"),
             ScoreFactor(name: "Moon",
-                        value: clamp(1 - moon.interference, 0, 1),
+                        value: clamp(1 - moonInterference, 0, 1),
                         weight: 0.25,
-                        detail: "\(moon.illuminationPercent)% lit, \(moon.phaseName.lowercased())"),
+                        detail: inWindow.isEmpty
+                            ? "\(moon.illuminationPercent)% lit, \(moon.phaseName.lowercased())"
+                            : "\(moon.illuminationPercent)% lit, \(moon.phaseName.lowercased()), during the best stretch"),
             ScoreFactor(name: "Conditions",
                         value: comfort,
                         weight: 0.10,
@@ -706,6 +736,7 @@ struct Planner: Sendable {
                                 fit: RigFit,
                                 maximumAltitude: Double,
                                 minimumSeparation: Double,
+                                closestBrightMoon: Double,
                                 maximumRotation: Double,
                                 meanDarkness: Double,
                                 obstructedMinutes: Double,
@@ -749,7 +780,12 @@ struct Planner: Sendable {
                                    90 - maximumAltitude, maximumRotation))
         }
 
-        if minimumSeparation < 35 && meanDarkness < 0.75 {
+        // Shown for a bright Moon close by whatever the filter: the filter's
+        // discount used to keep the sky "dark enough" that this never
+        // appeared, even 13° from a 75% Moon.
+        if closestBrightMoon < 25 {
+            warnings.append(String(format: "Within %.0f° of a bright Moon while it's usable", closestBrightMoon))
+        } else if minimumSeparation < 35 && meanDarkness < 0.75 {
             warnings.append(String(format: "Comes within %.0f° of the moon", minimumSeparation))
         }
 

@@ -45,14 +45,26 @@ enum SkyQuality {
                                         separationFromMoon: Double,
                                         targetRespondsToNarrowband: Bool,
                                         rigHasNarrowbandFilter: Bool) -> Double {
-        // Close to the moon is much worse than the far side of the sky.
-        let separationFactor = 1 - 0.55 * clamp((separationFromMoon - 20) / 100, 0, 1)
+        // Close to the Moon is far worse than the other side of the sky, and
+        // the glow climbs steeply in the last few tens of degrees: it used to
+        // stop improving at 20° and count nothing extra nearer in, so a
+        // target 13° from a 75% Moon was judged as if it were 20° away.
+        let separationFactor: Double
+        if separationFromMoon < 30 {
+            separationFactor = 1 + 0.8 * pow((30 - max(separationFromMoon, 0)) / 30, 1.5)
+        } else {
+            separationFactor = 1 - 0.55 * clamp((separationFromMoon - 30) / 90, 0, 1)
+        }
         var effective = moonBrightness * separationFactor
 
         // A dual/tri-band filter rejects most of the scattered continuum, so an
-        // emission target under a gibbous moon is genuinely still worth shooting.
+        // emission target under a gibbous moon is genuinely still worth
+        // shooting — away from the Moon. Near it the glow is bright enough to
+        // come through the filter's bands too (a Seestar's are fairly wide),
+        // so the filter's help fades inside about 40°.
         if targetRespondsToNarrowband && rigHasNarrowbandFilter {
-            effective *= 0.4
+            let closeness = clamp((40 - separationFromMoon) / 30, 0, 1)
+            effective *= 0.4 + 0.45 * closeness
         }
         return clamp(effective, 0, 1)
     }

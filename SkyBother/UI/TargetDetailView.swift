@@ -351,6 +351,15 @@ struct TargetDetailView: View {
                 }
             }
                 .fixedSize(horizontal: false, vertical: true)
+            // Said outright, because it changes the number a lot: without the
+            // filter this target would score noticeably lower.
+            if target.type.respondsToNarrowband && state.rig.hasNarrowbandFilter {
+                Label("Scored with your dual-band (light-pollution) filter in use. It cuts moonlight and light pollution on this nebula; without it, this would score lower.",
+                      systemImage: "camera.filters")
+                    .font(.scaled(.callout, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
