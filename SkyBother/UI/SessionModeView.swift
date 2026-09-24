@@ -45,7 +45,7 @@ struct SessionModeView: View {
                     }
                     .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(20)
+                .padding(16)
                 .onAppear { follow(clock) }
                 .onChange(of: (clock.current ?? clock.next)?.targetID) { _, _ in follow(clock) }
             }
@@ -91,7 +91,7 @@ struct SessionModeView: View {
 
     @ViewBuilder
     private func mainPanel(_ clock: SessionClock, now: Date) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             switch clock.phase {
             case .running:
                 if let block = clock.current { blockDetail(block, heading: "NOW", now: now, isRunning: true) }
@@ -110,7 +110,7 @@ struct SessionModeView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .padding(20)
+        .padding(16)
         .background(Self.panel, in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Self.border))
     }
@@ -119,19 +119,29 @@ struct SessionModeView: View {
     private func blockDetail(_ block: PlanSegment, heading: String, now: Date, isRunning: Bool) -> some View {
         let targetPlan = plan.targets.first { $0.id == block.targetID }
         let times = "\(Format.time(block.window.start, in: plan.timeZone))–\(Format.time(block.window.end, in: plan.timeZone))"
-        Text(heading)
-            .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
-            .kerning(0.8)
-            .foregroundStyle(Self.accent)
-        Text(block.targetName)
-            .font(.system(size: 44 * uiTextScale, weight: .bold))
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
+        // The target and its times on one line: the pictures below are what
+        // you came for, and a stacked heading left them squashed on a laptop.
+        VStack(alignment: .leading, spacing: 2) {
+            Text(heading)
+                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                .kerning(0.8)
+                .foregroundStyle(Self.accent)
+            HStack(alignment: .firstTextBaseline, spacing: 16) {
+                Text(block.targetName)
+                    .font(.system(size: 32 * uiTextScale, weight: .bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text(isRunning
+                     ? "\(times) · \(Format.duration(minutes: max(0, block.window.end.timeIntervalSince(now)) / 60)) left"
+                     : "\(times) · \(Format.duration(minutes: block.window.durationMinutes))")
+                    .font(.scaled(.title3, scale: uiTextScale).monospacedDigit())
+                    .foregroundStyle(Self.muted)
+                    .lineLimit(1)
+                    .layoutPriority(-1)
+            }
+        }
         if isRunning {
             let elapsed = now.timeIntervalSince(block.window.start)
-            Text("\(times) · \(Format.duration(minutes: max(0, block.window.end.timeIntervalSince(now)) / 60)) left")
-                .font(.scaled(.title3, scale: uiTextScale).monospacedDigit())
-                .foregroundStyle(Self.muted)
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Self.border)
@@ -139,12 +149,8 @@ struct SessionModeView: View {
                         .frame(width: geometry.size.width * CGFloat(min(1, max(0, elapsed / max(1, block.window.duration)))))
                 }
             }
-            .frame(height: 8)
+            .frame(height: 6)
             .accessibilityHidden(true)
-        } else {
-            Text("\(times) · \(Format.duration(minutes: block.window.durationMinutes))")
-                .font(.scaled(.title3, scale: uiTextScale).monospacedDigit())
-                .foregroundStyle(Self.muted)
         }
         if let targetPlan {
             // Split: what you're capturing, and where it is right now.
