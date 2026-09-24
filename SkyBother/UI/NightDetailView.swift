@@ -562,7 +562,10 @@ struct NightDetailView: View {
                     Label(limitationLine, systemImage: "exclamationmark.circle")
                         .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        // Two lines: "waning gibbous moon" doesn't fit one
+                        // beside the buttons on a laptop.
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                         .hoverTooltip(limitationLine)
                 }
             }

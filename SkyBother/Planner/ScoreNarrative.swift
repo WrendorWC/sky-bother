@@ -55,7 +55,11 @@ func nightLimitationPhrase(for night: NightPlan) -> String? {
         return nil
     }
     switch primary.factor.name {
-    case "Moon": return night.moon.phaseName.lowercased()
+    case "Moon":
+        // "Waning gibbous" alone doesn't say it's the Moon; "Full moon"
+        // already does.
+        let phase = night.moon.phaseName.lowercased()
+        return phase.hasSuffix("moon") ? phase : phase + " moon"
     case "Sky clarity": return "cloud during the dark hours"
     case "Clear dark time": return "short dark window"
     case "Conditions": return night.hasDewRisk ? "dew risk" : "wind"
