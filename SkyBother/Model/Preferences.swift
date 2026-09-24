@@ -54,6 +54,10 @@ struct Preferences: Codable, Hashable, Sendable {
     /// hand is yours, and nothing here rearranges it.
     var planEmphasis: PlanEmphasis = .longerIntegration
 
+    /// Representative clouds on the sky dome: the forecast's amount, in
+    /// invented shapes. Off for anyone who'd rather see only what's real.
+    var showsClouds: Bool = true
+
     static let `default` = Preferences()
 }
 
@@ -133,6 +137,7 @@ extension Preferences {
         textScale = value(.textScale, fallback.textScale)
         autoFitsText = value(.autoFitsText, fallback.autoFitsText)
         planEmphasis = value(.planEmphasis, fallback.planEmphasis)
+        showsClouds = value(.showsClouds, fallback.showsClouds)
     }
 }
 

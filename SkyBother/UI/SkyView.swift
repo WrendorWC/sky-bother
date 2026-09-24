@@ -399,6 +399,17 @@ struct SkyView: View {
                 }
                 .accessibilityLabel("Camera roll, one degree steps")
             }
+
+            if plan.hasWeather {
+                HStack(spacing: 6) {
+                    Toggle("Show clouds", isOn: $state.preferences.showsClouds)
+                        .toggleStyle(.checkbox)
+                    Text("Representative: does not show exact cloud location")
+                        .foregroundStyle(.tertiary)
+                }
+                .font(.scaled(.callout, scale: uiTextScale))
+                .help("The amount of each cloud layer comes from the forecast for the time shown, drifting with its wind. The shapes are invented.")
+            }
         }
     }
 
@@ -540,7 +551,62 @@ struct SkyView: View {
             .float4(moon.altitude, moon.azimuth, Moon.illuminatedFraction(daysSinceJ2000: daysSinceJ2000), 0),
             .color(Palette.sky(sunAltitude: sun.altitude)),
             .color(Palette.sky(sunAltitude: -90)),
-            .float(1.3)))
+            .float(1.3),
+            .float4(clouds.low, clouds.mid, clouds.high, clouds.shown ? 1 : 0),
+            .float2(clouds.driftEast, clouds.driftNorth)))
+    }
+
+    /// The forecast's cloud at this moment, for the dome's representative
+    /// clouds: each layer's cover, and how far the wind has carried them
+    /// since the night began, so they drift as time moves.
+    private var clouds: (low: Float, mid: Float, high: Float, shown: Bool, driftEast: Float, driftNorth: Float) {
+        guard state.preferences.showsClouds, plan.hasWeather,
+              let weather = state.forecast.interpolated(at: scrubTime) else {
+            return (0, 0, 0, false, 0, 0)
+        }
+        let drift = cloudDrift(to: scrubTime)
+        return (Float(weather.cloudCoverLow / 100), Float(weather.cloudCoverMid / 100),
+                Float(weather.cloudCoverHigh / 100), true, Float(drift.east), Float(drift.north))
+    }
+
+    /// How far the wind has carried the clouds between the start of the night
+    /// and `time`, in km east and north, added up a few minutes at a time.
+    ///
+    /// Summed rather than "this wind times the hours so far": that swung every
+    /// cloud across the sky whenever the wind changed — at half past each
+    /// hour, where the forecast's direction flips to the next hour's.
+    private func cloudDrift(to time: Date) -> (east: Double, north: Double) {
+        let start = plan.chartWindow.start
+        let total = time.timeIntervalSince(start)
+        guard abs(total) > 1 else { return (0, 0) }
+        let steps = max(1, Int(abs(total) / 600))
+        let dt = total / Double(steps)
+        var east = 0.0, north = 0.0
+        for step in 0..<steps {
+            let wind = windVector(at: start.addingTimeInterval(dt * (Double(step) + 0.5)))
+            east += wind.east * dt / 3600
+            north += wind.north * dt / 3600
+        }
+        return (east, north)
+    }
+
+    /// The wind the clouds move with, km/h east and north, blended smoothly
+    /// between forecast hours as arrows, so it never jumps.
+    private func windVector(at time: Date) -> (east: Double, north: Double) {
+        func vector(_ hour: HourlyWeather) -> (east: Double, north: Double) {
+            // Meteorological direction is where the wind comes *from*.
+            let toward = ((hour.windDirectionDegrees ?? 270) + 180) * .pi / 180
+            return (sin(toward) * hour.windSpeedKilometersPerHour, cos(toward) * hour.windSpeedKilometersPerHour)
+        }
+        let hours = state.forecast.hours
+        guard let first = hours.first, let last = hours.last else { return (0, 0) }
+        if time <= first.date { return vector(first) }
+        if time >= last.date { return vector(last) }
+        guard let next = hours.firstIndex(where: { $0.date > time }), next > 0 else { return vector(last) }
+        let a = hours[next - 1], b = hours[next]
+        let t = time.timeIntervalSince(a.date) / max(1, b.date.timeIntervalSince(a.date))
+        let va = vector(a), vb = vector(b)
+        return (va.east + (vb.east - va.east) * t, va.north + (vb.north - va.north) * t)
     }
 
     /// The selected target's track across the whole chart window, so its
