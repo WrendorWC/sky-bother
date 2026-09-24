@@ -100,9 +100,16 @@ enum SkyQuality {
         var brightness = site.zenithSkyBrightness
         // Light pollution and airglow both pile up toward the horizon.
         brightness -= clamp(1.6 * (1 - sinDeg(max(altitude, 5))), 0, 1.6)
-        // A high full moon lifts even a dark site to roughly city-sky levels.
-        brightness -= 4.2 * clamp(effectiveMoonBrightness, 0, 1)
-        return brightness
+        // Moonlight adds to the glow already there. A high full Moon alone
+        // makes a sky of about 17.8 mag/arcsec²: four magnitudes brighter
+        // than a dark site, but less than one on top of a city sky that's
+        // already bright. It used to be taken off as a flat 4.2 whatever the
+        // sky, which put a moonlit Bortle 7 sky near 14 and made even the
+        // Orion Nebula undetectable.
+        let moon = clamp(effectiveMoonBrightness, 0, 2)
+        guard moon > 0.001 else { return brightness }
+        let moonSky = 17.8 - 2.5 * log10(moon)
+        return -2.5 * log10(pow(10, -0.4 * brightness) + pow(10, -0.4 * moonSky))
     }
 
     /// How readily this target separates from the sky background on this rig,
@@ -127,8 +134,13 @@ enum SkyQuality {
         }
 
         // Positive contrast means the target is brighter than the background it
-        // sits on, per square arcsecond.
-        let contrast = sky - target.surfaceBrightness
+        // sits on, per square arcsecond. A galaxy is judged on the central
+        // area holding half its light — about a third of its catalogued
+        // diameter, some 1.9 magnitudes brighter than the whole ellipse's
+        // average — since that's what a short stack records; averaged over
+        // the faint outer disk, M31 read as hopeless from a suburb.
+        let surface = target.type == .galaxy ? target.surfaceBrightness - 1.9 : target.surfaceBrightness
+        let contrast = sky - surface
 
         // A faster system delivers more signal per unit time on an extended
         // object; f-ratio, not aperture, is what governs that.
