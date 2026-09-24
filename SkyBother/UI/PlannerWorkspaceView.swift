@@ -209,6 +209,7 @@ struct PlannerWorkspaceView: View {
                               addNote = nil
                           })
                 .frame(height: 52 * max(1, uiTextScale * 0.9))
+                .overlay { selectedBlockRemover }
                 .focusable()
                 .focused($isTimelineFocused)
                 .onKeyPress(keys: [.leftArrow, .rightArrow, .upArrow, .downArrow, .delete, .deleteForward]) { press in
@@ -249,18 +250,8 @@ struct PlannerWorkspaceView: View {
     /// result of the last Add, or how the strip works.
     @ViewBuilder
     private var timelineStatus: some View {
-        HStack(spacing: 12) {
-            timelineMessage
-                .frame(maxWidth: .infinity, alignment: .leading)
-            if selectedBlock != nil && dragReadout == nil {
-                Button(action: removeSelectedBlock) {
-                    Label("Remove block", systemImage: "minus.circle")
-                        .font(.scaled(.callout, scale: uiTextScale))
-                }
-                .buttonStyle(.bordered)
-                .help("Take the selected block out of the plan (Delete)")
-            }
-        }
+        timelineMessage
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
@@ -283,6 +274,33 @@ struct PlannerWorkspaceView: View {
         .foregroundStyle(.secondary)
         .lineLimit(2)
         .frame(minHeight: 16 * uiTextScale, alignment: .leading)
+    }
+
+    /// A small ✕ in the top-right corner of the selected block.
+    @ViewBuilder
+    private var selectedBlockRemover: some View {
+        if let block = selectedBlock, dragReadout == nil {
+            GeometryReader { geometry in
+                let axis = TimeAxis(window: plan.chartWindow, width: geometry.size.width)
+                let right = axis.x(for: block.window.end)
+                let left = axis.x(for: block.window.start)
+                let size = 14 * uiTextScale
+                if right - left > size * 2.5 {
+                    Button(action: removeSelectedBlock) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 8 * uiTextScale, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.85))
+                            .frame(width: size, height: size)
+                            .background(Color.black.opacity(0.45), in: Circle())
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Remove this block (Delete)")
+                    .accessibilityLabel("Remove block for \(block.targetName)")
+                    .position(x: right - size / 2 - 4, y: size / 2 + 3)
+                }
+            }
+        }
     }
 
     private func blockDescription(_ segment: PlanSegment) -> String {
@@ -636,10 +654,13 @@ struct PlannerWorkspaceView: View {
             Button {
                 remove(targetPlan)
             } label: {
-                Label("Remove", systemImage: "minus")
-                    .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
+                Image(systemName: "xmark")
+                    .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                    .frame(width: 18 * uiTextScale, height: 18 * uiTextScale)
+                    .contentShape(Rectangle())
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
             .opacity(planned > 0 ? 1 : 0)
             .disabled(planned == 0)
             .accessibilityHidden(planned == 0)

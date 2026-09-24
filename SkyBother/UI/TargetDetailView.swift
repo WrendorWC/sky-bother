@@ -133,12 +133,11 @@ struct TargetDetailView: View {
             }
             if let onRemoveFromPlan, !plannedBlocks.isEmpty {
                 Button(action: onRemoveFromPlan) {
-                    Label("Remove from plan", systemImage: "minus.circle")
-                        .font(.scaled(.body, scale: uiTextScale))
-                        .frame(maxWidth: .infinity)
+                    Text("Remove from plan")
+                        .font(.scaled(.caption, scale: uiTextScale))
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+                .buttonStyle(.link)
+                .frame(maxWidth: .infinity)
                 .help(plannedBlocks.count == 1 ? "Take this target out of the plan"
                       : "Take all \(plannedBlocks.count) of this target's blocks out of the plan")
             }
