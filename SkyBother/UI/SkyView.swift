@@ -447,13 +447,14 @@ struct SkyView: View {
 
         context.fill(rim, with: skyShading(center: center, radius: radius))
         context.stroke(rim, with: .color(Palette.panelBorder), lineWidth: 1)
-        drawSun(context: context, center: center, radius: radius)
 
         // Everything from here down is confined to the visible dome, so a
         // path or a frame that only partially clears the blocked horizon is
         // honestly truncated right at the rim instead of spilling out past a
         // boundary that's supposed to mean "can't see past here."
         context.clip(to: rim)
+
+        drawSun(context: context, center: center, radius: radius)
 
         for altitude in [30.0, 60.0] {
             let r = radius * CGFloat(clamp((90 - altitude) / 90, 0, 1))
@@ -703,10 +704,9 @@ struct SkyView: View {
 
     /// The Sun, when it's up: only ever at the dusk and dawn ends of a night,
     /// or in a daytime look at the sky, but it's what makes the dome blue.
-    /// Same size rule as the Moon, which it matches in the sky. Unlike
-    /// everything else it's drawn even behind your trees, dimmed and out in
-    /// the cut-away where they are: a high horizon can hide it all day, and
-    /// knowing where it is still orients you.
+    /// Same size rule as the Moon, which it matches in the sky. Drawn inside
+    /// the visible sky's clip like everything else, so behind your trees it
+    /// simply isn't there.
     private func drawSun(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
         let sun = sunHorizontal
         guard sun.altitude > -0.8 else { return }
@@ -714,10 +714,6 @@ struct SkyView: View {
         let diameter = moonDiameter(radius: radius)
         let disc = Path(ellipseIn: CGRect(x: screen.x - diameter / 2, y: screen.y - diameter / 2,
                                           width: diameter, height: diameter))
-        if sun.altitude < plan.site.blockedAltitude(azimuth: sun.azimuth) {
-            context.fill(disc, with: .color(Palette.sunlight.opacity(0.55)))
-            return
-        }
         let glow = diameter * 2.2
         context.fill(Path(ellipseIn: CGRect(x: screen.x - glow, y: screen.y - glow, width: glow * 2, height: glow * 2)),
                      with: .radialGradient(Gradient(colors: [Palette.sunlight.opacity(0.55), Palette.sunlight.opacity(0)]),
