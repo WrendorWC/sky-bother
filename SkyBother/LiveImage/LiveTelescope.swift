@@ -69,6 +69,8 @@ final class LiveTelescope: ObservableObject {
     @Published private(set) var status: Status = .idle
     @Published private(set) var frame: LiveFrame?
     @Published private(set) var address: String?
+    /// 0–1 while a picture is on its way, nil otherwise.
+    @Published private(set) var downloadProgress: Double?
 
     private var connection: NWConnection?
     private var reader = SeestarFrames.Reader()
@@ -225,7 +227,10 @@ final class LiveTelescope: ObservableObject {
                 guard let self, !Task.isCancelled, let connection = self.connection else { return }
                 // A request that got no image back (the scope had nothing
                 // yet) shouldn't block the next one forever.
-                if self.awaitingFrame, Date().timeIntervalSince(self.lastRequest) > 45 {
+                // Only once nothing has arrived for a while: a raw stack can
+                // take minutes, and asking again mid-transfer queues another.
+                if self.awaitingFrame, Date().timeIntervalSince(self.lastRequest) > 45,
+                   Date().timeIntervalSince(self.lastHeard) > 45 {
                     self.awaitingFrame = false
                 }
                 if Date().timeIntervalSince(self.lastRequest) >= Self.requestInterval {
@@ -247,6 +252,9 @@ final class LiveTelescope: ObservableObject {
                     if self.status == .busy { self.status = self.frame == nil ? .waitingForStack : .live }
                     self.reader.append(data)
                     while let frame = self.reader.nextFrame() { self.handle(frame) }
+                    let partial = self.reader.partialImage
+                    let progress = partial.map { Double($0.received) / Double(max(1, $0.total)) }
+                    if progress != self.downloadProgress { self.downloadProgress = progress }
                 }
                 if isComplete || error != nil {
                     self.dropped(because: error)

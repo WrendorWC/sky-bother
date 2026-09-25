@@ -74,6 +74,15 @@ enum SeestarFrames {
             buffer.append(data)
         }
 
+        /// How much of an image frame has arrived, while one is arriving:
+        /// a raw stack is tens of megabytes and can take minutes over Wi-Fi.
+        var partialImage: (received: Int, total: Int)? {
+            guard buffer.count >= SeestarFrames.namedHeaderSize,
+                  buffer[buffer.startIndex] == 0x03, buffer[buffer.startIndex + 1] == 0xC3,
+                  let header = Header(buffer), header.length > 64 else { return nil }
+            return (min(buffer.count - header.headerSize, header.length), header.length)
+        }
+
         /// The next complete frame, or nil until more bytes arrive.
         mutating func nextFrame() -> Frame? {
             while true {

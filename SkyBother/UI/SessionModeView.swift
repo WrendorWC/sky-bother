@@ -354,6 +354,10 @@ struct SessionModeView: View {
             return statusChip("Connection lost, reconnecting · picture \(age) old",
                               systemImage: "wifi.exclamationmark", color: Self.warning)
         default:
+            if let progress = telescope.downloadProgress {
+                return statusChip("\(frame.kind.rawValue) · updated \(age) ago · next one \(Int(progress * 100))% here",
+                                  systemImage: "arrow.down.circle", color: Self.text)
+            }
             return statusChip("\(frame.kind.rawValue) · updated \(age) ago",
                               systemImage: "dot.radiowaves.left.and.right", color: Self.text)
         }
@@ -379,6 +383,9 @@ struct SessionModeView: View {
         case .connecting:
             return ("Connecting…", "antenna.radiowaves.left.and.right", false)
         case .waitingForStack:
+            if let progress = telescope.downloadProgress {
+                return ("Receiving the stack from your telescope · \(Int(progress * 100))%", "arrow.down.circle", false)
+            }
             return ("Waiting for live stack — start stacking in the Seestar app", "hourglass", false)
         case .paused:
             return ("Connection lost — trying again", "wifi.exclamationmark", true)
