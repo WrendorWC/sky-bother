@@ -13,7 +13,9 @@ struct SessionModeView: View {
     @EnvironmentObject private var state: AppState
     var plan: NightPlan
 
-    @StateObject private var telescope = LiveTelescope()
+    @Environment(\.openWindow) private var openWindow
+    /// The app's live-stack connection, shared with the Live Stack window.
+    @ObservedObject var telescope: LiveTelescope
     /// Which picture the frame box shows once the scope has sent one.
     @State private var showsTelescope = true
     @State private var isExplainingUnavailable = false
@@ -332,6 +334,9 @@ struct SessionModeView: View {
                     .interpolation(.high)
                     .scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .onTapGesture { AppWindow.bringForward(id: "live", using: openWindow) }
+                    .help("Open in a window to zoom in")
                 liveBadge(frame, now: now)
             }
         } else {

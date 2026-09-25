@@ -829,6 +829,10 @@ final class AppState: ObservableObject {
 
     @Published var skyBrowserRequest: SkyBrowserRequest?
 
+    /// The telescope's live-stack connection: opened from Session View, and
+    /// also watched by the Live Stack viewer window.
+    let liveTelescope = LiveTelescope()
+
     /// What a sky dome points out, best first: the plan's targets, then the
     /// named showpieces, then the rest of the Messier list, each by
     /// brightness. Not just the night's usable targets — a showpiece that's

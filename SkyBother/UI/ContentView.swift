@@ -42,7 +42,7 @@ struct ContentView: View {
                 // well, or relaunching into setup never gets a first plan.
                 .task { if state.settings.hasSetLocation { await state.refresh() } }
         } else if state.mainView == .session, let plan = sessionNight {
-            SessionModeView(plan: plan)
+            SessionModeView(plan: plan, telescope: state.liveTelescope)
                 .toolbarTitleDisplayMode(.inline)
                 .forcedToolbarBackground(Palette.spaceTop)
                 .toolbar { windowToolbar }

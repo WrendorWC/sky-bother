@@ -127,6 +127,16 @@ struct SkyBotherApp: App {
         .defaultSize(width: 1000, height: 780)
         .associatedWindow()
 
+        // The live stack, full size, to zoom into.
+        Window("Live Stack", id: "live") {
+            LiveImageViewer(telescope: state.liveTelescope)
+                .environmentObject(state)
+                .tint(Palette.accent)
+                .appTextScale(state.effectiveTextScale)
+        }
+        .defaultSize(width: 900, height: 1100)
+        .associatedWindow()
+
         WindowGroup(id: "help") {
             HelpView()
                 .tint(Palette.accent)

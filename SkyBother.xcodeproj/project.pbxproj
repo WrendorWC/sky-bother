@@ -119,6 +119,7 @@
 		ACBF301AA8181600DC11D0E2 /* NearbyPlaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9A4F92C5B49E3B8C9AAD65 /* NearbyPlaces.swift */; };
 		B0285781A1FB67DC44DF5A73 /* AutoPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BC56301A546F2B6755990EC /* AutoPlan.swift */; };
 		B1601A579C92B32BF5D7A778 /* TargetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4496CB31E8E93CCDBAD854BA /* TargetDetailView.swift */; };
+		B3B0D8ADE0FD032EA7209EEC /* LiveImageViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58F7273ADB222F5A6CCB1583 /* LiveImageViewer.swift */; };
 		B444DC27F4EB9609C662B763 /* Angles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4443A05DD710F60E39F0AF3B /* Angles.swift */; };
 		B64C10EA181B808276EDB428 /* Images in Resources */ = {isa = PBXBuildFile; fileRef = B58706DA975CF9D40CE33ED0 /* Images */; };
 		B655973F7E0808D98C3CE753 /* MoonGlobe.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9ED26EE0C4965A40B990D525 /* MoonGlobe.metal */; };
@@ -167,6 +168,7 @@
 		EF32E0AA79351090F758F8E0 /* HorizonEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B043473DF32779CDD3B1D49 /* HorizonEditor.swift */; };
 		EF926E923D4E5B07E93E9F66 /* MoonGlobe.metal in Sources */ = {isa = PBXBuildFile; fileRef = 9ED26EE0C4965A40B990D525 /* MoonGlobe.metal */; };
 		F3E787EDB9872DD30A9FC554 /* PlannerWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A4697D00ED56792C87CDE5 /* PlannerWorkspaceView.swift */; };
+		F41D4A4AE0BF26ED56DDA3DC /* LiveImageViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58F7273ADB222F5A6CCB1583 /* LiveImageViewer.swift */; };
 		F73867C3F2B9D1E0E4862402 /* PlanDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9218A5DDDA723F9B6A81C3 /* PlanDraftTests.swift */; };
 		F8355B8854989ED06666701F /* Ephemeris.swift in Sources */ = {isa = PBXBuildFile; fileRef = A817D7755EE05DCD9EFCE167 /* Ephemeris.swift */; };
 		F9C858C81A863A7933BEB221 /* StarMap.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 60A19186776A6FB21AD71803 /* StarMap.jpg */; };
@@ -211,6 +213,7 @@
 		4F419FCEE63CD7B951505A1C /* NearbySpot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbySpot.swift; sourceTree = "<group>"; };
 		583C7973712342F3C9E7F14B /* SkyThumbnails */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SkyThumbnails; path = SkyBother/Catalog/SkyThumbnails; sourceTree = SOURCE_ROOT; };
 		58BDA77DF11F11A3366FDE78 /* NightLightsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightLightsClient.swift; sourceTree = "<group>"; };
+		58F7273ADB222F5A6CCB1583 /* LiveImageViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveImageViewer.swift; sourceTree = "<group>"; };
 		5FDA99227F7CBC18F634F3AD /* WeatherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModels.swift; sourceTree = "<group>"; };
 		60A19186776A6FB21AD71803 /* StarMap.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = StarMap.jpg; sourceTree = "<group>"; };
 		67A8276F40E115B68D146ED7 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
@@ -416,6 +419,7 @@
 		C58FD67BA34E7658431A6C19 /* LiveImage */ = {
 			isa = PBXGroup;
 			children = (
+				58F7273ADB222F5A6CCB1583 /* LiveImageViewer.swift */,
 				8839457EDDBCBF8D16383287 /* LiveTelescope.swift */,
 				EA6D28E6965C02BF8E656A61 /* SeestarFrames.swift */,
 			);
@@ -585,6 +589,7 @@
 				EF32E0AA79351090F758F8E0 /* HorizonEditor.swift in Sources */,
 				D4DC22A589460DD493C8A218 /* JulianDate.swift in Sources */,
 				07B3EC195D51800D74499AB0 /* LandCoverClient.swift in Sources */,
+				B3B0D8ADE0FD032EA7209EEC /* LiveImageViewer.swift in Sources */,
 				D562CD9774490B4ADFFF2783 /* LiveTelescope.swift in Sources */,
 				26E2B809D7E2616BC0A260BF /* MetNorwayClient.swift in Sources */,
 				4C1689A1BAFB67948A00A658 /* Moon.swift in Sources */,
@@ -669,6 +674,7 @@
 				A1191938E71CE005492EA0F3 /* HorizonEditor.swift in Sources */,
 				A672871709C93291A5E7C5C4 /* JulianDate.swift in Sources */,
 				C3A0BDE5D7C47D2BEB446146 /* LandCoverClient.swift in Sources */,
+				F41D4A4AE0BF26ED56DDA3DC /* LiveImageViewer.swift in Sources */,
 				6C6A7286BE8AAFC8F37CCFBE /* LiveTelescope.swift in Sources */,
 				6B7061EB51530B362E54034B /* MetNorwayClient.swift in Sources */,
 				C1F94130A0EA71B29EC3E18B /* Moon.swift in Sources */,
