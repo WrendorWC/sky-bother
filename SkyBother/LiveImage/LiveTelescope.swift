@@ -85,6 +85,10 @@ final class LiveTelescope: ObservableObject {
     private var isDecoding = false
     /// When the scope last sent anything at all.
     private var lastHeard = Date.distantPast
+    /// Whether this connection has had anything back. A scope serving the
+    /// Seestar app says nothing from the start; one preparing a stack goes
+    /// quiet for a while partway through, which is normal.
+    private var heardSinceConnecting = false
     /// A fingerprint of the picture on screen, to tell a new stack from a
     /// resend. The header's image id can't: it stays put as a stack grows.
     private var shownFingerprint: Int?
@@ -140,6 +144,7 @@ final class LiveTelescope: ObservableObject {
 
     private func open(_ host: String) {
         LiveLog.write("connecting to \(host):\(port)")
+        heardSinceConnecting = false
         status = frame == nil ? .connecting : .paused
         let tcp = NWProtocolTCP.Options()
         tcp.noDelay = true
@@ -253,6 +258,7 @@ final class LiveTelescope: ObservableObject {
                 guard let self, connection === self.connection else { return }
                 if let data, !data.isEmpty {
                     self.lastHeard = Date()
+                    self.heardSinceConnecting = true
                     if self.status == .busy { self.status = self.frame == nil ? .waitingForStack : .live }
                     self.reader.append(data)
                     while let frame = self.reader.nextFrame() { self.handle(frame) }
@@ -322,10 +328,24 @@ final class LiveTelescope: ObservableObject {
     /// seconds is serving its live view to the Seestar app. Say so, and
     /// reconnect every so often so the picture resumes once that app lets go.
     private func markStaleIfQuiet() {
-        guard connection != nil, Date().timeIntervalSince(lastHeard) > 20 else { return }
-        if status != .busy { LiveLog.write("telescope silent for 20s") }
+        guard connection != nil else { return }
+        let silence = Date().timeIntervalSince(lastHeard)
+        // Quiet partway through is the scope preparing the next stack; only
+        // three minutes of it means the link has gone.
+        if heardSinceConnecting {
+            if silence > 180 {
+                LiveLog.write("telescope silent for 3 minutes; reconnecting")
+                connection?.cancel(); connection = nil
+                heartbeat?.cancel(); heartbeat = nil
+                lastHeard = Date()
+                scheduleReconnect()
+            }
+            return
+        }
+        guard silence > 20 else { return }
+        if status != .busy { LiveLog.write("telescope silent since connecting: another app has the live view") }
         status = .busy
-        if Date().timeIntervalSince(lastHeard) > 35 {
+        if silence > 35 {
             connection?.cancel(); connection = nil
             heartbeat?.cancel(); heartbeat = nil
             lastHeard = Date()
