@@ -346,10 +346,17 @@ struct SessionModeView: View {
 
     private func liveBadge(_ frame: LiveFrame, now: Date) -> some View {
         let age = Self.age(from: frame.receivedAt, to: now)
-        let isPaused = telescope.status == .paused
-        return statusChip(isPaused ? "Paused · last picture \(age) old" : "\(frame.kind.rawValue) · \(age) ago",
-                          systemImage: isPaused ? "pause.circle" : "dot.radiowaves.left.and.right",
-                          color: isPaused ? Self.warning : Self.text)
+        switch telescope.status {
+        case .busy:
+            return statusChip("The Seestar app has the live view · picture \(age) old",
+                              systemImage: "iphone", color: Self.warning)
+        case .paused:
+            return statusChip("Connection lost, reconnecting · picture \(age) old",
+                              systemImage: "wifi.exclamationmark", color: Self.warning)
+        default:
+            return statusChip("\(frame.kind.rawValue) · updated \(age) ago",
+                              systemImage: "dot.radiowaves.left.and.right", color: Self.text)
+        }
     }
 
     private func statusChip(_ text: String, systemImage: String, color: Color) -> some View {
@@ -375,6 +382,9 @@ struct SessionModeView: View {
             return ("Waiting for live stack — start stacking in the Seestar app", "hourglass", false)
         case .paused:
             return ("Connection lost — trying again", "wifi.exclamationmark", true)
+        case .busy:
+            return ("The Seestar app is showing the live stack, and the scope sends it to one app at a time. Leave its live view (stacking carries on) and the picture will come through here.",
+                    "iphone", true)
         case .notFound:
             return ("Telescope not found — is it on and on the same Wi-Fi as this Mac? Trying again…",
                     "wifi.exclamationmark", true)

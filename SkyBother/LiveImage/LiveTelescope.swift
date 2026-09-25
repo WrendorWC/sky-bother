@@ -55,9 +55,13 @@ final class LiveTelescope: ObservableObject {
         /// Connected, but the scope has no stack to give yet.
         case waitingForStack
         case live
-        /// Nothing new for a while, or the connection dropped; the last
-        /// picture stays up, marked as old, while we keep trying.
+        /// The connection dropped; the last picture stays up, marked as
+        /// old, while we keep trying.
         case paused
+        /// Connected, but the scope says nothing at all, not even to the
+        /// keepalive: while the Seestar app shows the live stack, the scope
+        /// serves its pictures to that app alone.
+        case busy
         case notFound
         case failed(String)
     }
@@ -77,6 +81,11 @@ final class LiveTelescope: ObservableObject {
     private var lastRequest = Date.distantPast
     private var ticks = 0
     private var isDecoding = false
+    /// When the scope last sent anything at all.
+    private var lastHeard = Date.distantPast
+    /// A fingerprint of the picture on screen, to tell a new stack from a
+    /// resend. The header's image id can't: it stays put as a stack grows.
+    private var shownFingerprint: Int?
     private var wanted = false
 
     /// How often to ask for the stack. The scope adds a sub-frame every ten
@@ -149,6 +158,7 @@ final class LiveTelescope: ObservableObject {
         switch state {
         case .ready:
             if frame == nil { status = .waitingForStack }
+            lastHeard = Date()
             receive(on: connection)
             requestStack()
             startHeartbeat()
@@ -233,6 +243,8 @@ final class LiveTelescope: ObservableObject {
             Task { @MainActor in
                 guard let self, connection === self.connection else { return }
                 if let data, !data.isEmpty {
+                    self.lastHeard = Date()
+                    if self.status == .busy { self.status = self.frame == nil ? .waitingForStack : .live }
                     self.reader.append(data)
                     while let frame = self.reader.nextFrame() { self.handle(frame) }
                 }
@@ -255,7 +267,8 @@ final class LiveTelescope: ObservableObject {
         }
         guard header.isStack else { return }
         awaitingFrame = false
-        if let current = self.frame, current.imageID == header.imageID, header.imageID != 0 {
+        let fingerprint = Self.fingerprint(frame.payload)
+        if fingerprint == shownFingerprint {
             if status != .live { status = .live }
             return
         }
@@ -266,15 +279,36 @@ final class LiveTelescope: ObservableObject {
             isDecoding = false
             guard wanted, let image else { return }
             self.frame = LiveFrame(image: image, kind: .stack, receivedAt: Date(), imageID: header.imageID)
+            shownFingerprint = fingerprint
             status = .live
         }
     }
 
-    /// A picture older than a few requests' worth is shown as paused.
+    /// Length and a spread of bytes: enough to tell two stacks apart without
+    /// hashing fifty megabytes.
+    private static func fingerprint(_ data: Data) -> Int {
+        var hasher = Hasher()
+        hasher.combine(data.count)
+        let step = max(1, data.count / 4096)
+        var index = data.startIndex
+        while index < data.endIndex {
+            hasher.combine(data[index])
+            index += step
+        }
+        return hasher.finalize()
+    }
+
+    /// A scope that has answered nothing, not even the keepalive, for 20
+    /// seconds is serving its live view to the Seestar app. Say so, and
+    /// reconnect every so often so the picture resumes once that app lets go.
     private func markStaleIfQuiet() {
-        guard status == .live, let frame else { return }
-        if Date().timeIntervalSince(frame.receivedAt) > Self.requestInterval * 6 {
-            status = .paused
+        guard connection != nil, Date().timeIntervalSince(lastHeard) > 20 else { return }
+        status = .busy
+        if Date().timeIntervalSince(lastHeard) > 35 {
+            connection?.cancel(); connection = nil
+            heartbeat?.cancel(); heartbeat = nil
+            lastHeard = Date()
+            scheduleReconnect()
         }
     }
 }
