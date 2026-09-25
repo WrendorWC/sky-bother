@@ -62,7 +62,15 @@ func nightLimitationPhrase(for night: NightPlan) -> String? {
         // "Waning gibbous" alone doesn't say it's the Moon; "Full moon"
         // already does.
         let phase = night.moon.phaseName.lowercased()
-        return phase.hasSuffix("moon") ? phase : phase + " moon"
+        let moon = phase.hasSuffix("moon") ? phase : phase + " moon"
+        // The night's Moon penalty assumes any target, but a nebula far from
+        // it, or behind a dual-band filter, can still score well. Say so, or
+        // "Marginal night" and "Excellent target" read as a contradiction.
+        // (To be replaced by a rig-aware night score: see docs/TODO.md.)
+        if let best = night.bestTarget, best.verdict == .excellent || best.verdict == .exceptional {
+            return "\(moon), though \(best.target.displayName) still scores \(Int(best.score.rounded()))"
+        }
+        return moon
     case "Sky clarity": return "cloud during the dark hours"
     case "Clear dark time": return "short dark window"
     case "Conditions": return night.hasDewRisk ? "dew risk" : "wind"
