@@ -139,6 +139,7 @@ final class LiveTelescope: ObservableObject {
     }
 
     private func open(_ host: String) {
+        LiveLog.write("connecting to \(host):\(port)")
         status = frame == nil ? .connecting : .paused
         let tcp = NWProtocolTCP.Options()
         tcp.noDelay = true
@@ -172,6 +173,7 @@ final class LiveTelescope: ObservableObject {
     }
 
     private func dropped(because error: NWError?) {
+        LiveLog.write("connection ended: \(error.map { "\($0)" } ?? "closed by the telescope")")
         connection?.cancel(); connection = nil
         heartbeat?.cancel(); heartbeat = nil
         guard wanted else { return }
@@ -214,6 +216,7 @@ final class LiveTelescope: ObservableObject {
         guard let connection, !awaitingFrame else { return }
         awaitingFrame = true
         lastRequest = Date()
+        LiveLog.write("asked for the stack")
         send("get_stacked_img", on: connection)
     }
 
@@ -229,8 +232,9 @@ final class LiveTelescope: ObservableObject {
                 // yet) shouldn't block the next one forever.
                 // Only once nothing has arrived for a while: a raw stack can
                 // take minutes, and asking again mid-transfer queues another.
+                // A request never answered at all gives up after five minutes.
                 if self.awaitingFrame, Date().timeIntervalSince(self.lastRequest) > 45,
-                   Date().timeIntervalSince(self.lastHeard) > 45 {
+                   Date().timeIntervalSince(self.lastHeard) > 45 || Date().timeIntervalSince(self.lastRequest) > 300 {
                     self.awaitingFrame = false
                 }
                 if Date().timeIntervalSince(self.lastRequest) >= Self.requestInterval {
@@ -268,11 +272,19 @@ final class LiveTelescope: ObservableObject {
     private func handle(_ frame: SeestarFrames.Frame) {
         let header = frame.header
         guard header.type != .ack, header.length > 0 else {
-            // "Nothing to send": no stack exists yet.
-            awaitingFrame = false
-            if self.frame == nil { status = .waitingForStack }
+            // Only "there is no image now" answers a stack request. The
+            // keepalive's "server connected!" comes back the same way, and
+            // counting that as an answer re-asked every ten seconds while the
+            // scope was still preparing a stack — which it then restarted.
+            let text = String(decoding: frame.payload, as: UTF8.self)
+            LiveLog.write("reply \(text.trimmingCharacters(in: .controlCharacters))")
+            if text.localizedCaseInsensitiveContains("no image") {
+                awaitingFrame = false
+                if self.frame == nil { status = .waitingForStack }
+            }
             return
         }
+        LiveLog.write("frame type \(header.imageType) \(header.width)x\(header.height) \(header.length) bytes, \(Int(Date().timeIntervalSince(lastRequest)))s after asking")
         guard header.isStack else { return }
         awaitingFrame = false
         let fingerprint = Self.fingerprint(frame.payload)
@@ -311,6 +323,7 @@ final class LiveTelescope: ObservableObject {
     /// reconnect every so often so the picture resumes once that app lets go.
     private func markStaleIfQuiet() {
         guard connection != nil, Date().timeIntervalSince(lastHeard) > 20 else { return }
+        if status != .busy { LiveLog.write("telescope silent for 20s") }
         status = .busy
         if Date().timeIntervalSince(lastHeard) > 35 {
             connection?.cancel(); connection = nil
@@ -450,5 +463,37 @@ enum SeestarDiscovery {
             }
         }
         return result == 0
+    }
+}
+
+/// A short record of what the telescope connection did, for when the live
+/// picture misbehaves: ~/Library/Logs/SkyBother/live.log, trimmed as it grows.
+enum LiveLog {
+    private static let url: URL? = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?
+        .appendingPathComponent("Logs/SkyBother", isDirectory: true)
+    private static let queue = DispatchQueue(label: "LiveLog")
+    private static let stamp: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter
+    }()
+
+    static func write(_ message: String) {
+        let line = "\(stamp.string(from: Date()))  \(message)\n"
+        queue.async {
+            guard let directory = url else { return }
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let file = directory.appendingPathComponent("live.log")
+            if let size = (try? FileManager.default.attributesOfItem(atPath: file.path)[.size]) as? Int, size > 1_000_000 {
+                try? FileManager.default.removeItem(at: file)
+            }
+            if let handle = try? FileHandle(forWritingTo: file) {
+                handle.seekToEndOfFile()
+                handle.write(Data(line.utf8))
+                try? handle.close()
+            } else {
+                try? Data(line.utf8).write(to: file)
+            }
+        }
     }
 }
