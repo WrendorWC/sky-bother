@@ -85,7 +85,10 @@ struct SkyBotherApp: App {
                 .environmentObject(state)
                 .tint(Palette.accent)
                 .appTextScale(state.effectiveTextScale)
-                .frame(minWidth: ContentView.minWindowWidth, minHeight: 720)
+                // The wizard shrinks the window to its card; everything else
+                // needs the full layout's width.
+                .frame(minWidth: state.needsSetup ? 700 : ContentView.minWindowWidth,
+                       minHeight: state.needsSetup ? 480 : 720)
                 .background(TitleBarZoomAndDragFix())
         }
         .defaultSize(width: 1500, height: 920)

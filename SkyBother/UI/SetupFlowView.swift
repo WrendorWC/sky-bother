@@ -38,6 +38,9 @@ struct SetupFlowView: View {
         }
         .spaceBackground()
         .sheet(isPresented: $isShowingAdvanced) { advancedSheet }
+        // The wizard is one card, not a dashboard: the window shrinks to it
+        // while it runs, refits each step, and goes back to where it was.
+        .background(WizardWindowSizer(step: step))
     }
 
     /// Every detailed field, as in Settings. Changes apply straight away, so
@@ -528,5 +531,79 @@ private struct FirstPlanStep: View {
                 }
             }
         }
+    }
+}
+
+/// Shrinks the main window to the wizard's card while setup runs, centred
+/// on its screen, growing or shrinking with each step's content, and puts the
+/// window back exactly as it was when setup ends. Leaves a full-screen window
+/// alone.
+private struct WizardWindowSizer: NSViewRepresentable {
+    var step: Int
+
+    /// Card, its padding and room for the step indicator and footer.
+    private static let width: CGFloat = 900
+    private static let minHeight: CGFloat = 480
+
+    func makeNSView(context: Context) -> NSView { NSView() }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        let coordinator = context.coordinator
+        guard coordinator.lastStep != step else { return }
+        let isFirst = coordinator.lastStep == nil
+        coordinator.lastStep = step
+        for delay in isFirst ? [0.05, 0.3, 0.7, 1.2] : [0.1, 0.4, 0.8] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                guard let window = view.window, !window.styleMask.contains(.fullScreen),
+                      let screen = window.screen ?? NSScreen.main else { return }
+                if coordinator.savedFrame == nil {
+                    coordinator.savedFrame = window.frame
+                    coordinator.window = window
+                    let available = screen.visibleFrame
+                    let start = NSRect(x: available.midX - Self.width / 2, y: available.midY - 300,
+                                       width: Self.width, height: 600)
+                    window.setFrame(start, display: true)
+                }
+                fitHeight(window, screen: screen)
+            }
+        }
+    }
+
+    static func dismantleNSView(_ view: NSView, coordinator: Coordinator) {
+        guard let window = coordinator.window, let frame = coordinator.savedFrame,
+              !window.styleMask.contains(.fullScreen) else { return }
+        DispatchQueue.main.async { window.setFrame(frame, display: true) }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator {
+        var lastStep: Int?
+        var savedFrame: NSRect?
+        weak var window: NSWindow?
+    }
+
+    /// As tall as the step's content, keeping the window centred vertically
+    /// on the screen and inside it.
+    private func fitHeight(_ window: NSWindow, screen: NSScreen) {
+        guard let content = window.contentView, let scroll = Self.scrollView(in: content),
+              let document = scroll.documentView else { return }
+        let insets = scroll.contentView.contentInsets
+        let hidden = document.frame.height - (scroll.contentView.bounds.height - insets.top - insets.bottom)
+        let available = screen.visibleFrame
+        let height = min(max(window.frame.height + hidden, Self.minHeight), available.height)
+        guard abs(height - window.frame.height) > 2 else { return }
+        var frame = window.frame
+        frame.origin.y = frame.midY - height / 2
+        frame.size.height = height
+        frame.origin.y = min(max(frame.origin.y, available.minY), available.maxY - height)
+        window.setFrame(frame, display: true)
+    }
+
+    private static func scrollView(in view: NSView) -> NSScrollView? {
+        if let scroll = view as? NSScrollView, scroll.frame.width > 300 { return scroll }
+        for subview in view.subviews {
+            if let found = scrollView(in: subview) { return found }
+        }
+        return nil
     }
 }
