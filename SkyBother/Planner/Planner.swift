@@ -197,9 +197,21 @@ struct Planner: Sendable {
                          minimumTemperature: temperatures.min() ?? .nan,
                          minimumDewSpread: dewSpreads.min() ?? .nan,
                          maximumGust: gusts.max() ?? 0,
-                         score: weightedGeometricScore(factors),
+                         score: nightScore(factors: factors, targets: targets, isCloudedOut: isCloudedOut),
                          factors: factors,
                          targets: targets)
+    }
+
+    /// A night is only as good as the best thing you can shoot on it. The
+    /// night's own factors judge the sky in general; a full Moon scored the
+    /// night Good (60) while its best target, a filtered nebula, was only
+    /// Marginal (55). On a clouded-out night the targets are scored as if it
+    /// clears, so they don't cap anything.
+    private func nightScore(factors: [ScoreFactor], targets: [TargetPlan], isCloudedOut: Bool) -> Double {
+        let skyScore = weightedGeometricScore(factors)
+        guard !isCloudedOut,
+              let best = targets.filter({ $0.usableMinutes > 0 }).map(\.score).max() else { return skyScore }
+        return min(skyScore, best)
     }
 
     // MARK: - Sun events
@@ -610,9 +622,14 @@ struct Planner: Sendable {
                         value: timeValue,
                         weight: 0.26,
                         detail: "\(Int(usableMinutes)) min usable against a \(Int(goal)) min goal"),
+            // Heavy and steep, because moonlight is what decides whether a
+            // night records faint detail at all: a full Moon washes out the
+            // whole sky, filter or not, and hours of integration don't win it
+            // back. At 0.18 and linear, a full Moon cost a well-placed nebula
+            // about nine points and it still scored Excellent.
             ScoreFactor(name: "Sky darkness",
-                        value: meanDarkness,
-                        weight: 0.18,
+                        value: pow(meanDarkness, 2.5),
+                        weight: 0.5,
                         detail: usesFilter
                             ? "Twilight and moonlight, averaged over the window, with your dual-band filter cutting moonlight"
                             : "Twilight and moonlight, averaged over the window"),

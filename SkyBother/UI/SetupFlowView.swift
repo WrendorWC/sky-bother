@@ -511,7 +511,7 @@ private struct FirstPlanStep: View {
             }
             if let best = night.bestTarget {
                 VStack(alignment: .leading, spacing: 4) {
-                    SectionHeader("Top recommendation")
+                    SectionHeader(night.isCloudedOut ? "If it clears" : "Top recommendation")
                     Text("\(best.target.displayName) · \(Int(best.score.rounded()))")
                         .font(.scaled(.headline, scale: uiTextScale))
                     Text(targetVerdictSentence(best))

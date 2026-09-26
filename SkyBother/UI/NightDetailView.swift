@@ -635,7 +635,9 @@ struct NightDetailView: View {
                         state.selectedTargetID = best.id
                     } label: {
                         HStack(spacing: 6) {
-                            Text("Best target")
+                            // On a clouded-out night its score assumes the
+                            // cloud clears, so say so beside the number.
+                            Text(plan.isCloudedOut ? "If it clears" : "Best target")
                                 .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
                                 .foregroundStyle(Palette.accent)
                             Text(bestTargetLine)
@@ -649,7 +651,7 @@ struct NightDetailView: View {
                     }
                     .buttonStyle(.plain)
                     .help("Show details")
-                    .accessibilityLabel("Best target, \(bestTargetLine). Show details")
+                    .accessibilityLabel("\(plan.isCloudedOut ? "If it clears" : "Best target"), \(bestTargetLine). Show details")
                 }
                 if let limitation = nightLimitationPhrase(for: plan) {
                     let limitationLine = "Main limitation: \(limitation)"

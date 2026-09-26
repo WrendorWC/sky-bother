@@ -47,23 +47,28 @@ enum SkyQuality {
                                         rigHasNarrowbandFilter: Bool) -> Double {
         // Close to the Moon is far worse than the other side of the sky, and
         // the glow climbs steeply in the last few tens of degrees, so inside
-        // 30° the penalty grows past the Moon's own brightness.
+        // 30° the penalty grows past the Moon's own brightness. Away from it
+        // the relief is modest: scattered moonlight lights the whole sky, and
+        // the far side still keeps three quarters of it. (It used to fall to
+        // 45%, which made a bright Moon on the other side of the sky look
+        // nearly harmless; in practice the whole sky is washed out.)
         let separationFactor: Double
         if separationFromMoon < 30 {
             separationFactor = 1 + 0.8 * pow((30 - max(separationFromMoon, 0)) / 30, 1.5)
         } else {
-            separationFactor = 1 - 0.55 * clamp((separationFromMoon - 30) / 90, 0, 1)
+            separationFactor = 1 - 0.25 * clamp((separationFromMoon - 30) / 90, 0, 1)
         }
         var effective = moonBrightness * separationFactor
 
-        // A dual/tri-band filter rejects most of the scattered continuum, so an
-        // emission target under a gibbous moon is genuinely still worth
-        // shooting — away from the Moon. Near it the glow is bright enough to
-        // come through the filter's bands too (a Seestar's are fairly wide),
-        // so the filter's help fades inside about 40°.
+        // A dual/tri-band filter rejects some of the scattered continuum, so an
+        // emission target under a bright Moon loses less than a galaxy would —
+        // but only some: a Seestar's bands are fairly wide and moonlight comes
+        // through them, so even far from the Moon it keeps about two thirds.
+        // Near it the glow is bright enough that the filter's help fades
+        // inside about 40°.
         if targetRespondsToNarrowband && rigHasNarrowbandFilter {
             let closeness = clamp((40 - separationFromMoon) / 30, 0, 1)
-            effective *= 0.4 + 0.45 * closeness
+            effective *= 0.65 + 0.3 * closeness
         }
         return clamp(effective, 0, 1)
     }
@@ -151,10 +156,13 @@ enum SkyQuality {
         let integrationBonus = clamp(2.5 * log10(hours), -1.5, 2.0)
 
         // A dual-band filter raises contrast on emission targets dramatically by
-        // throwing away the sky continuum but keeping the line emission.
+        // throwing away the light-pollution continuum but keeping the line
+        // emission. Its effect on moonlight is already in the effective Moon
+        // brightness, so the bonus shrinks as moonlight takes over the sky
+        // rather than counting the filter a second time.
         var filterBonus = 0.0
         if target.type.respondsToNarrowband && rig.hasNarrowbandFilter {
-            filterBonus = 2.2
+            filterBonus = 2.2 * (1 - 0.5 * clamp(effectiveMoonBrightness, 0, 1))
         }
 
         let effective = contrast + speedBonus + integrationBonus + filterBonus

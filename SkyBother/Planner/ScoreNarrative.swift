@@ -54,7 +54,10 @@ func limitationPhrase(for factor: ScoreFactor) -> String {
 /// moon's actual phase, not a made-up description) rather than the generic
 /// phrase used for target-level factors.
 func nightLimitationPhrase(for night: NightPlan) -> String? {
-    guard let primary = primaryFactor(in: night.factors, actualScore: night.score), primary.impact > 1.5 else {
+    // Against the night's own factors, not its score, which the best target
+    // may have capped below them.
+    let skyScore = weightedGeometricScore(night.factors)
+    guard let primary = primaryFactor(in: night.factors, actualScore: skyScore), primary.impact > 1.5 else {
         return nil
     }
     switch primary.factor.name {
@@ -62,17 +65,15 @@ func nightLimitationPhrase(for night: NightPlan) -> String? {
         // "Waning gibbous" alone doesn't say it's the Moon; "Full moon"
         // already does.
         let phase = night.moon.phaseName.lowercased()
-        let moon = phase.hasSuffix("moon") ? phase : phase + " moon"
-        // The night's Moon penalty assumes any target, but a nebula far from
-        // it, or behind a dual-band filter, can still score well. Say so, or
-        // "Marginal night" and "Excellent target" read as a contradiction.
-        // (To be replaced by a rig-aware night score: see docs/TODO.md.)
-        if let best = night.bestTarget, best.verdict == .excellent || best.verdict == .exceptional {
-            return "\(moon), though \(best.target.displayName) still scores \(Int(best.score.rounded()))"
-        }
-        return moon
+        return phase.hasSuffix("moon") ? phase : phase + " moon"
     case "Sky clarity": return "cloud during the dark hours"
-    case "Clear dark time": return "short dark window"
+    case "Clear dark time":
+        // The clear stretch can be short because the night is (summer) or
+        // because cloud chops it up; only the first is a short dark window.
+        if night.isCloudedOut { return "cloud all night" }
+        let darkHours = night.darkWindows.totalMinutes / 60
+        let clearHours = night.bestImagingWindow.map { $0.duration / 3600 } ?? 0
+        return darkHours - clearHours > 1 ? "cloud breaking up the dark hours" : "short dark window"
     case "Conditions": return night.hasDewRisk ? "dew risk" : "wind"
     default: return limitationPhrase(for: primary.factor)
     }
