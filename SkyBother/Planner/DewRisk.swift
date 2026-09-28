@@ -135,3 +135,39 @@ enum DewRisk {
                           sessionStart: window.start)
     }
 }
+
+extension DewRisk.Assessment {
+    /// Rated over the plan from its first block to its last, since that is
+    /// when the scope is actually out, or astronomical darkness when there
+    /// is no plan. Home and the planner both rate it this way.
+    static func forPlan(_ segments: [PlanSegment], in night: NightPlan) -> DewRisk.Assessment? {
+        guard night.hasWeather else { return nil }
+        let ordered = segments.chronological
+        let window: TimeWindow
+        if let first = ordered.first, let last = ordered.last {
+            window = TimeWindow(start: first.window.start, end: last.window.end)
+        } else if let dusk = night.astronomicalDusk, let dawn = night.astronomicalDawn {
+            window = TimeWindow(start: dusk, end: dawn)
+        } else {
+            window = night.chartWindow
+        }
+        return DewRisk.assess(samples: night.samples, over: window)
+    }
+
+    /// "all night" only when it really is — the worst level holding for the
+    /// whole session — and otherwise when it starts, or when it eases.
+    func when(in timeZone: TimeZone) -> String {
+        if isWorstThroughout { return "all night" }
+        if peakStart <= sessionStart.addingTimeInterval(10 * 60) {
+            return "until \(Format.time(peakEnd, in: timeZone))"
+        }
+        return "after \(Format.time(peakStart, in: timeZone))"
+    }
+
+    /// Short enough for a legend row: the advice, and when it starts to
+    /// matter.
+    func adviceLine(in timeZone: TimeZone) -> String {
+        guard level > .low else { return level.advice }
+        return "\(level.advice) \(when(in: timeZone))"
+    }
+}

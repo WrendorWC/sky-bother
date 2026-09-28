@@ -759,7 +759,7 @@ struct NightDetailView: View {
                 legendItem(color: Palette.accent, label: "\(target.target.displayName)'s altitude · shaded box = its best window")
             }
             if let dew = dewAssessment {
-                Label(dewAdviceLine(dew), systemImage: dew.level >= .high ? "drop.fill" : "drop")
+                Label(dew.adviceLine(in: plan.timeZone), systemImage: dew.level >= .high ? "drop.fill" : "drop")
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(dew.level == .low ? Color.secondary : Palette.dewRisk(dew.level))
                     .lineLimit(1)
@@ -772,41 +772,11 @@ struct NightDetailView: View {
 
     // MARK: - Dew risk
 
-    /// The stretch dew risk is rated over: tonight's plan from its first
-    /// block to its last, since that is when the scope is actually out, or
-    /// astronomical darkness when there is no plan.
-    private var dewSession: TimeWindow {
-        let segments = planSegments.chronological
-        if let first = segments.first, let last = segments.last {
-            return TimeWindow(start: first.window.start, end: last.window.end)
-        }
-        if let dusk = plan.astronomicalDusk, let dawn = plan.astronomicalDawn {
-            return TimeWindow(start: dusk, end: dawn)
-        }
-        return plan.chartWindow
-    }
-
     private var dewAssessment: DewRisk.Assessment? {
-        guard plan.hasWeather else { return nil }
-        return DewRisk.assess(samples: plan.samples, over: dewSession)
+        .forPlan(planSegments, in: plan)
     }
 
-    /// Short enough for the legend row: the advice, and when it starts to
-    /// matter.
-    private func dewAdviceLine(_ dew: DewRisk.Assessment) -> String {
-        guard dew.level > .low else { return dew.level.advice }
-        return "\(dew.level.advice) \(dewWhen(dew))"
-    }
-
-    /// "all night" only when it really is — the worst level holding for the
-    /// whole session — and otherwise when it starts, or when it eases.
-    private func dewWhen(_ dew: DewRisk.Assessment) -> String {
-        if dew.isWorstThroughout { return "all night" }
-        if dew.peakStart <= dew.sessionStart.addingTimeInterval(10 * 60) {
-            return "until \(Format.time(dew.peakEnd, in: plan.timeZone))"
-        }
-        return "after \(Format.time(dew.peakStart, in: plan.timeZone))"
-    }
+    private func dewWhen(_ dew: DewRisk.Assessment) -> String { dew.when(in: plan.timeZone) }
 
     /// The full reading, for hover: what, when and what to do. How it is
     /// worked out lives in Help, not here.
@@ -829,7 +799,7 @@ struct NightDetailView: View {
         case .veryHigh:
             reading = "Temperature is expected to stay within \(spread) of the dew point \(when). Dew protection strongly recommended."
         }
-        return "\(dew.level.name) dew risk. \(reading) \(dew.level.advice)."
+        return "\(dew.level.name.prefix(1))\(dew.level.name.dropFirst().lowercased()) dew risk. \(reading) \(dew.level.advice)."
     }
 
     private func legendItem(color: Color, label: String) -> some View {
@@ -1102,7 +1072,7 @@ private struct DewRiskStrip: View {
         return VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
                 Circle().fill(Palette.dewRisk(level)).frame(width: 9, height: 9)
-                Text("\(Format.time(time, in: plan.timeZone)) · \(level.name) dew risk")
+                Text("\(Format.time(time, in: plan.timeZone)) · \(level.name.lowercased()) dew risk")
                     .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
             }
             Text(spreadNote(spread: spread, conditions: conditions, level: level))

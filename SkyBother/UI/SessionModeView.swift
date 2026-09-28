@@ -117,30 +117,91 @@ struct SessionModeView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Self.border))
     }
 
+    /// The dew heater, in a small box level with the target's name: before the risk
+    /// arrives, when to switch it on; once it's here, to keep it on and
+    /// until when. Rated over what's left of the plan, so it eases off
+    /// the screen once the risk has passed. Only at High and above, where
+    /// the advice is a heater rather than keeping an eye on the optics.
+    @ViewBuilder
+    private func dewReminder(now: Date) -> some View {
+        let ordered = segments.chronological
+        let end = ordered.last?.window.end ?? plan.chartWindow.end
+        // From the first block, like Home, or from now once it's under way.
+        let start = max(now, ordered.first?.window.start ?? now)
+        if plan.hasWeather, start < end,
+           let dew = DewRisk.assess(samples: plan.samples, over: TimeWindow(start: start, end: end)),
+           dew.level >= .high {
+            let level = dew.level.name.lowercased()
+            // An instruction and the reason, short enough for a small box.
+            let lines: (action: String, reason: String) = {
+                // A little ahead of the risk itself: optics dew over as they
+                // cool, and a heater takes a while to get ahead of that.
+                let switchOn = dew.peakStart.addingTimeInterval(-15 * 60)
+                // Risk from the first block on: have it on before you start.
+                if now < start, dew.peakStart <= start.addingTimeInterval(10 * 60) {
+                    return ("Dew heater on before \(Format.time(start, in: plan.timeZone))",
+                            "Dew risk \(level) \(dew.when(in: plan.timeZone))")
+                }
+                if now < switchOn {
+                    return ("Dew heater on by \(Format.time(switchOn, in: plan.timeZone))",
+                            "Dew risk \(level) from \(Format.time(dew.peakStart, in: plan.timeZone))")
+                }
+                let until = dew.isWorstThroughout || dew.peakEnd >= end.addingTimeInterval(-10 * 60)
+                    ? "for the rest of the session"
+                    : "until \(Format.time(dew.peakEnd, in: plan.timeZone))"
+                return ("Keep your dew heater on", "Dew risk \(level) \(until)")
+            }()
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Image(systemName: "drop.fill")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(lines.action)
+                        .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
+                    Text(lines.reason)
+                        .font(.scaled(.caption, scale: uiTextScale))
+                        .opacity(0.85)
+                }
+            }
+            .foregroundStyle(Self.warning)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .frame(width: 230 * uiTextScale, alignment: .leading)
+            .background(Self.warning.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Self.warning.opacity(0.35)))
+        }
+    }
+
     @ViewBuilder
     private func blockDetail(_ block: PlanSegment, heading: String, now: Date, isRunning: Bool) -> some View {
         let targetPlan = plan.targets.first { $0.id == block.targetID }
         let times = "\(Format.time(block.window.start, in: plan.timeZone))–\(Format.time(block.window.end, in: plan.timeZone))"
         // The target and its times on one line: the pictures below are what
         // you came for, and a stacked heading left them squashed on a laptop.
-        VStack(alignment: .leading, spacing: 2) {
-            Text(heading)
-                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
-                .kerning(0.8)
-                .foregroundStyle(Self.accent)
-            HStack(alignment: .firstTextBaseline, spacing: 16) {
-                Text(block.targetName)
-                    .font(.system(size: 32 * uiTextScale, weight: .bold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                Text(isRunning
-                     ? "\(times) · \(Format.duration(minutes: max(0, block.window.end.timeIntervalSince(now)) / 60)) left"
-                     : "\(times) · \(Format.duration(minutes: block.window.durationMinutes))")
-                    .font(.scaled(.title3, scale: uiTextScale).monospacedDigit())
-                    .foregroundStyle(Self.muted)
-                    .lineLimit(1)
-                    .layoutPriority(-1)
+        // The dew reminder sits at the far end of the same row, above the
+        // sky, so it adds no height.
+        HStack(alignment: .bottom, spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(heading)
+                    .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                    .kerning(0.8)
+                    .foregroundStyle(Self.accent)
+                HStack(alignment: .firstTextBaseline, spacing: 16) {
+                    Text(block.targetName)
+                        .font(.system(size: 32 * uiTextScale, weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text(isRunning
+                         ? "\(times) · \(Format.duration(minutes: max(0, block.window.end.timeIntervalSince(now)) / 60)) left"
+                         : "\(times) · \(Format.duration(minutes: block.window.durationMinutes))")
+                        .font(.scaled(.title3, scale: uiTextScale).monospacedDigit())
+                        .foregroundStyle(Self.muted)
+                        .lineLimit(1)
+                        .layoutPriority(-1)
+                }
             }
+            Spacer(minLength: 0)
+            dewReminder(now: now)
         }
         if isRunning {
             let elapsed = now.timeIntervalSince(block.window.start)
@@ -431,14 +492,12 @@ struct SessionModeView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Self.border))
     }
 
-    /// The sky and the weather at this minute, and the one warning worth
-    /// acting on tonight.
+    /// The sky and the weather at this minute. The dew heater has its own
+    /// reminder above the target, where it can't be missed.
     private func conditions(now: Date) -> some View {
         let imperial = state.preferences.usesImperialUnits
         let tonight = plan.chartWindow.contains(now)
         let weather = tonight ? state.forecast.interpolated(at: now) : nil
-        let session = TimeWindow(start: tonight ? now : plan.chartWindow.start, end: plan.chartWindow.end)
-        let dew = plan.hasWeather ? DewRisk.assess(samples: plan.samples, over: session) : nil
         let moon = SkyCoordinates.horizontal(Moon.position(daysSinceJ2000: now.daysSinceJ2000).coordinate,
                                              daysSinceJ2000: now.daysSinceJ2000,
                                              latitude: plan.site.latitude, longitude: plan.site.longitude)
@@ -464,10 +523,6 @@ struct SessionModeView: View {
             }
             conditionLine("Sky", skyText(sunAltitude: sun), warn: false)
             conditionLine("Moon", moonText(moon), warn: false)
-            if let dew, dew.level >= .high {
-                conditionLine("Dew", "\(dew.level.name) from \(Format.time(dew.peakStart, in: plan.timeZone)) — heater recommended",
-                              warn: true)
-            }
             if let dawn = plan.astronomicalDawn, now < dawn {
                 conditionLine("Dark until", "\(Format.time(dawn, in: plan.timeZone)) · \(Format.duration(minutes: dawn.timeIntervalSince(now) / 60)) left",
                               warn: false)

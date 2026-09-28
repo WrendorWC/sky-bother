@@ -250,6 +250,7 @@ struct PlannerWorkspaceView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
                 SectionHeader("Session timeline")
+                dewReminder
                 Spacer()
                 Text(timelineSummary)
                     .font(.scaled(.caption, scale: uiTextScale).monospacedDigit())
@@ -319,6 +320,20 @@ struct PlannerWorkspaceView: View {
             .frame(height: max(12, 13 * uiTextScale))
 
             timelineStatus
+        }
+    }
+
+    /// Whether this plan wants a dew heater, and when. Rated over the draft's
+    /// own blocks, so it follows the plan as you move them. Only once there
+    /// is something to act on: a low risk says nothing here.
+    @ViewBuilder
+    private var dewReminder: some View {
+        if let dew = DewRisk.Assessment.forPlan(segments, in: plan), dew.level > .low {
+            Label(dew.adviceLine(in: plan.timeZone), systemImage: dew.level >= .high ? "drop.fill" : "drop")
+                .font(.scaled(.caption, scale: uiTextScale).weight(.semibold))
+                .foregroundStyle(Palette.dewRisk(dew.level))
+                .lineLimit(1)
+                .help("Dew risk \(dew.level.name.lowercased()) \(dew.when(in: plan.timeZone)). See Help → Cloud, Moon & Weather.")
         }
     }
 
