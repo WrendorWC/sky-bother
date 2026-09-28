@@ -85,6 +85,7 @@ struct SkyBotherApp: App {
                 .environmentObject(state)
                 .tint(Palette.accent)
                 .appTextScale(state.effectiveTextScale)
+                .nightMode(state.preferences.nightMode)
                 // The wizard shrinks the window to its card; everything else
                 // needs the full layout's width.
                 .frame(minWidth: state.needsSetup ? 700 : ContentView.minWindowWidth,
@@ -101,6 +102,12 @@ struct SkyBotherApp: App {
             }
             CommandGroup(after: .toolbar) {
                 CatalogWindowButton()
+                Button {
+                    state.preferences.nightMode.toggle()
+                } label: {
+                    NightModeToggleLabel(isOn: state.preferences.nightMode)
+                }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
             }
             CommandGroup(replacing: .help) {
                 HelpWindowButton()
@@ -112,6 +119,7 @@ struct SkyBotherApp: App {
                 .environmentObject(state)
                 .tint(Palette.accent)
                 .appTextScale(state.effectiveTextScale)
+                .nightMode(state.preferences.nightMode)
         }
         .defaultSize(width: 980, height: 720)
         .associatedWindow()
@@ -123,6 +131,7 @@ struct SkyBotherApp: App {
                 .environmentObject(state)
                 .tint(Palette.accent)
                 .appTextScale(state.effectiveTextScale)
+                .nightMode(state.preferences.nightMode)
         }
         .defaultSize(width: 1000, height: 780)
         .associatedWindow()
@@ -133,6 +142,7 @@ struct SkyBotherApp: App {
                 .environmentObject(state)
                 .tint(Palette.accent)
                 .appTextScale(state.effectiveTextScale)
+                .nightMode(state.preferences.nightMode)
         }
         .defaultSize(width: 900, height: 1100)
         .associatedWindow()
@@ -141,6 +151,7 @@ struct SkyBotherApp: App {
             HelpView()
                 .tint(Palette.accent)
                 .appTextScale(state.effectiveTextScale)
+                .nightMode(state.preferences.nightMode)
         }
         .defaultSize(width: 900, height: 700)
         .associatedWindow()
@@ -150,6 +161,7 @@ struct SkyBotherApp: App {
                 .environmentObject(state)
                 .tint(Palette.accent)
                 .appTextScale(state.effectiveTextScale)
+                .nightMode(state.preferences.nightMode)
         }
         .windowResizability(.contentMinSize)
         .associatedWindow()
@@ -159,6 +171,7 @@ struct SkyBotherApp: App {
                 .environmentObject(state)
                 .tint(Palette.accent)
                 .appTextScale(state.effectiveTextScale)
+                .nightMode(state.preferences.nightMode)
         } label: {
             MenuBarScoreIcon()
                 .environmentObject(state)
@@ -204,15 +217,15 @@ private struct MenuBarScoreIcon: View {
 
     var body: some View {
         if let plan = state.tonight {
-            Image(nsImage: Self.badgeImage(score: plan.score))
+            Image(nsImage: Self.badgeImage(score: plan.score, night: state.preferences.nightMode))
         } else {
             Image(systemName: "moon.stars.fill")
         }
     }
 
     @MainActor
-    private static func badgeImage(score: Double) -> NSImage {
-        let renderer = ImageRenderer(content: MenuBarBadge(score: score))
+    private static func badgeImage(score: Double, night: Bool) -> NSImage {
+        let renderer = ImageRenderer(content: MenuBarBadge(score: score, night: night))
         renderer.scale = NSScreen.main?.backingScaleFactor ?? 2
         return renderer.nsImage ?? NSImage(systemSymbolName: "moon.stars.fill", accessibilityDescription: nil) ?? NSImage()
     }
@@ -220,8 +233,9 @@ private struct MenuBarScoreIcon: View {
 
 private struct MenuBarBadge: View {
     var score: Double
+    var night: Bool
     @Environment(\.uiTextScale) private var uiTextScale
-    private var color: Color { Palette.score(score) }
+    private var color: Color { night ? .red : Palette.score(score) }
     private var size: CGFloat { 18 * uiTextScale }
 
     var body: some View {

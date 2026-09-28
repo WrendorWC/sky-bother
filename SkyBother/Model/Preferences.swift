@@ -56,6 +56,10 @@ struct Preferences: Codable, Hashable, Sendable {
     /// invented shapes. Off for anyone who'd rather see only what's real.
     var showsClouds: Bool = true
 
+    /// Red-light night mode: every window drawn in red only, to keep your
+    /// dark adaptation at the scope. See `NightMode.swift`.
+    var nightMode: Bool = false
+
     static let `default` = Preferences()
 }
 
@@ -135,6 +139,7 @@ extension Preferences {
         autoFitsText = value(.autoFitsText, fallback.autoFitsText)
         planEmphasis = value(.planEmphasis, fallback.planEmphasis)
         showsClouds = value(.showsClouds, fallback.showsClouds)
+        nightMode = value(.nightMode, fallback.nightMode)
     }
 }
 

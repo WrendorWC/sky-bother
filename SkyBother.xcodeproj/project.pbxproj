@@ -117,7 +117,9 @@
 		AC2BA9B88095DC469FB62142 /* NightLightsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58BDA77DF11F11A3366FDE78 /* NightLightsClient.swift */; };
 		AC373408CF9CC11BD5FD5AC4 /* CatalogQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A4F4B498990E1BA6ACCA56D /* CatalogQuery.swift */; };
 		ACBF301AA8181600DC11D0E2 /* NearbyPlaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9A4F92C5B49E3B8C9AAD65 /* NearbyPlaces.swift */; };
+		AE10BB577200737410EDE4D5 /* NightMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3072EA20C3E53FAF8B60944F /* NightMode.swift */; };
 		B0285781A1FB67DC44DF5A73 /* AutoPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BC56301A546F2B6755990EC /* AutoPlan.swift */; };
+		B03CAFD7719BA0C9157B8025 /* NightMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3072EA20C3E53FAF8B60944F /* NightMode.swift */; };
 		B1601A579C92B32BF5D7A778 /* TargetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4496CB31E8E93CCDBAD854BA /* TargetDetailView.swift */; };
 		B3B0D8ADE0FD032EA7209EEC /* LiveImageViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58F7273ADB222F5A6CCB1583 /* LiveImageViewer.swift */; };
 		B444DC27F4EB9609C662B763 /* Angles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4443A05DD710F60E39F0AF3B /* Angles.swift */; };
@@ -196,6 +198,7 @@
 		2AB56774EDA919324B27FDD0 /* SessionClockTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionClockTests.swift; sourceTree = "<group>"; };
 		2EF533F0EAA07F58C2317C4A /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
 		2F6BCE3EDF964A070B0EBAC3 /* DewRisk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DewRisk.swift; sourceTree = "<group>"; };
+		3072EA20C3E53FAF8B60944F /* NightMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightMode.swift; sourceTree = "<group>"; };
 		31C65B07DCED75574C6A918D /* PlanStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanStripView.swift; sourceTree = "<group>"; };
 		378A0F752FD63B0C235E9A6B /* SkyDome.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SkyDome.metal; sourceTree = "<group>"; };
 		3A7F52EB44A620F8E7E1166E /* MetNorwayClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetNorwayClient.swift; sourceTree = "<group>"; };
@@ -349,6 +352,7 @@
 				0D92198AFA083369F3D169C3 /* NearbySpotPanel.swift */,
 				7C7E0701838380DC076493D8 /* NightDetailView.swift */,
 				8A1994C1A48D1B45C4E8AC68 /* NightListView.swift */,
+				3072EA20C3E53FAF8B60944F /* NightMode.swift */,
 				121F6312FBA6A6551B7E5A5C /* NightTimelineView.swift */,
 				E622F785F876A6C4DDE8CCB2 /* PlanComponents.swift */,
 				F8A4697D00ED56792C87CDE5 /* PlannerWorkspaceView.swift */,
@@ -602,6 +606,7 @@
 				3DD8A6E80AB4E729690DA1DF /* NightDetailView.swift in Sources */,
 				AC2BA9B88095DC469FB62142 /* NightLightsClient.swift in Sources */,
 				AADC18B67BCCF912DA100820 /* NightListView.swift in Sources */,
+				B03CAFD7719BA0C9157B8025 /* NightMode.swift in Sources */,
 				C221051609F08A0118E11DF4 /* NightPlan.swift in Sources */,
 				12CDB847CB679DCE28B904A7 /* NightTimelineView.swift in Sources */,
 				8459D357ADF5D2E3FC97A089 /* OpenHorizonFinder.swift in Sources */,
@@ -687,6 +692,7 @@
 				AB31C01779401A441185DCBF /* NightDetailView.swift in Sources */,
 				9063B7BAE24EB38D5F0CFECC /* NightLightsClient.swift in Sources */,
 				A123ADCEE0ED7FA16DFBC089 /* NightListView.swift in Sources */,
+				AE10BB577200737410EDE4D5 /* NightMode.swift in Sources */,
 				36AB3271D71079153445E30F /* NightPlan.swift in Sources */,
 				95AE6C0DBCC56E5FED6E7120 /* NightTimelineView.swift in Sources */,
 				3C02C63ABA6D1FB01F7F3C66 /* OpenHorizonFinder.swift in Sources */,

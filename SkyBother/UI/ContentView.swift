@@ -171,6 +171,15 @@ extension ContentView {
         }
         ToolbarItem {
             Button {
+                state.preferences.nightMode.toggle()
+            } label: {
+                NightModeToggleLabel(isOn: state.preferences.nightMode)
+                    .labelStyle(.titleAndIcon)
+            }
+            .help("Red light only, to keep your dark adaptation (⇧⌘N)")
+        }
+        ToolbarItem {
+            Button {
                 AppWindow.bringForward(id: "help", using: openWindow)
             } label: {
                 Label("Help", systemImage: "questionmark.circle")
