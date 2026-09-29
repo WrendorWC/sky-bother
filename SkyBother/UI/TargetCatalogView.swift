@@ -114,8 +114,8 @@ struct TargetCatalogView: View {
                 Menu {
                     Button("All Types") { query.types.removeAll() }
                     Divider()
-                    ForEach(TargetType.allCases) { type in
-                        Toggle(type.displayName, isOn: Binding(
+                    ForEach(TargetType.filterOrder) { type in
+                        Toggle(type.filterName, isOn: Binding(
                             get: { query.types.contains(type) },
                             set: { isOn in
                                 if isOn { query.types.insert(type) } else { query.types.remove(type) }
@@ -623,8 +623,10 @@ private struct CustomTargetEditor: View {
             Section("Identity") {
                 TextField("Designation", text: $designation)
                 TextField("Common name (optional)", text: $commonName)
+                // A custom target has a fixed position, so it can't be a
+                // comet.
                 Picker("Type", selection: $type) {
-                    ForEach(TargetType.allCases) { type in
+                    ForEach(TargetType.filterOrder.filter { $0 != .comet }) { type in
                         Text(type.displayName).tag(type)
                     }
                 }

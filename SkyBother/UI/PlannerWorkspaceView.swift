@@ -659,8 +659,8 @@ struct PlannerWorkspaceView: View {
                 Menu {
                     Button("All Types") { state.typeFilter.removeAll() }
                     Divider()
-                    ForEach(TargetType.allCases) { type in
-                        Toggle(type.displayName, isOn: Binding(
+                    ForEach(TargetType.filterOrder) { type in
+                        Toggle(type.filterName, isOn: Binding(
                             get: { state.typeFilter.contains(type) },
                             set: { isOn in
                                 if isOn { state.typeFilter.insert(type) } else { state.typeFilter.remove(type) }

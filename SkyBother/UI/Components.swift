@@ -897,23 +897,6 @@ struct SeededGenerator: RandomNumberGenerator {
     }
 }
 
-/// Draws a sparse, stable starfield into `context` — seeded from `seed` so
-/// it's the same on every redraw for a given target rather than flickering.
-/// Shared by the framing preview's background and the "no photo" placeholder,
-/// so the app has one visual language for "here's some sky" rather than two.
-func drawStarfield(context: GraphicsContext, size: CGSize, seed: String) {
-    var generator = SeededGenerator(seed: seed.hashValue)
-    let starCount = Int((size.width * size.height) / 900)
-    for _ in 0..<starCount {
-        let x = CGFloat.random(in: 0...size.width, using: &generator)
-        let y = CGFloat.random(in: 0...size.height, using: &generator)
-        let radius = CGFloat.random(in: 0.4...1.3, using: &generator)
-        let opacity = Double.random(in: 0.12...0.45, using: &generator)
-        context.fill(Path(ellipseIn: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)),
-                     with: .color(.white.opacity(opacity)))
-    }
-}
-
 /// This target's actual patch of sky, from the Digitized Sky Survey.
 ///
 /// Prefers the thumbnail built into the app, and falls back to fetching one —
@@ -987,27 +970,91 @@ struct TargetThumbnail: View {
         } else {
             GeometryReader { geometry in
                 ZStack {
-                    Palette.spaceTop
+                    LinearGradient(colors: [Palette.spaceTop, Color(red: 0.13, green: 0.08, blue: 0.24)],
+                                   startPoint: .top, endPoint: .bottom)
                     Canvas { context, size in
-                        drawStarfield(context: context, size: size, seed: designation)
+                        drawPlaceholderSky(context: context, size: size, seed: designation)
                     }
-                    VStack(spacing: 5) {
-                        Image(systemName: "sparkles")
-                            .font(.scaled(.title3, scale: uiTextScale))
-                            .foregroundStyle(.tertiary)
-                        // Only worth the label where there's room to read it —
-                        // this same view renders at everything from a 56pt row
-                        // icon up to a 300pt detail sheet.
-                        if geometry.size.height > 90 {
+                    // Only worth the label where there's room to read it —
+                    // this same view renders at everything from a 56pt row
+                    // icon up to a 300pt detail sheet.
+                    if geometry.size.height > 90 {
+                        VStack {
+                            Spacer()
                             Text("No Photo Available")
                                 .font(.scaled(.caption2, scale: uiTextScale).weight(.medium))
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(.white.opacity(0.7))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(Color.black.opacity(0.35), in: Capsule())
+                                .padding(.bottom, 10)
                         }
                     }
                 }
             }
         }
     }
+}
+
+/// A made-up but cheerful picture for a target without a photo — a bright
+/// star with diffraction spikes over a faint glow of nebula and a field of
+/// tinted stars — so a card without a photo still looks like the sky rather
+/// than a grey gap.
+private func drawPlaceholderSky(context: GraphicsContext, size: CGSize, seed: String) {
+    var generator = SeededGenerator(seed: seed.hashValue)
+    let short = min(size.width, size.height)
+    let centre = CGPoint(x: size.width / 2, y: size.height * 0.44)
+
+    // A wash of nebula off to one side.
+    let glowCentre = CGPoint(x: size.width * CGFloat.random(in: 0.25...0.75, using: &generator),
+                             y: size.height * CGFloat.random(in: 0.25...0.65, using: &generator))
+    context.fill(Path(CGRect(origin: .zero, size: size)),
+                 with: .radialGradient(Gradient(colors: [Color(red: 0.55, green: 0.30, blue: 0.85).opacity(0.35),
+                                                         Color(red: 0.20, green: 0.35, blue: 0.80).opacity(0.12),
+                                                         .clear]),
+                                       center: glowCentre, startRadius: 0, endRadius: short * 0.7))
+
+    // Background stars in the colours real ones come in.
+    let tints: [Color] = [.white,
+                          Color(red: 0.70, green: 0.82, blue: 1.00),
+                          Color(red: 1.00, green: 0.88, blue: 0.62),
+                          Color(red: 1.00, green: 0.66, blue: 0.48)]
+    let starCount = Int((size.width * size.height) / 500)
+    for _ in 0..<starCount {
+        let x = CGFloat.random(in: 0...size.width, using: &generator)
+        let y = CGFloat.random(in: 0...size.height, using: &generator)
+        let radius = CGFloat.random(in: 0.4...1.4, using: &generator)
+        let tint = tints[Int.random(in: 0..<tints.count, using: &generator)]
+        let opacity = Double.random(in: 0.35...0.9, using: &generator)
+        context.fill(Path(ellipseIn: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)),
+                     with: .color(tint.opacity(opacity)))
+    }
+
+    // The star itself: a halo, four spikes, a white core.
+    context.fill(Path(ellipseIn: CGRect(x: centre.x - short * 0.32, y: centre.y - short * 0.32,
+                                        width: short * 0.64, height: short * 0.64)),
+                 with: .radialGradient(Gradient(colors: [Color(red: 0.75, green: 0.85, blue: 1.0).opacity(0.75),
+                                                         Color(red: 0.45, green: 0.55, blue: 1.0).opacity(0.25),
+                                                         .clear]),
+                                       center: centre, startRadius: 0, endRadius: short * 0.32))
+    let spike = short * 0.34
+    let spikeWidth = max(1, short * 0.012)
+    for (dx, dy) in [(1.0, 0.0), (0.0, 1.0)] {
+        var path = Path()
+        path.move(to: CGPoint(x: centre.x - spike * dx, y: centre.y - spike * dy))
+        path.addLine(to: CGPoint(x: centre.x + spike * dx, y: centre.y + spike * dy))
+        context.stroke(path,
+                       with: .linearGradient(Gradient(stops: [.init(color: .clear, location: 0),
+                                                              .init(color: .white.opacity(0.9), location: 0.5),
+                                                              .init(color: .clear, location: 1)]),
+                                             startPoint: CGPoint(x: centre.x - spike * dx, y: centre.y - spike * dy),
+                                             endPoint: CGPoint(x: centre.x + spike * dx, y: centre.y + spike * dy)),
+                       lineWidth: spikeWidth)
+    }
+    let core = max(2, short * 0.035)
+    context.fill(Path(ellipseIn: CGRect(x: centre.x - core, y: centre.y - core, width: core * 2, height: core * 2)),
+                 with: .radialGradient(Gradient(colors: [.white, Color(red: 0.85, green: 0.92, blue: 1.0).opacity(0.8)]),
+                                       center: centre, startRadius: 0, endRadius: core))
 }
 
 /// Escape as Cancel, for editors that live inside a window rather than in a

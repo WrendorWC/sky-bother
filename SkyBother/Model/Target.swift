@@ -33,6 +33,17 @@ enum TargetType: String, Codable, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// How the type reads in the filter menus. Comets say "Visible" because
+    /// only the few bright enough to image are listed, not every comet.
+    var filterName: String {
+        self == .comet ? "Visible Comets" : displayName
+    }
+
+    /// The filter menus' order: alphabetical by what they show.
+    static var filterOrder: [TargetType] {
+        allCases.sorted { $0.filterName.localizedCompare($1.filterName) == .orderedAscending }
+    }
+
     var shortName: String {
         switch self {
         case .emissionNebula: return "Emission"
