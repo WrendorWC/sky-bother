@@ -182,7 +182,7 @@ struct NightPlan: Identifiable, Hashable, Sendable {
     /// The single longest dark-and-clear-enough stretch — "best imaging window".
     var bestImagingWindow: TimeWindow? { clearDarkWindows.longest }
     /// The night's own single best target, if anything is up at all tonight.
-    var bestTarget: TargetPlan? { targets.filter { $0.usableMinutes > 0 }.max { $0.score < $1.score } }
+    var bestTarget: TargetPlan? { targets.filter { $0.usableMinutes > 0 && !$0.target.type.isStar }.max { $0.score < $1.score } }
     var clearDarkHours: Double { clearDarkWindows.totalMinutes / 60 }
     var moonlessDarkHours: Double { moonlessDarkWindows.totalMinutes / 60 }
     var hasDewRisk: Bool { hasWeather && minimumDewSpread < 2.5 }

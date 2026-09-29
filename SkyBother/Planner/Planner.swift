@@ -210,7 +210,7 @@ struct Planner: Sendable {
     private func nightScore(factors: [ScoreFactor], targets: [TargetPlan], isCloudedOut: Bool) -> Double {
         let skyScore = weightedGeometricScore(factors)
         guard !isCloudedOut,
-              let best = targets.filter({ $0.usableMinutes > 0 }).map(\.score).max() else { return skyScore }
+              let best = targets.filter({ $0.usableMinutes > 0 && !$0.target.type.isStar }).map(\.score).max() else { return skyScore }
         return min(skyScore, best)
     }
 
@@ -367,6 +367,7 @@ struct Planner: Sendable {
 
         for target in catalog {
             if target.type.isStarField && !preferences.includeStarClusters { continue }
+            if target.type.isStar && !preferences.includeStars { continue }
             // Cheap rejection before doing any per-sample work.
             guard target.isEverVisible(latitude: site.latitude, aboveAltitude: bestCaseFloor) else { continue }
 
@@ -542,7 +543,8 @@ struct Planner: Sendable {
         let targetWindows = makeWindows(from: usableFlags, contexts: contexts)
         let zenithRiskWindows = makeWindows(from: zenithRiskFlags, contexts: contexts)
 
-        let factors = targetFactors(usableMinutes: usableMinutes,
+        var factors = targetFactors(isStar: target.type.isStar,
+                                    usableMinutes: usableMinutes,
                                     usesFilter: target.type.respondsToNarrowband && rig.hasNarrowbandFilter,
                                     meanDarkness: meanDarkness,
                                     meanClear: meanClear,
@@ -550,6 +552,23 @@ struct Planner: Sendable {
                                     framing: fit.framingScore,
                                     detectability: detectability,
                                     hasWeather: hasWeather)
+
+        // What a star can offer, set against deep sky. Everything else about
+        // a bright star scores near perfect — it cuts through moonlight, a
+        // few minutes record it, and it's never faint — so without this a
+        // plain single star topped the list on an excellent dark night, above
+        // the galaxies the night was good for. With it a single star lands in
+        // the fifties and a double in the seventies, and they lead only when
+        // the Moon has washed deep sky out.
+        if target.type.isStar {
+            let showpiece = target.isShowpieceStar
+            factors.append(ScoreFactor(name: "Subject",
+                                       value: showpiece ? 0.34 : 0.14,
+                                       weight: 0.5,
+                                       detail: showpiece
+                                           ? "A double or coloured star: a fine sight, but slight beside deep sky"
+                                           : "A single star: little to record beyond a point of light"))
+        }
 
         let warnings = targetWarnings(target: target,
                                       fit: fit,
@@ -606,7 +625,8 @@ struct Planner: Sendable {
 
     // MARK: - Scoring
 
-    private func targetFactors(usableMinutes: Double,
+    private func targetFactors(isStar: Bool,
+                               usableMinutes: Double,
                                usesFilter: Bool,
                                meanDarkness: Double,
                                meanClear: Double,
@@ -614,7 +634,9 @@ struct Planner: Sendable {
                                framing: Double,
                                detectability: Double,
                                hasWeather: Bool) -> [ScoreFactor] {
-        let goal = max(15, preferences.integrationGoalMinutes)
+        // A bright star wants minutes, not hours: a short stack records all
+        // there is of it, so the goal is capped for one.
+        let goal = isStar ? min(20, max(15, preferences.integrationGoalMinutes)) : max(15, preferences.integrationGoalMinutes)
         let timeValue = clamp(usableMinutes / goal, 0, 1)
 
         return [
@@ -627,10 +649,14 @@ struct Planner: Sendable {
             // whole sky, filter or not, and hours of integration don't win it
             // back. At 0.18 and linear, a full Moon cost a well-placed nebula
             // about nine points and it still scored Excellent.
+            // Except for a star, which shines through moonlight and twilight
+            // that would bury a nebula: the sky still matters, gently.
             ScoreFactor(name: "Sky darkness",
-                        value: pow(meanDarkness, 2.5),
+                        value: isStar ? pow(meanDarkness, 0.5) : pow(meanDarkness, 2.5),
                         weight: 0.5,
-                        detail: usesFilter
+                        detail: isStar
+                            ? "Twilight and moonlight, averaged over the window — a bright star shines through most of it"
+                            : usesFilter
                             ? "Twilight and moonlight, averaged over the window, with your dual-band filter cutting moonlight"
                             : "Twilight and moonlight, averaged over the window"),
             ScoreFactor(name: "Cloud cover",

@@ -76,7 +76,7 @@ enum AutoPlanner {
                 if let allowedTargetIDs {
                     return allowedTargetIDs.contains(targetPlan.id)
                 }
-                return targetPlan.score >= minimumScore
+                return targetPlan.score >= minimumScore && !targetPlan.target.type.isStar
             }
             .filter { !$0.windows.isEmpty }
 

@@ -131,6 +131,12 @@ enum SkyQuality {
                                 altitude: altitude,
                                 effectiveMoonBrightness: effectiveMoonBrightness)
 
+        // Every star in the catalogue is bright enough to record from any
+        // sky; this only matters if a fainter one is ever added.
+        if target.type.isStar {
+            return clamp(smoothstep(9, 5, target.magnitude), 0, 1)
+        }
+
         if target.type.isStarField {
             // Clusters stay visible in far worse skies than nebulae do.
             let reach = smoothstep(12.5, 3.5, target.magnitude)

@@ -46,6 +46,7 @@ func limitationPhrase(for factor: ScoreFactor) -> String {
     case "Altitude": return "how low it stays, through thick air"
     case "Framing": return "how poorly it fits your frame"
     case "Detectability": return "how faint it is against your sky"
+    case "Subject": return "being a star rather than deep sky"
     default: return factor.name.lowercased()
     }
 }

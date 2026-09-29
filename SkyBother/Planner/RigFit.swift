@@ -25,6 +25,10 @@ struct RigFit: Hashable, Sendable {
         let minor = max(0.1, target.minorAxisArcminutes)
         let fillFraction = major / frameLong
 
+        if target.type.isStar {
+            return starFit(target: target, rig: rig, fillFraction: fillFraction)
+        }
+
         var notes: [String] = []
         var framingScore: Double
         var mosaicPanels = 1
@@ -102,5 +106,34 @@ struct RigFit: Hashable, Sendable {
                       framingNote: framingNote,
                       samplingNote: samplingNote,
                       notes: notes)
+    }
+
+    /// A single star is a point, so there's nothing to frame. A double is
+    /// judged on whether this rig splits it: how many pixels lie between
+    /// the pair, where a handful is the least that shows two stars rather
+    /// than one elongated one.
+    private static func starFit(target: Target, rig: Rig, fillFraction: Double) -> RigFit {
+        let separationArcseconds = target.majorAxisArcminutes * 60
+        guard separationArcseconds > 6 else {
+            return RigFit(framingScore: 0.7, fillFraction: fillFraction, mosaicPanels: 1,
+                          framingNote: "A point of light — framing hardly matters",
+                          samplingNote: nil, notes: [])
+        }
+        let pixels = rig.arcsecondsPerPixel > 0 ? separationArcseconds / rig.arcsecondsPerPixel : 10
+        let score: Double
+        let note: String
+        switch pixels {
+        case 8...:
+            score = 1.0
+            note = String(format: "Splits cleanly — the pair sits %.0f pixels apart", pixels)
+        case 3..<8:
+            score = 0.3 + 0.7 * smoothstep(3, 8, pixels)
+            note = String(format: "Barely split — the pair sits %.0f pixels apart", pixels)
+        default:
+            score = 0.15
+            note = String(format: "Too close to split with this rig — %.1f pixels apart", pixels)
+        }
+        return RigFit(framingScore: score, fillFraction: fillFraction, mosaicPanels: 1,
+                      framingNote: note, samplingNote: nil, notes: [])
     }
 }

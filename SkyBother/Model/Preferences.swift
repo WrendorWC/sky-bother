@@ -29,6 +29,8 @@ struct Preferences: Codable, Hashable, Sendable {
     var includeOversizedTargets: Bool = true
     /// Include star clusters, which some people don't count as targets.
     var includeStarClusters: Bool = true
+    /// Include bright stars and doubles as targets.
+    var includeStars: Bool = true
     /// Show temperatures in Fahrenheit and wind in mph.
     var usesImperialUnits: Bool = false
     /// Whether to mark zenith-risk spans (Sky View's amber path, the
@@ -133,6 +135,7 @@ extension Preferences {
         minimumUsefulAltitude = value(.minimumUsefulAltitude, fallback.minimumUsefulAltitude)
         includeOversizedTargets = value(.includeOversizedTargets, fallback.includeOversizedTargets)
         includeStarClusters = value(.includeStarClusters, fallback.includeStarClusters)
+        includeStars = value(.includeStars, fallback.includeStars)
         usesImperialUnits = value(.usesImperialUnits, fallback.usesImperialUnits)
         showsZenithRiskWarnings = value(.showsZenithRiskWarnings, fallback.showsZenithRiskWarnings)
         textScale = value(.textScale, fallback.textScale)

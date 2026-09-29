@@ -315,7 +315,7 @@ struct NightDetailView: View {
     private var otherTargets: [TargetPlan] {
         let planned = Set(planSegments.map(\.targetID))
         return plan.targets
-            .filter { $0.usableMinutes > 0 && $0.score >= state.preferences.minimumScore && !planned.contains($0.id) }
+            .filter { $0.usableMinutes > 0 && $0.score >= state.preferences.minimumScore && !planned.contains($0.id) && !$0.target.type.isStar }
             .sorted { $0.score > $1.score }
     }
 

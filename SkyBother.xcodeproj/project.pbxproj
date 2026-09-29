@@ -64,6 +64,7 @@
 		525A31CBF3FB33E9AEAD3CC5 /* MoonCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40ED508ABC0DA40A267BF2B5 /* MoonCard.swift */; };
 		560CA39EC4C9C7277A5FD6F2 /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FDA99227F7CBC18F634F3AD /* WeatherModels.swift */; };
 		58873061F3C8F87E2DE745C5 /* OpenMeteoClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0676B078C685FB1C8DCA19EB /* OpenMeteoClient.swift */; };
+		59F018FD9D12A17CCE52A944 /* BrightStars.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60C7BF11E0A59AF1F76D6EA9 /* BrightStars.swift */; };
 		5A613E4BB19E4599C3C72F27 /* CuratedFacts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C659F64C48216AFB1032D273 /* CuratedFacts.swift */; };
 		5AB7588ACDD6A1FFB587B0C9 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EF533F0EAA07F58C2317C4A /* HelpView.swift */; };
 		5E7123D04489157F9BF1A90C /* SkyCoordinates.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A123B8D06CD7F1E48A51CF /* SkyCoordinates.swift */; };
@@ -154,6 +155,7 @@
 		D600B0AE0A7DCAA8D3DB97C5 /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FDA99227F7CBC18F634F3AD /* WeatherModels.swift */; };
 		D70E975F3A6B6B4C2567F9AC /* SkyGlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE3702C19A7134A7E3312CE /* SkyGlow.swift */; };
 		D8132666B57371193585ED0C /* PlanStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C65B07DCED75574C6A918D /* PlanStripView.swift */; };
+		DACB393131734A16B96D6045 /* BrightStars.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60C7BF11E0A59AF1F76D6EA9 /* BrightStars.swift */; };
 		DB6D32CD72A3E6ACA3A1F3A5 /* SkyBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC199764A5EF9A7CBF9B78B /* SkyBrowserView.swift */; };
 		DCBE689E21BB5EBDE0B74619 /* Site.swift in Sources */ = {isa = PBXBuildFile; fileRef = 460638789B415941DD7B42EF /* Site.swift */; };
 		E09DBCB7D2FFE8D1266E6E35 /* Site.swift in Sources */ = {isa = PBXBuildFile; fileRef = 460638789B415941DD7B42EF /* Site.swift */; };
@@ -219,6 +221,7 @@
 		58F7273ADB222F5A6CCB1583 /* LiveImageViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveImageViewer.swift; sourceTree = "<group>"; };
 		5FDA99227F7CBC18F634F3AD /* WeatherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModels.swift; sourceTree = "<group>"; };
 		60A19186776A6FB21AD71803 /* StarMap.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = StarMap.jpg; sourceTree = "<group>"; };
+		60C7BF11E0A59AF1F76D6EA9 /* BrightStars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightStars.swift; sourceTree = "<group>"; };
 		67A8276F40E115B68D146ED7 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		67B068C06E3D0F513EDC1027 /* TargetCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetCatalogView.swift; sourceTree = "<group>"; };
 		6CE5CF299A94A6F5FA50D5E9 /* ExtendedCatalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ExtendedCatalog.json; sourceTree = "<group>"; };
@@ -374,6 +377,7 @@
 		9A707FC08F28F19F0F085A34 /* Catalog */ = {
 			isa = PBXGroup;
 			children = (
+				60C7BF11E0A59AF1F76D6EA9 /* BrightStars.swift */,
 				A2298B98269426A86EE03028 /* BuiltInCatalog.swift */,
 				C659F64C48216AFB1032D273 /* CuratedFacts.swift */,
 				6CE5CF299A94A6F5FA50D5E9 /* ExtendedCatalog.json */,
@@ -576,6 +580,7 @@
 				6A1EA4F100B4060BF41E916A /* Angles.swift in Sources */,
 				2B9DAB2E81A23A0F12B4ED8D /* AppState.swift in Sources */,
 				E2A39AB2CDF119FFA1D8BDD3 /* AutoPlan.swift in Sources */,
+				59F018FD9D12A17CCE52A944 /* BrightStars.swift in Sources */,
 				FDF9E66A08EB26441C0019A0 /* BuiltInCatalog.swift in Sources */,
 				FBA7E1EA6EC4AF6FC330CB4F /* CameraFrame.swift in Sources */,
 				9ACC3469D11D4B2C8EE31174 /* CatalogQuery.swift in Sources */,
@@ -660,6 +665,7 @@
 				B444DC27F4EB9609C662B763 /* Angles.swift in Sources */,
 				C9566B5AF9ABA326F608D008 /* AppState.swift in Sources */,
 				B0285781A1FB67DC44DF5A73 /* AutoPlan.swift in Sources */,
+				DACB393131734A16B96D6045 /* BrightStars.swift in Sources */,
 				395DD98FB1FE15C1639D2CBC /* BuiltInCatalog.swift in Sources */,
 				246A915AA956DB12EC741876 /* CameraFrame.swift in Sources */,
 				AC373408CF9CC11BD5FD5AC4 /* CatalogQuery.swift in Sources */,

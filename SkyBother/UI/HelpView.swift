@@ -58,7 +58,7 @@ enum HelpContent {
 
         HelpTopic(title: "Sky View", systemImage: "globe", sections: [
             HelpSection(body: "The sky as a dome: the zenith in the centre, the horizon at the rim, north at the top. Open it by clicking the small sky picture in the night’s summary on Home, “Sky View” in the planner, or “Show in Sky View” on a selected target. Back (or Esc) returns to where you came from; unsaved planner changes are kept. Sky View shows the plan but never changes it. Drag the divider to resize the side panel."),
-            HelpSection(heading: "What’s Drawn", body: "The real sky at the chosen time, with twilight and moonlight brightening it as they would outside. Only the selected target is marked.", swatches: [
+            HelpSection(heading: "What’s Drawn", body: "The real sky at the chosen time, with twilight and moonlight brightening it as they would outside. Only the selected target is marked. The brightest stars are named, faintly, to find your way around by.", swatches: [
                 HelpSwatch(color: Palette.go, label: "Selected target — green brackets around your rig’s frame, drawn to scale"),
                 HelpSwatch(color: Palette.moonlight, label: "The Moon — at its true apparent size, when above the horizon")
             ]),
@@ -141,13 +141,14 @@ enum HelpContent {
             HelpSection(body: "“Catalog” in the toolbar (⌘K). Every target is scored for one night — the one you’re planning or viewing, or another from the Night menu. Cards show the score, verdict, usable time and framing."),
             HelpSection(heading: "Sorting and Filters", body: "Sort by best on the night or longest window; filter to Good or better, Fits my frame, or a minimum usable time."),
             HelpSection(heading: "Target Page", body: "Shows how the target does on the night, then “Add to …’s Plan” (opens the planner with it added; nothing is saved until Done) and “View on …” (shows it in the main window). Pictures: your frame on the sky survey, and a photograph or a survey close-up."),
+            HelpSection(heading: "Stars", body: "The brightest named stars, plus doubles and red stars that suit a small scope, such as Albireo, Mizar and Alcor, and the Garnet Star. They’re scored on their own terms: they shine through moonlight and need only minutes, so a double can lead on a moonlit night. A double is judged on whether your rig splits it. A “Subject” factor keeps a single star in the fifties and a double around the seventies, so deep sky still leads on a dark night. Stars are never the night’s best target or part of a suggested plan; add them yourself. Turn them off in Settings → Planning → What to show."),
             HelpSection(heading: "Custom Targets", body: "“Add Custom Target” adds anything missing. Custom targets are scored like any other; click one to edit or delete it.")
         ]),
 
         HelpTopic(title: "Data Sources", systemImage: "antenna.radiowaves.left.and.right", sections: [
             HelpSection(heading: "Weather", body: "Open-Meteo, free and keyless. In the US and southern Canada the cloud totals come from NOAA’s National Blend of Models. If Open-Meteo is unreachable, MET Norway is used and the sidebar says “backup source”. Automatic refreshes happen at most hourly; Refresh (⌘R) always fetches."),
             HelpSection(heading: "Astronomy", body: "Sun, Moon and target positions and all rise, set and twilight times are computed on your Mac. The Sun is accurate to about 0.01°, the Moon to a few arcminutes."),
-            HelpSection(heading: "Catalog", body: "About 1,150 targets: the Messier catalogue, 49 other showpieces, and about 1,000 NGC/IC objects from OpenNGC (CC-BY-SA-4.0). Positions are J2000."),
+            HelpSection(heading: "Catalog", body: "About 1,150 targets: the Messier catalogue, 49 other showpieces, and about 1,000 NGC/IC objects from OpenNGC (CC-BY-SA-4.0), plus 58 bright and double stars with positions and magnitudes from SIMBAD. Positions are J2000."),
             HelpSection(heading: "Images", body: "Framing images: Digitized Sky Survey (STScI/NASA), colour by CDS. Photographs: Wikipedia, credited under each. Satellite clouds: NASA GIBS, GOES-East GeoColor (Americas only). Sky View star map: NASA Goddard SVS Deep Star Maps 2020, from Gaia DR2, Hipparcos-2 and Tycho-2. Moon: NASA SVS CGI Moon Kit, from Lunar Reconnaissance Orbiter data."),
             HelpSection(heading: "Nearby Spots", body: "Places: Apple Maps. Night lights: NASA Black Marble. Land cover: ESA WorldCover 2021 (© ESA WorldCover project / Copernicus Sentinel data, CC BY 4.0). Park hours: © OpenStreetMap contributors.")
         ])

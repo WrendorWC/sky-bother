@@ -450,7 +450,7 @@ final class AppState: ObservableObject {
                 guard let night = Planner(site: site, rig: rig, preferences: tonightOnly,
                                           catalog: catalog, forecast: forecast).plan().first
                 else { return (0, false) }
-                let count = night.targets.filter { $0.usableMinutes > 0 && $0.score >= goodScore }.count
+                let count = night.targets.filter { $0.usableMinutes > 0 && $0.score >= goodScore && !$0.target.type.isStar }.count
                 return (count, night.isCloudedOut)
             }
             let fromHere = goodTargets(from: here)

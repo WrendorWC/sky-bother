@@ -11,6 +11,7 @@ enum TargetType: String, Codable, CaseIterable, Identifiable, Sendable {
     case openCluster
     case starCloud
     case asterism
+    case star
 
     var id: String { rawValue }
 
@@ -26,6 +27,7 @@ enum TargetType: String, Codable, CaseIterable, Identifiable, Sendable {
         case .openCluster: return "Open Cluster"
         case .starCloud: return "Star Cloud"
         case .asterism: return "Asterism"
+        case .star: return "Star"
         }
     }
 
@@ -41,6 +43,7 @@ enum TargetType: String, Codable, CaseIterable, Identifiable, Sendable {
         case .openCluster: return "Open Cluster"
         case .starCloud: return "Star Cloud"
         case .asterism: return "Asterism"
+        case .star: return "Star"
         }
     }
 
@@ -53,6 +56,7 @@ enum TargetType: String, Codable, CaseIterable, Identifiable, Sendable {
         case .globularCluster: return "circle.hexagongrid.fill"
         case .openCluster, .asterism: return "sparkles"
         case .starCloud: return "sparkle"
+        case .star: return "star.fill"
         }
     }
 
@@ -64,6 +68,13 @@ enum TargetType: String, Codable, CaseIterable, Identifiable, Sendable {
         default: return false
         }
     }
+
+    /// A single bright star, or a double. Planned and scored like anything
+    /// else, but on its own terms — see `Planner.targetFactors` — and never
+    /// the night's best target or part of a suggested plan: a bright star is
+    /// there for a moonlit night or a spare half hour, not to decide whether
+    /// a night is worth going out for.
+    var isStar: Bool { self == .star }
 
     /// Star fields are collections of point sources; their catalogued magnitude
     /// is an integrated value and the surface-brightness model does not apply.

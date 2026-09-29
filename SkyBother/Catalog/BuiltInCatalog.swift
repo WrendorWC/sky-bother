@@ -502,5 +502,5 @@ enum BuiltInCatalog {
         return decoded
     }()
 
-    static let all: [Target] = messier + showpieces + extended
+    static let all: [Target] = messier + showpieces + extended + stars
 }

@@ -462,6 +462,8 @@ struct SkyView: View {
                  at: HorizontalCoordinate(altitude: poleAltitude, azimuth: poleAzimuth),
                  size: 5, color: .white.opacity(0.35))
 
+        if labelled { drawSignpostStars(context: context, center: center, radius: radius) }
+
         if moonHorizontal.altitude > 0 {
             let screen = screenPoint(for: moonHorizontal, center: center, radius: radius)
             let diameter = moonDiameter(radius: radius)
@@ -507,6 +509,22 @@ struct SkyView: View {
                 fadingOut = nil
                 isFading = false
             }
+        }
+    }
+
+    /// The brightest stars named, faintly, to find your way around by —
+    /// "that's Vega, so the Double Double is just there". The stars
+    /// themselves are already in the sky picture; this only puts names to
+    /// them, beside rather than on top so the star stays visible.
+    private func drawSignpostStars(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
+        for star in BuiltInCatalog.signpostStars {
+            let position = horizontal(of: star.coordinate)
+            guard position.altitude > plan.site.blockedAltitude(azimuth: position.azimuth) else { continue }
+            let point = screenPoint(for: position, center: center, radius: radius)
+            let name = context.resolve(Text(star.displayName)
+                .font(.scaled(.caption2, scale: uiTextScale))
+                .foregroundColor(.white.opacity(0.6)))
+            context.draw(name, at: CGPoint(x: point.x + 6, y: point.y), anchor: .leading)
         }
     }
 
