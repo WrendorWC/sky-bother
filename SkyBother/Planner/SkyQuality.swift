@@ -150,7 +150,8 @@ enum SkyQuality {
         // diameter, some 1.9 magnitudes brighter than the whole ellipse's
         // average — since that's what a short stack records; averaged over
         // the faint outer disk, M31 read as hopeless from a suburb.
-        let surface = target.type == .galaxy ? target.surfaceBrightness - 1.9 : target.surfaceBrightness
+        // A comet's light is packed toward its head in much the same way.
+        let surface = target.type == .galaxy || target.type == .comet ? target.surfaceBrightness - 1.9 : target.surfaceBrightness
         let contrast = sky - surface
 
         // A faster system delivers more signal per unit time on an extended

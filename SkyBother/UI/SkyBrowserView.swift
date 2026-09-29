@@ -424,7 +424,7 @@ struct SkyBrowserView: View {
     private var visibleTargets: [Target] {
         let halfWidth = fieldOfViewDegrees / 2
         let halfHeight = halfWidth * 0.85
-        return (BuiltInCatalog.all + state.customTargets)
+        return state.allTargets()
             .filter { target in
                 let cosDec = max(0.02, cosDeg(centre.declination))
                 var deltaRA = target.coordinate.rightAscension - centre.rightAscension
@@ -557,14 +557,14 @@ struct SkyBrowserView: View {
     private var matches: [Target] {
         let query = searchText.trimmingCharacters(in: .whitespaces).lowercased()
         guard !query.isEmpty else { return [] }
-        return (BuiltInCatalog.all + state.customTargets)
+        return state.allTargets()
             .filter { $0.searchText.contains(query) }
     }
 
     // MARK: - Navigation
 
     private func startingPoint() {
-        let catalog = BuiltInCatalog.all + state.customTargets
+        let catalog = state.allTargets()
         let wanted = designation ?? state.selectedTargetID
         if let target = catalog.first(where: { $0.designation == wanted }) ?? catalog.first {
             go(to: target)
@@ -634,7 +634,7 @@ struct SkyBrowserView: View {
     private func identifyCentre() async {
         guard isIdentifying else { centreName = nil; return }
 
-        let nearby = (BuiltInCatalog.all + state.customTargets)
+        let nearby = state.allTargets()
             .map { target -> (Target, Double) in
                 let separation = SkyCoordinates.separation(target.coordinate, centre)
                 let reach = max(target.majorAxisArcminutes / 60 / 2, 0.02)

@@ -16,6 +16,9 @@ final class AppState: ObservableObject {
     @Published var weatherErrorMessage: String?
     @Published private(set) var cloudMapImage: NSImage?
     @Published private(set) var cloudMapCapturedAt: Date?
+    /// Every comet orbit the Minor Planet Center lists; the planner works
+    /// out which are bright enough on each night.
+    @Published private(set) var comets: [CometOrbit] = []
     /// What the main window last fitted its UI scale to — see
     /// `reportOneLineFit(_:column:)`. Not saved: it's a fact about the
     /// window's current size, worked out again on every launch.
@@ -151,6 +154,7 @@ final class AppState: ObservableObject {
             forecast = cached
             lastWeatherFetchAt = cached.retrievedAt
         }
+        comets = CometClient.shared.cached()
     }
 
     // MARK: - Convenience accessors
@@ -283,6 +287,7 @@ final class AppState: ObservableObject {
         // something forced a real refresh — not what "cached, not skipped"
         // was supposed to mean for a completely separate resource.
         maybeRefreshCloudMap(force: force)
+        refreshCometsIfStale()
 
         if !force, let lastWeatherFetchAt,
            Date().timeIntervalSince(lastWeatherFetchAt) < Self.minimumAutomaticFetchInterval {
@@ -329,6 +334,29 @@ final class AppState: ObservableObject {
     /// so a second error banner alongside the weather one would be noise.
     /// Outside GOES-East's coverage, or if a network hiccup drops the one
     /// request, the panel just doesn't appear.
+    /// About weekly; the cached orbits stand in meanwhile and offline.
+    private func refreshCometsIfStale() {
+        guard CometClient.shared.isStale, !isFetchingComets else { return }
+        isFetchingComets = true
+        Task { [weak self] in
+            let fetched = try? await CometClient.shared.fetch()
+            guard let self else { return }
+            self.isFetchingComets = false
+            if let fetched {
+                self.comets = fetched
+                await self.rebuildPlans()
+            }
+        }
+    }
+    private var isFetchingComets = false
+
+    /// Everything that can be looked up by designation: the catalogue,
+    /// your own targets, and the comets bright enough around `date`.
+    func allTargets(near date: Date = Date()) -> [Target] {
+        BuiltInCatalog.all + customTargets
+            + (preferences.includeComets ? comets.compactMap { $0.target(at: date) } : [])
+    }
+
     private func maybeRefreshCloudMap(force: Bool) {
         if !force, let lastCloudMapFetchAt,
            Date().timeIntervalSince(lastCloudMapFetchAt) < Self.minimumCloudMapFetchInterval {
@@ -441,6 +469,7 @@ final class AppState: ObservableObject {
         var tonightOnly = preferences
         tonightOnly.forecastNights = 1
         let catalog = BuiltInCatalog.all + customTargets
+        let comets = comets
         let rig = rig
         let forecast = forecast
         let goodScore = 60.0
@@ -448,7 +477,7 @@ final class AppState: ObservableObject {
         return await Task.detached(priority: .utility) {
             func goodTargets(from site: Site) -> (count: Int, cloudedOut: Bool) {
                 guard let night = Planner(site: site, rig: rig, preferences: tonightOnly,
-                                          catalog: catalog, forecast: forecast).plan().first
+                                          catalog: catalog, forecast: forecast, comets: comets).plan().first
                 else { return (0, false) }
                 let count = night.targets.filter { $0.usableMinutes > 0 && $0.score >= goodScore && !$0.target.type.isStar }.count
                 return (count, night.isCloudedOut)
@@ -537,7 +566,8 @@ final class AppState: ObservableObject {
                               rig: rig,
                               preferences: preferences,
                               catalog: BuiltInCatalog.all + customTargets,
-                              forecast: forecast)
+                              forecast: forecast,
+                              comets: comets)
 
         isPlanning = true
         let computed = await Task.detached(priority: .userInitiated) {
@@ -839,7 +869,7 @@ final class AppState: ObservableObject {
     /// only up by day is marked too, and its card says when to catch it. The
     /// dome keeps as many as fit without overlapping.
     func domeHighlights(planSegments: [PlanSegment]) -> [Target] {
-        let catalog = BuiltInCatalog.all + customTargets
+        let catalog = allTargets(near: planSegments.chronological.first?.window.start ?? Date())
         let planned = planSegments.chronological.compactMap { segment in
             catalog.first { $0.id == segment.targetID }
         }

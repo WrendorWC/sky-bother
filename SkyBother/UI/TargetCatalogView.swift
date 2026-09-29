@@ -43,7 +43,7 @@ struct TargetCatalogView: View {
     }
 
     private var targets: [Target] {
-        effectiveQuery.apply(to: BuiltInCatalog.all + state.customTargets, scored: scored)
+        effectiveQuery.apply(to: state.allTargets(near: night?.chartWindow.midpoint ?? Date()), scored: scored)
     }
 
     private let columns = [GridItem(.adaptive(minimum: 180, maximum: 240), spacing: 16)]
@@ -259,7 +259,7 @@ private struct TargetCatalogCell: View {
                             .foregroundStyle(Palette.accent)
                     }
                 }
-                Text("\(target.designation) · \(target.constellationName)")
+                Text(target.constellation.isEmpty ? target.designation : "\(target.designation) · \(target.constellationName)")
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -326,7 +326,7 @@ struct TargetCatalogDetail: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(target.displayName)
                         .font(.scaled(.title2, scale: uiTextScale).weight(.semibold))
-                    Text("\(target.designation) · \(target.type.displayName) in \(target.constellationName)")
+                    Text("\(target.designation) · \(target.type.displayName)\(target.inConstellation)")
                         .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                 }

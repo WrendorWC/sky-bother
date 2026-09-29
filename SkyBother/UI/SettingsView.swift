@@ -433,6 +433,7 @@ private struct PlanningSettings: View {
 
                 Toggle("Include star clusters", isOn: $state.preferences.includeStarClusters)
                 Toggle("Include bright stars and doubles", isOn: $state.preferences.includeStars)
+                Toggle("Include comets", isOn: $state.preferences.includeComets)
                 Toggle("Include targets larger than the frame", isOn: $state.preferences.includeOversizedTargets)
                 Toggle("Use Fahrenheit and mph", isOn: $state.preferences.usesImperialUnits)
                 Toggle("Night mode (red light only)", isOn: $state.preferences.nightMode)

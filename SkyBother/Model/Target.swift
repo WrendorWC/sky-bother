@@ -12,6 +12,7 @@ enum TargetType: String, Codable, CaseIterable, Identifiable, Sendable {
     case starCloud
     case asterism
     case star
+    case comet
 
     var id: String { rawValue }
 
@@ -28,6 +29,7 @@ enum TargetType: String, Codable, CaseIterable, Identifiable, Sendable {
         case .starCloud: return "Star Cloud"
         case .asterism: return "Asterism"
         case .star: return "Star"
+        case .comet: return "Comet"
         }
     }
 
@@ -44,6 +46,7 @@ enum TargetType: String, Codable, CaseIterable, Identifiable, Sendable {
         case .starCloud: return "Star Cloud"
         case .asterism: return "Asterism"
         case .star: return "Star"
+        case .comet: return "Comet"
         }
     }
 
@@ -57,6 +60,7 @@ enum TargetType: String, Codable, CaseIterable, Identifiable, Sendable {
         case .openCluster, .asterism: return "sparkles"
         case .starCloud: return "sparkle"
         case .star: return "star.fill"
+        case .comet: return "smoke.fill"
         }
     }
 
@@ -118,6 +122,10 @@ struct Target: Codable, Hashable, Identifiable, Sendable {
     /// three-letter abbreviation, which is the right thing to store but the
     /// wrong thing to show someone.
     var constellationName: String { Constellation.fullName(for: constellation) }
+
+    /// " in Cygnus", or nothing for a comet, which moves between
+    /// constellations and isn't placed in one.
+    var inConstellation: String { constellation.isEmpty ? "" : " in \(constellationName)" }
 
     var sizeSummary: String {
         if abs(majorAxisArcminutes - minorAxisArcminutes) < 0.05 {

@@ -8,6 +8,8 @@ struct Planner: Sendable {
     var preferences: Preferences
     var catalog: [Target]
     var forecast: WeatherForecast
+    /// Placed night by night, since they move; see `CometOrbit.target(at:)`.
+    var comets: [CometOrbit]
 
     /// Timeline resolution. Five minutes is finer than any forecast and finer
     /// than the eye can read off a night-long chart.
@@ -15,12 +17,14 @@ struct Planner: Sendable {
 
     /// Declared explicitly: a private stored property would otherwise make the
     /// synthesized memberwise initialiser private too.
-    init(site: Site, rig: Rig, preferences: Preferences, catalog: [Target], forecast: WeatherForecast) {
+    init(site: Site, rig: Rig, preferences: Preferences, catalog: [Target], forecast: WeatherForecast,
+         comets: [CometOrbit] = []) {
         self.site = site
         self.rig = rig
         self.preferences = preferences
         self.catalog = catalog
         self.forecast = forecast
+        self.comets = comets
     }
 
     /// Everything known about one instant, including the pieces the public
@@ -150,7 +154,14 @@ struct Planner: Sendable {
 
         let moon = makeMoonSummary(contexts: contexts, chartWindow: chartWindow)
 
-        var targets = makeTargetPlans(contexts: contexts,
+        // Each comet where it is tonight. A comet moves at most a few
+        // degrees a night, so one position at the middle of it is plenty.
+        let nightCatalog = catalog + (preferences.includeComets
+            ? comets.compactMap { $0.target(at: chartWindow.midpoint) }
+            : [])
+
+        var targets = makeTargetPlans(catalog: nightCatalog,
+                                      contexts: contexts,
                                       samples: samples,
                                       clearThreshold: clearThreshold,
                                       hasWeather: hasWeather,
@@ -161,7 +172,8 @@ struct Planner: Sendable {
         // instead of showing nothing and looking broken.
         let isCloudedOut = targets.isEmpty && !darkWindows.isEmpty
         if isCloudedOut {
-            targets = makeTargetPlans(contexts: contexts,
+            targets = makeTargetPlans(catalog: nightCatalog,
+                                      contexts: contexts,
                                       samples: samples,
                                       clearThreshold: clearThreshold,
                                       hasWeather: hasWeather,
@@ -351,7 +363,8 @@ struct Planner: Sendable {
 
     // MARK: - Targets
 
-    private func makeTargetPlans(contexts: [SampleContext],
+    private func makeTargetPlans(catalog: [Target],
+                                 contexts: [SampleContext],
                                  samples: [NightSample],
                                  clearThreshold: Double,
                                  hasWeather: Bool,
@@ -830,6 +843,10 @@ struct Planner: Sendable {
 
         if fit.needsMosaic {
             warnings.append(fit.framingNote)
+        }
+
+        if target.type == .comet {
+            warnings.append(String(format: "Predicted magnitude %.1f — comets often come in a magnitude or more off their predictions, either way", target.magnitude))
         }
 
         warnings.append(contentsOf: fit.notes)
