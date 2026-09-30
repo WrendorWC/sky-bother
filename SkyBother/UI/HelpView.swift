@@ -146,10 +146,6 @@ enum HelpContent {
             HelpSection(heading: "Custom Targets", body: "“Add Custom Target” adds anything missing. Custom targets are scored like any other; click one to edit or delete it.")
         ]),
 
-        HelpTopic(title: "FAQ", systemImage: "questionmark.bubble", sections: [
-            HelpSection(heading: "Is There a Windows Version?", body: "Yes. Matt Palulis is developing one in parallel, at github.com/mpalulis/sky-bother-windows. The two versions are similar, but the Windows version has a few enhancements to match Matt’s own workflow.")
-        ]),
-
         HelpTopic(title: "Data Sources", systemImage: "antenna.radiowaves.left.and.right", sections: [
             HelpSection(heading: "Weather", body: "Open-Meteo, free and keyless. In the US and southern Canada the cloud totals come from NOAA’s National Blend of Models. If Open-Meteo is unreachable, MET Norway is used and the sidebar says “backup source”. Automatic refreshes happen at most hourly; Refresh (⌘R) always fetches."),
             HelpSection(heading: "Astronomy", body: "Sun, Moon and target positions and all rise, set and twilight times are computed on your Mac. The Sun is accurate to about 0.01°, the Moon to a few arcminutes."),

@@ -11,6 +11,9 @@ what to point at if it is.
 Unzip, drag `SkyBother.app` into Applications, then right-click it and choose
 Open the first time (it isn't notarized yet, so macOS needs that one-time nudge).
 
+*On Windows?* Matt Palulis is developing a Windows version in parallel:
+[mpalulis/sky-bother-windows](https://github.com/mpalulis/sky-bother-windows).
+
 It combines four things that normally live in four different tabs:
 
 - **Weather** — hourly cloud cover split into low, mid and high layers, plus dew point, humidity, wind and gusts.
