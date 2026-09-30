@@ -222,8 +222,9 @@ Some deliberate modelling choices worth knowing about:
 
 Stated plainly so you are not left looking for it:
 
-- **No planets, moon or comets as targets.** Planetary ephemerides are a separate
+- **No planets or moon as targets.** Planetary ephemerides are a separate
   piece of work and the moon is treated purely as a nuisance light source.
+  (Comets bright enough to image are included.)
 - **No real seeing forecast.** The app shows a rough proxy derived from surface
   gusts. Actual seeing depends on the jet stream, which no free API exposes.
 - **No measured light pollution.** You set your site's Bortle class by hand.
@@ -233,6 +234,14 @@ Stated plainly so you are not left looking for it:
 - **No "use my current location" button.** Location Services on an ad-hoc signed
   app is unreliable; search for your site instead, it is a one-time step.
 - **No connection to your telescope.** This plans the session; it does not run it.
+
+## FAQ
+
+**Is there a Windows version?**
+Yes. Matt Palulis is developing one in parallel:
+[mpalulis/sky-bother-windows](https://github.com/mpalulis/sky-bother-windows).
+The two versions are similar, but the Windows version has a few enhancements
+to match Matt's own workflow.
 
 ## Project layout
 

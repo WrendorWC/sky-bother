@@ -424,6 +424,17 @@ private struct GoalStep: View {
                 }
                 .font(.scaled(.callout, scale: uiTextScale))
             }
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Show these too:")
+                    .font(.scaled(.headline, scale: uiTextScale))
+                Toggle("Bright stars and doubles", isOn: $state.preferences.includeStars)
+                Toggle("Visible comets", isOn: $state.preferences.includeComets)
+                Text("Unticked ones start hidden in the catalog and planner filters. Tick them there any time.")
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+            }
+            .toggleStyle(.checkbox)
+            .font(.scaled(.callout, scale: uiTextScale))
         }
     }
 

@@ -432,8 +432,10 @@ private struct PlanningSettings: View {
                         value: $state.preferences.forecastNights, in: 1...14)
 
                 Toggle("Include star clusters", isOn: $state.preferences.includeStarClusters)
-                Toggle("Include bright stars and doubles", isOn: $state.preferences.includeStars)
-                Toggle("Include visible comets", isOn: $state.preferences.includeComets)
+                Toggle("Show bright stars and doubles", isOn: $state.preferences.includeStars)
+                    .help("Unticked, stars start hidden in the catalog and planner type filters")
+                Toggle("Show visible comets", isOn: $state.preferences.includeComets)
+                    .help("Unticked, comets start hidden in the catalog and planner type filters")
                 Toggle("Include targets larger than the frame", isOn: $state.preferences.includeOversizedTargets)
                 Toggle("Use Fahrenheit and mph", isOn: $state.preferences.usesImperialUnits)
                 Toggle("Night mode (red light only)", isOn: $state.preferences.nightMode)
@@ -521,6 +523,11 @@ private struct SetupWizardBanner: View {
                         .font(.scaled(.callout, scale: uiTextScale))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                    if !state.canRestartSetup {
+                        Label("Save or cancel the plan you're editing first.", systemImage: "exclamationmark.circle")
+                            .font(.scaled(.callout, scale: uiTextScale))
+                            .foregroundStyle(Palette.marginal)
+                    }
                 }
                 Spacer(minLength: 12)
                 Button {
@@ -535,8 +542,8 @@ private struct SetupWizardBanner: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .disabled(state.planDraft != nil)
-                .help(state.planDraft != nil ? "Finish or cancel the plan you're editing first" : "Run the Setup Wizard")
+                .disabled(!state.canRestartSetup)
+                .help(state.canRestartSetup ? "Run the Setup Wizard" : "Save or cancel the plan you're editing first")
             }
             .padding(.vertical, 4)
         }

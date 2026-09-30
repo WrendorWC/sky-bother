@@ -656,21 +656,7 @@ struct PlannerWorkspaceView: View {
                 .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.panelBorder))
                 .frame(minWidth: 150)
 
-                Menu {
-                    Button("All Types") { state.typeFilter.removeAll() }
-                    Divider()
-                    ForEach(TargetType.filterOrder) { type in
-                        Toggle(type.filterName, isOn: Binding(
-                            get: { state.typeFilter.contains(type) },
-                            set: { isOn in
-                                if isOn { state.typeFilter.insert(type) } else { state.typeFilter.remove(type) }
-                            }))
-                    }
-                } label: {
-                    Label(state.typeFilter.isEmpty ? "All Types" : "\(state.typeFilter.count) Types",
-                          systemImage: "line.3.horizontal.decrease.circle")
-                }
-                .scaledMenuStyle(uiTextScale)
+                TargetTypeFilterButton(selection: $state.typeFilter)
 
                 Menu {
                     Picker("Sort by", selection: $sortOption) {

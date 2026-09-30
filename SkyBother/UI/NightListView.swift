@@ -153,8 +153,8 @@ struct NightListView: View {
                 Spacer(minLength: 4)
                 Button("Setup Wizard") { state.restartSetup() }
                     .buttonStyle(.link)
-                    .disabled(state.planDraft != nil)
-                    .help("Run the Setup Wizard")
+                    .disabled(!state.canRestartSetup)
+                    .help(state.canRestartSetup ? "Run the Setup Wizard" : "Save or cancel the plan you're editing first")
             }
             .font(.scaled(.caption, scale: uiTextScale))
         }

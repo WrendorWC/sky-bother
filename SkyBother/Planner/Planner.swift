@@ -156,9 +156,7 @@ struct Planner: Sendable {
 
         // Each comet where it is tonight. A comet moves at most a few
         // degrees a night, so one position at the middle of it is plenty.
-        let nightCatalog = catalog + (preferences.includeComets
-            ? comets.compactMap { $0.target(at: chartWindow.midpoint) }
-            : [])
+        let nightCatalog = catalog + comets.compactMap { $0.target(at: chartWindow.midpoint) }
 
         var targets = makeTargetPlans(catalog: nightCatalog,
                                       contexts: contexts,
@@ -380,7 +378,6 @@ struct Planner: Sendable {
 
         for target in catalog {
             if target.type.isStarField && !preferences.includeStarClusters { continue }
-            if target.type.isStar && !preferences.includeStars { continue }
             // Cheap rejection before doing any per-sample work.
             guard target.isEverVisible(latitude: site.latitude, aboveAltitude: bestCaseFloor) else { continue }
 

@@ -155,6 +155,7 @@ final class AppState: ObservableObject {
             lastWeatherFetchAt = cached.retrievedAt
         }
         comets = CometClient.shared.cached()
+        typeFilter = defaultTypeFilter
     }
 
     // MARK: - Convenience accessors
@@ -197,7 +198,23 @@ final class AppState: ObservableObject {
 
     var preferences: Preferences {
         get { settings.preferences }
-        set { settings.preferences = newValue }
+        set {
+            let old = settings.preferences
+            settings.preferences = newValue
+            if old.includeStars != newValue.includeStars || old.includeComets != newValue.includeComets {
+                typeFilter = defaultTypeFilter
+            }
+        }
+    }
+
+    /// Where the type filters start: every type, less stars or comets if
+    /// you chose not to see them in setup or Settings. Empty means every
+    /// type, as it does in the filter itself.
+    var defaultTypeFilter: Set<TargetType> {
+        var hidden: Set<TargetType> = []
+        if !preferences.includeStars { hidden.insert(.star) }
+        if !preferences.includeComets { hidden.insert(.comet) }
+        return hidden.isEmpty ? [] : Set(TargetType.allCases).subtracting(hidden)
     }
 
     var selectedPlan: NightPlan? {
@@ -235,9 +252,16 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// Only unsaved planner edits stand in the way; an open planner with
+    /// nothing changed is simply closed. It used to block setup whenever the
+    /// planner was open at all, which left the button greyed out with the
+    /// reason hidden in a tooltip.
+    var canRestartSetup: Bool { !(planDraft?.isDirty ?? false) }
+
     /// Walks through setup again, starting from what's already set.
     func restartSetup() {
-        guard planDraft == nil else { return }
+        guard canRestartSetup else { return }
+        if planDraft != nil { closePlanner() }
         mainView = .home
         settings.setupStep = 0
     }
@@ -353,8 +377,7 @@ final class AppState: ObservableObject {
     /// Everything that can be looked up by designation: the catalogue,
     /// your own targets, and the comets bright enough around `date`.
     func allTargets(near date: Date = Date()) -> [Target] {
-        BuiltInCatalog.all + customTargets
-            + (preferences.includeComets ? comets.compactMap { $0.target(at: date) } : [])
+        BuiltInCatalog.all + customTargets + comets.compactMap { $0.target(at: date) }
     }
 
     private func maybeRefreshCloudMap(force: Bool) {

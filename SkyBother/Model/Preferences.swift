@@ -29,9 +29,11 @@ struct Preferences: Codable, Hashable, Sendable {
     var includeOversizedTargets: Bool = true
     /// Include star clusters, which some people don't count as targets.
     var includeStarClusters: Bool = true
-    /// Include bright stars and doubles as targets.
+    /// Whether bright stars and doubles start ticked in the catalog's and
+    /// planner's type filters. Off only hides them there — they're still
+    /// scored and a tick away — so choosing it in setup costs nothing later.
     var includeStars: Bool = true
-    /// Include comets predicted bright enough to image.
+    /// The same for visible comets.
     var includeComets: Bool = true
     /// Show temperatures in Fahrenheit and wind in mph.
     var usesImperialUnits: Bool = false

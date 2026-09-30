@@ -1,5 +1,70 @@
 import SwiftUI
 
+/// The target-type filter, for the catalog and the planner alike: a
+/// checkbox per type in a popover that stays open while you tick, where a
+/// menu closed after every click and showed no box at all beside the types
+/// that weren't picked. Every box ticked is no filter at all — the same
+/// empty selection as before — and "Only" beside a type narrows to it in
+/// one click.
+struct TargetTypeFilterButton: View {
+    @Environment(\.uiTextScale) private var uiTextScale
+    @Binding var selection: Set<TargetType>
+    @State private var isShowing = false
+
+    var body: some View {
+        Button {
+            isShowing.toggle()
+        } label: {
+            Label(title, systemImage: "line.3.horizontal.decrease.circle")
+        }
+        .buttonStyle(.borderless)
+        .font(.scaled(.body, scale: uiTextScale))
+        .fixedSize()
+        .popover(isPresented: $isShowing, arrowEdge: .bottom) {
+            VStack(alignment: .leading, spacing: 7) {
+                Button("Show All Types") { selection.removeAll() }
+                    .disabled(selection.isEmpty)
+                Divider()
+                ForEach(TargetType.filterOrder) { type in
+                    HStack(spacing: 12) {
+                        Toggle(type.filterName, isOn: shows(type))
+                            .toggleStyle(.checkbox)
+                            // The last type ticked stays ticked: none at all
+                            // would mean an empty list, not a filter.
+                            .disabled(selection.count == 1 && selection.contains(type))
+                        Spacer(minLength: 0)
+                        Button("Only") { selection = [type] }
+                            .buttonStyle(.borderless)
+                            .font(.scaled(.caption, scale: uiTextScale))
+                            .help("Show only \(type.filterName.lowercased())")
+                    }
+                }
+            }
+            .font(.scaled(.body, scale: uiTextScale))
+            .padding(14)
+            .frame(minWidth: 240 * uiTextScale, alignment: .leading)
+        }
+    }
+
+    private var title: String {
+        switch selection.count {
+        case 0: return "All Types"
+        case 1: return selection.first?.filterName ?? "1 Type"
+        default: return "\(selection.count) Types"
+        }
+    }
+
+    private func shows(_ type: TargetType) -> Binding<Bool> {
+        Binding(
+            get: { selection.isEmpty || selection.contains(type) },
+            set: { isOn in
+                var shown = selection.isEmpty ? Set(TargetType.allCases) : selection
+                if isOn { shown.insert(type) } else { shown.remove(type) }
+                selection = shown.count == TargetType.allCases.count ? [] : shown
+            })
+    }
+}
+
 /// A browsable reference catalog — every target in the built-in list, with a
 /// photo, so you know what you're pointing at before committing a night to it.
 /// It covers the whole sky, deep-southern targets included: a southern observer
@@ -83,8 +148,12 @@ struct TargetCatalogView: View {
         .sheet(item: $editorContext) { context in
             CustomTargetEditor(existing: context.existing)
         }
-        .onAppear { applyRequest() }
+        .onAppear {
+            query.types = state.defaultTypeFilter
+            applyRequest()
+        }
         .onChange(of: state.catalogRequest) { _, _ in applyRequest() }
+        .onChange(of: state.defaultTypeFilter) { _, types in query.types = types }
     }
 
     /// Opened for a particular night — from the planner, say — the catalog
@@ -111,21 +180,7 @@ struct TargetCatalogView: View {
                 .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.panelBorder))
                 .frame(maxWidth: 280)
 
-                Menu {
-                    Button("All Types") { query.types.removeAll() }
-                    Divider()
-                    ForEach(TargetType.filterOrder) { type in
-                        Toggle(type.filterName, isOn: Binding(
-                            get: { query.types.contains(type) },
-                            set: { isOn in
-                                if isOn { query.types.insert(type) } else { query.types.remove(type) }
-                            }))
-                    }
-                } label: {
-                    Label(query.types.isEmpty ? "All Types" : "\(query.types.count) Types",
-                          systemImage: "line.3.horizontal.decrease.circle")
-                }
-                .scaledMenuStyle(uiTextScale)
+                TargetTypeFilterButton(selection: $query.types)
 
                 Menu {
                     Picker("Sort by", selection: $query.sort) {
