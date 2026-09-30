@@ -135,7 +135,11 @@ struct Planner: Sendable {
         }
 
         let hasWeather = samples.contains { $0.hasWeather }
-        let clearThreshold = clamp(1 - preferences.maximumCloudCover / 100, 0, 1)
+        // How much each moment counts as clear; beyond the forecast, all of it.
+        let preferences = preferences
+        let credit: (NightSample) -> Double = { sample in
+            sample.hasWeather ? preferences.cloudCredit(cloudCover: sample.cloudCover) : 1
+        }
 
         // Darkness windows are set by the Sun alone. The moon reduces the quality
         // of those hours rather than removing them, and is scored per target.
@@ -143,7 +147,11 @@ struct Planner: Sendable {
             SkyQuality.twilightFactor(sunAltitude: sample.sunAltitude) >= preferences.minimumDarkness
         }
         let darkWindows = windows(from: samples, where: isDark)
-        let clearDarkWindows = windows(from: samples) { isDark($0) && $0.clearFactor >= clearThreshold }
+        let clearDarkWindows = windows(from: samples) { isDark($0) && credit($0) > 0 }
+        let clearDarkWindowMinutes = clearDarkWindows.map { window in
+            samples.filter { isDark($0) && window.contains($0.date) }
+                .reduce(0.0) { $0 + credit($1) * sampleStepMinutes }
+        }
         let moonlessDarkWindows = windows(from: samples) { isDark($0) && $0.moonAltitude <= 0 }
 
         let darkSamples = samples.filter(isDark)
@@ -161,7 +169,6 @@ struct Planner: Sendable {
         var targets = makeTargetPlans(catalog: nightCatalog,
                                       contexts: contexts,
                                       samples: samples,
-                                      clearThreshold: clearThreshold,
                                       hasWeather: hasWeather,
                                       ignoreCloud: false)
 
@@ -173,12 +180,12 @@ struct Planner: Sendable {
             targets = makeTargetPlans(catalog: nightCatalog,
                                       contexts: contexts,
                                       samples: samples,
-                                      clearThreshold: clearThreshold,
                                       hasWeather: hasWeather,
                                       ignoreCloud: true)
         }
 
         let factors = nightFactors(clearDarkWindows: clearDarkWindows,
+                                   clearDarkWindowMinutes: clearDarkWindowMinutes,
                                    darkSamples: darkSamples,
                                    moon: moon,
                                    hasWeather: hasWeather,
@@ -198,6 +205,7 @@ struct Planner: Sendable {
                          astronomicalDawn: astroDawn,
                          darkWindows: darkWindows,
                          clearDarkWindows: clearDarkWindows,
+                         clearDarkWindowMinutes: clearDarkWindowMinutes,
                          moonlessDarkWindows: moonlessDarkWindows,
                          isCloudedOut: isCloudedOut,
                          samples: samples,
@@ -364,7 +372,6 @@ struct Planner: Sendable {
     private func makeTargetPlans(catalog: [Target],
                                  contexts: [SampleContext],
                                  samples: [NightSample],
-                                 clearThreshold: Double,
                                  hasWeather: Bool,
                                  ignoreCloud: Bool) -> [TargetPlan] {
         // The cheap rejection below only gets the site's *most open* direction,
@@ -384,7 +391,6 @@ struct Planner: Sendable {
             if let plan = makeTargetPlan(target: target,
                                          contexts: contexts,
                                          samples: samples,
-                                         clearThreshold: clearThreshold,
                                          hasWeather: hasWeather,
                                          ignoreCloud: ignoreCloud) {
                 plans.append(plan)
@@ -397,7 +403,6 @@ struct Planner: Sendable {
     private func makeTargetPlan(target: Target,
                                 contexts: [SampleContext],
                                 samples: [NightSample],
-                                clearThreshold: Double,
                                 hasWeather: Bool,
                                 ignoreCloud: Bool) -> TargetPlan? {
         let fit = RigFit.evaluate(target: target, rig: rig, site: site)
@@ -416,6 +421,7 @@ struct Planner: Sendable {
         zenithRiskFlags.reserveCapacity(contexts.count)
 
         var usableCount = 0
+        var usableCredit = 0.0
         var darknessSum = 0.0
         var extinctionSum = 0.0
         // Tracked separately from clearSum/usableCount: this counts every
@@ -489,7 +495,10 @@ struct Planner: Sendable {
                 clearPotentialSum += sample.clearFactor
             }
 
-            let clearEnough = ignoreCloud || !hasWeather || sample.clearFactor >= clearThreshold
+            // Hazy moments count in part toward usable time; see
+            // `Preferences.cloudCredit`.
+            let cloudCredit = ignoreCloud || !hasWeather ? 1 : preferences.cloudCredit(cloudCover: sample.cloudCover)
+            let clearEnough = cloudCredit > 0
             let isUsable = aboveFloor && darkEnough && clearEnough
             usableFlags.append(isUsable)
 
@@ -502,6 +511,7 @@ struct Planner: Sendable {
             guard isUsable else { continue }
 
             usableCount += 1
+            usableCredit += cloudCredit
             darknessSum += targetDarkness
             effectiveMoonSum += effectiveMoon
             let extinction = SkyQuality.extinctionFactor(altitude: horizontal.altitude)
@@ -530,7 +540,7 @@ struct Planner: Sendable {
 
         guard usableCount > 0 else { return nil }
 
-        let usableMinutes = Double(usableCount) * sampleStepMinutes
+        let usableMinutes = usableCredit * sampleStepMinutes
         let meanDarkness = darknessSum / Double(usableCount)
         // Over the target's whole potential dark, above-floor window — not
         // just the usable subset — so a target that only squeaked out a few
@@ -705,6 +715,7 @@ struct Planner: Sendable {
     }
 
     private func nightFactors(clearDarkWindows: [TimeWindow],
+                              clearDarkWindowMinutes: [Double],
                               darkSamples: [NightSample],
                               moon: MoonSummary,
                               hasWeather: Bool,
@@ -717,9 +728,13 @@ struct Planner: Sendable {
         // cloud only makes a lot of data to throw away. So both the time and
         // the clarity are taken from that one window, and what happens
         // outside it doesn't count.
+        //
+        // Hazy stretches count in part (see `Preferences.cloudCredit`), so the
+        // best window is the one worth most, not simply the longest.
         let goalHours = max(0.5, preferences.integrationGoalMinutes / 60)
-        let bestWindow = clearDarkWindows.longest
-        let clearDarkHours = (bestWindow?.durationMinutes ?? 0) / 60
+        let best = zip(clearDarkWindows, clearDarkWindowMinutes).max { $0.1 < $1.1 }
+        let bestWindow = best?.0
+        let clearDarkHours = (best?.1 ?? 0) / 60
         let timeValue = clamp(clearDarkHours / goalHours, 0, 1)
 
         let clarity: Double

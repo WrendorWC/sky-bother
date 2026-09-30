@@ -86,6 +86,25 @@ enum PlanEmphasis: String, Codable, CaseIterable, Hashable, Sendable {
 }
 
 extension Preferences {
+    /// How far over the Maximum Cloud Cover an hour still counts for
+    /// something, in percentage points.
+    static let cloudCoverMargin = 10.0
+
+    /// How much of an hour counts as clear: all of it at or under the
+    /// Maximum Cloud Cover, less the further over it goes, and none once
+    /// it's `cloudCoverMargin` points over.
+    ///
+    /// Not a hard cutoff. With one, a night sitting at 22–28% cloud all night
+    /// against a 20% limit scored 21, the same as an overcast night, while
+    /// another averaging the same 28% but clearing to 15% for a few hours
+    /// scored 80. Cloud a couple of points over your limit costs a little,
+    /// not the whole night. Ten points was chosen so that hazy night lands
+    /// in the mid-70s (Good), below the one that properly clears (81): a
+    /// fifteen-point band put them level, which was too generous to haze.
+    func cloudCredit(cloudCover: Double) -> Double {
+        clamp(1 - (cloudCover - maximumCloudCover) / Self.cloudCoverMargin, 0, 1)
+    }
+
     /// The most of a night any one target may claim on the suggested plan's
     /// first pass. Whatever is left over afterwards still gets handed back to
     /// whoever can use it, so this caps the opening bid rather than the final

@@ -54,6 +54,7 @@
 		3CC3C48445F09E957E8832D8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0867EA4E9C35E7C5BA67DC75 /* SettingsView.swift */; };
 		3DC77A95419D180FD3E4BF2D /* SessionClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D5C42F9039A33CB596D34E2 /* SessionClock.swift */; };
 		3DD8A6E80AB4E729690DA1DF /* NightDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C7E0701838380DC076493D8 /* NightDetailView.swift */; };
+		3FB045336DCE44A0CAB4E4D6 /* CloudCreditTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B5D3663A14A3612EB0DB929 /* CloudCreditTests.swift */; };
 		413E25F1C0D3CA5681DE859C /* NearbySpotPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D92198AFA083369F3D169C3 /* NearbySpotPanel.swift */; };
 		4277555ADF1147AC089C690B /* SkyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E00C215DAED2F778E792A08 /* SkyView.swift */; };
 		43764CFCF89FC27FD0D055E1 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EF533F0EAA07F58C2317C4A /* HelpView.swift */; };
@@ -251,6 +252,7 @@
 		90D93329150DA0AC673F1C77 /* Comet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Comet.swift; sourceTree = "<group>"; };
 		9147CD88A151E37523D49B13 /* SkyViewScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyViewScreen.swift; sourceTree = "<group>"; };
 		916944C4D5E50DC97D5F6E2C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		9B5D3663A14A3612EB0DB929 /* CloudCreditTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudCreditTests.swift; sourceTree = "<group>"; };
 		9C30ED2A029EDAA75CB7645E /* SkyResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyResolver.swift; sourceTree = "<group>"; };
 		9DA0FBE41B05F9E38B31F059 /* SkyProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyProjection.swift; sourceTree = "<group>"; };
 		9ED26EE0C4965A40B990D525 /* MoonGlobe.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = MoonGlobe.metal; sourceTree = "<group>"; };
@@ -322,6 +324,7 @@
 			isa = PBXGroup;
 			children = (
 				ABAFED8E569DB47A7F42CDE2 /* CatalogQueryTests.swift */,
+				9B5D3663A14A3612EB0DB929 /* CloudCreditTests.swift */,
 				013589B91B1822268364F1BF /* CometTests.swift */,
 				8D4CA051BE49E839FDF95C5E /* Fixtures.swift */,
 				EE9218A5DDDA723F9B6A81C3 /* PlanDraftTests.swift */,
@@ -683,6 +686,7 @@
 				246A915AA956DB12EC741876 /* CameraFrame.swift in Sources */,
 				AC373408CF9CC11BD5FD5AC4 /* CatalogQuery.swift in Sources */,
 				C97505E5FA591C74215CA7B6 /* CatalogQueryTests.swift in Sources */,
+				3FB045336DCE44A0CAB4E4D6 /* CloudCreditTests.swift in Sources */,
 				ED99549D90D85A820884137E /* CloudMapClient.swift in Sources */,
 				020ABB667E7EB220CEC1F224 /* Comet.swift in Sources */,
 				1EEFCC954C565A6CA879C9C6 /* CometClient.swift in Sources */,

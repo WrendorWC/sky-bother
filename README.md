@@ -144,6 +144,15 @@ Some deliberate modelling choices worth knowing about:
   Bortle sky, adjusted for f-ratio, integration time and filters. This is why
   M101 scores near zero from a city: at roughly 23.8 mag/arcsec² it is fainter
   than a genuinely dark sky, never mind a bright one.
+- **Cloud over your limit is a cost, not a cutoff.** Your maximum cloud cover
+  is where cloud starts to count against a night, not a wall: an hour at the
+  limit counts in full, an hour 5 points over counts half, and 10 points over
+  counts nothing. With a hard cutoff, a night hazy at 22–28% all night against
+  a 20% limit scored 21, the same as an overcast night, while a night with the
+  same average cloud that cleared to 15% for four hours scored 80. Now the
+  hazy night scores in the mid-70s and the clearing one still scores higher.
+  The 10-point band is a judgment call; 15 put the two nights level, which was
+  too generous to haze.
 - **Framing is judged against your real sensor.** A target filling 30–80% of the
   frame's long side scores full marks. Smaller wastes the sensor; larger needs a
   mosaic, which is penalised lightly if your rig can do mosaics and heavily if it

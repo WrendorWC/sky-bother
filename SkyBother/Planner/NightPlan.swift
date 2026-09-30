@@ -147,6 +147,10 @@ struct NightPlan: Identifiable, Hashable, Sendable {
     var astronomicalDawn: Date?
     var darkWindows: [TimeWindow]
     var clearDarkWindows: [TimeWindow]
+    /// Each clear dark window's worth in minutes, beside it: its length with
+    /// hazy stretches counted in part (see `Preferences.cloudCredit`). Empty
+    /// means every window counts in full.
+    var clearDarkWindowMinutes: [Double] = []
     /// Dark and with the moon below the horizon — the good stuff.
     var moonlessDarkWindows: [TimeWindow]
     /// True when the cloud forecast wipes out the night entirely. The target
@@ -179,11 +183,21 @@ struct NightPlan: Identifiable, Hashable, Sendable {
     var verdict: Verdict { Verdict.forScore(score) }
 
     var darkHours: Double { darkWindows.totalMinutes / 60 }
-    /// The single longest dark-and-clear-enough stretch — "best imaging window".
-    var bestImagingWindow: TimeWindow? { clearDarkWindows.longest }
+    /// The dark stretch worth most once haze is counted — "best imaging window".
+    var bestImagingWindow: TimeWindow? {
+        guard clearDarkWindowMinutes.count == clearDarkWindows.count, !clearDarkWindows.isEmpty else {
+            return clearDarkWindows.longest
+        }
+        return zip(clearDarkWindows, clearDarkWindowMinutes).max { $0.1 < $1.1 }?.0
+    }
     /// The night's own single best target, if anything is up at all tonight.
     var bestTarget: TargetPlan? { targets.filter { $0.usableMinutes > 0 && !$0.target.type.isStar }.max { $0.score < $1.score } }
-    var clearDarkHours: Double { clearDarkWindows.totalMinutes / 60 }
+    /// Clear dark time, hazy stretches counted in part.
+    var clearDarkHours: Double {
+        clearDarkWindowMinutes.count == clearDarkWindows.count && !clearDarkWindows.isEmpty
+            ? clearDarkWindowMinutes.reduce(0, +) / 60
+            : clearDarkWindows.totalMinutes / 60
+    }
     var moonlessDarkHours: Double { moonlessDarkWindows.totalMinutes / 60 }
     var hasDewRisk: Bool { hasWeather && minimumDewSpread < 2.5 }
 

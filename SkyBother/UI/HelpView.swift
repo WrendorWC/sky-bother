@@ -41,7 +41,8 @@ enum HelpContent {
                 HelpSwatch(color: Palette.marginal, label: "45–59 — Marginal"),
                 HelpSwatch(color: Palette.skip, label: "Below 45 — Poor")
             ]),
-            HelpSection(heading: "Night Score", body: "Clear dark time (35%), sky clarity (30%), the Moon (25%) and conditions such as wind and dew (10%). Clear dark time and clarity come from the night’s best imaging window — its longest unbroken stretch of dark sky under your maximum cloud cover — measured against your integration goal. A night never scores higher than the best target you can shoot on it."),
+            HelpSection(heading: "Night Score", body: "Clear dark time (35%), sky clarity (30%), the Moon (25%) and conditions such as wind and dew (10%). Clear dark time and clarity come from the night’s best imaging window — its best unbroken stretch of dark sky — measured against your integration goal. Cloud over your limit counts against the night gradually rather than all at once; see Cloud: No Hard Cutoff below. A night never scores higher than the best target you can shoot on it."),
+            HelpSection(heading: "Cloud: No Hard Cutoff", body: "Your maximum cloud cover is where cloud starts to cost, not a wall. An hour at or under it counts in full. Over it, the hour counts for less the further over it is: with a 20% limit, an hour at 22% counts 80%, at 25% it counts half, and at 30% or more it counts nothing. Clear dark time, the best imaging window and every target’s usable time are all counted this way.\n\nWhy: with a hard cutoff, a night hazy at 22–28% all night scored 21, the same as an overcast night, while another night with the same 28% average cloud that cleared to 15% for four hours scored 80. That was misleading: a couple of points over your limit costs a little, not the whole night. Now the hazy night scores in the mid-70s (Good) and the one that clears properly still scores higher, because clean sky beats haze. The 10-point band is a judgment call: 15 points put the two nights level, which was too kind to haze."),
             HelpSection(heading: "Target Score", body: "Time on target (24%), detectability (20%), sky darkness (17%), cloud cover (17%), framing (14%) and altitude (8%). Night and target scores are independent: a good night can still be a poor one for a particular target.")
         ]),
 
@@ -128,7 +129,7 @@ enum HelpContent {
 
         HelpTopic(title: "Planning Settings", systemImage: "slider.horizontal.3", sections: [
             HelpSection(heading: "Goal", body: "Quick session, Deep integration and Variety each set the integration goal and plan emphasis. Changing either value makes it Custom."),
-            HelpSection(heading: "Maximum Cloud Cover", body: "Hours cloudier than this don’t count. Around 20% works well."),
+            HelpSection(heading: "Maximum Cloud Cover", body: "Cloud up to this counts as clear. Up to 10 points over it an hour counts in part, less the further over it is; beyond that it doesn’t count. See Scores & Verdicts → Cloud: No Hard Cutoff for why. Around 20% works well."),
             HelpSection(heading: "Minimum Darkness", body: "The Sun’s altitude at which the sky counts as dark. −18° is full astronomical darkness."),
             HelpSection(heading: "Minimum Altitude", body: "Targets lower than this are skipped, even where the horizon is open."),
             HelpSection(heading: "Integration Goal", body: "The usable time a target needs for full marks on time on target."),
