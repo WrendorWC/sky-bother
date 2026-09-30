@@ -146,13 +146,15 @@ Some deliberate modelling choices worth knowing about:
   than a genuinely dark sky, never mind a bright one.
 - **Cloud over your limit is a cost, not a cutoff.** Your maximum cloud cover
   is where cloud starts to count against a night, not a wall: an hour at the
-  limit counts in full, an hour 5 points over counts half, and 10 points over
-  counts nothing. With a hard cutoff, a night hazy at 22–28% all night against
-  a 20% limit scored 21, the same as an overcast night, while a night with the
-  same average cloud that cleared to 15% for four hours scored 80. Now the
-  hazy night scores in the mid-70s and the clearing one still scores higher.
-  The 10-point band is a judgment call; 15 put the two nights level, which was
-  too generous to haze.
+  limit counts in full, and every 6 points over it halves what it counts for
+  (with a 20% limit: 26% counts half, 32% a quarter, 38% an eighth). A hard
+  cutoff scored a night hazy at 22–28% all night 21, the same as overcast,
+  beside a night with the same average cloud that cleared for four hours at
+  80. A band ending 10 points over only moved that edge: 37% high cloud scored
+  20 beside a 30% night at 66. Halving has no edge, so scores fall steadily with
+  cloud; on a real week, nights at 30%, 38%, 42% and 50% scored 78, 51, 43 and
+  24. Six points is a judgment call: 5 left a 30-point gap between the first
+  two, and 7 lifted nights near 50% into the high 30s.
 - **Framing is judged against your real sensor.** A target filling 30–80% of the
   frame's long side scores full marks. Smaller wastes the sensor; larger needs a
   mosaic, which is penalised lightly if your rig can do mosaics and heavily if it

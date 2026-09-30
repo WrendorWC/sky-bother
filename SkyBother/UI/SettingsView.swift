@@ -388,7 +388,7 @@ private struct PlanningSettings: View {
                           value: $state.preferences.maximumCloudCover,
                           range: 0...100, step: 5,
                           display: "\(Int(state.preferences.maximumCloudCover))%",
-                          caption: "Hours cloudier than this count less, and not at all 10 points over.")
+                          caption: "Hours cloudier than this count less: half for every 6 points over.")
 
                 sliderRow(title: "Minimum darkness",
                           value: $state.preferences.minimumDarkness,

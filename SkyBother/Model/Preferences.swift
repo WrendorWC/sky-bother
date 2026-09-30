@@ -86,23 +86,30 @@ enum PlanEmphasis: String, Codable, CaseIterable, Hashable, Sendable {
 }
 
 extension Preferences {
-    /// How far over the Maximum Cloud Cover an hour still counts for
-    /// something, in percentage points.
-    static let cloudCoverMargin = 10.0
+    /// Every this many percentage points over the Maximum Cloud Cover
+    /// halves what an hour counts for.
+    static let cloudCoverHalving = 6.0
 
     /// How much of an hour counts as clear: all of it at or under the
-    /// Maximum Cloud Cover, less the further over it goes, and none once
-    /// it's `cloudCoverMargin` points over.
+    /// Maximum Cloud Cover, then half for every `cloudCoverHalving` points
+    /// over — with a 20% limit, 26% counts half, 32% a quarter, 38% an
+    /// eighth. Below a twentieth (about 26 points over) it's nothing.
     ///
-    /// Not a hard cutoff. With one, a night sitting at 22–28% cloud all night
-    /// against a 20% limit scored 21, the same as an overcast night, while
-    /// another averaging the same 28% but clearing to 15% for a few hours
-    /// scored 80. Cloud a couple of points over your limit costs a little,
-    /// not the whole night. Ten points was chosen so that hazy night lands
-    /// in the mid-70s (Good), below the one that properly clears (81): a
-    /// fifteen-point band put them level, which was too generous to haze.
+    /// No cliff anywhere. A hard cutoff at the limit scored a night hazy at
+    /// 22–28% all night 21, the same as an overcast one, while a night with
+    /// the same average cloud that cleared for four hours scored 80. A
+    /// straight-line band ending ten points over only moved the cliff: a
+    /// night of 37% high cirrus scored 20 beside one at 25–30% scoring 66.
+    /// Halving keeps the first few points over your limit costly and the
+    /// far end of the scale small, with nothing in between that falls off
+    /// an edge. Six points was chosen against a real week: that 30% night
+    /// scores 78, the 38% one 51, and nights near 50% stay in the 20s.
+    /// Five left a 30-point gap between the first two; seven lifted 48%
+    /// nights into the high 30s.
     func cloudCredit(cloudCover: Double) -> Double {
-        clamp(1 - (cloudCover - maximumCloudCover) / Self.cloudCoverMargin, 0, 1)
+        guard cloudCover > maximumCloudCover else { return 1 }
+        let credit = pow(0.5, (cloudCover - maximumCloudCover) / Self.cloudCoverHalving)
+        return credit < 0.05 ? 0 : credit
     }
 
     /// The most of a night any one target may claim on the suggested plan's
