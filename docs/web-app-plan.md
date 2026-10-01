@@ -144,7 +144,10 @@ panel (rig preset, kind of night, cloud limit, units); thumbnails and target det
   and the reason, and the detail points to a better night this week.
 - Forecast fetch falls back to Open-Meteo's best_match alone when the two-model request
   stalls or comes back broken (seen 2026-10-01); MET Norway needs the proxy.
-- Phase 1 left: night score breakdown, first Cloudflare Pages deploy.
+- Night "Why this score": the four sky factors with points lost, and the best-target cap
+  when it applies (EngineAPI sends skyScore, cappedBy, factor impacts). The Mac app has no
+  night breakdown yet.
+- Phase 1 left: first Cloudflare Pages deploy.
 - Target detail shows the photo only; the Mac's frame-to-scale preview comes with the
   Aladin Lite sky browser (Phase 2).
 

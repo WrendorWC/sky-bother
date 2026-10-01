@@ -50,6 +50,11 @@ public enum EngineAPI {
         /// "Main limitation: …", as Home words it; nil when nothing stands out.
         var limitation: String?
         var dew: Dew?
+        /// The night's own factors' score, before the best-target cap.
+        var skyScore: Double
+        /// The target that caps the night below `skyScore`, if one does:
+        /// Planner.nightScore's "only as good as the best thing you can shoot".
+        var cappedBy: String?
         var factors: [Factor]
         /// Every five minutes from sunset to sunrise, for the timeline.
         var samples: [Sample]
@@ -94,6 +99,8 @@ public enum EngineAPI {
         var value: Double
         var weight: Double
         var detail: String
+        /// Points the sky score loses to this factor (FactorBar's "−n").
+        var impact: Double
     }
 
     struct TargetSummary: Encodable {
@@ -269,7 +276,12 @@ public enum EngineAPI {
     }
 
     static func summary(_ night: NightPlan, preferences: Preferences) -> NightSummary {
-        let factors = night.factors.map { Factor(name: $0.name, value: $0.value, weight: $0.weight, detail: $0.detail) }
+        let skyScore = weightedGeometricScore(night.factors)
+        let factors = night.factors.map {
+            Factor(name: $0.name, value: $0.value, weight: $0.weight, detail: $0.detail,
+                   impact: scoreImpact(of: $0, in: night.factors, actualScore: skyScore))
+        }
+        let cappedBy = night.isCloudedOut ? nil : night.bestTarget.flatMap { $0.score < skyScore - 0.5 ? $0.id : nil }
         let segments = suggestedPlan(for: night, preferences: preferences)
         let ranked = night.targets.sorted { a, b in a.score != b.score ? a.score > b.score : a.id < b.id }
         let planned = Set(segments.map(\.targetID))
@@ -324,6 +336,8 @@ public enum EngineAPI {
                             maximumGust: finite(night.maximumGust),
                             limitation: nightLimitationPhrase(for: night),
                             dew: dew,
+                            skyScore: skyScore,
+                            cappedBy: cappedBy,
                             factors: factors,
                             samples: samples,
                             plan: blocks,

@@ -6,6 +6,7 @@
   import { targetDetail } from '../engine/engine.js';
   import ScoreBadge from './ScoreBadge.svelte';
   import VerdictTag from './VerdictTag.svelte';
+  import FactorBar from './FactorBar.svelte';
   import { targetImage } from './images.js';
   import { verdictColor, verdictFor } from './palette.js';
   import { time, degrees, weekday, dayAndMonth, hours } from './format.js';
@@ -47,8 +48,6 @@
     if (event.key === 'Escape' && !inline) onclose?.();
   }
 
-  // FactorBar's colour for the points lost.
-  const impactClass = impact => (impact >= 8 ? 'skip' : impact >= 3 ? 'marginal' : '');
 </script>
 
 <svelte:window {onkeydown} />
@@ -137,18 +136,7 @@
     {#if detail.scored}
     <section>
       <h3>Why this score</h3>
-      {#each detail.factors as factor}
-        {@const verdict = verdictFor(factor.value * 100)}
-        <div class="factor">
-          <div class="factor-head">
-            <span>{factor.name}</span>
-            <span class="factor-verdict" style:color={verdictColor(verdict)}>{verdict}</span>
-            <span class="impact {impactClass(Math.round(factor.impact))}">{Math.round(factor.impact) >= 1 ? `−${Math.round(factor.impact)}` : '0'}</span>
-          </div>
-          <div class="factor-bar"><span style:width="{Math.max(1, factor.value * 100)}%" style:background={verdictColor(verdict)}></span></div>
-          <p class="muted">{factor.detail}</p>
-        </div>
-      {/each}
+      {#each detail.factors as factor}<FactorBar {factor} />{/each}
       {#if detail.filterNote}<p class="muted">{detail.filterNote}</p>{/if}
     </section>
     {/if}
@@ -199,14 +187,6 @@
   .credit { font-size: 13px; }
   .facts { margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 4px; }
   .facts li::marker { color: var(--accent); }
-  .factor { display: grid; gap: 3px; margin-bottom: 6px; }
-  .factor-head { display: flex; gap: 8px; align-items: baseline; }
-  .factor-verdict { font-size: 11px; font-weight: 600; }
-  .impact { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
-  .impact.marginal { color: var(--marginal); font-weight: 700; }
-  .impact.skip { color: var(--poor); font-weight: 700; }
-  .factor-bar { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
-  .factor-bar span { display: block; height: 100%; border-radius: 3px; }
   .disclosure { background: none; border: none; padding: 0; text-align: left; }
   .numbers { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0; font-size: 14px; }
   dt { color: var(--muted); }

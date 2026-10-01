@@ -10,6 +10,7 @@
   import AvailabilityBar from './AvailabilityBar.svelte';
   import Thumbnail from './Thumbnail.svelte';
   import TargetDetail from './TargetDetail.svelte';
+  import FactorBar from './FactorBar.svelte';
   import { scoreColor, dewColor } from './palette.js';
   import * as format from './format.js';
 
@@ -72,6 +73,9 @@
   const planMinutes = $derived(night.plan.reduce((sum, b) => sum + (Date.parse(b.window.end) - Date.parse(b.window.start)) / 60000, 0));
   const unshootable = $derived(night.plan.reduce((sum, b) => sum + b.unusableMinutes, 0));
   const scoreOf = id => night.targets.find(t => t.id === id);
+
+  let showsScore = $state(false);
+  const cap = $derived(night.cappedBy ? night.targets.find(t => t.id === night.cappedBy) : null);
 </script>
 
 <div class="night-layout" class:wide>
@@ -119,6 +123,24 @@
     <li><span class="swatch" style:background="rgb(6, 8, 19)"></span>darker background = darker sky</li>
     {#if selected}<li><span class="swatch" style:background="var(--accent)"></span>{selected.displayName}'s altitude · shaded box = its best window</li>{/if}
   </ul>
+
+  <section class="why">
+    <button type="button" class="disclosure" onclick={() => (showsScore = !showsScore)} aria-expanded={showsScore}>
+      <h3>{showsScore ? '▾' : '▸'} Why this score</h3>
+    </button>
+    {#if showsScore}
+      <div class="panel why-body">
+        {#each night.factors as factor}<FactorBar {factor} />{/each}
+        {#if cap}
+          <p class="cap">
+            The sky alone scores {Math.round(night.skyScore)}, but the night is capped at {Math.round(night.score)} by its best
+            target, <button type="button" class="inline-link" onclick={() => open(cap.id)}>{cap.displayName}</button>:
+            a night is only as good as the best thing you can shoot on it.
+          </p>
+        {/if}
+      </div>
+    {/if}
+  </section>
 
   <section class="plan">
     <header>
@@ -216,7 +238,11 @@
   .legend { list-style: none; padding: 0; margin: -6px 0 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
   .legend li { display: flex; align-items: center; gap: 6px; }
   .swatch { width: 10px; height: 10px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.15); }
-  .plan, .others { display: grid; gap: 8px; }
+  .plan, .others, .why { display: grid; gap: 8px; }
+  .disclosure { justify-self: start; background: none; border: none; padding: 0; }
+  .why-body { padding: 12px 14px; display: grid; gap: 4px; }
+  .cap { margin: 4px 0 0; color: var(--muted); }
+  .inline-link { background: none; border: none; padding: 0; color: var(--accent); font: inherit; }
   .plan header { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
   h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
   .badge { font-size: 11px; color: var(--muted); border: 1px solid var(--panel-border); border-radius: 999px; padding: 0 7px; }
