@@ -51,7 +51,15 @@
           timeZoneIdentifier: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }));
       },
-      e => { busy = ''; error = e.message; },
+      e => {
+        busy = '';
+        // 1 is PERMISSION_DENIED: the browser or the phone blocks location
+        // for this site. Say how to fix it rather than the browser's wording.
+        error = e.code === 1
+          ? 'Location is blocked for this site. On an iPhone: Settings → Privacy & Security → Location Services → your browser → While Using the App, then reload. Or search for your town instead.'
+          : `Couldn't find your location: ${e.message}`;
+      },
+      { enableHighAccuracy: false, timeout: 20_000, maximumAge: 600_000 },
     );
   }
 
