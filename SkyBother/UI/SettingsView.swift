@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreImage
 
 struct SettingsView: View {
     @EnvironmentObject private var state: AppState
@@ -60,6 +61,8 @@ struct SettingsView: View {
                 .tabItem { Label("Equipment", systemImage: "camera.aperture") }
             PlanningSettings()
                 .tabItem { Label("Planning", systemImage: "slider.horizontal.3") }
+            SyncSettings()
+                .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
         }
         .background(FitWindowToContent())
         // Resizable both ways: the panes scroll, so a smaller window only
@@ -547,5 +550,113 @@ private struct SetupWizardBanner: View {
             }
             .padding(.vertical, 4)
         }
+    }
+}
+
+
+// MARK: - Sync
+
+/// Keeping this Mac, the web app and your phone in step with a sync code
+/// (SyncController). No account; the server only holds an encrypted copy.
+private struct SyncSettings: View {
+    @Environment(\.uiTextScale) private var uiTextScale
+    @ObservedObject private var sync = SyncController.shared
+    @State private var typed = ""
+    @State private var joinError: String?
+    @State private var confirmingStop = false
+
+    var body: some View {
+        Form {
+            if let code = sync.code {
+                Section("This Mac is syncing") {
+                    HStack(alignment: .top, spacing: 18) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(code)
+                                .font(.system(size: 18 * uiTextScale, weight: .bold, design: .monospaced))
+                                .foregroundStyle(Palette.accent)
+                                .textSelection(.enabled)
+                            Text("Enter this code on your other devices — on the web, Settings → Sync at skybother.com — or scan the code with your phone. Keep it private: it's the key to your settings.")
+                                .font(.scaled(.caption, scale: uiTextScale))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            HStack {
+                                Button("Copy Code") { copy(code) }
+                                if let link = sync.link { Button("Copy Link") { copy(link.absoluteString) } }
+                                Button(sync.isSyncing ? "Syncing…" : "Sync Now") { sync.syncNow() }
+                                    .disabled(sync.isSyncing)
+                            }
+                        }
+                        if let link = sync.link, let qr = Self.qrCode(for: link.absoluteString) {
+                            Image(nsImage: qr)
+                                .interpolation(.none)
+                                .resizable()
+                                .frame(width: 120, height: 120)
+                                .padding(6)
+                                .background(Color.white, in: RoundedRectangle(cornerRadius: 8))
+                                .help("Scan with your phone's camera to sync it")
+                        }
+                    }
+                    Text(sync.lastSynced.map { "Last synced \($0.formatted(.relative(presentation: .named)))." } ?? "Not synced yet.")
+                        .font(.scaled(.caption, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
+                    if let error = sync.errorMessage {
+                        Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(Palette.marginal)
+                    }
+                    HStack {
+                        Button("Turn Off on This Mac") { sync.turnOff() }
+                        Button("Stop Syncing Everywhere…", role: .destructive) { confirmingStop = true }
+                    }
+                }
+            } else {
+                Section("Sync") {
+                    Text("Keep your sites, telescope, settings and plans the same here, in the web app and on your phone. No account: one device gets a sync code, the others enter it. Everything is encrypted on the device before it leaves.")
+                        .font(.scaled(.callout, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("Turn On Sync") { sync.turnOn() }
+                }
+                Section("I have a code") {
+                    TextField("Sync code", text: $typed)
+                        .font(.system(.body, design: .monospaced))
+                    Button("Join") {
+                        do {
+                            try sync.join(typed)
+                            typed = ""
+                            joinError = nil
+                        } catch {
+                            joinError = error.localizedDescription
+                        }
+                    }
+                    .disabled(typed.trimmingCharacters(in: .whitespaces).isEmpty)
+                    Text("This Mac then takes on the synced settings.")
+                        .font(.scaled(.caption, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
+                    if let joinError { Text(joinError).foregroundStyle(Palette.marginal) }
+                    if let error = sync.errorMessage { Text(error).foregroundStyle(Palette.marginal) }
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .confirmationDialog("Stop syncing on every device?", isPresented: $confirmingStop) {
+            Button("Stop Syncing Everywhere", role: .destructive) { sync.stopEverywhere() }
+        } message: {
+            Text("The synced copy is deleted. Each device keeps the settings it has now.")
+        }
+    }
+
+    private func copy(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+    }
+
+    static func qrCode(for text: String) -> NSImage? {
+        guard let filter = CIFilter(name: "CIQRCodeGenerator") else { return nil }
+        filter.setValue(Data(text.utf8), forKey: "inputMessage")
+        filter.setValue("M", forKey: "inputCorrectionLevel")
+        guard let output = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 8, y: 8)) else { return nil }
+        let rep = NSCIImageRep(ciImage: output)
+        let image = NSImage(size: rep.size)
+        image.addRepresentation(rep)
+        return image
     }
 }

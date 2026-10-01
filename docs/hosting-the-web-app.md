@@ -42,9 +42,11 @@ you'd rather avoid another account.
 > static assets rather than a Pages project. `wrangler.jsonc` at the repo root points it at
 > `web/dist`. Settings used: build command `cd web && npm ci && npm run build`, deploy
 > command `npx wrangler deploy`, project name `skybother` (→ `skybother.<account>.workers.dev`).
-> A custom domain goes on under the Worker's **Settings → Domains & Routes**. The proxy,
-> when it comes, is this Worker's script rather than Pages Functions. The Pages steps below
-> are kept for reference.
+> A custom domain goes on under the Worker's **Domains** tab. The Worker's script
+> (`web/worker/index.js`) serves `/api/`: the sync store, one SQLite Durable Object per sync
+> code (free plan), created by the `migrations` in `wrangler.jsonc` on deploy — nothing to set
+> up in the dashboard. www.skybother.com redirects to skybother.com with a Redirect Rule.
+> The Pages steps below are kept for reference.
 
 Do this once the `web/` folder exists in the repo (Claude will create it).
 

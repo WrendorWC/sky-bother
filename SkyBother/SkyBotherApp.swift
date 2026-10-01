@@ -83,6 +83,7 @@ struct SkyBotherApp: App {
         WindowGroup(id: "main") {
             ContentView()
                 .environmentObject(state)
+                .onAppear { SyncController.shared.attach(to: state) }
                 .tint(Palette.accent)
                 .appTextScale(state.effectiveTextScale)
                 .nightMode(state.preferences.nightMode)

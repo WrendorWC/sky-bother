@@ -10,6 +10,7 @@
 		018C10723C100C10C27FFFA8 /* CloudMapClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D8871293889B76E76720A7 /* CloudMapClient.swift */; };
 		018C5DA610E416E337A61A9A /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89216F01CDADC4FD5ABB6250 /* Formatting.swift */; };
 		020ABB667E7EB220CEC1F224 /* Comet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D93329150DA0AC673F1C77 /* Comet.swift */; };
+		03022DBFA1951D403AE27FA7 /* SyncClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5C751AF4A460B91ED021D7 /* SyncClient.swift */; };
 		041099CED0B6C9E0ED1806C6 /* SkyCoordinates.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A123B8D06CD7F1E48A51CF /* SkyCoordinates.swift */; };
 		048D8D7B36D8B30C471FDAF6 /* NearbySpotSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = E126116CAD84EF2B606A71C9 /* NearbySpotSelection.swift */; };
 		052B01A944B3A6016D8B9FE7 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429F6B0C5AB1B97D1D20ED0D /* Components.swift */; };
@@ -41,6 +42,7 @@
 		3205068867F1696D45C52FE2 /* SessionModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5FF58CDCB84E27B67895123 /* SessionModeView.swift */; };
 		326F8BEC59E0A3AE3E8580AC /* RigFit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06609FAAB2A7F0C05A258C7D /* RigFit.swift */; };
 		3291EBA77F8EABE5807C187A /* SkyProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DA0FBE41B05F9E38B31F059 /* SkyProjection.swift */; };
+		33CE7AA1801E7602EE708ECF /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE177D284D57249F5D35949 /* SyncController.swift */; };
 		3527706E102932A9CA55E3F7 /* PlanDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03ED5D1151B8FA598EE0F6A2 /* PlanDraft.swift */; };
 		36AB3271D71079153445E30F /* NightPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040966302C52DB4A5DA521D9 /* NightPlan.swift */; };
 		37D9C691B55C21A09FCFA38C /* SkyCutoutClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B21991955A54E8BBF703ACE2 /* SkyCutoutClient.swift */; };
@@ -80,6 +82,7 @@
 		675F24DBC1EB4F951239D4A9 /* SkyBotherApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63BE2419188960C65B98408 /* SkyBotherApp.swift */; };
 		67B0B907F4BB36EFE504B7C9 /* PlanStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C65B07DCED75574C6A918D /* PlanStripView.swift */; };
 		690CEABE697F0A4CCAC13B44 /* Planner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C0D660B9E2BB51D1FDE213 /* Planner.swift */; };
+		692FBDA3BAA799C60EEF3632 /* SyncClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5C751AF4A460B91ED021D7 /* SyncClient.swift */; };
 		6A1EA4F100B4060BF41E916A /* Angles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4443A05DD710F60E39F0AF3B /* Angles.swift */; };
 		6B7061EB51530B362E54034B /* MetNorwayClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A7F52EB44A620F8E7E1166E /* MetNorwayClient.swift */; };
 		6C6A7286BE8AAFC8F37CCFBE /* LiveTelescope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8839457EDDBCBF8D16383287 /* LiveTelescope.swift */; };
@@ -182,6 +185,7 @@
 		F3E787EDB9872DD30A9FC554 /* PlannerWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A4697D00ED56792C87CDE5 /* PlannerWorkspaceView.swift */; };
 		F41D4A4AE0BF26ED56DDA3DC /* LiveImageViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58F7273ADB222F5A6CCB1583 /* LiveImageViewer.swift */; };
 		F73867C3F2B9D1E0E4862402 /* PlanDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9218A5DDDA723F9B6A81C3 /* PlanDraftTests.swift */; };
+		F80C3CF50C28EA2AB438EF11 /* SyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE177D284D57249F5D35949 /* SyncController.swift */; };
 		F8355B8854989ED06666701F /* Ephemeris.swift in Sources */ = {isa = PBXBuildFile; fileRef = A817D7755EE05DCD9EFCE167 /* Ephemeris.swift */; };
 		F9C858C81A863A7933BEB221 /* StarMap.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 60A19186776A6FB21AD71803 /* StarMap.jpg */; };
 		FBA7E1EA6EC4AF6FC330CB4F /* CameraFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C9EEDCDA3EC7A04EB4FED6A /* CameraFrame.swift */; };
@@ -207,6 +211,7 @@
 		21C5A347B7B38F09484F2E56 /* SkyBother.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SkyBother.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		256FB6DE32F301123F193DBF /* TargetImages.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = TargetImages.json; sourceTree = "<group>"; };
 		2AB56774EDA919324B27FDD0 /* SessionClockTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionClockTests.swift; sourceTree = "<group>"; };
+		2AE177D284D57249F5D35949 /* SyncController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncController.swift; sourceTree = "<group>"; };
 		2EF533F0EAA07F58C2317C4A /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
 		2F6BCE3EDF964A070B0EBAC3 /* DewRisk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DewRisk.swift; sourceTree = "<group>"; };
 		3072EA20C3E53FAF8B60944F /* NightMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightMode.swift; sourceTree = "<group>"; };
@@ -264,6 +269,7 @@
 		A750DF9618DEE6723EF61C88 /* MoonMap.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = MoonMap.jpg; sourceTree = "<group>"; };
 		A817D7755EE05DCD9EFCE167 /* Ephemeris.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ephemeris.swift; sourceTree = "<group>"; };
 		ABAFED8E569DB47A7F42CDE2 /* CatalogQueryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogQueryTests.swift; sourceTree = "<group>"; };
+		AF5C751AF4A460B91ED021D7 /* SyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncClient.swift; sourceTree = "<group>"; };
 		B188A9E4BAF4E4E9F29FEC03 /* TimeWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeWindow.swift; sourceTree = "<group>"; };
 		B1B5DCAF4E542405646E34C3 /* SiteFinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiteFinder.swift; sourceTree = "<group>"; };
 		B21991955A54E8BBF703ACE2 /* SkyCutoutClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyCutoutClient.swift; sourceTree = "<group>"; };
@@ -307,6 +313,7 @@
 			children = (
 				89216F01CDADC4FD5ABB6250 /* Formatting.swift */,
 				DC95A35A7813EA06C25324A2 /* Persistence.swift */,
+				AF5C751AF4A460B91ED021D7 /* SyncClient.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -383,6 +390,7 @@
 				378A0F752FD63B0C235E9A6B /* SkyDome.metal */,
 				6E00C215DAED2F778E792A08 /* SkyView.swift */,
 				9147CD88A151E37523D49B13 /* SkyViewScreen.swift */,
+				2AE177D284D57249F5D35949 /* SyncController.swift */,
 				67B068C06E3D0F513EDC1027 /* TargetCatalogView.swift */,
 				4496CB31E8E93CCDBAD854BA /* TargetDetailView.swift */,
 			);
@@ -669,6 +677,8 @@
 				B7974615B6B0E7E32ACCCD35 /* SkyView.swift in Sources */,
 				C792CBFCCF27F084A3889057 /* SkyViewScreen.swift in Sources */,
 				71F708AEF0F8A4663CDDAFAF /* Sun.swift in Sources */,
+				03022DBFA1951D403AE27FA7 /* SyncClient.swift in Sources */,
+				33CE7AA1801E7602EE708ECF /* SyncController.swift in Sources */,
 				9A3DDEDEE59797EA85BB553F /* Target.swift in Sources */,
 				8CE49F49B50BDA27419E9DB3 /* TargetCatalogView.swift in Sources */,
 				1EE8629C594AE74FB429B4F7 /* TargetDetailView.swift in Sources */,
@@ -765,6 +775,8 @@
 				CD9785BFC6F5680BBEC7DC4D /* SkyViewScreen.swift in Sources */,
 				9178B89D9CCE5BD2E02AA0B4 /* SkyViewTimelineTests.swift in Sources */,
 				0A6933603296E6B4655448BC /* Sun.swift in Sources */,
+				692FBDA3BAA799C60EEF3632 /* SyncClient.swift in Sources */,
+				F80C3CF50C28EA2AB438EF11 /* SyncController.swift in Sources */,
 				E4515E05ABFE8D35E57549F4 /* Target.swift in Sources */,
 				7B4E94F1C7E6E78C59AD412E /* TargetCatalogView.swift in Sources */,
 				B1601A579C92B32BF5D7A778 /* TargetDetailView.swift in Sources */,

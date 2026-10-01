@@ -181,8 +181,12 @@ inspector column on wide screens, Done / Cancel / Clear / Reset to Suggested. Ev
 plans are stored as the Mac stores them (`sessionPlans`), so an imported Mac file's plans show.
 Also: all the Mac's Settings ("More settings"), location inside Settings, night mode, the
 Mac-style labelled toolbar on wide screens, a full-width planner.
-- Not yet: the setup wizard; keyboard Delete on the web strip needs focus; plans don't
-  travel in setup links.
+- Setup wizard on the web (site, horizon, rig, goal, first plan), as on the Mac.
+- Sync by code (user's choice over iCloud or manual): Worker + Durable Object store of an
+  AES-GCM blob per code (id and key are hashes of the code); seven sections each stamped on
+  change and merged newest-wins. Web: lib/sync.js, syncState; Mac: Support/SyncClient.swift,
+  UI/SyncController.swift, Settings → Sync (code, QR, link). Tested web↔web and Mac↔web
+  against `wrangler dev`. SKYBOTHER_SYNC_BASE points the Mac at a test server.
 - Target detail shows the photo only; the Mac's frame-to-scale preview comes with the
   Aladin Lite sky browser (Phase 2).
 
