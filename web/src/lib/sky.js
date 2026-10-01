@@ -76,8 +76,25 @@ export function cloudDrift(track, fromMs, toMs) {
   return { east, north };
 }
 
-/** The night's forecast cloud by layer at a moment, 0–1, from its 5-minute samples. */
-export function cloudAt(night, ms) {
+/**
+ * The forecast's cloud by layer at a moment, 0–1, as the Mac's dome reads it
+ * (forecast.interpolated): from the sky track's hourly forecast, which covers
+ * the day as well as the night, else the night's own samples. Null beyond the
+ * forecast.
+ */
+export function cloudAt(night, ms, track = null) {
+  if (track?.cloud?.length) {
+    const step = track.stepMinutes * 60_000;
+    const f = clamp((ms - Date.parse(track.start)) / step, 0, track.cloud.length - 1);
+    const i = Math.min(Math.floor(f), track.cloud.length - 2), t = f - i;
+    const a = track.cloud[i], b = track.cloud[i + 1] ?? a;
+    if (a.length !== 3 || b.length !== 3) return null;
+    return { low: a[0] + (b[0] - a[0]) * t, mid: a[1] + (b[1] - a[1]) * t, high: a[2] + (b[2] - a[2]) * t };
+  }
+  return nightCloudAt(night, ms);
+}
+
+function nightCloudAt(night, ms) {
   const samples = night.samples;
   if (!night.hasWeather || samples.length < 2) return null;
   const t0 = Date.parse(samples[0].date), t1 = Date.parse(samples[samples.length - 1].date);

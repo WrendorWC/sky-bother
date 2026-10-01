@@ -97,7 +97,7 @@
       moon: scene.moon,
       skyColour: palette.sky(scene.sun.altitude),
       nightColour: palette.sky(-90),
-      clouds: showsClouds ? sky.cloudAt(night, at) : null,
+      clouds: showsClouds ? sky.cloudAt(night, at, track) : null,
       drift: sky.cloudDrift(track, start, at),
     });
     drawOverlay(g);
@@ -318,7 +318,11 @@
     const soon = sky.horizontal(selected.rightAscension, selected.declination, d + 5 / 1440, track.latitude, track.longitude);
     return { ...here, rising: soon.altitude > here.altitude, blocked: sky.blockedAltitude(track.horizon, here.azimuth) };
   });
-  const nowInWindow = $derived(Date.now() > start && Date.now() < end);
+  // Now works whenever the sky track covers it (half a day either side of
+  // the night), so by day it shows today's sky, like the Mac's Now.
+  const trackEnd = $derived(track ? Date.parse(track.start) + (track.sun.length - 1) * track.stepMinutes * 60_000 : 0);
+  const nowAvailable = $derived(track != null && Date.now() > Date.parse(track.start) && Date.now() < trackEnd);
+  const outsideNight = $derived(at < start || at > end);
 </script>
 
 <section class="sky-view">
@@ -345,12 +349,12 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" /></svg>
           {/if}
         </button>
-        <button type="button" class:on={followingNow} onclick={goNow} disabled={!nowInWindow}
-                title={nowInWindow ? 'Show the sky now' : 'Now is outside this night'}>Now</button>
+        <button type="button" class:on={followingNow} onclick={goNow} disabled={!nowAvailable}
+                title={nowAvailable ? 'Show the sky now' : 'Now is a different day from this night'}>Now</button>
         <span class="clock">{followingNow ? 'Now · ' : ''}{time(at, timeZone)}</span>
       </div>
-      <input class="scrubber" type="range" min="0" max="1000" step="1" aria-label="Time"
-             value={Math.round(((at - start) / (end - start)) * 1000)} oninput={scrub} />
+      <input class="scrubber" class:outside={outsideNight} type="range" min="0" max="1000" step="1" aria-label="Time"
+             value={Math.round(Math.min(1, Math.max(0, (at - start) / (end - start))) * 1000)} oninput={scrub} />
       {#if night.plan.length}
         <PlanStrip {night} selectedID={selectedID} onselect={jumpTo} />
       {/if}
@@ -414,6 +418,8 @@
   .controls .on { background: rgba(158, 133, 250, 0.25); border-color: var(--accent); }
   .clock { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .scrubber { width: 100%; accent-color: var(--accent); padding: 0; }
+  /* Now, by day: the slider only spans the night. */
+  .scrubber.outside { opacity: 0.4; }
   .credit { font-size: 11px; color: var(--tertiary); }
   .side { padding: 14px; display: grid; gap: 8px; }
   .target-name { margin-top: 8px; color: var(--text); text-transform: none; letter-spacing: 0; font-size: 17px; }

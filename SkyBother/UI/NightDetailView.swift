@@ -28,6 +28,10 @@ struct NightDetailView: View {
     @State private var catalogTarget: Target?
     /// A real other-targets row, once one has been laid out.
     @State private var measuredRowHeight: CGFloat = 0
+    /// The night score's "Why this score" popover, and whether the pointer
+    /// is over the score (for the pointing-hand cursor).
+    @State private var isShowingScoreBreakdown = false
+    @State private var isHoveringScore = false
 
     init(plan: NightPlan) {
         self.plan = plan
@@ -592,7 +596,7 @@ struct NightDetailView: View {
     /// not more. Everything below this is the detail that backs it up.
     private var missionSummary: some View {
         HStack(alignment: .center, spacing: 16) {
-            ScoreBadge(score: plan.score, size: 58)
+            nightScoreButton
             // Separate lines rather than one run-on sentence: when to shoot,
             // what to shoot, and what's limiting it each read as their own
             // thought.
@@ -691,6 +695,34 @@ struct NightDetailView: View {
         .padding(16)
         .panelStyle(cornerRadius: 14)
         .animation(.easeInOut(duration: 0.3), value: plan.id)
+    }
+
+    /// The big score, clickable for why: the night's four sky factors and
+    /// what each costs, and the best-target cap when it applies — the same
+    /// breakdown as the web app's "Why this score".
+    private var nightScoreButton: some View {
+        Button {
+            isShowingScoreBreakdown.toggle()
+        } label: {
+            ScoreBadge(score: plan.score, size: 58)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            guard hovering != isHoveringScore else { return }
+            isHoveringScore = hovering
+            if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+        }
+        .onDisappear {
+            if isHoveringScore { NSCursor.pop(); isHoveringScore = false }
+        }
+        .help("Why this score")
+        .accessibilityLabel("Night score \(Int(plan.score.rounded())). Show why")
+        .popover(isPresented: $isShowingScoreBreakdown, arrowEdge: .bottom) {
+            NightScoreBreakdown(plan: plan) { id in
+                isShowingScoreBreakdown = false
+                state.selectedTargetID = id
+            }
+        }
     }
 
     private var operationalSummaryLine: String {
@@ -1121,5 +1153,46 @@ private struct DewRiskStrip: View {
         case .high: return "\(delta(DewRisk.highAbove))–\(delta(DewRisk.moderateAbove))"
         case .veryHigh: return "\(delta(DewRisk.highAbove)) or less"
         }
+    }
+}
+
+
+/// "Why this score" for a night: its own sky factors with the points each
+/// costs, and, when the best target caps the night below its sky score
+/// (Planner.nightScore), which target and why. The web app shows the same.
+struct NightScoreBreakdown: View {
+    @Environment(\.uiTextScale) private var uiTextScale
+    var plan: NightPlan
+    var onSelectTarget: (String) -> Void
+
+    private var skyScore: Double { weightedGeometricScore(plan.factors) }
+
+    private var cap: TargetPlan? {
+        guard !plan.isCloudedOut, let best = plan.bestTarget, best.score < skyScore - 0.5 else { return nil }
+        return best
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader("Why this score")
+            VStack(alignment: .leading, spacing: 7) {
+                ForEach(plan.factors) { factor in
+                    FactorBar(factor: factor, impact: scoreImpact(of: factor, in: plan.factors, actualScore: skyScore))
+                }
+            }
+            if let cap {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("The sky alone scores \(Int(skyScore.rounded())), but the night is capped at \(Int(plan.score.rounded())) by its best target. A night is only as good as the best thing you can shoot on it.")
+                        .font(.scaled(.callout, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("Show \(cap.target.displayName)") { onSelectTarget(cap.id) }
+                        .buttonStyle(.link)
+                        .font(.scaled(.callout, scale: uiTextScale))
+                }
+            }
+        }
+        .padding(16)
+        .frame(width: 360 * max(1, uiTextScale))
     }
 }

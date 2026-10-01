@@ -370,6 +370,10 @@ public enum EngineAPI {
         /// [km/h toward east, km/h toward north] per step; wind direction is
         /// where it blows from, so this is reversed (SkyView.windVector).
         var wind: [[Double]]
+        /// [low, mid, high] cloud cover 0–1 per step, from the hourly forecast
+        /// (the night's samples stop at its edges; Sky View's Now can be by day).
+        /// Empty beyond the forecast.
+        var cloud: [[Double]]
         var stars: [Star]
     }
 
@@ -381,8 +385,8 @@ public enum EngineAPI {
 
     struct TrackRequest: Decodable { var planKey: String }
 
-    /// Sky View's data for a night of the last week planned, from an hour
-    /// before the chart window to an hour after.
+    /// Sky View's data for a night of the last week planned, from twelve
+    /// hours before the chart window to twelve after.
     public static func skyTrack(_ requestJSON: Data) -> Data {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -392,9 +396,10 @@ public enum EngineAPI {
             return (try? encoder.encode(Failure(error: "No such night."))) ?? Data()
         }
         let step = 10.0
-        let start = night.chartWindow.start.addingTimeInterval(-3600)
-        let count = Int((night.chartWindow.duration + 7200) / (step * 60)) + 1
-        var sun: [[Double]] = [], moon: [[Double]] = [], wind: [[Double]] = []
+        // Twelve hours either side, so Now can show today's sky by day too.
+        let start = night.chartWindow.start.addingTimeInterval(-12 * 3600)
+        let count = Int((night.chartWindow.duration + 24 * 3600) / (step * 60)) + 1
+        var sun: [[Double]] = [], moon: [[Double]] = [], wind: [[Double]] = [], cloud: [[Double]] = []
         for index in 0..<count {
             let date = start.addingTimeInterval(Double(index) * step * 60)
             let d = date.daysSinceJ2000
@@ -408,13 +413,16 @@ public enum EngineAPI {
             if let hour = lastForecast.interpolated(at: date) {
                 let toward = ((hour.windDirectionDegrees ?? 270) + 180) * .pi / 180
                 wind.append([sin(toward) * hour.windSpeedKilometersPerHour, cos(toward) * hour.windSpeedKilometersPerHour])
+                cloud.append([hour.cloudCoverLow / 100, hour.cloudCoverMid / 100, hour.cloudCoverHigh / 100])
             } else {
                 wind.append([0, 0])
+                cloud.append([])
             }
         }
         let track = SkyTrack(latitude: night.site.latitude, longitude: night.site.longitude,
                              horizon: night.site.horizonByDirection, start: start, stepMinutes: step,
                              sun: sun, moon: moon, wind: wind,
+                             cloud: lastForecast.hours.isEmpty ? [] : cloud,
                              stars: BuiltInCatalog.signpostStars.map {
                                  Star(name: $0.displayName, rightAscension: $0.rightAscension, declination: $0.declination)
                              })
