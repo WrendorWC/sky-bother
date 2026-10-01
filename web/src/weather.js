@@ -10,15 +10,17 @@ export async function fetchForecast(latitude, longitude, nights) {
   const url = models => `https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(4)}&longitude=${longitude.toFixed(4)}` +
     `&hourly=${hourly.join(',')}&timeformat=unixtime&timezone=UTC&wind_speed_unit=kmh&temperature_unit=celsius` +
     `&forecast_days=${days}&models=${models}`;
-  // Both models, as the Mac app asks. When that request stalls or comes back
-  // broken (Open-Meteo's NBM backend sometimes does), Open-Meteo's own model
-  // alone still gives a forecast; the Mac app falls back to MET Norway
-  // instead, which a browser can't reach without a proxy.
-  try {
-    return await fetchJSONText(url('best_match,ncep_nbm_conus'));
-  } catch {
-    return fetchJSONText(url('best_match'));
-  }
+  // Both models, as the Mac app asks. Open-Meteo's NBM backend sometimes
+  // stalls or sends back a broken body; Open-Meteo's own model alone still
+  // gives a forecast. So if the pair hasn't answered in 3 s, ask for that too
+  // and take the first usable answer, preferring the pair. (The Mac app falls
+  // back to MET Norway instead, which a browser can't reach without a proxy.)
+  const both = fetchJSONText(url('best_match,ncep_nbm_conus'));
+  const head = new Promise(resolve => setTimeout(resolve, 3000, 'slow'));
+  const first = await Promise.race([both.then(text => ({ text }), error => ({ error })), head]);
+  if (first !== 'slow' && first.text) return first.text;
+  const alone = fetchJSONText(url('best_match'));
+  return Promise.any([both, alone]).catch(failure => { throw failure.errors?.at(-1) ?? failure; });
 }
 
 /** The body, if it's a JSON object with an hourly forecast; throws otherwise. */

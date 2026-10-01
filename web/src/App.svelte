@@ -14,6 +14,9 @@
   let nights = $state([]);
   let catalog = $state([]);
   let loading = $state(false);
+  // What's happening while the week is fetched and planned, shown up top —
+  // on a phone the engine download alone can take a while.
+  let status = $state('');
   let error = $state('');
   let updatedAt = $state(null);
   let editingSite = $state(false);
@@ -48,7 +51,18 @@
   }
 
   async function setSite(site) {
-    const base = settings ?? (await defaults());
+    nights = [];
+    status = 'Starting up…';
+    loading = true;
+    let base;
+    try {
+      base = settings ?? (await defaults());
+    } catch (e) {
+      loading = false;
+      status = '';
+      error = `Sky Bother couldn't start on this browser: ${e.message}`;
+      return;
+    }
     settings = { rig: base.rig, preferences: base.preferences, customTargets: base.customTargets ?? [], site };
     editingSite = false;
     saveSettings();
@@ -56,6 +70,7 @@
   }
 
   function importSettings(imported) {
+    nights = [];
     settings = imported;
     editingSite = false;
     saveSettings();
@@ -78,6 +93,7 @@
     if (!settings) return;
     error = '';
     loading = true;
+    status = `Getting the forecast for ${settings.site.name || 'your site'}…`;
     try {
       const { site, preferences } = settings;
       const [openMeteoResponse, cometElements] = await Promise.all([
@@ -85,12 +101,14 @@
         fetchCometElements(),
       ]);
       fetched = { key: `${site.latitude},${site.longitude}`, openMeteoResponse, cometElements };
+      status = 'Planning the week…';
       await plan();
       updatedAt = Date.now();
     } catch (e) {
       error = e.message;
     } finally {
       loading = false;
+      status = '';
     }
   }
 
@@ -151,6 +169,7 @@
     </div>
   {/if}
 
+  {#if loading && status}<p class="status-bar" role="status"><span class="spinning">↻</span> {status}</p>{/if}
   {#if error}<p class="error banner">{error}</p>{/if}
 
   {#if settings}
@@ -202,6 +221,10 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .site-area { margin-top: 14px; }
   .banner { margin: 14px 0 0; }
+  .status-bar {
+    margin: 14px 0 0; padding: 10px 14px; border-radius: 10px; color: var(--text);
+    background: rgba(158, 133, 250, 0.14); border: 1px solid rgba(158, 133, 250, 0.4);
+  }
   .empty { margin: 20px 2px; }
 
   .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; margin-top: 16px; }
