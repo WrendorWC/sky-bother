@@ -348,6 +348,30 @@
   const outsideNight = $derived(at < start || at > end);
 </script>
 
+{#snippet controls()}
+<div class="controls">
+  <button type="button" class="play" onclick={togglePlay} aria-label={playing ? 'Pause' : 'Play the night'}>
+    {#if playing}
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
+    {:else}
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" /></svg>
+    {/if}
+  </button>
+  <button type="button" class:on={followingNow} onclick={goNow} disabled={!nowAvailable}
+          title={nowAvailable ? 'Show the sky now' : 'Now is a different day from this night'}>Now</button>
+  <span class="clock">{followingNow ? 'Now · ' : ''}{time(at, timeZone)}</span>
+</div>
+{/snippet}
+
+{#snippet modes()}
+<div class="modes" role="radiogroup" aria-label="As time moves">
+  <button type="button" role="radio" aria-checked={mode === 'follow'} class:on={mode === 'follow'}
+          onclick={() => (mode = 'follow')}>Follow planned targets</button>
+  <button type="button" role="radio" aria-checked={mode === 'stay'} class:on={mode === 'stay'}
+          onclick={() => (mode = 'stay')} disabled={!selectedID}>Stay on selected target</button>
+</div>
+{/snippet}
+
 <section class="sky-view">
   <header>
     <a class="back" href="#/{night.planKey}">‹ {longDate(night.planKey)}</a>
@@ -364,34 +388,21 @@
         {#if !track && !error}<p class="loading muted">Loading the sky…</p>{/if}
       </div>
 
-      <div class="controls">
-        <button type="button" class="play" onclick={togglePlay} aria-label={playing ? 'Pause' : 'Play the night'}>
-          {#if playing}
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
-          {:else}
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" /></svg>
-          {/if}
-        </button>
-        <button type="button" class:on={followingNow} onclick={goNow} disabled={!nowAvailable}
-                title={nowAvailable ? 'Show the sky now' : 'Now is a different day from this night'}>Now</button>
-        <span class="clock">{followingNow ? 'Now · ' : ''}{time(at, timeZone)}</span>
-      </div>
+      <div class="phone-only">{@render controls()}</div>
       <input class="scrubber" class:outside={outsideNight} type="range" min="0" max="1000" step="1" aria-label="Time"
              value={Math.round(Math.min(1, Math.max(0, (at - start) / (end - start))) * 1000)} oninput={scrub} />
       {#if night.plan.length}
         <PlanStrip {night} selectedID={selectedID} onselect={jumpTo} />
-        <div class="modes" role="radiogroup" aria-label="As time moves">
-          <button type="button" role="radio" aria-checked={mode === 'follow'} class:on={mode === 'follow'}
-                  onclick={() => (mode = 'follow')}>Follow planned targets</button>
-          <button type="button" role="radio" aria-checked={mode === 'stay'} class:on={mode === 'stay'}
-                  onclick={() => (mode = 'stay')} disabled={!selectedID}>Stay on selected target</button>
-        </div>
+        <div class="phone-only">{@render modes()}</div>
       {/if}
       <p class="credit">Star map: NASA/Goddard SVS, from Gaia DR2 (ESA/Gaia/DPAC), Hipparcos and Tycho-2</p>
     </div>
 
     <aside class="panel side">
-      <h3>{time(at, timeZone)}</h3>
+      <!-- On a wide screen the time controls live here, leaving the dome
+           the height of the window. -->
+      <div class="wide-only">{@render controls()}</div>
+      {#if night.plan.length}<div class="wide-only">{@render modes()}</div>{/if}
       {#if scene}
         <p class="muted-strong">
           {#if scene.sun.altitude > 0}Sun up, {degrees(scene.sun.altitude)}
@@ -437,14 +448,15 @@
   h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
   p { margin: 0; }
   .layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr) 280px; align-items: start; }
-  .dome-area { display: grid; gap: 10px; min-width: 0; max-width: 760px; }
+  .dome-area { display: grid; gap: 10px; min-width: 0; max-width: 900px; }
   /* As wide as there's room for, but never taller than the window less the
      header and the controls below it, so the whole dome and its controls
      are on screen together. */
   .dome {
     position: relative; touch-action: none; justify-self: center;
-    width: min(100%, max(260px, calc(100dvh - 400px)));
+    width: min(100%, max(280px, calc(100dvh - 250px)));
   }
+  .phone-only { display: none; }
   .dome canvas { position: absolute; inset: 0; display: block; }
   .loading { position: absolute; inset: 0; display: grid; place-items: center; }
   .controls { display: flex; gap: 10px; align-items: center; }
@@ -467,5 +479,10 @@
   .picks button.on { border-color: var(--accent); background: rgba(158, 133, 250, 0.18); }
   @media (max-width: 860px) {
     .layout { grid-template-columns: minmax(0, 1fr); }
+    .phone-only { display: block; }
+    .wide-only { display: none; }
+    .dome { width: min(100%, max(260px, calc(100dvh - 400px))); }
   }
+  .side .controls { margin-bottom: 4px; }
+  .side .modes { margin-bottom: 8px; }
 </style>
