@@ -7,10 +7,13 @@
   import SettingsPanel from './lib/SettingsPanel.svelte';
   import Catalog from './lib/Catalog.svelte';
   import { age } from './lib/format.js';
+  import { isSetupHash, readSetup } from './lib/setupLink.js';
 
   const storageKey = 'skybother.settings.v1';
 
   let settings = $state(loadSettings());
+  // A #setup= link opened here, waiting for "Use this setup".
+  let offeredSetup = $state(null);
   let nights = $state([]);
   let catalog = $state([]);
   let loading = $state(false);
@@ -129,8 +132,33 @@
     catalog = await catalogEntries();
   }
 
+  function checkForSetup() {
+    if (!isSetupHash(location.hash)) return;
+    try {
+      offeredSetup = readSetup(location.hash);
+    } catch {
+      error = 'That setup link is damaged or incomplete.';
+    }
+    history.replaceState(null, '', location.pathname);
+    route = '';
+  }
+
+  function useOfferedSetup() {
+    settings = offeredSetup;
+    offeredSetup = null;
+    editingSite = false;
+    nights = [];
+    saveSettings();
+    refresh();
+  }
+
+  checkForSetup();
+
   $effect(() => {
-    const onHash = () => (route = location.hash);
+    const onHash = () => {
+      checkForSetup();
+      route = location.hash;
+    };
     const tick = setInterval(() => (clock = Date.now()), 60_000);
     addEventListener('hashchange', onHash);
     return () => { removeEventListener('hashchange', onHash); clearInterval(tick); };
@@ -156,7 +184,22 @@
     {/if}
   </header>
 
-  {#if !settings || editingSite}
+  {#if offeredSetup}
+    <section class="panel offer" role="dialog" aria-label="Use this setup?">
+      <p><strong>Use this setup?</strong></p>
+      <p class="muted-strong">
+        {offeredSetup.site.name || 'Unnamed site'} · {offeredSetup.rig.name} ·
+        {offeredSetup.preferences.maximumCloudCover}% cloud limit
+      </p>
+      {#if settings}<p class="muted">It replaces this browser's site, rig and settings.</p>{/if}
+      <div class="offer-buttons">
+        <button type="button" class="primary" onclick={useOfferedSetup}>Use This Setup</button>
+        <button type="button" onclick={() => (offeredSetup = null)}>Cancel</button>
+      </div>
+    </section>
+  {/if}
+
+  {#if (!settings && !offeredSetup) || editingSite}
     <div class="site-area">
       <SitePanel {settings} onsite={setSite} onimport={importSettings} onbortle={setBortle}
                  oncancel={() => (editingSite = false)} />
@@ -201,7 +244,7 @@
         {/if}
       </main>
     </div>
-  {:else}
+  {:else if !offeredSetup}
     <p class="empty muted">Choose a site to see the week ahead.</p>
   {/if}
 </div>
@@ -221,6 +264,10 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .site-area { margin-top: 14px; }
   .banner { margin: 14px 0 0; }
+  .offer { margin-top: 14px; padding: 14px; display: grid; gap: 6px; border-color: var(--accent); }
+  .offer p { margin: 0; }
+  .offer-buttons { display: flex; gap: 8px; margin-top: 6px; }
+  .primary { background: var(--accent); border-color: var(--accent); color: #120e22; font-weight: 600; }
   .status-bar {
     margin: 14px 0 0; padding: 10px 14px; border-radius: 10px; color: var(--text);
     background: rgba(158, 133, 250, 0.14); border: 1px solid rgba(158, 133, 250, 0.4);

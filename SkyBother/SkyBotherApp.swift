@@ -99,6 +99,20 @@ struct SkyBotherApp: App {
                     Task { await state.refresh(force: true) }
                 }
                 .keyboardShortcut("r", modifiers: .command)
+                Divider()
+                // The web app at skybother.com, set up like this Mac: for a
+                // phone at the scope, or a friend.
+                Button("Copy Web Setup Link") {
+                    guard let link = state.settings.webSetupLink else { return }
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(link.absoluteString, forType: .string)
+                }
+                .disabled(!state.settings.hasSetLocation)
+                Button("Open on the Web") {
+                    guard let link = state.settings.webSetupLink else { return }
+                    NSWorkspace.shared.open(link)
+                }
+                .disabled(!state.settings.hasSetLocation)
             }
             CommandGroup(after: .toolbar) {
                 CatalogWindowButton()

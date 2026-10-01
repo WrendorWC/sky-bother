@@ -5,6 +5,7 @@
   // brings those over.
   import { duration } from './format.js';
   import { uuid } from './uuid.js';
+  import { setupLink } from './setupLink.js';
 
   let { settings, rigPresets, onchange, ondone } = $props();
 
@@ -51,6 +52,27 @@
   function setCloudLimit() {
     onchange({ ...settings, preferences: { ...settings.preferences, maximumCloudCover: cloudLimit } });
   }
+
+  // Your setup as a link, for your phone or a friend.
+  let linkNote = $state('');
+  let linkShown = $state('');
+  async function copyLink() {
+    const link = setupLink(settings);
+    try {
+      await navigator.clipboard.writeText(link);
+      linkNote = 'Copied. Open it on your phone or send it to a friend.';
+      linkShown = '';
+    } catch {
+      linkNote = 'Copy this link:';
+      linkShown = link;
+    }
+  }
+  async function shareLink() {
+    try {
+      await navigator.share({ title: 'My Sky Bother setup', url: setupLink(settings) });
+    } catch {}
+  }
+  const canShare = typeof navigator.share === 'function';
 
   function setImperial(on) {
     onchange({ ...settings, preferences: { ...settings.preferences, usesImperialUnits: on } });
@@ -103,6 +125,16 @@
     <input type="checkbox" checked={settings.preferences.usesImperialUnits} onchange={e => setImperial(e.currentTarget.checked)} />
     <span>Use Fahrenheit and mph</span>
   </label>
+
+  <div class="row">
+    <span class="label">Use this setup elsewhere</span>
+    <div class="link-buttons">
+      <button type="button" onclick={copyLink}>Copy Setup Link</button>
+      {#if canShare}<button type="button" onclick={shareLink}>Share…</button>{/if}
+    </div>
+    <span class="muted">{linkNote || 'A link that gives another device your site, telescope and settings.'}</span>
+    {#if linkShown}<input type="text" readonly value={linkShown} onfocus={e => e.currentTarget.select()} />{/if}
+  </div>
 </section>
 
 <style>
@@ -118,4 +150,5 @@
   .segments { display: flex; flex-wrap: wrap; gap: 6px; }
   .segments button.on { background: rgba(158, 133, 250, 0.25); border-color: var(--accent); }
   p { margin: 0; }
+  .link-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 </style>

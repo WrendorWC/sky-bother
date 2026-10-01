@@ -210,3 +210,29 @@ struct WeatherCacheStore: Sendable {
         }
     }
 }
+
+extension StoredSettings {
+    /// This setup as a link to the web app — skybother.com/#setup=… — which
+    /// offers to take on the same site, rig, preferences and custom targets.
+    /// The web app reads and makes the same links (web/src/lib/setupLink.js):
+    /// base64url of the JSON { v: 1, site, rig, preferences, customTargets }.
+    /// Plans and saved sites and rigs stay on this Mac.
+    var webSetupLink: URL? {
+        struct Payload: Encodable {
+            var v = 1
+            var site: Site
+            var rig: Rig
+            var preferences: Preferences
+            var customTargets: [Target]
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(Payload(site: site, rig: rig, preferences: preferences,
+                                                     customTargets: customTargets)) else { return nil }
+        let encoded = data.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+        return URL(string: "https://skybother.com/#setup=\(encoded)")
+    }
+}
