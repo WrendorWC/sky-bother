@@ -5,6 +5,7 @@
   import NightDetail from './lib/NightDetail.svelte';
   import SitePanel from './lib/SitePanel.svelte';
   import SettingsPanel from './lib/SettingsPanel.svelte';
+  import ImportSettings from './lib/ImportSettings.svelte';
   import Catalog from './lib/Catalog.svelte';
   import SkyView from './lib/SkyView.svelte';
   import { age } from './lib/format.js';
@@ -82,6 +83,7 @@
   function importSettings(imported) {
     nights = [];
     settings = imported;
+    editingSettings = false;
     editingSite = false;
     saveSettings();
     refresh();
@@ -194,13 +196,6 @@
       <button type="button" class="site-button" onclick={() => { editingSite = !editingSite; editingSettings = false; }} title="Change site">
         {settings.site.name || 'Unnamed site'} <span aria-hidden="true">▾</span>
       </button>
-      <button type="button" class="icon" onclick={() => { editingSettings = !editingSettings; editingSite = false; }}
-              title="Settings" aria-label="Settings" aria-expanded={editingSettings}>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M9.96 5.10 L10.17 2.58 L13.83 2.58 L14.04 5.10 L15.44 5.67 L17.37 4.04 L19.96 6.63 L18.33 8.56 L18.90 9.96 L21.42 10.17 L21.42 13.83 L18.90 14.04 L18.33 15.44 L19.96 17.37 L17.37 19.96 L15.44 18.33 L14.04 18.90 L13.83 21.42 L10.17 21.42 L9.96 18.90 L8.56 18.33 L6.63 19.96 L4.04 17.37 L5.67 15.44 L5.10 14.04 L2.58 13.83 L2.58 10.17 L5.10 9.96 L5.67 8.56 L4.04 6.63 L6.63 4.04 L8.56 5.67 Z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-      </button>
       <button type="button" class="icon" onclick={refresh} disabled={loading} title="Fetch the latest forecast" aria-label="Refresh">
         <svg class:spinning={loading} viewBox="0 0 24 24" aria-hidden="true">
           <path d="M20 12a8 8 0 1 1-2.34-5.66" />
@@ -208,6 +203,13 @@
         </svg>
       </button>
     {/if}
+    <button type="button" class="icon" onclick={() => { editingSettings = !editingSettings; editingSite = false; }}
+              title="Settings" aria-label="Settings" aria-expanded={editingSettings}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9.96 5.10 L10.17 2.58 L13.83 2.58 L14.04 5.10 L15.44 5.67 L17.37 4.04 L19.96 6.63 L18.33 8.56 L18.90 9.96 L21.42 10.17 L21.42 13.83 L18.90 14.04 L18.33 15.44 L19.96 17.37 L17.37 19.96 L15.44 18.33 L14.04 18.90 L13.83 21.42 L10.17 21.42 L9.96 18.90 L8.56 18.33 L6.63 19.96 L4.04 17.37 L5.67 15.44 L5.10 14.04 L2.58 13.83 L2.58 10.17 L5.10 9.96 L5.67 8.56 L4.04 6.63 L6.63 4.04 L8.56 5.67 Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      </button>
   </header>
 
   {#if offeredSetup}
@@ -227,15 +229,21 @@
 
   {#if (!settings && !offeredSetup) || editingSite}
     <div class="site-area">
-      <SitePanel {settings} onsite={setSite} onimport={importSettings} onbortle={setBortle}
+      <SitePanel {settings} onsite={setSite} onbortle={setBortle}
                  oncancel={() => (editingSite = false)} />
     </div>
   {/if}
 
   {#if settings && editingSettings && rigPresets.length}
     <div class="site-area">
-      <SettingsPanel {settings} {rigPresets} onchange={changeSettings} ondone={() => (editingSettings = false)} />
+      <SettingsPanel {settings} {rigPresets} onchange={changeSettings} onimport={importSettings}
+                     ondone={() => (editingSettings = false)} />
     </div>
+  {:else if !settings && editingSettings}
+    <!-- Before a site is chosen, Settings is just the import. -->
+    <section class="panel site-area first-import">
+      <ImportSettings onimport={importSettings} />
+    </section>
   {/if}
 
   {#if loading && status}<p class="status-bar" role="status"><span class="spinning">↻</span> {status}</p>{/if}
@@ -297,6 +305,7 @@
   .spinning { display: inline-block; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .site-area { margin-top: 14px; }
+  .first-import { padding: 14px; }
   .banner { margin: 14px 0 0; }
   .offer { margin-top: 14px; padding: 14px; display: grid; gap: 6px; border-color: var(--accent); }
   .offer p { margin: 0; }

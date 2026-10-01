@@ -7,8 +7,9 @@
   import { uuid } from './uuid.js';
   import { setupLink } from './setupLink.js';
   import MoreSettings from './MoreSettings.svelte';
+  import ImportSettings from './ImportSettings.svelte';
 
-  let { settings, rigPresets, onchange, ondone } = $props();
+  let { settings, rigPresets, onchange, onimport, ondone } = $props();
 
   // Rig.presetGroup
   const smartMakers = ['ZWO Seestar', 'Celestron Origin', 'Unistellar', 'Vaonis', 'DwarfLab'];
@@ -133,6 +134,8 @@
     <span class="muted">site, horizon, your own rig, darkness, altitude, what to show, night mode</span>
   </button>
   {#if showsMore}<MoreSettings {settings} {onchange} />{/if}
+
+  <ImportSettings {onimport} />
 
   <div class="row">
     <span class="label">Use this setup elsewhere</span>

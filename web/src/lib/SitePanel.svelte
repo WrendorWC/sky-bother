@@ -4,7 +4,7 @@
   import { searchPlaces, elevationAt, placeDetails } from '../weather.js';
   import { uuid } from './uuid.js';
 
-  let { settings, onsite, onimport, onbortle, oncancel } = $props();
+  let { settings, onsite, onbortle, oncancel } = $props();
 
   let query = $state('');
   let places = $state([]);
@@ -76,18 +76,6 @@
     );
   }
 
-  // Reads the Mac app's settings.json (~/Library/Application Support/SkyBother).
-  async function importMacSettings(event) {
-    const file = event.currentTarget.files?.[0];
-    if (!file) return;
-    try {
-      const stored = JSON.parse(await file.text());
-      if (!stored.site || !stored.rig || !stored.preferences) throw new Error('That isn’t a Sky Bother settings file.');
-      onimport({ site: stored.site, rig: stored.rig, preferences: stored.preferences, customTargets: stored.customTargets ?? [] });
-    } catch (e) {
-      error = e.message;
-    }
-  }
 </script>
 
 <section class="panel site">
@@ -114,10 +102,6 @@
     <input type="search" placeholder="Town, place or postal code" bind:value={query} />
     <button type="submit" disabled={!query.trim()}>Search</button>
     <button type="button" onclick={useMyLocation}>Use My Location</button>
-    <label class="button" title="A settings file saved from the Mac app with File → Export Settings…">
-      Import Mac Settings File
-      <input type="file" accept=".json,application/json" onchange={importMacSettings} hidden />
-    </label>
     {#if settings && oncancel}<button type="button" onclick={oncancel}>Done</button>{/if}
   </form>
 
@@ -130,7 +114,7 @@
       {/each}
     </ul>
   {/if}
-  <p class="muted">From the Mac app, File → Copy Web Setup Link is quickest. Or use File → Export Settings… there and import that file here.</p>
+  {#if !settings}<p class="muted">Using the Mac app too? Import its settings from ⚙︎ Settings above.</p>{/if}
   {#if busy}<p class="muted">{busy}</p>{/if}
   {#if error}<p class="error">{error}</p>{/if}
 </section>
