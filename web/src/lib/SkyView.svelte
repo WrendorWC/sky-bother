@@ -438,7 +438,13 @@
   p { margin: 0; }
   .layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr) 280px; align-items: start; }
   .dome-area { display: grid; gap: 10px; min-width: 0; max-width: 760px; }
-  .dome { position: relative; width: 100%; touch-action: none; }
+  /* As wide as there's room for, but never taller than the window less the
+     header and the controls below it, so the whole dome and its controls
+     are on screen together. */
+  .dome {
+    position: relative; touch-action: none; justify-self: center;
+    width: min(100%, max(260px, calc(100dvh - 400px)));
+  }
   .dome canvas { position: absolute; inset: 0; display: block; }
   .loading { position: absolute; inset: 0; display: grid; place-items: center; }
   .controls { display: flex; gap: 10px; align-items: center; }
