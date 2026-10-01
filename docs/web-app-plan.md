@@ -163,8 +163,14 @@ panel (rig preset, kind of night, cloud limit, units); thumbnails and target det
   carry RA/Dec.
 - Overlay: rim, 30°/60° rings, pole, N/E/S/W, signpost star names, Sun, Moon, the selected
   target's daily path and brackets. Play (night in ~25 s), Now, scrubber, plan strip jumps.
-- Not yet: the camera frame to scale (CameraFrame.footprint), playback modes ("follow
-  planned targets"), zenith-risk path colouring, Session View, tapping a target on the dome.
+- Same day, after review: opens at astronomical dusk; "Follow planned targets" (selection
+  only while a block runs, with the Mac's 0.7 s fade) or "Stay on selected target" (the
+  default when a target was picked before opening) — the Mac app changed to match; Now
+  works by day (track spans ±12 h, cloud from the hourly forecast); controls in the side
+  panel on wide screens so the dome fills the height; camera frame to scale with roll;
+  showpiece highlights (tap to select); side panel with score, shootable-now status, jump
+  to best window; Show clouds. www.skybother.com redirects to skybother.com.
+- Not yet: zenith-risk path colouring, the "In your frame" sky cutout, Session View.
 - Target detail shows the photo only; the Mac's frame-to-scale preview comes with the
   Aladin Lite sky browser (Phase 2).
 
