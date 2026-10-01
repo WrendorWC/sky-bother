@@ -752,7 +752,8 @@ struct NightDetailView: View {
     /// first thing to make the automatic UI scale shrink everything.
     private var legend: some View {
         FlowLayout(spacing: 16, lineSpacing: 6) {
-            legendItem(color: Palette.cloud.opacity(0.7), label: "cloud from the top")
+            legendItem(color: Palette.cloud.opacity(0.7),
+                       label: "cloud from the top · sky dulls past your \(Int(state.preferences.maximumCloudCover))% cloud limit")
             legendItem(color: Palette.moonlight.opacity(0.8), label: "moonlight and its altitude")
             legendItem(color: Palette.astronomical, label: "darker background = darker sky")
             if let target = selectedTargetPlan {

@@ -86,7 +86,7 @@
   <Timeline {night} {selected} {timeZone} {imperial} height={168} />
 
   <ul class="legend muted">
-    <li><span class="swatch" style:background="rgba(219, 227, 240, 0.7)"></span>cloud from the top</li>
+    <li><span class="swatch" style:background="rgba(219, 227, 240, 0.7)"></span>cloud from the top · sky dulls past your {Math.round(preferences.maximumCloudCover)}% cloud limit</li>
     <li><span class="swatch" style:background="rgba(250, 237, 189, 0.8)"></span>moonlight and its altitude</li>
     <li><span class="swatch" style:background="rgb(6, 8, 19)"></span>darker background = darker sky</li>
     {#if selected}<li><span class="swatch" style:background="var(--accent)"></span>{selected.displayName}'s altitude · shaded box = its best window</li>{/if}

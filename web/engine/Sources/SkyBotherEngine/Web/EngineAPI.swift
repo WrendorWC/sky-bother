@@ -65,6 +65,12 @@ public enum EngineAPI {
         var moonBrightness: Double
         var darkness: Double
         var cloudCover: Double?
+        var cloudLow: Double?
+        var cloudMid: Double?
+        var cloudHigh: Double?
+        /// Preferences.cloudCredit: what the score lets this cloud keep, 1
+        /// under the cloud limit, halving past it.
+        var cloudCredit: Double?
         var temperature: Double?
         var hasWeather: Bool
     }
@@ -200,6 +206,8 @@ public enum EngineAPI {
         let samples = night.samples.map {
             Sample(date: $0.date, sunAltitude: $0.sunAltitude, moonAltitude: $0.moonAltitude,
                    moonBrightness: $0.moonBrightness, darkness: $0.darkness, cloudCover: finite($0.cloudCover),
+                   cloudLow: finite($0.cloudLow), cloudMid: finite($0.cloudMid), cloudHigh: finite($0.cloudHigh),
+                   cloudCredit: $0.cloudCover.isFinite ? preferences.cloudCredit(cloudCover: $0.cloudCover) : nil,
                    temperature: finite($0.temperature), hasWeather: $0.hasWeather)
         }
         return NightSummary(planKey: night.planKey,

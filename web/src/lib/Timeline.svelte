@@ -5,10 +5,13 @@
   // any moment.
   import * as palette from './palette.js';
   import { time, minuteOfHour, temperature, degrees } from './format.js';
+  import { timelineSky } from './timelineSky.js';
 
   let { night, selected = null, timeZone, imperial = false, height = 152 } = $props();
 
   let canvas;
+  let skyCanvas;
+  let sky = null;
   let width = $state(0);
   let pointerX = $state(null);
 
@@ -33,6 +36,10 @@
   });
 
   $effect(() => {
+    if (skyCanvas && !sky) {
+      try { sky = timelineSky(skyCanvas); } catch (e) { console.warn('[timeline]', e); sky = null; }
+    }
+    sky?.(night, width, height, window.devicePixelRatio || 1);
     draw(canvas, width, height, night, selected, hourTicks);
   });
 
@@ -49,8 +56,11 @@
     const n = samples.length;
     const stepX = n > 1 ? width / (n - 1) : width;
 
-    // Sky, then the Moon's wash over it.
-    if (n > 1) {
+    // Sky, then the Moon's wash over it. Only where WebGL isn't available:
+    // otherwise timelineSky.js draws them, with stars and the score's dulling.
+    if (sky) {
+      // Drawn underneath.
+    } else if (n > 1) {
       const sky = c.createLinearGradient(0, 0, width, 0);
       const moon = c.createLinearGradient(0, 0, width, 0);
       samples.forEach((s, i) => {
@@ -244,14 +254,18 @@
 <div class="timeline" role="img" aria-label="The night from sunset to sunrise: darkness, cloud, Moon and the selected target" style:height="{height}px" bind:clientWidth={width}
      onpointermove={track} onpointerdown={track} onpointerleave={() => (pointerX = null)}
      onpointercancel={() => (pointerX = null)}>
-  <canvas bind:this={canvas} style:width="{width}px" style:height="{height}px"></canvas>
+  <canvas class="sky" bind:this={skyCanvas} style:width="{width}px" style:height="{height}px"></canvas>
+  <canvas class="overlay" bind:this={canvas} style:width="{width}px" style:height="{height}px"></canvas>
   {#if hovered}
     {@const s = hovered.sample}
     {@const altitude = targetAltitude(hovered.index)}
     <div class="cursor" style:left="{pointerX}px"></div>
     <div class="readout" style:left="{clamp(pointerX - 70, 0, Math.max(0, width - 170))}px">
       <strong>{time(s.date, timeZone)}</strong>
-      {#if s.hasWeather && s.cloudCover != null}<div>{Math.round(s.cloudCover)}% cloud · {temperature(s.temperature, imperial)}</div>{/if}
+      {#if s.hasWeather && s.cloudCover != null}
+        <div>{Math.round(s.cloudCover)}% cloud · {temperature(s.temperature, imperial)}</div>
+        <div class="layers">high {Math.round(s.cloudHigh ?? 0)} · mid {Math.round(s.cloudMid ?? 0)} · low {Math.round(s.cloudLow ?? 0)}</div>
+      {/if}
       <div>darkness {Math.round(s.darkness * 100)}%</div>
       {#if s.moonAltitude > 0}<div>Moon {degrees(s.moonAltitude)} up</div>{/if}
       {#if selected && altitude != null}
@@ -267,6 +281,7 @@
     border: 1px solid var(--panel-border); touch-action: pan-y; user-select: none;
   }
   canvas { display: block; }
+  .overlay { position: absolute; inset: 0; }
   .cursor { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.5); pointer-events: none; }
   .readout {
     position: absolute; top: 8px; width: 170px; padding: 8px; border-radius: 6px;
@@ -274,4 +289,5 @@
   }
   .readout strong { font-size: 14px; font-variant-numeric: tabular-nums; }
   .accent { color: var(--accent); }
+  .layers { opacity: 0.7; }
 </style>

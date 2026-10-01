@@ -97,40 +97,32 @@ struct NightTimelineView: View {
 
     // MARK: - Layers
 
+    /// Sky, Moon and stars in one pass of `nightTimeline` in SkyDome.metal:
+    /// per pixel, interpolating between samples, so twilight and moonrise
+    /// blend smoothly, with the stars going and the sky dulling wherever the
+    /// score's own cloud credit falls — see the shader. Cloud is drawn over
+    /// it by `drawCloud`.
     private func drawSky(context: GraphicsContext, size: CGSize) {
         let samples = plan.samples
         guard samples.count > 1 else {
             context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Palette.astronomical))
             return
         }
-
-        let rect = CGRect(origin: .zero, size: size)
-        let start = CGPoint(x: 0, y: size.height / 2)
-        let end = CGPoint(x: size.width, y: size.height / 2)
-
-        // One continuous gradient across every sample's colour, rather than a
-        // flat-filled rect per sample. A solid-filled column has no blending
-        // into its neighbours, so the sequence of columns reads as a visible
-        // staircase of hard edges rather than a gradient — most noticeable
-        // through the low-contrast twilight blues, where the eye is most
-        // sensitive to banding. A gradient lets the renderer interpolate
-        // continuously between each sample's real, already-smooth colour.
-        let skyStops = samples.enumerated().map { index, sample in
-            Gradient.Stop(color: Palette.sky(sunAltitude: sample.sunAltitude),
-                          location: CGFloat(index) / CGFloat(samples.count - 1))
-        }
-        context.fill(Path(rect), with: .linearGradient(Gradient(stops: skyStops), startPoint: start, endPoint: end))
-
-        // Moonlight lifts the background wherever the moon is above the
-        // horizon, in proportion to how much light it's actually throwing —
-        // also blended continuously, so moonrise and moonset fade in rather
-        // than snapping on at whichever sample happens to cross the horizon.
-        let moonStops = samples.enumerated().map { index, sample -> Gradient.Stop in
+        let showsCloud = plan.hasWeather
+        let data = samples.flatMap { sample -> [Float] in
             let wash = sample.moonAltitude > 0 ? 0.34 * sample.moonBrightness : 0
-            return Gradient.Stop(color: Palette.moonlight.opacity(wash),
-                                 location: CGFloat(index) / CGFloat(samples.count - 1))
+            guard showsCloud, sample.hasWeather, sample.cloudCover.isFinite else {
+                return [Float(sample.sunAltitude), Float(wash), 0, 0, 0, 0, 1, 0]
+            }
+            return [Float(sample.sunAltitude), Float(wash),
+                    Float(clamp(sample.cloudLow / 100, 0, 1)), Float(clamp(sample.cloudMid / 100, 0, 1)),
+                    Float(clamp(sample.cloudHigh / 100, 0, 1)), Float(clamp(sample.cloudCover / 100, 0, 1)),
+                    Float(state.preferences.cloudCredit(cloudCover: sample.cloudCover)), 1]
         }
-        context.fill(Path(rect), with: .linearGradient(Gradient(stops: moonStops), startPoint: start, endPoint: end))
+        context.fill(Path(CGRect(origin: .zero, size: size)),
+                     with: .shader(ShaderLibrary.nightTimeline(
+                        .float2(size),
+                        .floatArray(data))))
     }
 
     private func drawCloud(context: GraphicsContext, size: CGSize) {
@@ -362,6 +354,9 @@ struct NightTimelineView: View {
             if sample.hasWeather {
                 Text("\(Int(sample.cloudCover))% cloud · \(Format.temperature(celsius: sample.temperature, imperial: state.preferences.usesImperialUnits))")
                     .font(.scaled(.caption, scale: uiTextScale))
+                Text("high \(Int(sample.cloudHigh)) · mid \(Int(sample.cloudMid)) · low \(Int(sample.cloudLow))")
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(.white.opacity(0.7))
             }
             Text("darkness \(Int(sample.darkness * 100))%")
                 .font(.scaled(.caption, scale: uiTextScale))

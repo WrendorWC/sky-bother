@@ -199,3 +199,93 @@ static float cloudLayer(float3 direction, float height, float cover, float2 drif
                        clamp(0.5 - declination / 180.0, 0.0005, 0.9995));
     return half4(half3(float3(starMap.sample(linearRepeat, uv).rgb) * gain), 1.0h);
 }
+
+// The night timeline's sky: sunset to sunrise left to right, the app's
+// twilight colours, the Moon's wash, and stars wherever it's properly dark.
+//
+// Cloud itself is drawn over this by NightTimelineView.drawCloud, hanging
+// from the top as deep as the sky is covered. What this adds is the score's
+// verdict: wherever its cloud credit (Preferences.cloudCredit) falls the sky
+// dulls a little; where cloud is under your limit it stays clear. Stars dim
+// gradually as the cloud thickens, so a clear window shows as a starry gap.
+//
+// The web app draws the same thing in web/src/lib/timelineSky.js; keep the
+// two in step.
+//
+// `samples` holds kTimelineStride floats per forecast sample, evenly spaced
+// across the width: sun altitude, moon wash (0-0.34), low, mid and high
+// cover, total cover (all 0-1), cloud credit, and 1 if there is weather.
+
+constant int kTimelineStride = 8;
+
+// smoothstep with its edges either way round, as the Swift side's is.
+static float ramp(float edge0, float edge1, float x) {
+    float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
+}
+
+// Palette.sky(sunAltitude:)
+static float3 twilightColour(float sunAltitude) {
+    float3 day = float3(0.42, 0.62, 0.86), civil = float3(0.18, 0.24, 0.45);
+    float3 nautical = float3(0.07, 0.10, 0.22), astronomical = float3(0.025, 0.03, 0.075);
+    if (sunAltitude >= 0.0) return day;
+    if (sunAltitude >= -6.0) return mix(day, civil, ramp(0.0, -6.0, sunAltitude));
+    if (sunAltitude >= -12.0) return mix(civil, nautical, ramp(-6.0, -12.0, sunAltitude));
+    if (sunAltitude >= -18.0) return mix(nautical, astronomical, ramp(-12.0, -18.0, sunAltitude));
+    return astronomical;
+}
+
+static float timelineValue(device const float *samples, int sampleCount, float u, int field) {
+    if (sampleCount < 2) return sampleCount == 1 ? samples[field] : 0.0;
+    float f = clamp(u, 0.0, 1.0) * float(sampleCount - 1);
+    int i = min(int(f), sampleCount - 2);
+    return mix(samples[i * kTimelineStride + field], samples[(i + 1) * kTimelineStride + field], f - float(i));
+}
+
+[[ stitchable ]] half4 nightTimeline(float2 position,
+                                     float2 size,
+                                     device const float *samples,
+                                     int count) {
+    int n = count / kTimelineStride;
+    float u = position.x / max(size.x, 1.0);
+    float sun = timelineValue(samples, n, u, 0);
+    // The Moon's light steps hour by hour with the forecast; average it over
+    // a couple of hours so it fades instead of banding.
+    float wash = 0.0;
+    float sampleStep = 1.0 / float(max(n - 1, 1));
+    for (int k = -4; k <= 4; k++) wash += timelineValue(samples, n, u + float(k) * 3.0 * sampleStep, 1);
+    wash /= 9.0;
+    float credit = timelineValue(samples, n, u, 6);
+    float weather = timelineValue(samples, n, u, 7);
+    if (weather < 0.5) credit = 1.0;
+
+    float3 moonlight = float3(0.98, 0.93, 0.74);
+    float3 sky = mix(twilightColour(sun), moonlight, wash);
+
+    // Stars where the sky is dark, fading as the Moon washes it out and
+    // dimming gradually as cloud thickens: full on a clear night, about half
+    // at 40% cover, faint past 60%. Whatever the score fully credits keeps
+    // them at full strength.
+    float cover = timelineValue(samples, n, u, 5);
+    float seen = weather > 0.5 ? max(clamp(1.0 - cover * 1.3, 0.1, 1.0), credit) : 1.0;
+    float starry = ramp(-9.0, -15.0, sun) * mix(1.0, 0.12, ramp(0.0, 0.3, wash)) * seen;
+    float2 cell = floor(position / 3.0);
+    if (starry > 0.0 && hash(cell) > 0.968) {
+        float2 centre = (cell + 0.25 + 0.5 * float2(hash(cell + 3.1), hash(cell + 7.7))) * 3.0;
+        float d = length(position - centre);
+        float brightness = 0.25 + 0.75 * pow(hash(cell + 11.3), 4.0);
+        sky += float3(0.85, 0.9, 1.0) * brightness * exp(-d * d / 0.7) * starry;
+    }
+
+    // Where the score loses the sky, it dulls: gently, so the cloud drawn
+    // over it stays the thing you read. Squared, so a window the score half
+    // counts already looks like open sky.
+    if (weather > 0.5) {
+        float lost = (1.0 - credit) * (1.0 - credit);
+        sky = mix(sky, mix(float3(0.17, 0.18, 0.21), twilightColour(sun) * 0.7 + 0.08, ramp(-12.0, 0.0, sun)), lost * 0.5);
+    }
+
+    // A touch of dither, so the soft gradients don't band.
+    sky += (hash(position * 3.7) - 0.5) / 255.0;
+    return half4(half3(sky), 1.0h);
+}

@@ -49,12 +49,12 @@ enum HelpContent {
 
         HelpTopic(title: "The Night Timeline", systemImage: "chart.bar.xaxis", sections: [
             HelpSection(heading: "Layers", body: "", swatches: [
-                HelpSwatch(color: Palette.astronomical, label: "Background — sky darkness, from daylight through twilight to full dark"),
+                HelpSwatch(color: Palette.astronomical, label: "Background — sky darkness, from daylight through twilight to full dark, with stars once it’s properly dark. The stars dim as cloud thickens, and the sky dulls where cloud is past your cloud limit"),
                 HelpSwatch(color: Palette.cloud, label: "Grey from the top — forecast cloud; the deeper it reaches, the cloudier"),
                 HelpSwatch(color: Palette.moonlight, label: "Pale wash and line near the bottom — moonlight and the Moon’s altitude")
             ]),
             HelpSection(heading: "Lines", body: "The dotted lines mark astronomical dusk and dawn. The red line marks the current time on tonight’s chart."),
-            HelpSection(heading: "Hovering", body: "Point at the chart for the time, cloud, temperature, darkness and Moon altitude. With a target selected, its altitude is shown too, and whether it’s behind your blocked horizon in that direction."),
+            HelpSection(heading: "Hovering", body: "Point at the chart for the time, cloud (with its high, mid and low layers), temperature, darkness and Moon altitude. With a target selected, its altitude is shown too, and whether it’s behind your blocked horizon in that direction."),
             HelpSection(heading: "Selected Target", body: "A selected target’s altitude curve, usable time and best window are drawn over the chart.")
         ]),
 
@@ -90,7 +90,7 @@ enum HelpContent {
         ]),
 
         HelpTopic(title: "Availability Bars", systemImage: "chart.xyaxis.line", sections: [
-            HelpSection(body: "Each candidate has a bar on the same time axis as the timeline. It fills when the target is above your minimum altitude, the sky is dark enough, and cloud is under your maximum. Gaps are usually cloud. The line through it is the target’s altitude; the tick marks its best moment."),
+            HelpSection(body: "Each candidate has a bar on the same time axis as the timeline. It fills when the target is above your minimum altitude, the sky is dark enough, and cloud is under your maximum. Gaps are usually cloud. The line through it is the target’s altitude; the tick marks its best moment. On a plan block’s row the bar shows the target’s whole night, with the block itself drawn solid and raised and the rest dimmed."),
             HelpSection(heading: "Figures", body: "Under each bar, always in this order: best time, peak altitude, how much of the frame it fills, and usable time. An amber triangle marks zenith risk.")
         ]),
 
