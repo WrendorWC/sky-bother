@@ -114,8 +114,8 @@
     <input type="search" placeholder="Town, place or postal code" bind:value={query} />
     <button type="submit" disabled={!query.trim()}>Search</button>
     <button type="button" onclick={useMyLocation}>Use My Location</button>
-    <label class="button">
-      Import Mac Settings
+    <label class="button" title="A settings file saved from the Mac app with File → Export Settings…">
+      Import Mac Settings File
       <input type="file" accept=".json,application/json" onchange={importMacSettings} hidden />
     </label>
     {#if settings && oncancel}<button type="button" onclick={oncancel}>Done</button>{/if}
@@ -130,6 +130,7 @@
       {/each}
     </ul>
   {/if}
+  <p class="muted">From the Mac app, File → Copy Web Setup Link is quickest. Or use File → Export Settings… there and import that file here.</p>
   {#if busy}<p class="muted">{busy}</p>{/if}
   {#if error}<p class="error">{error}</p>{/if}
 </section>
