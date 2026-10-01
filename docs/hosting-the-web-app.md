@@ -38,6 +38,14 @@ you'd rather avoid another account.
 
 ## Step 2 — Connect the website to GitHub (10 minutes)
 
+> **As actually set up (2026-10-01):** Cloudflare's dashboard now offers a Worker with
+> static assets rather than a Pages project. `wrangler.jsonc` at the repo root points it at
+> `web/dist`. Settings used: build command `cd web && npm ci && npm run build`, deploy
+> command `npx wrangler deploy`, project name `skybother` (→ `skybother.<account>.workers.dev`).
+> A custom domain goes on under the Worker's **Settings → Domains & Routes**. The proxy,
+> when it comes, is this Worker's script rather than Pages Functions. The Pages steps below
+> are kept for reference.
+
 Do this once the `web/` folder exists in the repo (Claude will create it).
 
 1. In the Cloudflare dashboard: **Workers & Pages → Create → Pages → Connect to Git**.

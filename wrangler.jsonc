@@ -1,0 +1,10 @@
+// Cloudflare deploys the web app (web/) as a Worker serving static assets.
+// Its build runs `cd web && npm ci && npm run build`, then `npx wrangler deploy`
+// from the repo root, which reads this file. See docs/hosting-the-web-app.md.
+{
+  "name": "skybother",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./web/dist"
+  }
+}
