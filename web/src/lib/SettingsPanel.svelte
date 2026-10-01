@@ -10,10 +10,11 @@
   import ImportSettings from './ImportSettings.svelte';
   import LocationSection from './LocationSection.svelte';
 
-  let { settings, rigPresets, onchange, onimport, onsite, ondone, focus = null } = $props();
+  let { settings, rigPresets, onchange, onimport, onsite, ondone, onsetup, focus = null } = $props();
 
   // Opened from the site name: straight to Location.
   $effect(() => {
+    if (focus !== 'location') window.scrollTo({ top: 0 });
     if (focus === 'location') document.getElementById('settings-location')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   });
 
@@ -147,6 +148,11 @@
   {#if showsMore}<MoreSettings {settings} {onchange} />{/if}
 
   <ImportSettings {onimport} />
+
+  <div class="row">
+    <span class="label">Guided setup</span>
+    <button type="button" onclick={onsetup}>Run Setup Wizard</button>
+  </div>
 
   <div class="row">
     <span class="label">Use this setup elsewhere</span>

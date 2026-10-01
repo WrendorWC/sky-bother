@@ -3,12 +3,11 @@
   import { fetchForecast, fetchCometElements } from './weather.js';
   import NightList from './lib/NightList.svelte';
   import NightDetail from './lib/NightDetail.svelte';
-  import LocationSection from './lib/LocationSection.svelte';
   import SettingsPanel from './lib/SettingsPanel.svelte';
-  import ImportSettings from './lib/ImportSettings.svelte';
   import Catalog from './lib/Catalog.svelte';
   import SkyView from './lib/SkyView.svelte';
   import Planner from './lib/Planner.svelte';
+  import SetupWizard from './lib/SetupWizard.svelte';
   import { age } from './lib/format.js';
   import { isSetupHash, readSetup } from './lib/setupLink.js';
   import { view } from './lib/view.svelte.js';
@@ -51,6 +50,20 @@
 
   // Done in the planner: a night's plan becomes yours (null goes back to
   // the suggestion), stored as the Mac app stores it (sessionPlans).
+  const inSetup = $derived(!offeredSetup && (!settings || settings.setupStep != null));
+
+  function finishSetup(planKey) {
+    const { setupStep, ...rest } = settings;
+    settings = rest;
+    saveSettings();
+    location.hash = planKey ? `#/${planKey}` : '#/';
+  }
+
+  function startSetup() {
+    editingSettings = false;
+    changeSettings({ ...settings, setupStep: 0 });
+  }
+
   function savePlan(planKey, segments) {
     const plans = { ...(settings.sessionPlans ?? {}) };
     if (segments) plans[planKey] = segments;
@@ -94,6 +107,8 @@
     const saved = [...(base.savedSites ?? [])];
     if (settings?.site && !saved.some(s => s.id === settings.site.id)) saved.push({ ...settings.site });
     settings = { ...base, rig: base.rig, preferences: base.preferences, customTargets: base.customTargets ?? [], site, savedSites: saved };
+    // A first site starts the rest of the setup wizard (or keeps its step).
+    settings.setupStep = base.setupStep ?? (base.site ? undefined : 0);
     delete settings.rigPresets;
     editingSettings = false;
     saveSettings();
@@ -251,17 +266,14 @@
     </section>
   {/if}
 
-  {#if !settings && !offeredSetup}
-    <!-- A first visit: Settings' Location section on its own, with the import. -->
-    <section class="panel site-area first-visit">
-      <LocationSection settings={null} onsite={setSite} autofocus />
-      <ImportSettings onimport={importSettings} />
-    </section>
+  {#if inSetup}
+    <SetupWizard {settings} {rigPresets} {nights} {loading} onsite={setSite} onchange={changeSettings}
+                 onimport={importSettings} onfinish={finishSetup} />
   {/if}
 
-  {#if settings && editingSettings && rigPresets.length}
+  {#if settings && !inSetup && editingSettings && rigPresets.length}
     <div class="site-area">
-      <SettingsPanel {settings} {rigPresets} onchange={changeSettings} onimport={importSettings}
+      <SettingsPanel {settings} {rigPresets} onchange={changeSettings} onimport={importSettings} onsetup={startSetup}
                      onsite={setSite} focus={settingsFocus} ondone={() => (editingSettings = false)} />
     </div>
   {/if}
@@ -269,7 +281,8 @@
   {#if loading && status}<p class="status-bar" role="status"><span class="spinning">↻</span> {status}</p>{/if}
   {#if error}<p class="error banner">{error}</p>{/if}
 
-  {#if settings}
+  <!-- Settings is a screen of its own: nothing else shows until it's closed. -->
+  {#if settings && !inSetup && !editingSettings}
     <div class="layout">
       <aside class="sidebar">
         <h3>Nights</h3>
@@ -310,8 +323,6 @@
         {/if}
       </main>
     </div>
-  {:else if !offeredSetup}
-    <p class="empty muted">Choose a site to see the week ahead.</p>
   {/if}
 </div>
 
@@ -342,7 +353,6 @@
   .spinning { display: inline-block; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .site-area { margin-top: 14px; }
-  .first-visit { padding: 14px; display: grid; gap: 18px; }
   .banner { margin: 14px 0 0; }
   .offer { margin-top: 14px; padding: 14px; display: grid; gap: 6px; border-color: var(--accent); }
   .offer p { margin: 0; }

@@ -4,6 +4,7 @@
   // first thing anyone sees. Same names, ranges and captions as the Mac.
   import { duration, degrees } from './format.js';
   import { uuid } from './uuid.js';
+  import HorizonSliders from './HorizonSliders.svelte';
 
   let { settings, onchange } = $props();
 
@@ -19,19 +20,6 @@
   const zones = (() => {
     try { return Intl.supportedValuesOf('timeZone'); } catch { return null; }
   })();
-  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-  const horizon = $derived(site.horizonProfile?.length === 8 ? site.horizonProfile : directions.map(() => site.horizonAltitude ?? 20));
-
-  function setSector(index, value) {
-    const profile = [...horizon];
-    profile[index] = value;
-    // A profile that's the same everywhere is just a flat horizon.
-    const flat = profile.every(v => v === profile[0]);
-    setSite({ horizonProfile: flat ? null : profile, horizonAltitude: flat ? profile[0] : Math.min(...profile) });
-  }
-  function setHorizonEverywhere(value) {
-    setSite({ horizonProfile: null, horizonAltitude: value });
-  }
 
   // --- Equipment ------------------------------------------------------------
   const f = $derived(rig.focalLengthMillimeters);
@@ -106,20 +94,7 @@
     <div class="row">
       <span class="label">Your horizon</span>
       <p class="muted">How high trees and buildings reach in each direction. Targets lower than this don't count.</p>
-      <label class="slider">
-        <span>Everywhere</span>
-        <input type="range" min="0" max="60" step="1" value={shown('all', Math.min(...horizon))}
-               oninput={slide('all')} onchange={commit('all', setHorizonEverywhere)} />
-        <strong>{degrees(shown('all', Math.min(...horizon)))}</strong>
-      </label>
-      {#each directions as direction, i}
-        <label class="slider">
-          <span>{direction}</span>
-          <input type="range" min="0" max="60" step="1" value={shown(`h${i}`, horizon[i])}
-                 oninput={slide(`h${i}`)} onchange={commit(`h${i}`, v => setSector(i, v))} />
-          <strong>{degrees(shown(`h${i}`, horizon[i]))}</strong>
-        </label>
-      {/each}
+      <HorizonSliders {site} onchange={setSite} />
     </div>
 
   </section>
