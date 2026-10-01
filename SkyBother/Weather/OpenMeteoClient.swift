@@ -53,6 +53,7 @@ struct OpenMeteoClient {
         return components?.url
     }
 
+    #if !os(WASI) // the web app fetches in JavaScript and hands the response to `decode`
     func fetch(latitude: Double, longitude: Double, days: Int) async throws -> WeatherForecast {
         guard let url = forecastURL(latitude: latitude, longitude: longitude, days: days) else {
             throw WeatherError.malformedData
@@ -91,6 +92,12 @@ struct OpenMeteoClient {
             throw WeatherError.badResponse(http.statusCode)
         }
 
+        return try Self.decode(data)
+    }
+    #endif
+
+    /// Reads a successful response body into a forecast.
+    static func decode(_ data: Data) throws -> WeatherForecast {
         // `Hourly` now spells out every key explicitly (see its CodingKeys) —
         // `.convertFromSnakeCase` would fight those exact raw values instead of
         // the property names, breaking every field, not just the ones it

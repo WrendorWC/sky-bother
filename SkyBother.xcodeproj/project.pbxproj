@@ -60,8 +60,10 @@
 		43764CFCF89FC27FD0D055E1 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EF533F0EAA07F58C2317C4A /* HelpView.swift */; };
 		477F3B94B9225F9A436C69F6 /* NearbySpotPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D92198AFA083369F3D169C3 /* NearbySpotPanel.swift */; };
 		4789CC0F6DF5D64A3C9EBDB8 /* TargetImages.json in Resources */ = {isa = PBXBuildFile; fileRef = 256FB6DE32F301123F193DBF /* TargetImages.json */; };
+		48321781D28D919AB63AE414 /* RadianceGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = D575F65BEB8734FDB033DEFC /* RadianceGrid.swift */; };
 		4AA71B4691644A16BE9BF73C /* SkyResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C30ED2A029EDAA75CB7645E /* SkyResolver.swift */; };
 		4C1689A1BAFB67948A00A658 /* Moon.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52C0F2598A5F7776EEE3A6E /* Moon.swift */; };
+		4C6AAEC3AAC063F72ADFBD5E /* RadianceGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = D575F65BEB8734FDB033DEFC /* RadianceGrid.swift */; };
 		4F3A5995DE781AF21D00FB3C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0867EA4E9C35E7C5BA67DC75 /* SettingsView.swift */; };
 		4FBAD4FDA7118CE8FDB52973 /* NearbySpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F419FCEE63CD7B951505A1C /* NearbySpot.swift */; };
 		504AFFB86159DC2053B76770 /* SessionClockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AB56774EDA919324B27FDD0 /* SessionClockTests.swift */; };
@@ -275,6 +277,7 @@
 		C5FF58CDCB84E27B67895123 /* SessionModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionModeView.swift; sourceTree = "<group>"; };
 		C659F64C48216AFB1032D273 /* CuratedFacts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuratedFacts.swift; sourceTree = "<group>"; };
 		C79FBF03E53065D44D73BD96 /* JulianDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JulianDate.swift; sourceTree = "<group>"; };
+		D575F65BEB8734FDB033DEFC /* RadianceGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadianceGrid.swift; sourceTree = "<group>"; };
 		D5A43221B5BB9C9C070310D8 /* SkyQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyQuality.swift; sourceTree = "<group>"; };
 		DBB0607BD112BCCCEADD74AA /* TargetImageCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetImageCatalog.swift; sourceTree = "<group>"; };
 		DC95A35A7813EA06C25324A2 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
@@ -487,6 +490,7 @@
 				58BDA77DF11F11A3366FDE78 /* NightLightsClient.swift */,
 				B5D2166015F26A2F9C352297 /* OpenHorizonFinder.swift */,
 				0B29E97C5F533FF8DAFAA2B4 /* ParkHours.swift */,
+				D575F65BEB8734FDB033DEFC /* RadianceGrid.swift */,
 				3BE3702C19A7134A7E3312CE /* SkyGlow.swift */,
 			);
 			path = DarkSky;
@@ -640,6 +644,7 @@
 				1C9668B63C6B1E72213A48C6 /* Planner.swift in Sources */,
 				F3E787EDB9872DD30A9FC554 /* PlannerWorkspaceView.swift in Sources */,
 				25516C64919C89F5DF964622 /* Preferences.swift in Sources */,
+				48321781D28D919AB63AE414 /* RadianceGrid.swift in Sources */,
 				C984A842B76C1B84D255E943 /* Rig.swift in Sources */,
 				326F8BEC59E0A3AE3E8580AC /* RigFit.swift in Sources */,
 				6031E0C65F6392519CDA81C3 /* ScoreNarrative.swift in Sources */,
@@ -732,6 +737,7 @@
 				690CEABE697F0A4CCAC13B44 /* Planner.swift in Sources */,
 				38D2ACB4DC50B347D609A538 /* PlannerWorkspaceView.swift in Sources */,
 				EF3183AB1D267BECE5A3AEF2 /* Preferences.swift in Sources */,
+				4C6AAEC3AAC063F72ADFBD5E /* RadianceGrid.swift in Sources */,
 				7CFA931520207D903054EDA1 /* Rig.swift in Sources */,
 				CE7EBF068918DA2AB611A76B /* RigFit.swift in Sources */,
 				315DC6FE2DCC961BB9D820C6 /* ScoreNarrative.swift in Sources */,

@@ -1,0 +1,5 @@
+engine/.build/
+fixtures/local/
+node_modules/
+dist/
+engine/Sources/ICUDataSlim/icudt_slim.c

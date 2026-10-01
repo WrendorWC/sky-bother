@@ -1,0 +1,1 @@
+../../../../../SkyBother/Catalog/BrightStars.swift

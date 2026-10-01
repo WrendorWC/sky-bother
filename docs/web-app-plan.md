@@ -99,6 +99,28 @@ Critical files for the shared engine: `SkyBother/Core/*`, `SkyBother/Planner/*`,
 `SkyBother/DarkSky/SkyGlow.swift`; catalogue data `SkyBother/Catalog/*.json`,
 `SkyBother/Catalog/StarMap.jpg`, `SkyBother/Catalog/Images/`.
 
+## Phase 0 results (2026-10-01)
+
+Done — the WebAssembly route works; no need for the TypeScript fallback.
+
+- **Engine:** Core, Planner, Model + WeatherModels, OpenMeteoClient (parsing), SkyGlow,
+  RadianceGrid, BuiltInCatalog, BrightStars, Formatting compile unchanged for Wasm with the
+  Swift 6.4.0 SDK. Only two Mac-side edits: `RadianceGrid` moved out of NightLightsClient.swift
+  into its own file, and `OpenMeteoClient.decode(_:)` split from `fetch` (`fetch` is
+  `#if !os(WASI)`). Time zones (incl. DST changes) and DateFormatter text work in Wasm.
+- **Parity:** 5 sites (Kitt Peak, Namibia, Tromsø, Sydney across its DST change, and the
+  user's own yard) — every night, target, window, verdict and line of text matches the native
+  build; numbers agree to ~1e-13 (libm last-bit differences, can't be zero).
+- **Size:** 61 MB → 14.9 MB (3.9 MB Brotli) by linking a slimmed ICU data set and `wasm-opt -Oz`.
+- **Speed:** 7 nights × 1,159 targets in ~200–270 ms (Node and headless Chrome, M-series Mac).
+  Still to measure on an iPhone.
+- **CORS:** direct from the browser — Open-Meteo (+ geocoding, elevation), NASA GIBS and
+  Worldview snapshots, Overpass, SIMBAD, hips2fits, MPC comets, Photon, Nominatim.
+  Need the proxy — ESA WorldCover (no CORS headers on the S3 bucket); MET Norway (sends CORS
+  headers, but rejects requests without an identifying User-Agent, which a page can't set).
+- **Page:** `web/` Svelte + Vite page: place search / My Location / Import Mac Settings,
+  forecast fetched in the browser, engine in a Web Worker, seven nights listed. See `web/README.md`.
+
 ## Notes for next week (engineering detail)
 
 Decisions already made with the user (2026-09-25): web app **alongside** the Mac app; goals are
