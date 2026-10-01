@@ -17,6 +17,7 @@ final class SyncController: ObservableObject {
     @Published private(set) var errorMessage: String?
 
     private var document: SyncDocument?
+    private var version: Int?
     private weak var state: AppState?
     private var watch: AnyCancellable?
     private var timer: Timer?
@@ -26,6 +27,7 @@ final class SyncController: ObservableObject {
     private struct Stored: Codable {
         var code: String?
         var document: SyncDocument?
+        var version: Int?
         var lastSynced: Date?
     }
 
@@ -40,13 +42,14 @@ final class SyncController: ObservableObject {
            let stored = try? JSONDecoder().decode(Stored.self, from: data) {
             code = stored.code
             document = stored.document
+            version = stored.version
             lastSynced = stored.lastSynced
         }
     }
 
     private func persist() {
         guard let url = Self.fileURL,
-              let data = try? JSONEncoder().encode(Stored(code: code, document: document, lastSynced: lastSynced))
+              let data = try? JSONEncoder().encode(Stored(code: code, document: document, version: version, lastSynced: lastSynced))
         else { return }
         try? data.write(to: url, options: .atomic)
     }
@@ -62,8 +65,9 @@ final class SyncController: ObservableObject {
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.syncNow() }
         }
+        // Only while the app is in front: coming back to it checks in anyway.
         timer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.syncNow() }
+            Task { @MainActor in if NSApp.isActive { self?.syncNow() } }
         }
         syncNow()
     }
@@ -74,6 +78,7 @@ final class SyncController: ObservableObject {
     func turnOn() {
         code = SyncCode.generate()
         document = nil
+        version = nil
         lastSynced = nil
         persist()
         syncNow()
@@ -84,6 +89,7 @@ final class SyncController: ObservableObject {
         guard SyncCode.isValid(text) else { throw SyncError.badCode }
         code = SyncCode.format(text)
         document = nil
+        version = nil
         lastSynced = nil
         persist()
         syncNow(joining: true)
@@ -92,6 +98,7 @@ final class SyncController: ObservableObject {
     func turnOff() {
         code = nil
         document = nil
+        version = nil
         lastSynced = nil
         errorMessage = nil
         persist()
@@ -114,14 +121,16 @@ final class SyncController: ObservableObject {
     func syncNow(joining: Bool = false) {
         guard let code, let state, pending == nil else { return }
         let local = joining ? nil : SyncDocument.from(state.settings, previous: document)
+        let known = joining ? nil : document.flatMap { doc in version.map { (version: $0, document: doc) } }
         isSyncing = true
         errorMessage = nil
         pending = Task {
             defer { isSyncing = false; pending = nil }
             do {
-                let merged = try await client.syncOnce(code: code, local: local)
+                let (merged, newVersion) = try await client.syncOnce(code: code, local: local, known: known)
                 guard self.code == code else { return }
                 document = merged
+                version = newVersion
                 lastSynced = Date()
                 persist()
                 apply(merged)

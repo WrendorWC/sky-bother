@@ -236,18 +236,24 @@ struct SyncClient: Sendable {
     static let base = ProcessInfo.processInfo.environment["SKYBOTHER_SYNC_BASE"].flatMap(URL.init(string:))
         ?? URL(string: "https://skybother.com/api/sync/")!
 
-    private struct Stored: Decodable { var version: Int; var data: String }
+    private struct Stored: Decodable { var version: Int; var data: String?; var unchanged: Bool? }
+    private struct PutReply: Decodable { var version: Int }
     private struct Put: Encodable { var baseVersion: Int; var data: String }
 
     /// Fetches what's stored, merges in `local`, writes back if that changed
-    /// anything (retrying on a race), and returns the merged document.
-    /// `local` nil means joining: take what's there.
-    func syncOnce(code: String, local: SyncDocument?) async throws -> SyncDocument {
+    /// anything (retrying on a race), and returns the merged document and its
+    /// version. `local` nil means joining: take what's there. `known` is the
+    /// last version and document this Mac synced: when the store still has
+    /// that version only "unchanged" comes back, without the blob.
+    func syncOnce(code: String, local: SyncDocument?,
+                  known: (version: Int, document: SyncDocument)? = nil) async throws -> (SyncDocument, Int) {
         let (id, key) = try SyncCode.derive(code)
         let url = Self.base.appendingPathComponent(id)
         let session = URLSession(configuration: .ephemeral)
-        for _ in 0..<4 {
-            var request = URLRequest(url: url)
+        for attempt in 0..<4 {
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+            if attempt == 0, let known { components.queryItems = [URLQueryItem(name: "known", value: String(known.version))] }
+            var request = URLRequest(url: components.url!)
             request.cachePolicy = .reloadIgnoringLocalCacheData
             request.timeoutInterval = 15
             let (data, response) = try await session.data(for: request)
@@ -257,18 +263,23 @@ struct SyncClient: Sendable {
             if status == 200 {
                 let stored = try JSONDecoder().decode(Stored.self, from: data)
                 version = stored.version
-                guard let sealed = Data(base64Encoded: stored.data),
-                      let box = try? AES.GCM.SealedBox(combined: sealed),
-                      let plain = try? AES.GCM.open(box, using: key),
-                      let document = try? JSONDecoder().decode(SyncDocument.self, from: plain)
-                else { throw SyncError.wrongCode }
-                remote = document
+                if stored.unchanged == true, let known {
+                    remote = known.document
+                } else {
+                    guard let text = stored.data,
+                          let sealed = Data(base64Encoded: text),
+                          let box = try? AES.GCM.SealedBox(combined: sealed),
+                          let plain = try? AES.GCM.open(box, using: key),
+                          let document = try? JSONDecoder().decode(SyncDocument.self, from: plain)
+                    else { throw SyncError.wrongCode }
+                    remote = document
+                }
             } else if status != 404 {
                 throw SyncError.http(status)
             }
             if remote == nil && local == nil { throw SyncError.nothingStored }
             let merged = SyncDocument.merge(remote, local)
-            if let remote, remote == merged { return merged }
+            if let remote, remote == merged { return (merged, version) }
 
             let plain = try JSONEncoder().encode(merged)
             guard let sealed = try AES.GCM.seal(plain, using: key).combined else { throw SyncError.http(0) }
@@ -276,9 +287,12 @@ struct SyncClient: Sendable {
             put.httpMethod = "PUT"
             put.setValue("application/json", forHTTPHeaderField: "Content-Type")
             put.httpBody = try JSONEncoder().encode(Put(baseVersion: version, data: sealed.base64EncodedString()))
-            let (_, putResponse) = try await session.data(for: put)
+            let (putData, putResponse) = try await session.data(for: put)
             let putStatus = (putResponse as? HTTPURLResponse)?.statusCode ?? 0
-            if putStatus == 200 { return merged }
+            if putStatus == 200 {
+                let reply = try? JSONDecoder().decode(PutReply.self, from: putData)
+                return (merged, reply?.version ?? version + 1)
+            }
             if putStatus != 409 { throw SyncError.http(putStatus) }
         }
         throw SyncError.collided

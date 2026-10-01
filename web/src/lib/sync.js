@@ -101,33 +101,41 @@ const endpoint = id => `/api/sync/${id}`;
 
 /**
  * One round: fetch what's stored, merge in `local`, write back if that
- * changed anything (retrying on a race), and return the merged document.
+ * changed anything (retrying on a race). Returns { doc, version }.
+ * `known` is the last version and document this device synced: when the
+ * store still has that version, only "unchanged" comes back (no blob), and
+ * if nothing changed here either, that's the whole round.
  */
-export async function syncOnce(code, local) {
+export async function syncOnce(code, local, known = null) {
   const { id, key } = await derive(code);
   for (let attempt = 0; attempt < 4; attempt++) {
-    const response = await fetch(endpoint(id), { cache: 'no-store' });
+    const url = known && attempt === 0 ? `${endpoint(id)}?known=${known.version}` : endpoint(id);
+    const response = await fetch(url, { cache: 'no-store' });
     let remote = null, version = 0;
     if (response.ok) {
       const stored = await response.json();
       version = stored.version;
-      try {
-        remote = await open(key, stored.data);
-      } catch {
-        throw new Error('This sync code doesn’t match what’s stored. Check the code.');
+      if (stored.unchanged) {
+        remote = known.doc;
+      } else {
+        try {
+          remote = await open(key, stored.data);
+        } catch {
+          throw new Error('This sync code doesn’t match what’s stored. Check the code.');
+        }
       }
     } else if (response.status !== 404) {
       throw new Error(`Sync failed (HTTP ${response.status}).`);
     }
     if (!remote && !local) throw new Error('Nothing is synced with this code yet. Turn sync on from the device that has your settings.');
     const merged = merge(remote, local);
-    if (remote && JSON.stringify(merged) === JSON.stringify(remote)) return merged;
+    if (remote && JSON.stringify(merged) === JSON.stringify(remote)) return { doc: merged, version };
     const put = await fetch(endpoint(id), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ baseVersion: version, data: await seal(key, merged) }),
     });
-    if (put.ok) return merged;
+    if (put.ok) return { doc: merged, version: (await put.json()).version };
     if (put.status !== 409) throw new Error(`Sync failed (HTTP ${put.status}).`);
   }
   throw new Error('Sync kept colliding with another device. It will try again.');

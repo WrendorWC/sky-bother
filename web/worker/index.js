@@ -6,7 +6,8 @@
 // device with a key derived from it, so this never sees a location, a rig or
 // a plan — only scrambled bytes and a version number. Writes are
 // compare-and-swap on that version: a device writing over a newer copy gets
-// a 409 with the newer copy, merges, and tries again.
+// a 409 with the newer copy, merges, and tries again. A check-in that names
+// the version it already has gets just { unchanged: true } back.
 import { DurableObject } from 'cloudflare:workers';
 
 const MAX_BYTES = 512 * 1024;
@@ -16,7 +17,12 @@ export class SyncStore extends DurableObject {
   async fetch(request) {
     const stored = (await this.ctx.storage.get('doc')) ?? null;
     if (request.method === 'GET') {
-      return stored ? Response.json(stored) : Response.json({ error: 'No sync data for this code yet.' }, { status: 404 });
+      if (!stored) return Response.json({ error: 'No sync data for this code yet.' }, { status: 404 });
+      // ?known=<version>: the device already has this version, so say so
+      // without sending the blob again — most check-ins are this.
+      const known = new URL(request.url).searchParams.get('known');
+      if (known != null && Number(known) === stored.version) return Response.json({ version: stored.version, unchanged: true });
+      return Response.json(stored);
     }
     if (request.method === 'PUT') {
       let body;

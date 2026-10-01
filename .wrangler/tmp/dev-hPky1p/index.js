@@ -12,7 +12,10 @@ var SyncStore = class extends DurableObject {
   async fetch(request) {
     const stored = await this.ctx.storage.get("doc") ?? null;
     if (request.method === "GET") {
-      return stored ? Response.json(stored) : Response.json({ error: "No sync data for this code yet." }, { status: 404 });
+      if (!stored) return Response.json({ error: "No sync data for this code yet." }, { status: 404 });
+      const known = new URL(request.url).searchParams.get("known");
+      if (known != null && Number(known) === stored.version) return Response.json({ version: stored.version, unchanged: true });
+      return Response.json(stored);
     }
     if (request.method === "PUT") {
       let body;

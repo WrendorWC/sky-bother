@@ -9,10 +9,10 @@ function load() {
 }
 
 const saved = load();
-export const sync = $state({ code: saved.code ?? null, doc: saved.doc ?? null, at: saved.at ?? null, busy: false, error: '' });
+export const sync = $state({ code: saved.code ?? null, doc: saved.doc ?? null, version: saved.version ?? null, at: saved.at ?? null, busy: false, error: '' });
 
 function persist() {
-  try { localStorage.setItem(storageKey, JSON.stringify({ code: sync.code, doc: $state.snapshot(sync.doc), at: sync.at })); } catch {}
+  try { localStorage.setItem(storageKey, JSON.stringify({ code: sync.code, doc: $state.snapshot(sync.doc), version: sync.version, at: sync.at })); } catch {}
 }
 
 /**
@@ -26,9 +26,10 @@ export async function runSync(settings, { joining = false } = {}) {
   sync.error = '';
   try {
     const local = joining || !settings ? null : documentFrom(settings, sync.doc);
-    const merged = await syncOnce(sync.code, local);
-    if (!merged) return null;
+    const known = sync.doc && sync.version != null ? { version: sync.version, doc: $state.snapshot(sync.doc) } : null;
+    const { doc: merged, version } = await syncOnce(sync.code, local, joining ? null : known);
     sync.doc = merged;
+    sync.version = version;
     sync.at = Date.now();
     persist();
     const next = applyDocument(settings ?? {}, merged);
@@ -42,6 +43,7 @@ export async function runSync(settings, { joining = false } = {}) {
 }
 
 export function startSync(code) {
+  sync.version = null;
   sync.code = code;
   sync.doc = null;
   sync.at = null;
@@ -49,6 +51,7 @@ export function startSync(code) {
 }
 
 export function stopSync() {
+  sync.version = null;
   sync.code = null;
   sync.doc = null;
   sync.at = null;

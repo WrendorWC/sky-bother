@@ -133,7 +133,9 @@
 
   $effect(() => {
     const visible = () => { if (document.visibilityState === 'visible') syncNow(); };
-    const timer = setInterval(() => syncNow(), 120_000);
+    // Only while the page is in front: a tab left open in the background
+    // doesn't need to keep checking in.
+    const timer = setInterval(() => { if (document.visibilityState === 'visible') syncNow(); }, 120_000);
     document.addEventListener('visibilitychange', visible);
     return () => { clearInterval(timer); document.removeEventListener('visibilitychange', visible); };
   });
