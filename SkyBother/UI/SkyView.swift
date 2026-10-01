@@ -145,10 +145,15 @@ struct SkyView: View {
     /// Slots never overlap, so at most one contains `scrubTime`. Consecutive
     /// slots can have a gap between them; the selection moves on the moment the
     /// current slot ends, to whatever comes next, so it stays in step with the
-    /// plan strip whether or not the slots touch.
+    /// plan strip whether or not the slots touch. It follows dragging the
+    /// time bar as well as playback.
+    ///
+    /// Before the first block too: Sky View opens at dusk with nothing
+    /// selected, and a target appears only while its block is running (the
+    /// web app's Sky View does the same).
     private func syncSelectionToPlayback() {
         let ordered = planSegments.chronological
-        guard let first = ordered.first, scrubTime >= first.window.start else { return }
+        guard !ordered.isEmpty else { return }
         if let running = ordered.first(where: { $0.window.contains(scrubTime) }) {
             if state.selectedTargetID != running.targetID {
                 state.selectedTargetID = running.targetID
@@ -321,7 +326,14 @@ struct SkyView: View {
 
             if showsControls { timeScrubber }
         }
-        .onAppear { updatePlaybackModeForSelection() }
+        .onAppear {
+            updatePlaybackModeForSelection()
+            // The full Sky View only: Home's small domes don't drive the selection.
+            if showsControls && playbackMode == .cycleThroughPlan { syncSelectionToPlayback() }
+        }
+        .onChange(of: scrubTime) { _, _ in
+            if showsControls && playbackMode == .cycleThroughPlan { syncSelectionToPlayback() }
+        }
         .onChange(of: state.selectedTargetID) { old, _ in
             updatePlaybackModeForSelection()
             startFade(from: old)
