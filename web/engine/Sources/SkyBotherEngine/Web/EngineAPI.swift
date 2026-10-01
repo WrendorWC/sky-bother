@@ -375,6 +375,16 @@ public enum EngineAPI {
         /// Empty beyond the forecast.
         var cloud: [[Double]]
         var stars: [Star]
+        /// Showpieces worth marking on the dome, in AppState.famousTargets'
+        /// order (named first, then brightest); the page puts the night's
+        /// planned targets ahead of them, as AppState.domeHighlights does.
+        var highlights: [String]
+    }
+
+    /// AppState.famousTargets
+    static let famousTargets: [Target] = (BuiltInCatalog.messier + BuiltInCatalog.showpieces).sorted {
+        let a = $0.commonName != nil, b = $1.commonName != nil
+        return a != b ? a : $0.magnitude < $1.magnitude
     }
 
     struct Star: Encodable {
@@ -425,7 +435,8 @@ public enum EngineAPI {
                              cloud: lastForecast.hours.isEmpty ? [] : cloud,
                              stars: BuiltInCatalog.signpostStars.map {
                                  Star(name: $0.displayName, rightAscension: $0.rightAscension, declination: $0.declination)
-                             })
+                             },
+                             highlights: famousTargets.map(\.id))
         return (try? encoder.encode(track)) ?? Data()
     }
 

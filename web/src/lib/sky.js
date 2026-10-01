@@ -105,3 +105,51 @@ function nightCloudAt(night, ms) {
   const mix = (x, y) => ((x ?? 0) + ((y ?? 0) - (x ?? 0)) * t) / 100;
   return { low: mix(a.cloudLow, b.cloudLow), mid: mix(a.cloudMid, b.cloudMid), high: mix(a.cloudHigh, b.cloudHigh) };
 }
+
+// CameraFrame.footprint (Core/CameraFrame.swift): the camera pointed at
+// (altitude, azimuth), rolled `roll` degrees from "up", traced clockwise and
+// subdivided so it curves correctly on the dome. "Up" is the zenith for an
+// alt-az mount and the celestial pole for an equatorial one.
+const vec = (altitude, azimuth) => [cos(altitude) * sin(azimuth), cos(altitude) * cos(azimuth), sin(altitude)];
+const add = (a, b) => a.map((v, i) => v + b[i]);
+const scale = (a, k) => a.map(v => v * k);
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const unit = a => scale(a, 1 / Math.hypot(...a));
+const tan = d => Math.tan(d * rad);
+
+export function footprint(altitude, azimuth, widthDegrees, heightDegrees, roll, equatorialLatitude = null, subdivisions = 6) {
+  const forward = vec(altitude, azimuth);
+  let up0;
+  if (equatorialLatitude == null) {
+    up0 = [-sin(altitude) * sin(azimuth), -sin(altitude) * cos(azimuth), cos(altitude)];
+  } else {
+    const pole = equatorialLatitude >= 0 ? vec(equatorialLatitude, 0) : vec(-equatorialLatitude, 180);
+    up0 = unit(add(pole, scale(forward, -dot(pole, forward))));
+  }
+  const right0 = cross(forward, up0);
+  const up = add(scale(up0, cos(roll)), scale(right0, sin(roll)));
+  const right = add(scale(right0, cos(roll)), scale(up0, -sin(roll)));
+  const hw = widthDegrees / 2, hh = heightDegrees / 2;
+  const corners = [[-hw, hh], [hw, hh], [hw, -hh], [-hw, -hh]];
+  const points = [];
+  for (let i = 0; i < 4; i++) {
+    const [s, e] = [corners[i], corners[(i + 1) % 4]];
+    for (let k = 0; k < subdivisions; k++) {
+      const t = k / subdivisions;
+      const d = unit(add(add(forward, scale(right, tan(s[0] + (e[0] - s[0]) * t))), scale(up, tan(s[1] + (e[1] - s[1]) * t))));
+      points.push({ altitude: Math.asin(d[2]) / rad, azimuth: normalize360(Math.atan2(d[0], d[1]) / rad) });
+    }
+  }
+  return points;
+}
+
+/** Rig.fieldOfViewWidthDegrees / fieldOfViewHeightDegrees */
+export function fieldOfView(rig) {
+  if (!(rig?.focalLengthMillimeters > 0)) return null;
+  const f = rig.focalLengthMillimeters;
+  return {
+    width: 2 * Math.atan(rig.sensorWidthMillimeters / (2 * f)) / rad,
+    height: 2 * Math.atan(rig.sensorHeightMillimeters / (2 * f)) / rad,
+  };
+}

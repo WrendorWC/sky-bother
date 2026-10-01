@@ -247,7 +247,7 @@
           {#key skyNight.planKey}
             <SkyView night={skyNight} timeZone={settings.site.timeZoneIdentifier}
                      targetID={skyMatch[2] ? decodeURIComponent(skyMatch[2]) : null}
-                     showsClouds={settings.preferences.showsClouds ?? true} />
+                     rig={settings.rig} preferences={settings.preferences} />
           {/key}
         {:else if showingCatalog && nights.length}
           <a class="back" href="#/">‹ All nights</a>

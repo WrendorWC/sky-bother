@@ -9,8 +9,17 @@
   import * as palette from './palette.js';
   import { time, degrees, longDate } from './format.js';
   import PlanStrip from './PlanStrip.svelte';
+  import ScoreBadge from './ScoreBadge.svelte';
 
-  let { night, timeZone, targetID = null, showsClouds = true } = $props();
+  let { night, timeZone, targetID = null, rig = null, preferences = {} } = $props();
+
+  // The view options above the Mac's dome: representative clouds, and the
+  // camera's roll for the frame drawn round the selected target.
+  let showsClouds = $state(preferences.showsClouds ?? true);
+  let roll = $state(0);
+  const fov = $derived(sky.fieldOfView(rig));
+  // Highlights placed on the last draw, for tapping.
+  let placedHighlights = [];
 
   const start = $derived(Date.parse(night.chartWindow.start));
   const end = $derived(Date.parse(night.chartWindow.end));
@@ -122,7 +131,7 @@
 
   // Redraw whenever anything shown changes.
   $effect(() => {
-    at; selectedID; scene; showsClouds;
+    at; selectedID; scene; showsClouds; roll; playing;
     draw();
   });
 
@@ -239,6 +248,8 @@
       c.beginPath(); c.arc(p.x, p.y, moonDiameter(g) / 2, 0, Math.PI * 2); c.fill();
     }
 
+    placedHighlights = playing ? [] : placeHighlights(c, g);
+
     const progress = reduceMotion ? 1 : Math.min(1, (performance.now() - fadeStart) / fadeDuration);
     const outgoing = fadingOutID && progress < 1 && fadingOutID !== selectedID
       ? night.targets.find(t => t.id === fadingOutID) : null;
@@ -252,6 +263,8 @@
     }
     c.globalAlpha = 1;
     c.restore();
+    // Outside the clip, so a label near the rim isn't cut off.
+    drawHighlights(c, placedHighlights);
 
     // Signpost stars, named faintly; outside the clip so a name near the rim
     // isn't cut off, and to the left of a star near the right-hand edge.
@@ -272,6 +285,89 @@
   function moonDiameter(g) {
     const real = (scene.moon.diameter ?? 0.52) * g.radius / 90;
     return Math.min(Math.max(real, 10), 26);
+  }
+
+  // AppState.domeHighlights / SkyView.placedHighlights: the plan's targets,
+  // then showpieces, above the visible horizon, skipping any whose brackets
+  // and label would overlap one already placed; at most 14. Hidden while the
+  // night plays, when the plan's own targets are the story.
+  function placeHighlights(c, g) {
+    const lat = track.latitude, lon = track.longitude;
+    const ids = [...new Set([...blocksInOrder.map(b => b.targetID), ...track.highlights])];
+    const byID = new Map(night.targets.map(t => [t.id, t]));
+    c.font = '600 11px system-ui, sans-serif';
+    const size = 22;
+    const claimed = [];
+    if (selected) {
+      const h = sky.horizontal(selected.rightAscension, selected.declination, d, lat, lon);
+      const p = screen(g, h);
+      const w = Math.max(size * 1.6, c.measureText(selected.displayName).width + 16);
+      claimed.push({ x: p.x - w / 2, y: p.y - size, w, h: size * 2 + 22 });
+    }
+    const placed = [];
+    for (const id of ids) {
+      if (id === selectedID) continue;
+      const target = byID.get(id);
+      if (!target) continue;
+      const h = sky.horizontal(target.rightAscension, target.declination, d, lat, lon);
+      if (h.altitude <= Math.max(3, sky.blockedAltitude(track.horizon, h.azimuth))) continue;
+      const p = screen(g, h);
+      const w = Math.max(size, c.measureText(target.displayName).width + 10);
+      const box = { x: p.x - w / 2 - 4, y: p.y - size / 2 - 3, w: w + 8, h: size + 3 + 18 + 6 };
+      if (claimed.some(r => r.x < box.x + box.w && box.x < r.x + r.w && r.y < box.y + box.h && box.y < r.y + r.h)) continue;
+      claimed.push(box);
+      placed.push({ target, x: p.x, y: p.y });
+      if (placed.length >= 14) break;
+    }
+    return placed;
+  }
+
+  function drawHighlights(c, placed) {
+    const half = 11, arm = 5;
+    c.lineCap = 'round';
+    for (const { target, x, y } of placed) {
+      const path = new Path2D();
+      for (const [dx, dy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+        const cx = x + half * dx, cy = y + half * dy;
+        path.moveTo(cx - arm * dx, cy);
+        path.lineTo(cx, cy);
+        path.lineTo(cx, cy - arm * dy);
+      }
+      c.strokeStyle = palette.css(palette.accent);
+      c.lineWidth = 2;
+      c.stroke(path);
+      c.font = '600 11px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      const w = c.measureText(target.displayName).width;
+      // Kept inside the canvas: on a phone the dome reaches its edges.
+      const lx = Math.min(Math.max(x, w / 2 + 6), size - w / 2 - 6);
+      c.fillStyle = 'rgba(0,0,0,0.55)';
+      c.fillRect(lx - w / 2 - 5, y + half + 3, w + 10, 16);
+      c.fillStyle = 'white';
+      c.fillText(target.displayName, lx, y + half + 11);
+    }
+  }
+
+  // Tap a marked target to select it (and stay on it).
+  let downAt = null;
+  function pointerDown(event) {
+    downAt = { x: event.clientX, y: event.clientY };
+  }
+  function pointerUp(event) {
+    if (!downAt || Math.hypot(event.clientX - downAt.x, event.clientY - downAt.y) > 8) return;
+    const box = overlay.getBoundingClientRect();
+    const x = event.clientX - box.left, y = event.clientY - box.top;
+    let best = null, bestDistance = 26;
+    for (const h of placedHighlights) {
+      const distance = Math.hypot(h.x - x, h.y + 6 - y);
+      if (distance < bestDistance) { best = h; bestDistance = distance; }
+    }
+    if (best) {
+      playing = false;
+      selectedID = best.target.id;
+      mode = 'stay';
+    }
   }
 
   // The target's whole daily loop (a day centred on the night, every 6
@@ -303,7 +399,26 @@
     const now = sky.horizontal(target.rightAscension, target.declination, d, lat, lon);
     if (now.altitude <= sky.blockedAltitude(track.horizon, now.azimuth)) return;
     const m = screen(g, now);
-    const half = 18, arm = half * 0.5;
+
+    // Your camera's frame, to scale (SkyView.drawActiveTarget); not within
+    // 2° of the zenith, where a flat dome can't show which way it faces.
+    let extent = 0;
+    if (fov && now.altitude <= 88) {
+      const outline = sky.footprint(now.altitude, now.azimuth, fov.width, fov.height, roll,
+        rig.mountType === 'equatorial' ? lat : null);
+      if (outline.every(p => p.altitude > 0)) {
+        const points = outline.map(p => screen(g, p));
+        const frame = new Path2D();
+        points.forEach((p, i) => (i ? frame.lineTo(p.x, p.y) : frame.moveTo(p.x, p.y)));
+        frame.closePath();
+        c.fillStyle = palette.verdictColor('Excellent', 0.3);
+        c.fill(frame);
+        c.strokeStyle = 'rgba(0,0,0,0.6)'; c.lineWidth = 3.5; c.stroke(frame);
+        c.strokeStyle = palette.verdictColor('Excellent'); c.lineWidth = 1.5; c.stroke(frame);
+        extent = Math.max(...points.map(p => Math.max(Math.abs(p.x - m.x), Math.abs(p.y - m.y))));
+      }
+    }
+    const half = Math.max(extent + 10, 18), arm = half * 0.5;
     const brackets = new Path2D();
     for (const [dx, dy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
       const x = m.x + half * dx, y = m.y + half * dy;
@@ -317,7 +432,7 @@
     c.font = '600 12px system-ui, sans-serif';
     c.textAlign = 'center';
     const w = c.measureText(target.displayName).width;
-    const y = m.y + half + 16;
+    const y = m.y + half + 14;
     c.fillStyle = 'rgba(0,0,0,0.7)';
     c.beginPath(); c.roundRect ? c.roundRect(m.x - w / 2 - 6, y - 9, w + 12, 18, 4) : c.rect(m.x - w / 2 - 6, y - 9, w + 12, 18); c.fill();
     c.fillStyle = 'white';
@@ -383,6 +498,34 @@
     const soon = sky.horizontal(selected.rightAscension, selected.declination, d + 5 / 1440, track.latitude, track.longitude);
     return { ...here, rising: soon.altitude > here.altitude, blocked: sky.blockedAltitude(track.horizon, here.azimuth) };
   });
+  // The Mac's "Shootable now, until …" / "Not shootable now — why" line,
+  // from the target's usable windows and the reason it's out of one.
+  const shootable = $derived.by(() => {
+    if (!selected || !targetNow) return {};
+    const windows = selected.windows.map(w => ({ start: Date.parse(w.start), end: Date.parse(w.end) }));
+    const now = windows.find(w => at >= w.start && at < w.end);
+    if (now) return { now };
+    const next = windows.find(w => w.start > at) ?? null;
+    const minimum = preferences.minimumUsefulAltitude ?? 30;
+    const darkSun = -(9 + 9 * (preferences.minimumDarkness ?? 0.5));
+    let reason = '';
+    if (targetNow.altitude <= 0) reason = 'below the horizon';
+    else if (targetNow.altitude <= targetNow.blocked) reason = `behind your horizon to the ${compass(targetNow.azimuth)}`;
+    else if (targetNow.altitude < minimum) reason = `below your ${minimum}° minimum altitude`;
+    else if (scene && scene.sun.altitude > darkSun) reason = 'not dark enough yet';
+    else reason = 'too cloudy';
+    return { next, reason };
+  });
+
+  function jumpToBest() {
+    const w = selected?.bestWindow;
+    if (!w) return;
+    playing = false;
+    followingNow = false;
+    mode = 'stay';
+    at = (Date.parse(w.start) + Date.parse(w.end)) / 2;
+  }
+
   // Now works whenever the sky track covers it (half a day either side of
   // the night), so by day it shows today's sky, like the Mac's Now.
   const trackEnd = $derived(track ? Date.parse(track.start) + (track.sun.length - 1) * track.stepMinutes * 60_000 : 0);
@@ -426,7 +569,8 @@
     <div class="dome-area">
       <div class="dome" bind:clientWidth={size} style:height="{size}px">
         <canvas bind:this={domeCanvas} style:width="{size}px" style:height="{size}px"></canvas>
-        <canvas class="overlay" bind:this={overlay} style:width="{size}px" style:height="{size}px"></canvas>
+        <canvas class="overlay" bind:this={overlay} style:width="{size}px" style:height="{size}px"
+                onpointerdown={pointerDown} onpointerup={pointerUp}></canvas>
         {#if !track && !error}<p class="loading muted">Loading the sky…</p>{/if}
       </div>
 
@@ -462,13 +606,29 @@
         <p class="muted-strong">{next ? `Next: ${next.targetName} at ${time(next.window.start, timeZone)}` : 'The plan is done for the night.'}</p>
       {/if}
       {#if selected && targetNow}
-        <h3 class="target-name">{selected.displayName}</h3>
+        <div class="target-head">
+          <h3 class="target-name">{selected.displayName}</h3>
+          <ScoreBadge score={selected.score} size={40} />
+        </div>
         {#if targetNow.altitude <= 0}
           <p class="warn">Below the horizon</p>
         {:else if targetNow.altitude <= targetNow.blocked}
           <p class="warn">{degrees(targetNow.altitude)} up but behind your horizon to the {compass(targetNow.azimuth)}</p>
         {:else}
           <p>{degrees(targetNow.altitude)} up in the {compass(targetNow.azimuth)}, {targetNow.rising ? 'rising' : 'setting'}</p>
+        {/if}
+        {#if shootable.now}
+          <p class="good">✓ Shootable now, until {time(shootable.now.end, timeZone)}</p>
+        {:else}
+          <p class="warn">Not shootable now{shootable.reason ? ` — ${shootable.reason}` : ''}</p>
+          <p class="muted-strong">{shootable.next ? `Usable from ${time(shootable.next.start, timeZone)} to ${time(shootable.next.end, timeZone)}` : 'No usable time left this night.'}</p>
+        {/if}
+        {#if selected.bestWindow}
+          <button type="button" class="link" onclick={jumpToBest}>Jump to its best window</button>
+        {/if}
+        {@const planned = night.plan.filter(b => b.targetID === selected.id)}
+        {#if planned.length}
+          <p class="planned">✓ Planned · {planned.map(b => `${time(b.window.start, timeZone)}–${time(b.window.end, timeZone)}`).join(', ')}</p>
         {/if}
       {/if}
 
@@ -481,6 +641,17 @@
             </button></li>
           {/each}
         </ul>
+      {/if}
+
+      <h3>View</h3>
+      <label class="check"><input type="checkbox" bind:checked={showsClouds} /> Show clouds</label>
+      <p class="muted">Representative: the forecast's amount, not where the clouds really are.</p>
+      {#if fov}
+        <label class="roll">
+          <span>Camera roll <strong>{roll}°</strong></span>
+          <input type="range" min="0" max="359" step="1" bind:value={roll} />
+        </label>
+        <p class="muted">{rig.name} · {fov.width.toFixed(2)}° × {fov.height.toFixed(2)}°</p>
       {/if}
     </aside>
   </div>
@@ -521,6 +692,15 @@
   .side { padding: 14px; display: grid; gap: 8px; }
   .target-name { margin-top: 8px; color: var(--text); text-transform: none; letter-spacing: 0; font-size: 17px; }
   .warn { color: var(--marginal); }
+  .good { color: var(--excellent); }
+  .planned { color: var(--accent); font-weight: 600; }
+  .target-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; }
+  .target-head .target-name { margin-top: 0; }
+  .link { justify-self: start; background: none; border: none; padding: 0; color: var(--accent); font-weight: 600; text-align: left; }
+  .check { display: flex; gap: 8px; align-items: center; }
+  .check input, .roll input { accent-color: var(--accent); }
+  .roll { display: grid; gap: 4px; }
+  .roll span { display: flex; justify-content: space-between; }
   .picks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
   .picks button { width: 100%; text-align: left; display: flex; justify-content: space-between; gap: 8px; }
   .picks button.on { border-color: var(--accent); background: rgba(158, 133, 250, 0.18); }
