@@ -123,6 +123,8 @@ public enum EngineAPI {
         var needsMosaic: Bool
         var rightAscension: Double
         var declination: Double
+        var majorAxisArcminutes: Double
+        var minorAxisArcminutes: Double
         var framingNote: String
         /// Only for targets that are usable at all: the rest never show a bar.
         /// To 0.1°, finer than a pixel on either chart: at full precision a
@@ -138,6 +140,10 @@ public enum EngineAPI {
         /// False for a target with no usable time on the night: the rest is
         /// then just the catalogue's card, and `verdictSentence` says why.
         var scored: Bool
+        var rightAscension: Double
+        var declination: Double
+        var majorAxisArcminutes: Double
+        var minorAxisArcminutes: Double
         var id: String
         var displayName: String
         var designation: String
@@ -299,6 +305,8 @@ public enum EngineAPI {
                           zenithRisk: plan.bestWindowZenithRisk, fillFraction: plan.fit.fillFraction,
                           needsMosaic: plan.fit.needsMosaic,
                           rightAscension: plan.target.rightAscension, declination: plan.target.declination,
+                          majorAxisArcminutes: plan.target.majorAxisArcminutes,
+                          minorAxisArcminutes: plan.target.minorAxisArcminutes,
                           framingNote: plan.fit.framingNote,
                           altitudeTrace: plan.usableMinutes > 0 || planned.contains(plan.id) ? plan.altitudeTrace.map { ($0 * 10).rounded() / 10 } : nil)
         }
@@ -483,7 +491,10 @@ public enum EngineAPI {
             numbers.append(Number(label: "Surface brightness", value: String(format: "%.1f mag/arcsec²", target.surfaceBrightness)))
         }
         return TargetDetail(
-            scored: false, id: target.id, displayName: target.displayName, designation: target.designation,
+            scored: false,
+            rightAscension: target.rightAscension, declination: target.declination,
+            majorAxisArcminutes: target.majorAxisArcminutes, minorAxisArcminutes: target.minorAxisArcminutes,
+            id: target.id, displayName: target.displayName, designation: target.designation,
             subtitle: "\(target.designation) · \(target.type.displayName)\(target.inConstellation)",
             score: 0, verdict: "", recommendation: "Not usable on this night", verdictSentence: reason,
             transitTime: nil, maximumAltitude: 0, bestWindow: nil, zenithRisk: nil,
@@ -517,6 +528,8 @@ public enum EngineAPI {
         }
         return TargetDetail(
             scored: true,
+            rightAscension: target.rightAscension, declination: target.declination,
+            majorAxisArcminutes: target.majorAxisArcminutes, minorAxisArcminutes: target.minorAxisArcminutes,
             id: plan.id,
             displayName: target.displayName,
             designation: target.designation,

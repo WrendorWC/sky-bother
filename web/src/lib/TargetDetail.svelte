@@ -7,6 +7,7 @@
   import ScoreBadge from './ScoreBadge.svelte';
   import VerdictTag from './VerdictTag.svelte';
   import FactorBar from './FactorBar.svelte';
+  import FramePreview from './FramePreview.svelte';
   import { targetImage } from './images.js';
   import { verdictColor, verdictFor } from './palette.js';
   import { time, degrees, weekday, dayAndMonth, hours } from './format.js';
@@ -96,7 +97,8 @@
     {/if}
 
     <section>
-      <h3>Framing</h3>
+      <h3>In your frame</h3>
+      <FramePreview target={detail} />
       {#if image}
         <img class="photo" src={image.url} alt={detail.displayName} />
       {/if}

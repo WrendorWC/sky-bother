@@ -9,6 +9,7 @@
   import SkyView from './lib/SkyView.svelte';
   import { age } from './lib/format.js';
   import { isSetupHash, readSetup } from './lib/setupLink.js';
+  import { view } from './lib/view.svelte.js';
 
   const storageKey = 'skybother.settings.v1';
 
@@ -157,6 +158,11 @@
   }
 
   checkForSetup();
+
+  // The rig every frame drawing uses (Sky View, "In your frame").
+  $effect(() => {
+    view.rig = settings?.rig ?? null;
+  });
 
   $effect(() => {
     const onHash = () => {

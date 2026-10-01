@@ -10,13 +10,17 @@
   import { time, degrees, longDate } from './format.js';
   import PlanStrip from './PlanStrip.svelte';
   import ScoreBadge from './ScoreBadge.svelte';
+  import FramePreview from './FramePreview.svelte';
+  import TargetDetail from './TargetDetail.svelte';
+  import { view } from './view.svelte.js';
 
   let { night, timeZone, targetID = null, rig = null, preferences = {} } = $props();
 
   // The view options above the Mac's dome: representative clouds, and the
   // camera's roll for the frame drawn round the selected target.
   let showsClouds = $state(preferences.showsClouds ?? true);
-  let roll = $state(0);
+  // A target's full card, opened by tapping it on the dome.
+  let detailID = $state(null);
   const fov = $derived(sky.fieldOfView(rig));
   // Highlights placed on the last draw, for tapping.
   let placedHighlights = [];
@@ -131,7 +135,7 @@
 
   // Redraw whenever anything shown changes.
   $effect(() => {
-    at; selectedID; scene; showsClouds; roll; playing;
+    at; selectedID; scene; showsClouds; view.roll; playing;
     draw();
   });
 
@@ -364,9 +368,11 @@
       if (distance < bestDistance) { best = h; bestDistance = distance; }
     }
     if (best) {
+      // Selected, and its card opened, as clicking one on the Mac does.
       playing = false;
       selectedID = best.target.id;
       mode = 'stay';
+      detailID = best.target.id;
     }
   }
 
@@ -404,7 +410,7 @@
     // 2° of the zenith, where a flat dome can't show which way it faces.
     let extent = 0;
     if (fov && now.altitude <= 88) {
-      const outline = sky.footprint(now.altitude, now.azimuth, fov.width, fov.height, roll,
+      const outline = sky.footprint(now.altitude, now.azimuth, fov.width, fov.height, view.roll,
         rig.mountType === 'equatorial' ? lat : null);
       if (outline.every(p => p.altitude > 0)) {
         const points = outline.map(p => screen(g, p));
@@ -623,12 +629,22 @@
           <p class="warn">Not shootable now{shootable.reason ? ` — ${shootable.reason}` : ''}</p>
           <p class="muted-strong">{shootable.next ? `Usable from ${time(shootable.next.start, timeZone)} to ${time(shootable.next.end, timeZone)}` : 'No usable time left this night.'}</p>
         {/if}
-        {#if selected.bestWindow}
-          <button type="button" class="link" onclick={jumpToBest}>Jump to its best window</button>
-        {/if}
+        <div class="links">
+          {#if selected.bestWindow}<button type="button" class="link" onclick={jumpToBest}>Jump to its best window</button>{/if}
+          <button type="button" class="link" onclick={() => (detailID = selected.id)}>Details</button>
+        </div>
         {@const planned = night.plan.filter(b => b.targetID === selected.id)}
         {#if planned.length}
           <p class="planned">✓ Planned · {planned.map(b => `${time(b.window.start, timeZone)}–${time(b.window.end, timeZone)}`).join(', ')}</p>
+        {/if}
+        {#if fov}
+          <h3>In your frame</h3>
+          <FramePreview target={selected} />
+          <label class="roll">
+            <span>Camera roll <strong>{view.roll}°</strong></span>
+            <input type="range" min="0" max="359" step="1" bind:value={view.roll} />
+          </label>
+          <p class="muted">{selected.framingNote}</p>
         {/if}
       {/if}
 
@@ -646,16 +662,14 @@
       <h3>View</h3>
       <label class="check"><input type="checkbox" bind:checked={showsClouds} /> Show clouds</label>
       <p class="muted">Representative: the forecast's amount, not where the clouds really are.</p>
-      {#if fov}
-        <label class="roll">
-          <span>Camera roll <strong>{roll}°</strong></span>
-          <input type="range" min="0" max="359" step="1" bind:value={roll} />
-        </label>
-        <p class="muted">{rig.name} · {fov.width.toFixed(2)}° × {fov.height.toFixed(2)}°</p>
-      {/if}
+      {#if fov}<p class="muted">Frame: {rig.name} · {fov.width.toFixed(2)}° × {fov.height.toFixed(2)}°</p>{/if}
     </aside>
   </div>
 </section>
+
+{#if detailID}
+  <TargetDetail {night} targetID={detailID} {timeZone} onclose={() => (detailID = null)} />
+{/if}
 
 <style>
   .sky-view { display: grid; gap: 12px; min-width: 0; }
@@ -696,6 +710,7 @@
   .planned { color: var(--accent); font-weight: 600; }
   .target-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; }
   .target-head .target-name { margin-top: 0; }
+  .links { display: flex; gap: 16px; flex-wrap: wrap; }
   .link { justify-self: start; background: none; border: none; padding: 0; color: var(--accent); font-weight: 600; text-align: left; }
   .check { display: flex; gap: 8px; align-items: center; }
   .check input, .roll input { accent-color: var(--accent); }
