@@ -4,6 +4,7 @@
   import NightList from './lib/NightList.svelte';
   import NightDetail from './lib/NightDetail.svelte';
   import SitePanel from './lib/SitePanel.svelte';
+  import SettingsPanel from './lib/SettingsPanel.svelte';
   import { age } from './lib/format.js';
 
   const storageKey = 'skybother.settings.v1';
@@ -14,7 +15,12 @@
   let error = $state('');
   let updatedAt = $state(null);
   let editingSite = $state(false);
+  let editingSettings = $state(false);
+  let rigPresets = $state([]);
   let clock = $state(Date.now());
+  // The last forecast and comet orbits, so a settings change re-plans
+  // without fetching them again.
+  let fetched = null;
 
   // #/2026-10-01 is a night; anything else is the list (on a phone) or tonight.
   let route = $state(location.hash);
@@ -53,7 +59,13 @@
   function setBortle(value) {
     settings.site.bortleClass = value;
     saveSettings();
-    refresh();
+    replan();
+  }
+
+  function changeSettings(changed) {
+    settings = changed;
+    saveSettings();
+    replan();
   }
 
   async function refresh() {
@@ -66,13 +78,30 @@
         fetchForecast(site.latitude, site.longitude, preferences.forecastNights),
         fetchCometElements(),
       ]);
-      nights = await planNights({ ...$state.snapshot(settings), openMeteoResponse, cometElements, now: new Date().toISOString().replace(/\.\d+Z$/, 'Z') });
+      fetched = { key: `${site.latitude},${site.longitude}`, openMeteoResponse, cometElements };
+      await plan();
       updatedAt = Date.now();
     } catch (e) {
       error = e.message;
     } finally {
       loading = false;
     }
+  }
+
+  /** Re-plans from the forecast already fetched for this site, or fetches it. */
+  async function replan() {
+    if (!fetched || fetched.key !== `${settings.site.latitude},${settings.site.longitude}`) return refresh();
+    error = '';
+    try {
+      await plan();
+    } catch (e) {
+      error = e.message;
+    }
+  }
+
+  async function plan() {
+    const { openMeteoResponse, cometElements } = fetched;
+    nights = await planNights({ ...$state.snapshot(settings), openMeteoResponse, cometElements, now: new Date().toISOString().replace(/\.\d+Z$/, 'Z') });
   }
 
   $effect(() => {
@@ -82,6 +111,7 @@
     return () => { removeEventListener('hashchange', onHash); clearInterval(tick); };
   });
 
+  defaults().then(d => (rigPresets = d.rigPresets));
   refresh();
 </script>
 
@@ -89,9 +119,11 @@
   <header class="topbar">
     <a class="brand" href="#/">Sky Bother</a>
     {#if settings}
-      <button type="button" class="site-button" onclick={() => (editingSite = !editingSite)} title="Change site">
+      <button type="button" class="site-button" onclick={() => { editingSite = !editingSite; editingSettings = false; }} title="Change site">
         {settings.site.name || 'Unnamed site'} <span aria-hidden="true">▾</span>
       </button>
+      <button type="button" class="icon" onclick={() => { editingSettings = !editingSettings; editingSite = false; }}
+              title="Settings" aria-label="Settings" aria-expanded={editingSettings}>⚙︎</button>
       <button type="button" class="icon" onclick={refresh} disabled={loading} title="Fetch the latest forecast" aria-label="Refresh">
         <span class:spinning={loading}>↻</span>
       </button>
@@ -102,6 +134,12 @@
     <div class="site-area">
       <SitePanel {settings} onsite={setSite} onimport={importSettings} onbortle={setBortle}
                  oncancel={() => (editingSite = false)} />
+    </div>
+  {/if}
+
+  {#if settings && editingSettings && rigPresets.length}
+    <div class="site-area">
+      <SettingsPanel {settings} {rigPresets} onchange={changeSettings} ondone={() => (editingSettings = false)} />
     </div>
   {/if}
 
