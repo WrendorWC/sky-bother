@@ -7,6 +7,7 @@
   import Catalog from './lib/Catalog.svelte';
   import SkyView from './lib/SkyView.svelte';
   import Planner from './lib/Planner.svelte';
+  import SessionView from './lib/SessionView.svelte';
   import SetupWizard from './lib/SetupWizard.svelte';
   import { age } from './lib/format.js';
   import { isSetupHash, readSetup } from './lib/setupLink.js';
@@ -48,6 +49,9 @@
   // #/sky/2026-10-01, or #/sky/2026-10-01/M76 with a target selected.
   const skyMatch = $derived(/^#\/sky\/(\d{4}-\d{2}-\d{2})(?:\/(.+))?$/.exec(route));
   const skyNight = $derived(skyMatch ? nights.find(n => n.planKey === skyMatch[1]) ?? null : null);
+  // #/session/2026-10-01: Session View, for use at the scope.
+  const sessionMatch = $derived(/^#\/session\/(\d{4}-\d{2}-\d{2})$/.exec(route));
+  const sessionNight = $derived(sessionMatch ? nights.find(n => n.planKey === sessionMatch[1]) ?? null : null);
   // #/plan/2026-10-01: the planner on that night.
   const planMatch = $derived(/^#\/plan\/(\d{4}-\d{2}-\d{2})$/.exec(route));
   const planNight = $derived(planMatch ? nights.find(n => n.planKey === planMatch[1]) ?? null : null);
@@ -274,7 +278,7 @@
   syncNow();
 </script>
 
-<div class="app" class:showing-night={routeKey != null || showingCatalog || skyMatch || planMatch} class:planning={planMatch}>
+<div class="app" class:showing-night={routeKey != null || showingCatalog || skyMatch || planMatch || sessionMatch} class:planning={planMatch || sessionMatch}>
   <!-- The Mac window's toolbar: the site and refresh on the left of the
        tools, then Settings, Catalog and Night Mode as labelled buttons in
        one group (icons only on a phone). -->
@@ -376,7 +380,11 @@
       </aside>
 
       <main class="content">
-        {#if planNight}
+        {#if sessionNight}
+          {#key sessionNight.planKey}
+            <SessionView night={sessionNight} timeZone={settings.site.timeZoneIdentifier} preferences={settings.preferences} rig={settings.rig} />
+          {/key}
+        {:else if planNight}
           {#key planNight.planKey}
             <Planner night={planNight} {nights} timeZone={settings.site.timeZoneIdentifier} preferences={settings.preferences}
                      onsave={savePlan} onleave={() => (location.hash = `#/${planNight.planKey}`)} />

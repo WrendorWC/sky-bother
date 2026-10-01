@@ -86,6 +86,9 @@ public enum EngineAPI {
         /// under the cloud limit, halving past it.
         var cloudCredit: Double?
         var temperature: Double?
+        /// Temperature minus dew point, °C, and sustained wind, km/h.
+        var dewSpread: Double?
+        var windSpeed: Double?
         var hasWeather: Bool
     }
 
@@ -339,7 +342,10 @@ public enum EngineAPI {
                    moonBrightness: $0.moonBrightness, darkness: $0.darkness, cloudCover: finite($0.cloudCover),
                    cloudLow: finite($0.cloudLow), cloudMid: finite($0.cloudMid), cloudHigh: finite($0.cloudHigh),
                    cloudCredit: $0.cloudCover.isFinite ? preferences.cloudCredit(cloudCover: $0.cloudCover) : nil,
-                   temperature: finite($0.temperature), hasWeather: $0.hasWeather)
+                   temperature: finite($0.temperature),
+                   dewSpread: $0.hasWeather ? finite($0.dewSpread) : nil,
+                   windSpeed: $0.hasWeather ? finite($0.windSpeed) : nil,
+                   hasWeather: $0.hasWeather)
         }
         return NightSummary(planKey: night.planKey,
                             date: night.date,

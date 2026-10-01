@@ -170,7 +170,10 @@ panel (rig preset, kind of night, cloud limit, units); thumbnails and target det
   panel on wide screens so the dome fills the height; camera frame to scale with roll;
   showpiece highlights (tap to select); side panel with score, shootable-now status, jump
   to best window; Show clouds. www.skybother.com redirects to skybother.com.
-- Not yet: zenith-risk path colouring, Session View.
+- Session View (`#/session/date`, "View Session" on tonight): NOW / NEXT with countdown and
+  progress, dew-heater line, "In your frame", a compact live dome, right-now conditions from
+  the night's samples, facts, what's after; red palette; Keep Screen On (Wake Lock).
+- Not yet: zenith-risk path colouring; the Seestar live stack (browsers can't reach it).
 
 ## Phase 3 progress
 
@@ -186,7 +189,10 @@ Mac-style labelled toolbar on wide screens, a full-width planner.
   AES-GCM blob per code (id and key are hashes of the code); seven sections each stamped on
   change and merged newest-wins. Web: lib/sync.js, syncState; Mac: Support/SyncClient.swift,
   UI/SyncController.swift, Settings → Sync (code, QR, link). Tested web↔web and Mac↔web
-  against `wrangler dev`. SKYBOTHER_SYNC_BASE points the Mac at a test server.
+  against `wrangler dev`. SKYBOTHER_SYNC_BASE points the Mac at a test server. Idle
+  check-ins send the known version and get { unchanged } back; check-ins only in front.
+- Forecast backup: MET Norway through the Worker's /api/metno (cached to Expires), read by
+  the shared MetNorwayClient.decode; the sidebar notes a backup source.
 - Target detail shows the photo only; the Mac's frame-to-scale preview comes with the
   Aladin Lite sky browser (Phase 2).
 

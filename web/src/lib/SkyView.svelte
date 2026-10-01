@@ -14,7 +14,9 @@
   import TargetDetail from './TargetDetail.svelte';
   import { view } from './view.svelte.js';
 
-  let { night, timeZone, targetID = null, rig = null, preferences = {} } = $props();
+  // `compact`: just the dome, following the clock, with `targetID` marked —
+  // Session View's "In the sky now".
+  let { night, timeZone, targetID = null, rig = null, preferences = {}, compact = false } = $props();
 
   // The view options above the Mac's dome: representative clouds, and the
   // camera's roll for the frame drawn round the selected target.
@@ -75,6 +77,15 @@
     // A target selected before opening stays selected, and playback stays on
     // it; with nothing selected, the plan is followed from dusk.
     mode = first ? 'stay' : 'follow';
+    if (compact) {
+      followingNow = true;
+      mode = 'stay';
+    }
+  });
+
+  // Compact: the marked target is whatever Session View says is on now.
+  $effect(() => {
+    if (compact) selectedID = targetID;
   });
 
   // SkyView.syncSelectionToPlayback, stricter: blocks never overlap, so at
@@ -252,7 +263,7 @@
       c.beginPath(); c.arc(p.x, p.y, moonDiameter(g) / 2, 0, Math.PI * 2); c.fill();
     }
 
-    placedHighlights = playing ? [] : placeHighlights(c, g);
+    placedHighlights = playing || compact ? [] : placeHighlights(c, g);
 
     const progress = reduceMotion ? 1 : Math.min(1, (performance.now() - fadeStart) / fadeDuration);
     const outgoing = fadingOutID && progress < 1 && fadingOutID !== selectedID
@@ -563,6 +574,18 @@
 </div>
 {/snippet}
 
+{#snippet domeView()}
+  <div class="dome" class:compact bind:clientWidth={size} style:height="{size}px">
+    <canvas bind:this={domeCanvas} style:width="{size}px" style:height="{size}px"></canvas>
+    <canvas class="overlay" bind:this={overlay} style:width="{size}px" style:height="{size}px"
+            onpointerdown={pointerDown} onpointerup={pointerUp}></canvas>
+    {#if !track && !error}<p class="loading muted">Loading the sky…</p>{/if}
+  </div>
+{/snippet}
+
+{#if compact}
+  {@render domeView()}
+{:else}
 <section class="sky-view">
   <header>
     <a class="back" href="#/{night.planKey}">‹ {longDate(night.planKey)}</a>
@@ -573,12 +596,7 @@
 
   <div class="layout">
     <div class="dome-area">
-      <div class="dome" bind:clientWidth={size} style:height="{size}px">
-        <canvas bind:this={domeCanvas} style:width="{size}px" style:height="{size}px"></canvas>
-        <canvas class="overlay" bind:this={overlay} style:width="{size}px" style:height="{size}px"
-                onpointerdown={pointerDown} onpointerup={pointerUp}></canvas>
-        {#if !track && !error}<p class="loading muted">Loading the sky…</p>{/if}
-      </div>
+      {@render domeView()}
 
       <div class="phone-only">{@render controls()}</div>
       <input class="scrubber" class:outside={outsideNight} type="range" min="0" max="1000" step="1" aria-label="Time"
@@ -666,6 +684,7 @@
     </aside>
   </div>
 </section>
+{/if}
 
 {#if detailID}
   <TargetDetail {night} targetID={detailID} {timeZone} onclose={() => (detailID = null)} />
@@ -688,6 +707,7 @@
     width: min(100%, max(280px, calc(100dvh - 250px)));
   }
   .phone-only { display: none; }
+  .dome.compact { width: 100%; }
   .dome canvas { position: absolute; inset: 0; display: block; }
   .loading { position: absolute; inset: 0; display: grid; place-items: center; }
   .controls { display: flex; gap: 10px; align-items: center; }

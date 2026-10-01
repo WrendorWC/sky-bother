@@ -99,6 +99,7 @@
       <!-- Carries a target you picked on this night (not the default one). -->
       <div class="summary-actions">
         <a class="plan-button" href="#/plan/{night.planKey}">Plan Session</a>
+        {#if isTonight && night.plan.length}<a class="session-button" href="#/session/{night.planKey}">▶ View Session</a>{/if}
       <a class="sky-link" href="#/sky/{night.planKey}{chosenFor === night.planKey && chosenID ? `/${encodeURIComponent(chosenID)}` : ''}">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
         Open Sky View
@@ -239,6 +240,10 @@
   .summary-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
   .plan-button {
     padding: 8px 16px; border-radius: 9px; background: var(--accent); color: #120e22; font-weight: 700; text-decoration: none;
+  }
+  .session-button {
+    padding: 8px 16px; border-radius: 9px; background: rgba(158, 133, 250, 0.22); color: var(--accent);
+    border: 1px solid var(--accent); font-weight: 700; text-decoration: none;
   }
   .edit-plan { margin-left: auto; color: var(--accent); font-weight: 600; text-decoration: none; font-size: 14px; }
   .sky-link {
