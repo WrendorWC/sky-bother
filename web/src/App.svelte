@@ -277,8 +277,9 @@
   .nav { color: var(--muted); text-decoration: none; font-weight: 600; padding: 6px 4px; }
   .nav[aria-current='page'], .nav:hover { color: var(--accent); }
   .site-button { background: none; border-color: transparent; color: var(--muted); min-width: 0; max-width: 50vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .icon { width: 40px; height: 40px; padding: 0; display: grid; place-items: center; flex: none; }
-  .icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  /* 44 px: a comfortable tap on a phone. */
+  .icon { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; flex: none; }
+  .icon svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .spinning { display: inline-block; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .site-area { margin-top: 14px; }

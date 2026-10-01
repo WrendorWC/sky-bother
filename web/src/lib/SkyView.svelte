@@ -27,6 +27,16 @@
   // on the selected target.
   let mode = $state('follow');
 
+  // The Mac's 0.7 s fade (SkyView.startFade): a newly selected target's path,
+  // brackets and name fade in while the last one fades out. Instant with
+  // Reduce Motion on.
+  const fadeDuration = 700;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let shownID = null;        // what the dome last finished showing
+  let fadingOutID = null;
+  let fadeStart = 0;
+  let fadeFrame = 0;
+
   let size = $state(0);
   let domeCanvas;
   let overlay;
@@ -43,21 +53,24 @@
     playing = false;
     // (A local, not `selectedID`: reading that here would rerun all this,
     // back to dusk, every time the plan moves the selection on.)
-    const first = targetID ?? night.plan[0]?.targetID ?? night.targets.find(t => t.usableMinutes > 0 && !t.isStar)?.id ?? null;
+    // Nothing selected unless a target was asked for: with the plan to
+    // follow, a target appears only while its block is running.
+    const first = targetID ?? null;
     selectedID = first;
+    fadingOutID = null;
+    shownID = first;
     // Something picked from outside the plan has nothing to follow on to.
     mode = !first || night.plan.some(b => b.targetID === first) ? 'follow' : 'stay';
   });
 
-  // SkyView.syncSelectionToPlayback: blocks never overlap, so at most one
-  // holds `at`. Its target is selected; between blocks, and after the last,
-  // nothing is (nothing is being shot); before the first, the selection
-  // stays. Here it follows the slider as well as playback.
+  // SkyView.syncSelectionToPlayback, stricter: blocks never overlap, so at
+  // most one holds `at`, and only its target is selected. Before the first
+  // block, between blocks and after the last, nothing is (nothing is being
+  // shot). It follows the slider as well as playback.
+  const blocksInOrder = $derived([...night.plan].sort((a, b) => Date.parse(a.window.start) - Date.parse(b.window.start)));
   $effect(() => {
-    if (mode !== 'follow') return;
-    const blocks = [...night.plan].sort((a, b) => Date.parse(a.window.start) - Date.parse(b.window.start));
-    if (!blocks.length || at < Date.parse(blocks[0].window.start)) return;
-    const running = blocks.find(b => at >= Date.parse(b.window.start) && at < Date.parse(b.window.end));
+    if (mode !== 'follow' || !blocksInOrder.length) return;
+    const running = blocksInOrder.find(b => at >= Date.parse(b.window.start) && at < Date.parse(b.window.end));
     const next = running ? running.targetID : null;
     if (next !== selectedID) selectedID = next;
   });
@@ -87,6 +100,23 @@
       }
     }
     draw();
+  });
+
+  // Selection changed: start a fade, redrawing every frame until it's done.
+  $effect(() => {
+    const next = selectedID;
+    if (next === shownID) return;
+    fadingOutID = reduceMotion ? null : shownID;
+    shownID = next;
+    if (reduceMotion) return;
+    fadeStart = performance.now();
+    cancelAnimationFrame(fadeFrame);
+    const step = () => {
+      draw();
+      if (performance.now() - fadeStart < fadeDuration) fadeFrame = requestAnimationFrame(step);
+      else fadingOutID = null;
+    };
+    fadeFrame = requestAnimationFrame(step);
   });
 
   // Redraw whenever anything shown changes.
@@ -208,7 +238,18 @@
       c.beginPath(); c.arc(p.x, p.y, moonDiameter(g) / 2, 0, Math.PI * 2); c.fill();
     }
 
-    if (selected) drawTarget(c, g, selected);
+    const progress = reduceMotion ? 1 : Math.min(1, (performance.now() - fadeStart) / fadeDuration);
+    const outgoing = fadingOutID && progress < 1 && fadingOutID !== selectedID
+      ? night.targets.find(t => t.id === fadingOutID) : null;
+    if (outgoing) {
+      c.globalAlpha = 1 - progress;
+      drawTarget(c, g, outgoing);
+    }
+    if (selected) {
+      c.globalAlpha = progress;
+      drawTarget(c, g, selected);
+    }
+    c.globalAlpha = 1;
     c.restore();
 
     // Signpost stars, named faintly; outside the clip so a name near the rim
@@ -415,6 +456,10 @@
         </p>
       {/if}
 
+      {#if !selected && mode === 'follow' && blocksInOrder.length}
+        {@const next = blocksInOrder.find(b => Date.parse(b.window.start) > at)}
+        <p class="muted-strong">{next ? `Next: ${next.targetName} at ${time(next.window.start, timeZone)}` : 'The plan is done for the night.'}</p>
+      {/if}
       {#if selected && targetNow}
         <h3 class="target-name">{selected.displayName}</h3>
         {#if targetNow.altitude <= 0}
@@ -460,8 +505,9 @@
   .dome canvas { position: absolute; inset: 0; display: block; }
   .loading { position: absolute; inset: 0; display: grid; place-items: center; }
   .controls { display: flex; gap: 10px; align-items: center; }
-  .play { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 50%; }
-  .play svg { width: 20px; height: 20px; fill: currentColor; }
+  .play { width: 52px; height: 52px; padding: 0; display: grid; place-items: center; border-radius: 50%; }
+  .play svg { width: 24px; height: 24px; fill: currentColor; }
+  .controls > button:not(.play) { min-height: 44px; }
   .controls .on { background: rgba(158, 133, 250, 0.25); border-color: var(--accent); }
   .clock { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .scrubber { width: 100%; accent-color: var(--accent); padding: 0; }
