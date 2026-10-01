@@ -6,13 +6,14 @@
   import LocationSection from './LocationSection.svelte';
   import HorizonSliders from './HorizonSliders.svelte';
   import ImportSettings from './ImportSettings.svelte';
+  import SyncSection from './SyncSection.svelte';
   import FramePreview from './FramePreview.svelte';
   import ScoreBadge from './ScoreBadge.svelte';
   import { uuid } from './uuid.js';
   import { fieldOfView } from './sky.js';
   import { duration, longDate, time } from './format.js';
 
-  let { settings, rigPresets, nights, loading, onsite, onchange, onimport, onfinish } = $props();
+  let { settings, rigPresets, nights, loading, onsite, onchange, onimport, onfinish, onsyncjoin } = $props();
 
   const steps = ['Site', 'Horizon', 'Rig', 'Goal', 'First plan'];
   const step = $derived(settings?.setupStep ?? 0);
@@ -81,6 +82,8 @@
         <p class="muted">Light pollution: 1 is a truly dark sky, 9 a city centre. A guess is fine; you can change it any time.</p>
       {:else}
         <div class="alt">
+          <p class="label">Already use Sky Bother on another device?</p>
+          <SyncSection onjoin={onsyncjoin} onstart={() => {}} onsyncnow={() => {}} joinOnly />
           <ImportSettings {onimport} />
         </div>
       {/if}

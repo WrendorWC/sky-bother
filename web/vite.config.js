@@ -48,5 +48,7 @@ export default defineConfig({
   plugins: [svelte(), catalogImages()],
   worker: { format: 'es' },
   // The image manifests are imported from the Mac app's catalogue.
-  server: { fs: { allow: ['..'] } },
+  // /api/ is the Worker (web/worker); run `npx wrangler dev --port 8787` from
+  // the repo root alongside this to use sync in development.
+  server: { fs: { allow: ['..'] }, proxy: { '/api': 'http://localhost:8787' } },
 });

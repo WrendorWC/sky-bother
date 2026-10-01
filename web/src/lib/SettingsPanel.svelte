@@ -9,8 +9,9 @@
   import MoreSettings from './MoreSettings.svelte';
   import ImportSettings from './ImportSettings.svelte';
   import LocationSection from './LocationSection.svelte';
+  import SyncSection from './SyncSection.svelte';
 
-  let { settings, rigPresets, onchange, onimport, onsite, ondone, onsetup, focus = null } = $props();
+  let { settings, rigPresets, onchange, onimport, onsite, ondone, onsetup, onsyncjoin, onsyncstart, onsyncnow, focus = null } = $props();
 
   // Opened from the site name: straight to Location.
   $effect(() => {
@@ -146,6 +147,8 @@
     <span class="muted">time zone, horizon, your own rig, darkness, altitude, what to show, night mode</span>
   </button>
   {#if showsMore}<MoreSettings {settings} {onchange} />{/if}
+
+  <SyncSection onjoin={onsyncjoin} onstart={onsyncstart} {onsyncnow} />
 
   <ImportSettings {onimport} />
 

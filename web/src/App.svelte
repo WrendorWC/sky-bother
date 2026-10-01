@@ -11,6 +11,8 @@
   import { age } from './lib/format.js';
   import { isSetupHash, readSetup } from './lib/setupLink.js';
   import { view } from './lib/view.svelte.js';
+  import { sync, runSync, startSync } from './lib/syncState.svelte.js';
+  import { format as formatCode, normalize as normalizeCode } from './lib/sync.js';
 
   const storageKey = 'skybother.settings.v1';
 
@@ -86,7 +88,55 @@
     try {
       localStorage.setItem(storageKey, JSON.stringify(settings));
     } catch {}
+    scheduleSync();
   }
+
+  // --- Sync -------------------------------------------------------------------
+  // Shortly after any change, when the page comes back into view, every two
+  // minutes, and on load. What comes back from other devices replaces what's
+  // here and re-plans.
+  let syncTimer = null;
+  function scheduleSync() {
+    if (!sync.code) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => syncNow(), 2000);
+  }
+
+  async function syncNow({ joining = false } = {}) {
+    const next = await runSync(settings, { joining });
+    if (!next) return;
+    const siteChanged = JSON.stringify(next.site) !== JSON.stringify(settings?.site);
+    settings = next;
+    try { localStorage.setItem(storageKey, JSON.stringify(settings)); } catch {}
+    siteChanged ? refresh() : replan();
+  }
+
+  function joinSync() {
+    editingSettings = false;
+    syncNow({ joining: true });
+  }
+
+  // A #sync=CODE link: offer to join.
+  let offeredSync = $state(null);
+  function checkForSyncLink() {
+    const match = /^#sync=([0-9A-Za-z-]+)$/.exec(location.hash);
+    if (!match) return;
+    history.replaceState(null, '', location.pathname);
+    route = '';
+    if (normalizeCode(match[1]).length === 26) offeredSync = formatCode(match[1]);
+  }
+  function acceptSync() {
+    startSync(offeredSync);
+    offeredSync = null;
+    joinSync();
+  }
+
+  $effect(() => {
+    const visible = () => { if (document.visibilityState === 'visible') syncNow(); };
+    const timer = setInterval(() => syncNow(), 120_000);
+    document.addEventListener('visibilitychange', visible);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', visible); };
+  });
 
   async function setSite(site) {
     nights = [];
@@ -189,6 +239,7 @@
   }
 
   checkForSetup();
+  checkForSyncLink();
 
   // The rig every frame drawing uses (Sky View, "In your frame").
   $effect(() => {
@@ -204,6 +255,7 @@
   $effect(() => {
     const onHash = () => {
       checkForSetup();
+      checkForSyncLink();
       route = location.hash;
     };
     const tick = setInterval(() => (clock = Date.now()), 60_000);
@@ -213,6 +265,7 @@
 
   defaults().then(d => (rigPresets = d.rigPresets));
   refresh();
+  syncNow();
 </script>
 
 <div class="app" class:showing-night={routeKey != null || showingCatalog || skyMatch || planMatch} class:planning={planMatch}>
@@ -266,14 +319,27 @@
     </section>
   {/if}
 
+  {#if offeredSync}
+    <section class="panel offer" role="dialog" aria-label="Sync this browser?">
+      <p><strong>Sync this browser?</strong></p>
+      <p class="muted-strong">Code {offeredSync}</p>
+      <p class="muted">This browser takes on the synced sites, telescope, settings and plans, and keeps them in step from now on.</p>
+      <div class="offer-buttons">
+        <button type="button" class="primary" onclick={acceptSync}>Sync</button>
+        <button type="button" onclick={() => (offeredSync = null)}>Cancel</button>
+      </div>
+    </section>
+  {/if}
+
   {#if inSetup}
     <SetupWizard {settings} {rigPresets} {nights} {loading} onsite={setSite} onchange={changeSettings}
-                 onimport={importSettings} onfinish={finishSetup} />
+                 onimport={importSettings} onfinish={finishSetup} onsyncjoin={joinSync} />
   {/if}
 
   {#if settings && !inSetup && editingSettings && rigPresets.length}
     <div class="site-area">
       <SettingsPanel {settings} {rigPresets} onchange={changeSettings} onimport={importSettings} onsetup={startSetup}
+                     onsyncjoin={joinSync} onsyncstart={() => syncNow()} onsyncnow={() => syncNow()}
                      onsite={setSite} focus={settingsFocus} ondone={() => (editingSettings = false)} />
     </div>
   {/if}
