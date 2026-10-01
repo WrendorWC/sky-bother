@@ -424,49 +424,71 @@ struct TargetAvailabilityBar: View {
     var plan: NightPlan
     var targetPlan: TargetPlan
     var height: CGFloat = 26
+    /// A planned block of this target, spotlit: drawn solid and standing
+    /// proud of the bar, with the rest of the target's night dimmed behind it.
+    var highlight: TimeWindow? = nil
+
+    /// How far a spotlit block stands above and below the track.
+    private static let overhang: CGFloat = 2
 
     var body: some View {
         GeometryReader { geometry in
             let axis = TimeAxis(window: plan.chartWindow, width: geometry.size.width)
             Canvas { context, size in
-                // Track.
-                context.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 3),
+                let color = Palette.score(targetPlan.score)
+                // With a block to show, the track is inset so the block can
+                // stand out past it.
+                let inset = highlight == nil ? 0 : Self.overhang
+                let track = CGRect(x: 0, y: inset, width: size.width, height: size.height - 2 * inset)
+
+                context.fill(Path(roundedRect: track, cornerRadius: 3),
                              with: .color(Color.primary.opacity(0.07)))
 
                 // Altitude trace, so you can see it climb and set even outside
                 // the usable window.
-                drawAltitude(context: context, size: size)
+                drawAltitude(context: context, in: track)
 
-                // Usable windows.
+                // Usable windows: context only, when a block is spotlit.
                 for window in targetPlan.windows {
                     let startX = axis.x(for: window.start)
                     let endX = axis.x(for: window.end)
-                    let rect = CGRect(x: startX, y: 0, width: max(2, endX - startX), height: size.height)
+                    let rect = CGRect(x: startX, y: track.minY, width: max(2, endX - startX), height: track.height)
                     context.fill(Path(roundedRect: rect, cornerRadius: 3),
-                                 with: .color(Palette.score(targetPlan.score).opacity(0.55)))
+                                 with: .color(color.opacity(highlight == nil ? 0.55 : 0.25)))
                 }
 
                 // Where it is highest.
                 if let best = targetPlan.bestTime, plan.chartWindow.contains(best) {
                     let x = axis.x(for: best)
                     var mark = Path()
-                    mark.move(to: CGPoint(x: x, y: 0))
-                    mark.addLine(to: CGPoint(x: x, y: size.height))
-                    context.stroke(mark, with: .color(Palette.score(targetPlan.score)), lineWidth: 1.5)
+                    mark.move(to: CGPoint(x: x, y: track.minY))
+                    mark.addLine(to: CGPoint(x: x, y: track.maxY))
+                    context.stroke(mark, with: .color(color), lineWidth: 1.5)
+                }
+
+                // The block itself, in its plan-strip colour at full strength.
+                if let highlight {
+                    let startX = axis.x(for: highlight.start)
+                    let endX = axis.x(for: highlight.end)
+                    let rect = CGRect(x: startX, y: 0, width: max(3, endX - startX), height: size.height)
+                        .insetBy(dx: 0.5, dy: 0.5)
+                    let chip = Path(roundedRect: rect, cornerRadius: 3)
+                    context.fill(chip, with: .color(color))
+                    context.stroke(chip, with: .color(.white.opacity(0.85)), lineWidth: 1)
                 }
             }
         }
         .frame(height: height)
     }
 
-    private func drawAltitude(context: GraphicsContext, size: CGSize) {
+    private func drawAltitude(context: GraphicsContext, in rect: CGRect) {
         let trace = targetPlan.altitudeTrace
         guard trace.count > 1 else { return }
-        let stepX = size.width / CGFloat(trace.count - 1)
+        let stepX = rect.width / CGFloat(trace.count - 1)
         var path = Path()
         for (index, altitude) in trace.enumerated() {
             let x = CGFloat(index) * stepX
-            let y = size.height - CGFloat(clamp(altitude / 90, 0, 1)) * size.height
+            let y = rect.maxY - CGFloat(clamp(altitude / 90, 0, 1)) * rect.height
             if index == 0 { path.move(to: CGPoint(x: x, y: y)) }
             else { path.addLine(to: CGPoint(x: x, y: y)) }
         }

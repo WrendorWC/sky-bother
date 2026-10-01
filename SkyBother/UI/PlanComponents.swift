@@ -61,6 +61,14 @@ struct PlanBlockRow: View {
                 .font(.scaled(.caption, scale: uiTextScale))
                 .foregroundStyle(unshootable > 0 || targetPlan == nil ? Palette.marginal : .secondary)
                 .lineLimit(1)
+                // The target's whole night, with this block outlined in it:
+                // a planned target drops out of the other-targets list, and
+                // with it the only place its full viewing window showed.
+                if let targetPlan {
+                    TargetAvailabilityBar(plan: plan, targetPlan: targetPlan,
+                                          height: 16 * uiTextScale, highlight: segment.window)
+                        .padding(.top, 2)
+                }
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {

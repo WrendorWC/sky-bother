@@ -1,55 +1,37 @@
+/* The Mac app's Palette (UI/Components.swift). Dark only, like the app. */
 :root {
-  --bg: #0b0f17;
-  --panel: #131a26;
-  --line: #222c3d;
-  --text: #e6ebf2;
-  --muted: #8a96a8;
-  --accent: #6fa8ff;
-  --exceptional: #4fd18b;
-  --excellent: #8bd14f;
-  --good: #d1c34f;
-  --marginal: #d1934f;
-  --poor: #d1584f;
+  --space-top: #0e0d1c;
+  --space-bottom: #1a1229;
+  --panel: #241f33;
+  --panel-border: rgba(158, 133, 250, 0.18);
+  --divider: rgba(255, 255, 255, 0.08);
+  --text: #eceaf3;
+  --muted: rgba(235, 235, 245, 0.6);
+  --tertiary: rgba(235, 235, 245, 0.35);
+  --accent: #9e85fa;
+  --exceptional: #33eb8c;
+  --excellent: #3dc778;
+  --good: #b3cc47;
+  --marginal: #f2b33d;
+  --poor: #d95c57;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+html { min-height: 100%; background: linear-gradient(var(--space-top), var(--space-bottom)) var(--space-bottom); }
 body {
   margin: 0;
-  background: var(--bg);
   color: var(--text);
   font: 15px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
-main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
-h1 { margin: 0; font-size: 26px; }
-.tagline { margin: 2px 0 20px; color: var(--muted); }
 .muted { color: var(--muted); font-size: 13px; }
-.site { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
-.site-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
-.site-name { font-weight: 600; font-size: 17px; }
-form { display: flex; flex-wrap: wrap; gap: 8px; }
-input[type='search'] { flex: 1 1 220px; }
+.muted-strong { color: var(--muted); }
+.error { color: var(--poor); }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; }
 input, select, button, .button {
-  font: inherit; color: var(--text); background: var(--bg);
-  border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px;
+  font: inherit; color: var(--text); background: var(--space-top);
+  border: 1px solid var(--panel-border); border-radius: 8px; padding: 7px 10px;
 }
-button, .button { cursor: pointer; background: #1b2536; }
+button, .button { cursor: pointer; background: var(--panel); }
 button:hover, .button:hover { border-color: var(--accent); }
 button:disabled { opacity: 0.5; cursor: default; }
-.bortle { display: flex; align-items: center; gap: 6px; color: var(--muted); }
-.places { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
-.places button { width: 100%; text-align: left; display: flex; justify-content: space-between; gap: 12px; }
-.error { color: var(--poor); }
-.status, .empty { margin: 14px 2px; }
-.nights { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 10px; }
-.night { display: flex; gap: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
-.score { flex: 0 0 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; font-weight: 700; border: 3px solid currentColor; }
-.night-body { display: grid; gap: 4px; min-width: 0; }
-.night-title { font-weight: 600; }
-.verdict { font-size: 12px; font-weight: 600; margin-left: 6px; }
-.targets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-.target { font-size: 13px; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; }
-.exceptional { color: var(--exceptional); }
-.excellent { color: var(--excellent); }
-.good { color: var(--good); }
-.marginal { color: var(--marginal); }
-.poor { color: var(--poor); }
+a { color: var(--accent); }

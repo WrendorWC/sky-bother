@@ -2,11 +2,14 @@ import Foundation
 
 enum Format {
 
+    /// "21:05". From calendar components rather than a DateFormatter, which
+    /// traps in the WebAssembly build of Foundation; the planner's own text
+    /// (dew timing) uses this, so the web engine needs it too.
     static func time(_ date: Date, in timeZone: TimeZone) -> String {
-        let formatter = DateFormatter()
-        formatter.timeZone = timeZone
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let parts = calendar.dateComponents([.hour, .minute], from: date)
+        return String(format: "%02d:%02d", parts.hour ?? 0, parts.minute ?? 0)
     }
 
     static func weekday(_ date: Date, in timeZone: TimeZone) -> String {

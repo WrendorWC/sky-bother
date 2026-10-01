@@ -121,6 +121,21 @@ Done — the WebAssembly route works; no need for the TypeScript fallback.
 - **Page:** `web/` Svelte + Vite page: place search / My Location / Import Mac Settings,
   forecast fetched in the browser, engine in a Web Worker, seven nights listed. See `web/README.md`.
 
+## Phase 1 progress
+
+**Session 1 (2026-10-01):** nights list → night detail, working on desktop (two columns) and
+phone (list, then night, with `#/YYYY-MM-DD` links).
+- Engine API now sends what Home needs: twilight times, 5-minute samples for the timeline,
+  the suggested plan (`AutoPlanner`, as `AppState.suggestedPlan`), dew risk, main limitation,
+  and altitude traces for planned targets plus the best 24 others (~1.7 MB JSON a week).
+- Night detail: summary card, statistics, timeline (Canvas port of NightTimelineView, with a
+  hover/touch readout), legend, plan strip + plan rows (read-only), other targets with
+  "Show all".
+- `Format.time` now builds "HH:mm" from Calendar components: `DateFormatter` traps in Wasm.
+- Still to do in Phase 1: target detail (Mac's TargetCatalogDetail: photo, why/why-not,
+  factors), the catalogue browser, thumbnails, night score breakdown, first deploy to
+  Cloudflare Pages (the shareable link).
+
 ## Notes for next week (engineering detail)
 
 Decisions already made with the user (2026-09-25): web app **alongside** the Mac app; goals are

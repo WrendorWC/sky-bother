@@ -35,10 +35,52 @@ public enum EngineAPI {
         var clearDarkHours: Double
         var moonIlluminatedFraction: Double
         var moonPhase: String
+        var moonIsWaxing: Bool
         var sunset: Date?
         var sunrise: Date?
+        var astronomicalDusk: Date?
+        var astronomicalDawn: Date?
+        var chartWindow: TimeWindow
+        var bestImagingWindow: TimeWindow?
+        var moonlessDarkHours: Double
+        /// Weather values are null beyond the forecast (NaN in the planner).
+        var meanCloudDuringDark: Double?
+        var minimumTemperature: Double?
+        var maximumGust: Double?
+        /// "Main limitation: …", as Home words it; nil when nothing stands out.
+        var limitation: String?
+        var dew: Dew?
         var factors: [Factor]
+        /// Every five minutes from sunset to sunrise, for the timeline.
+        var samples: [Sample]
+        /// The app's suggested running order (AppState.suggestedPlan).
+        var plan: [Block]
         var targets: [TargetSummary]
+    }
+
+    struct Sample: Encodable {
+        var date: Date
+        var sunAltitude: Double
+        var moonAltitude: Double
+        var moonBrightness: Double
+        var darkness: Double
+        var cloudCover: Double?
+        var temperature: Double?
+        var hasWeather: Bool
+    }
+
+    struct Block: Encodable {
+        var targetID: String
+        var targetName: String
+        var window: TimeWindow
+        var unusableMinutes: Double
+    }
+
+    struct Dew: Encodable {
+        var level: String
+        var advice: String
+        var when: String
+        var spreadAtPeak: Double
     }
 
     struct Factor: Encodable {
@@ -51,11 +93,25 @@ public enum EngineAPI {
     struct TargetSummary: Encodable {
         var id: String
         var name: String
+        var displayName: String
+        var designation: String
+        var commonName: String?
+        var type: String
+        var typeName: String
+        var isStar: Bool
         var score: Double
         var usableMinutes: Double
         var maximumAltitude: Double
         var bestTime: Date?
         var windows: [TimeWindow]
+        var bestWindow: TimeWindow?
+        var zenithRisk: TimeWindow?
+        var fillFraction: Double
+        var framingNote: String
+        /// Only for targets that are usable at all: the rest never show a bar.
+        /// To 0.1°, finer than a pixel on either chart: at full precision a
+        /// week of them was 6 MB of JSON.
+        var altitudeTrace: [Double]?
     }
 
     struct Failure: Encodable { var error: String }
@@ -110,20 +166,41 @@ public enum EngineAPI {
                                   catalog: catalog + (request.customTargets ?? []),
                                   forecast: forecast,
                                   comets: request.cometElements.map(CometOrbit.parse) ?? [])
-            let nights = planner.plan(from: request.now).map(summary)
+            let nights = planner.plan(from: request.now).map { summary($0, preferences: request.preferences) }
             return try encoder.encode(nights)
         } catch {
             return (try? encoder.encode(Failure(error: String(describing: error)))) ?? Data()
         }
     }
 
-    static func summary(_ night: NightPlan) -> NightSummary {
+    static func summary(_ night: NightPlan, preferences: Preferences) -> NightSummary {
         let factors = night.factors.map { Factor(name: $0.name, value: $0.value, weight: $0.weight, detail: $0.detail) }
+        let segments = suggestedPlan(for: night, preferences: preferences)
         let ranked = night.targets.sorted { a, b in a.score != b.score ? a.score > b.score : a.id < b.id }
+        let planned = Set(segments.map(\.targetID))
         let targets = ranked.map { (plan: TargetPlan) -> TargetSummary in
-            TargetSummary(id: plan.id, name: plan.target.fullName, score: plan.score,
+            TargetSummary(id: plan.id, name: plan.target.fullName, displayName: plan.target.displayName,
+                          designation: plan.target.designation, commonName: plan.target.commonName,
+                          type: plan.target.type.rawValue, typeName: plan.target.type.shortName,
+                          isStar: plan.target.type.isStar, score: plan.score,
                           usableMinutes: plan.usableMinutes, maximumAltitude: plan.maximumAltitude,
-                          bestTime: plan.bestTime, windows: plan.windows)
+                          bestTime: plan.bestTime, windows: plan.windows, bestWindow: plan.bestWindow,
+                          zenithRisk: plan.bestWindowZenithRisk, fillFraction: plan.fit.fillFraction,
+                          framingNote: plan.fit.framingNote,
+                          altitudeTrace: plan.usableMinutes > 0 || planned.contains(plan.id) ? plan.altitudeTrace.map { ($0 * 10).rounded() / 10 } : nil)
+        }
+        let blocks = segments.map { segment in
+            Block(targetID: segment.targetID, targetName: segment.targetName, window: segment.window,
+                  unusableMinutes: segment.unusableMinutes(against: night.targets.first { $0.id == segment.targetID }))
+        }
+        let dew = DewRisk.Assessment.forPlan(segments, in: night).map {
+            Dew(level: $0.level.name, advice: $0.adviceLine(in: night.timeZone),
+                when: $0.when(in: night.timeZone), spreadAtPeak: $0.spreadAtPeak)
+        }
+        let samples = night.samples.map {
+            Sample(date: $0.date, sunAltitude: $0.sunAltitude, moonAltitude: $0.moonAltitude,
+                   moonBrightness: $0.moonBrightness, darkness: $0.darkness, cloudCover: finite($0.cloudCover),
+                   temperature: finite($0.temperature), hasWeather: $0.hasWeather)
         }
         return NightSummary(planKey: night.planKey,
                             date: night.date,
@@ -136,9 +213,36 @@ public enum EngineAPI {
                             clearDarkHours: night.clearDarkHours,
                             moonIlluminatedFraction: night.moon.illuminatedFraction,
                             moonPhase: night.moon.phaseName,
+                            moonIsWaxing: night.moon.isWaxing,
                             sunset: night.sunset,
                             sunrise: night.sunrise,
+                            astronomicalDusk: night.astronomicalDusk,
+                            astronomicalDawn: night.astronomicalDawn,
+                            chartWindow: night.chartWindow,
+                            bestImagingWindow: night.bestImagingWindow,
+                            moonlessDarkHours: night.moonlessDarkHours,
+                            meanCloudDuringDark: finite(night.meanCloudDuringDark),
+                            minimumTemperature: finite(night.minimumTemperature),
+                            maximumGust: finite(night.maximumGust),
+                            limitation: nightLimitationPhrase(for: night),
+                            dew: dew,
                             factors: factors,
+                            samples: samples,
+                            plan: blocks,
                             targets: targets)
+    }
+
+    static func finite(_ value: Double) -> Double? { value.isFinite ? value : nil }
+
+    /// AppState.suggestedSlots/suggestedPlan, which live in the Mac UI layer.
+    static func suggestedPlan(for night: NightPlan, preferences: Preferences) -> [PlanSegment] {
+        guard !night.isCloudedOut else { return [] }
+        return AutoPlanner.plan(for: night, minimumScore: preferences.minimumScore,
+                                sessionCapMinutes: preferences.sessionCapMinutes,
+                                minimumSlotMinutes: preferences.minimumSessionMinutes)
+            .map { PlanSegment.suggested(targetID: $0.targetPlan.id,
+                                         targetName: $0.targetPlan.target.displayName,
+                                         window: $0.window) }
+            .chronological
     }
 }

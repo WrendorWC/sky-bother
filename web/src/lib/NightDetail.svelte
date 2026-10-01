@@ -1,0 +1,201 @@
+<script>
+  // NightDetailView: is this night worth it? The summary, the numbers, the
+  // timeline, the app's suggested plan and the best of the rest.
+  import ScoreBadge from './ScoreBadge.svelte';
+  import VerdictTag from './VerdictTag.svelte';
+  import MoonDisc from './MoonDisc.svelte';
+  import Timeline from './Timeline.svelte';
+  import PlanStrip from './PlanStrip.svelte';
+  import TargetRow from './TargetRow.svelte';
+  import AvailabilityBar from './AvailabilityBar.svelte';
+  import { scoreColor, dewColor } from './palette.js';
+  import * as format from './format.js';
+
+  let { night, isTonight, timeZone, preferences } = $props();
+
+  const imperial = $derived(preferences.usesImperialUnits);
+  const usable = $derived(night.targets.filter(t => t.usableMinutes > 0));
+  const best = $derived(usable.find(t => !t.isStar));
+
+  // The best target starts selected, so the timeline shows something to
+  // shoot rather than an empty sky; a new night starts over.
+  let chosenID = $state(null);
+  let chosenFor = $state(null);
+  const selectedID = $derived(chosenFor === night.planKey ? chosenID : (night.plan[0]?.targetID ?? best?.id ?? null));
+  const selected = $derived(night.targets.find(t => t.id === selectedID) ?? null);
+
+  function select(id) {
+    chosenID = id;
+    chosenFor = night.planKey;
+  }
+
+  const planned = $derived(new Set(night.plan.map(b => b.targetID)));
+  const others = $derived(usable.filter(t => !planned.has(t.id) && !t.isStar && t.score >= preferences.minimumScore));
+  let showsAll = $state(false);
+  const listed = $derived(showsAll ? usable.filter(t => !planned.has(t.id)) : others.slice(0, 8));
+
+  const summaryLine = $derived(night.bestImagingWindow && Date.parse(night.bestImagingWindow.end) > Date.parse(night.bestImagingWindow.start)
+    ? `Best imaging ${format.time(night.bestImagingWindow.start, timeZone)}–${format.time(night.bestImagingWindow.end, timeZone)}`
+    : night.headline);
+
+  const darkWindow = $derived(night.astronomicalDusk && night.astronomicalDawn
+    ? `${format.time(night.astronomicalDusk, timeZone)}–${format.time(night.astronomicalDawn, timeZone)}`
+    : night.darkHours > 0 ? format.hours(night.darkHours) : 'none');
+
+  const planMinutes = $derived(night.plan.reduce((sum, b) => sum + (Date.parse(b.window.end) - Date.parse(b.window.start)) / 60000, 0));
+  const unshootable = $derived(night.plan.reduce((sum, b) => sum + b.unusableMinutes, 0));
+  const scoreOf = id => night.targets.find(t => t.id === id);
+</script>
+
+<article class="detail">
+  <section class="panel summary">
+    <ScoreBadge score={night.score} size={58} />
+    <div class="summary-body">
+      <div class="headline">
+        <h2>{format.longDate(night.planKey)}</h2>
+        <VerdictTag verdict={night.verdict} />
+        {#if night.isCloudedOut}<span class="clouded" title="The forecast writes this night off.">Clouded Out</span>{/if}
+      </div>
+      <p class="muted-strong">{summaryLine}</p>
+      {#if best}
+        <button type="button" class="best" onclick={() => select(best.id)}>
+          <span class="label">{night.isCloudedOut ? 'If it clears' : 'Best target'}</span>
+          {best.displayName} · {Math.round(best.score)} <span class="chevron">›</span>
+        </button>
+      {/if}
+      {#if night.limitation}<p class="muted-strong limitation">ⓘ Main limitation: {night.limitation}</p>{/if}
+    </div>
+  </section>
+
+  <dl class="stats">
+    <div><dt>Astronomical dark</dt><dd>{darkWindow}</dd></div>
+    <div><dt>Moon down</dt><dd>{night.moonlessDarkHours > 0.02 ? format.hours(night.moonlessDarkHours) : 'none'}</dd></div>
+    <div><dt>Moon</dt><dd><MoonDisc fraction={night.moonIlluminatedFraction} waxing={night.moonIsWaxing} size={14} />
+      {Math.round(night.moonIlluminatedFraction * 100)}% {night.moonPhase.toLowerCase()}</dd></div>
+    {#if night.hasWeather}
+      <div><dt>Cloud in the dark</dt><dd>{night.meanCloudDuringDark != null ? `${Math.round(night.meanCloudDuringDark)}%` : '—'}</dd></div>
+      <div><dt>Low</dt><dd>{format.temperature(night.minimumTemperature, imperial)}</dd></div>
+      {#if night.dew}
+        <div title={night.dew.advice}><dt>Dew risk</dt>
+          <dd><span class="dot" style:background={dewColor(night.dew.level)}></span>{night.dew.level}{night.dew.level !== 'Low' ? ` · ${night.dew.when}` : ''}</dd></div>
+      {/if}
+      <div><dt>Gusts</dt><dd>{format.wind(night.maximumGust, imperial)}</dd></div>
+    {/if}
+  </dl>
+
+  <Timeline {night} {selected} {timeZone} {imperial} height={168} />
+
+  <ul class="legend muted">
+    <li><span class="swatch" style:background="rgba(219, 227, 240, 0.7)"></span>cloud from the top</li>
+    <li><span class="swatch" style:background="rgba(250, 237, 189, 0.8)"></span>moonlight and its altitude</li>
+    <li><span class="swatch" style:background="rgb(6, 8, 19)"></span>darker background = darker sky</li>
+    {#if selected}<li><span class="swatch" style:background="var(--accent)"></span>{selected.displayName}'s altitude · shaded box = its best window</li>{/if}
+  </ul>
+
+  <section class="plan">
+    <header>
+      <h3>{isTonight ? 'Tonight’s plan' : `${format.fullWeekday(night.planKey)}’s plan`}</h3>
+      <span class="badge">Suggested</span>
+      {#if night.plan.length}
+        <span class="muted" class:warn={unshootable > 0}>
+          {night.plan.length} block{night.plan.length === 1 ? '' : 's'} · {format.duration(planMinutes)}{unshootable > 0 ? ` · ${format.duration(unshootable)} unshootable` : ''}
+        </span>
+      {/if}
+    </header>
+
+    {#if !night.plan.length}
+      <p class="muted-strong">{night.isCloudedOut ? 'Clouded out — nothing to plan.' : 'Nothing clears your minimum score for long enough on this night.'}</p>
+    {:else}
+      {#if night.plan.length > 1}<PlanStrip {night} selectedID={selectedID} onselect={select} />{/if}
+      <ol class="panel blocks">
+        {#each night.plan as block (block.targetID + block.window.start)}
+          {@const target = scoreOf(block.targetID)}
+          <li>
+            <button type="button" class="block" class:selected={selectedID === block.targetID} onclick={() => select(block.targetID)}>
+              <ScoreBadge score={target?.score ?? 0} size={30} />
+              <div class="block-body">
+                <strong>{block.targetName}</strong>
+                {#if !target}
+                  <span class="warn">⚠︎ Not up, dark or clear at all this night</span>
+                {:else if block.unusableMinutes > 0}
+                  <span class="warn">⚠︎ {format.duration(block.unusableMinutes)} unshootable</span>
+                {:else}
+                  <span class="muted">{target.framingNote}</span>
+                {/if}
+                <!-- The target's whole night, this block outlined: planned
+                     targets leave the other-targets list, and its bar with them. -->
+                {#if target}<div class="block-bar"><AvailabilityBar {night} {target} height={16} highlight={block.window} /></div>{/if}
+              </div>
+              <div class="times muted">
+                <span>{format.time(block.window.start, timeZone)}–{format.time(block.window.end, timeZone)}</span>
+                <span>{format.duration((Date.parse(block.window.end) - Date.parse(block.window.start)) / 60000)}</span>
+              </div>
+            </button>
+          </li>
+        {/each}
+      </ol>
+    {/if}
+  </section>
+
+  {#if listed.length}
+    <section class="others">
+      <h3>{showsAll ? 'Everything up tonight' : night.isCloudedOut ? 'If it clears' : 'Other targets of interest'}</h3>
+      <div class="panel target-list">
+        {#each listed as target (target.id)}
+          <TargetRow {night} {target} {timeZone} selected={selectedID === target.id} onselect={select} />
+        {/each}
+      </div>
+      <button type="button" class="link" onclick={() => (showsAll = !showsAll)}>
+        {showsAll ? 'Show fewer' : `Show all ${usable.length - planned.size} targets up tonight`}
+      </button>
+    </section>
+  {/if}
+</article>
+
+<style>
+  .detail { display: grid; gap: 14px; min-width: 0; }
+  .summary { display: flex; gap: 16px; align-items: center; padding: 16px; border-radius: 14px; }
+  .summary-body { display: grid; gap: 6px; min-width: 0; }
+  .headline { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+  h2 { margin: 0; font-size: 22px; }
+  p { margin: 0; }
+  .clouded {
+    font-size: 12px; font-weight: 600; color: var(--marginal); padding: 2px 7px;
+    border-radius: 999px; background: rgba(242, 179, 61, 0.15);
+  }
+  .best { justify-self: start; display: flex; gap: 6px; align-items: baseline; padding: 0; background: none; border: none; font-weight: 500; }
+  .best .label { color: var(--accent); font-size: 12px; font-weight: 600; }
+  .chevron { color: var(--accent); }
+  .stats { display: flex; flex-wrap: wrap; gap: 12px 26px; margin: 0; }
+  .stats div { display: grid; gap: 1px; }
+  dt { font-size: 12px; color: var(--muted); }
+  dd { margin: 0; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend { list-style: none; padding: 0; margin: -6px 0 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .legend li { display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.15); }
+  .plan, .others { display: grid; gap: 8px; }
+  .plan header { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
+  .badge { font-size: 11px; color: var(--muted); border: 1px solid var(--panel-border); border-radius: 999px; padding: 0 7px; }
+  .blocks { list-style: none; margin: 0; padding: 0; overflow: hidden; }
+  .blocks li + li { border-top: 1px solid var(--divider); }
+  .block {
+    display: flex; gap: 12px; align-items: center; width: 100%; text-align: left;
+    padding: 8px 12px; background: none; border: none; border-radius: 0; box-shadow: inset 0 0 0 transparent;
+  }
+  .block:hover { background: rgba(158, 133, 250, 0.07); }
+  .block.selected { background: rgba(158, 133, 250, 0.18); box-shadow: inset 3px 0 0 var(--accent); }
+  .block-body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+  .block-bar { margin-top: 2px; }
+  .block-body > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .times { display: grid; justify-items: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .warn { color: var(--marginal); font-size: 13px; }
+  .target-list { padding: 4px; display: grid; gap: 2px; }
+  .link { justify-self: start; background: none; border: none; padding: 0; color: var(--accent); font-weight: 600; }
+
+  @media (max-width: 560px) {
+    .summary { align-items: flex-start; padding: 14px; gap: 12px; }
+    h2 { font-size: 19px; }
+  }
+</style>

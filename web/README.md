@@ -10,6 +10,7 @@ web/
   build-engine.sh   engine → public/engine.wasm (checked in: Cloudflare can't build Swift)
   public/           engine.wasm, catalog-extended.json
   src/              Svelte page; the engine runs in a Web Worker (src/engine)
+  src/lib/          the page's views, each named after the Mac view it ports
   fixtures/         recorded forecasts for the parity check (local/ is gitignored)
   scripts/          parity.mjs, record-fixtures.mjs
 ```
@@ -47,3 +48,12 @@ needs time zones and English dates, so `engine/Scripts/slim_icu.py` keeps 36
 of ICU's 4,855 data items (1.7 MB). If the engine starts needing something it
 dropped, parity fails; add the item to `KEEP` there. Result: 14.9 MB raw,
 3.9 MB over the wire with Brotli.
+
+## DateFormatter doesn't work in WebAssembly
+
+`DateFormatter` traps in the Wasm build of Foundation, with or without the
+slimmed ICU data. Engine code that makes text must use `Format.time` (built
+from `Calendar` components) or similar, never a `DateFormatter`. Parity
+catches it: the Wasm run fails with `RuntimeError: unreachable`. To see where,
+run parity on the unstripped build, whose stack has Swift names:
+`node scripts/parity.mjs engine/.build/out/Products/Release-webassembly-wasm32/engine-wasm.wasm`.

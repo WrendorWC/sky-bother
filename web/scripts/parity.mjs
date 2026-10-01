@@ -73,7 +73,7 @@ for (const path of requests) {
   if (nights.error) { console.log(`✗ ${name}: wasm error ${nights.error}`); failures++; continue; }
   const differences = [];
   compare(JSON.parse(native), nights, '', differences);
-  const worst = Math.max(0, ...numericGaps);
+  const worst = numericGaps.reduce((a, b) => Math.max(a, b), 0);
   numericGaps.length = 0;
   if (differences.length === 0) {
     console.log(`✓ ${name}: ${nights.length} nights match (largest numeric gap ${worst.toExponential(1)}; ${ms.toFixed(0)} ms in wasm)`);
