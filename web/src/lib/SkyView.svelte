@@ -53,14 +53,15 @@
     playing = false;
     // (A local, not `selectedID`: reading that here would rerun all this,
     // back to dusk, every time the plan moves the selection on.)
-    // Nothing selected unless a target was asked for: with the plan to
-    // follow, a target appears only while its block is running.
+    // Nothing selected unless a target was selected on the night before
+    // opening; following the plan, a target appears only while its block runs.
     const first = targetID ?? null;
     selectedID = first;
     fadingOutID = null;
     shownID = first;
-    // Something picked from outside the plan has nothing to follow on to.
-    mode = !first || night.plan.some(b => b.targetID === first) ? 'follow' : 'stay';
+    // A target selected before opening stays selected, and playback stays on
+    // it; with nothing selected, the plan is followed from dusk.
+    mode = first ? 'stay' : 'follow';
   });
 
   // SkyView.syncSelectionToPlayback, stricter: blocks never overlap, so at

@@ -328,8 +328,17 @@ struct SkyView: View {
         }
         .onAppear {
             updatePlaybackModeForSelection()
-            // The full Sky View only: Home's small domes don't drive the selection.
-            if showsControls && playbackMode == .cycleThroughPlan { syncSelectionToPlayback() }
+            // The full Sky View only (Home's small domes don't drive the
+            // selection): a target already selected when Sky View opens stays
+            // selected, and playback stays on it; with nothing selected it
+            // follows the plan from dusk.
+            guard showsControls else { return }
+            if state.selectedTargetID != nil {
+                playbackMode = .trackSelected
+            } else {
+                playbackMode = .cycleThroughPlan
+                syncSelectionToPlayback()
+            }
         }
         .onChange(of: scrubTime) { _, _ in
             if showsControls && playbackMode == .cycleThroughPlan { syncSelectionToPlayback() }
