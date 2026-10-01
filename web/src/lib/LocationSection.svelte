@@ -1,10 +1,34 @@
 <script>
-  // Choosing where you observe from: a town, your location, or the Mac app's
-  // settings file. Same starting values as Site.unset in the Mac app.
+  // Settings → Location, and the whole of a first visit: where you observe
+  // from — a town, place or postal code, your location, or a saved site —
+  // and its Bortle class. New sites start as Site.unset does in the Mac app.
   import { searchPlaces, elevationAt, placeDetails } from '../weather.js';
   import { uuid } from './uuid.js';
 
-  let { settings, onsite, onbortle, oncancel } = $props();
+  let { settings, onsite, onchange = null, autofocus = false } = $props();
+
+  let searchBox;
+  $effect(() => {
+    if (autofocus && searchBox) searchBox.focus({ preventScroll: true });
+  });
+
+  const savedSites = $derived(settings?.savedSites ?? []);
+  const isSaved = $derived(!!settings && savedSites.some(s => s.id === settings.site.id));
+  function useSite(id) {
+    const chosen = savedSites.find(s => s.id === id);
+    if (chosen) onchange({ ...settings, site: { ...chosen } });
+  }
+  function forgetSite(id) {
+    onchange({ ...settings, savedSites: savedSites.filter(s => s.id !== id) });
+  }
+  function saveSite() {
+    onchange({ ...settings, savedSites: [...savedSites.filter(s => s.id !== settings.site.id), { ...settings.site }] });
+  }
+  function setBortle(value) {
+    const site = { ...settings.site, bortleClass: value };
+    // A saved site keeps its saved copy in step.
+    onchange({ ...settings, site, savedSites: savedSites.map(s => (s.id === site.id ? { ...site } : s)) });
+  }
 
   let query = $state('');
   let places = $state([]);
@@ -78,18 +102,18 @@
 
 </script>
 
-<section class="panel site">
+<div class="location" id="settings-location">
   {#if settings}
-    <div class="site-row">
+    <div class="current">
       <div>
         <div class="site-name">{settings.site.name || 'Unnamed site'}</div>
         <div class="muted">
-          {settings.site.latitude.toFixed(3)}°, {settings.site.longitude.toFixed(3)}° · {settings.site.timeZoneIdentifier} · {settings.rig.name}
+          {settings.site.latitude.toFixed(3)}°, {settings.site.longitude.toFixed(3)}° · {settings.site.timeZoneIdentifier}
         </div>
       </div>
       <label class="bortle">
         Bortle
-        <select value={settings.site.bortleClass} onchange={e => onbortle(Number(e.currentTarget.value))}>
+        <select value={settings.site.bortleClass} onchange={e => setBortle(Number(e.currentTarget.value))}>
           {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as b}<option value={b}>{b}</option>{/each}
         </select>
       </label>
@@ -99,10 +123,9 @@
   {/if}
 
   <form onsubmit={e => { e.preventDefault(); search(); }}>
-    <input type="search" placeholder="Town, place or postal code" bind:value={query} />
+    <input type="search" placeholder="Town, place or postal code" bind:value={query} bind:this={searchBox} />
     <button type="submit" disabled={!query.trim()}>Search</button>
     <button type="button" onclick={useMyLocation}>Use My Location</button>
-    {#if settings && oncancel}<button type="button" onclick={oncancel}>Done</button>{/if}
   </form>
 
   {#if places.length}
@@ -114,14 +137,32 @@
       {/each}
     </ul>
   {/if}
-  {#if !settings}<p class="muted">Using the Mac app too? Import its settings from ⚙︎ Settings above.</p>{/if}
   {#if busy}<p class="muted">{busy}</p>{/if}
   {#if error}<p class="error">{error}</p>{/if}
-</section>
+
+  {#if settings}
+    <div class="saved-list">
+      <span class="label">Saved sites</span>
+      {#each savedSites as s (s.id)}
+        <div class="saved">
+          <button type="button" onclick={() => useSite(s.id)} disabled={s.id === settings.site.id}>{s.name}{s.id === settings.site.id ? ' (in use)' : ''}</button>
+          <button type="button" class="forget" onclick={() => forgetSite(s.id)} aria-label="Forget {s.name}">✕</button>
+        </div>
+      {/each}
+      {#if !isSaved}<button type="button" onclick={saveSite}>Save This Site</button>{/if}
+      <p class="muted">Picking a new place saves the one you're leaving here first, so it isn't lost.</p>
+    </div>
+  {/if}
+</div>
 
 <style>
-  .site { padding: 14px; display: grid; gap: 12px; }
-  .site-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .location { display: grid; gap: 12px; scroll-margin-top: 80px; }
+  .current { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .saved-list { display: grid; gap: 6px; }
+  .label { font-weight: 600; }
+  .saved { display: flex; gap: 6px; }
+  .saved button:first-child { flex: 1; text-align: left; }
+  .forget { width: 40px; padding: 0; }
   .site-name { font-weight: 600; font-size: 17px; }
   .intro { margin: 0; font-weight: 600; font-size: 17px; }
   form { display: flex; flex-wrap: wrap; gap: 8px; }

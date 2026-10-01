@@ -8,8 +8,14 @@
   import { setupLink } from './setupLink.js';
   import MoreSettings from './MoreSettings.svelte';
   import ImportSettings from './ImportSettings.svelte';
+  import LocationSection from './LocationSection.svelte';
 
-  let { settings, rigPresets, onchange, onimport, ondone } = $props();
+  let { settings, rigPresets, onchange, onimport, onsite, ondone, focus = null } = $props();
+
+  // Opened from the site name: straight to Location.
+  $effect(() => {
+    if (focus === 'location') document.getElementById('settings-location')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
 
   // Rig.presetGroup
   const smartMakers = ['ZWO Seestar', 'Celestron Origin', 'Unistellar', 'Vaonis', 'DwarfLab'];
@@ -88,6 +94,11 @@
     <button type="button" onclick={ondone}>Done</button>
   </header>
 
+  <h3 class="section">Location</h3>
+  <LocationSection {settings} {onsite} {onchange} autofocus={focus === 'location'} />
+
+  <h3 class="section">Telescope and night</h3>
+
   <label class="row">
     <span class="label">Telescope</span>
     <select value={presetIndex} onchange={e => chooseRig(Number(e.currentTarget.value))}>
@@ -131,7 +142,7 @@
 
   <button type="button" class="disclosure" onclick={() => (showsMore = !showsMore)} aria-expanded={showsMore}>
     {showsMore ? '▾' : '▸'} More settings
-    <span class="muted">site, horizon, your own rig, darkness, altitude, what to show, night mode</span>
+    <span class="muted">time zone, horizon, your own rig, darkness, altitude, what to show, night mode</span>
   </button>
   {#if showsMore}<MoreSettings {settings} {onchange} />{/if}
 
@@ -161,6 +172,7 @@
   .segments { display: flex; flex-wrap: wrap; gap: 6px; }
   .segments button.on { background: rgba(158, 133, 250, 0.25); border-color: var(--accent); }
   p { margin: 0; }
+  .section { margin: 4px 0 -6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
   .link-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
   .disclosure { display: grid; gap: 2px; text-align: left; background: none; border: none; padding: 0; font-weight: 600; color: var(--accent); }
   .disclosure .muted { font-weight: 400; }

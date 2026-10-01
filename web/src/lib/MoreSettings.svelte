@@ -21,9 +21,6 @@
   })();
   const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
   const horizon = $derived(site.horizonProfile?.length === 8 ? site.horizonProfile : directions.map(() => site.horizonAltitude ?? 20));
-  // Site.bortleDescription, short.
-  const bortleNames = ['', 'Excellent dark site', 'Truly dark site', 'Rural sky', 'Rural/suburban transition', 'Suburban sky',
-    'Bright suburban sky', 'Suburban/urban transition', 'City sky', 'Inner-city sky'];
 
   function setSector(index, value) {
     const profile = [...horizon];
@@ -34,19 +31,6 @@
   }
   function setHorizonEverywhere(value) {
     setSite({ horizonProfile: null, horizonAltitude: value });
-  }
-
-  const savedSites = $derived(settings.savedSites ?? []);
-  function saveSite() {
-    const others = savedSites.filter(s => s.id !== site.id);
-    onchange({ ...settings, savedSites: [...others, { ...site }] });
-  }
-  function useSite(id) {
-    const chosen = savedSites.find(s => s.id === id);
-    if (chosen) onchange({ ...settings, site: { ...chosen } });
-  }
-  function forgetSite(id) {
-    onchange({ ...settings, savedSites: savedSites.filter(s => s.id !== id) });
   }
 
   // --- Equipment ------------------------------------------------------------
@@ -102,7 +86,7 @@
 
 <div class="more">
   <section>
-    <h3>Site</h3>
+    <h3>Site details</h3>
     <label class="row">
       <span class="label">Name</span>
       <input type="text" value={site.name} onchange={e => setSite({ name: e.currentTarget.value })} />
@@ -117,12 +101,6 @@
       {:else}
         <input type="text" value={site.timeZoneIdentifier} onchange={e => setSite({ timeZoneIdentifier: e.currentTarget.value })} />
       {/if}
-    </label>
-    <label class="row">
-      <span class="label">Light pollution</span>
-      <select value={site.bortleClass} onchange={e => setSite({ bortleClass: Number(e.currentTarget.value) })}>
-        {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as b}<option value={b}>Bortle {b} · {bortleNames[b]}</option>{/each}
-      </select>
     </label>
 
     <div class="row">
@@ -144,16 +122,6 @@
       {/each}
     </div>
 
-    <div class="row">
-      <span class="label">Saved sites</span>
-      {#each savedSites as s (s.id)}
-        <div class="saved">
-          <button type="button" onclick={() => useSite(s.id)} disabled={s.id === site.id}>{s.name}{s.id === site.id ? ' (in use)' : ''}</button>
-          <button type="button" class="forget" onclick={() => forgetSite(s.id)} aria-label="Forget {s.name}">✕</button>
-        </div>
-      {/each}
-      <button type="button" onclick={saveSite}>Save This Site</button>
-    </div>
   </section>
 
   <section>

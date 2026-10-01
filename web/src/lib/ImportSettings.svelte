@@ -32,7 +32,10 @@
   <span class="label">From the Mac app</span>
   <label class="button">
     Import Mac Settings File
-    <input type="file" accept=".json,application/json" onchange={read} hidden />
+    <!-- No accept filter: with one, macOS greys every file out while it
+         works out their types (slowly, in iCloud folders). The contents are
+         checked when it's read. -->
+    <input type="file" onchange={read} hidden />
   </label>
   <p class="muted">
     Brings over everything: your site, saved locations, telescope and saved rigs, and every setting.
