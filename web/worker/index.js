@@ -1,5 +1,5 @@
-// The site's Worker: static files (web/dist) for everything except /api/,
-// and the sync store at /api/sync/<id>.
+// The site's Worker: static files (web/dist) for everything except /api/:
+// the sync store at /api/sync/<id>, and MET Norway's forecast at /api/metno.
 //
 // Sync stores one encrypted blob per sync code, in a Durable Object of its
 // own. The id is a hash of the code and the blob is AES-GCM encrypted on the
@@ -49,12 +49,45 @@ const cors = {
   'Cache-Control': 'no-store',
 };
 
+// MET Norway's forecast, the Mac app's backup when Open-Meteo fails
+// (MetNorwayClient). Browsers can't call it themselves: MET Norway requires
+// an identifying User-Agent, which a page can't set. Its terms also ask for
+// coordinates to 4 decimals and for responses to be cached until they
+// expire, which the Cache API does here for everyone at the same spot.
+const MET_URL = 'https://api.met.no/weatherapi/locationforecast/2.0/complete';
+const MET_AGENT = 'SkyBother/1.0 (https://skybother.com; weather fallback)';
+
+async function metNorway(url, ctx) {
+  const lat = Number(url.searchParams.get('lat')), lon = Number(url.searchParams.get('lon'));
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+    return Response.json({ error: 'lat and lon, please.' }, { status: 400, headers: cors });
+  }
+  const upstream = `${MET_URL}?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}`;
+  const cache = caches.default;
+  const key = new Request(upstream);
+  let response = await cache.match(key);
+  if (!response) {
+    const fetched = await fetch(upstream, { headers: { 'User-Agent': MET_AGENT } });
+    if (!fetched.ok) return Response.json({ error: `MET Norway returned HTTP ${fetched.status}.` }, { status: 502, headers: cors });
+    const expires = Date.parse(fetched.headers.get('Expires') ?? '');
+    const seconds = Number.isFinite(expires) ? Math.max(60, Math.round((expires - Date.now()) / 1000)) : 1800;
+    response = new Response(fetched.body, {
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${seconds}` },
+    });
+    ctx.waitUntil(cache.put(key, response.clone()));
+  }
+  const headers = new Headers(response.headers);
+  for (const [k, v] of Object.entries(cors)) if (k !== 'Cache-Control') headers.set(k, v);
+  return new Response(response.body, { status: 200, headers });
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const match = /^\/api\/sync\/([^/]+)$/.exec(url.pathname);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+    if (url.pathname === '/api/metno' && request.method === 'GET') return metNorway(url, ctx);
     if (!match || !ID.test(match[1])) return Response.json({ error: 'Not found.' }, { status: 404, headers: cors });
     if (Number(request.headers.get('Content-Length') ?? 0) > MAX_BYTES) return Response.json({ error: 'Too large.' }, { status: 413, headers: cors });
     const store = env.SYNC.get(env.SYNC.idFromName(match[1]));

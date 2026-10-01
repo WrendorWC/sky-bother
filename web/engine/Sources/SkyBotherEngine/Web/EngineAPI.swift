@@ -21,6 +21,9 @@ public enum EngineAPI {
         /// Raw Open-Meteo response body, fetched by the page — parsed here by
         /// the Mac app's own parser. Either this or `forecast`.
         var openMeteoResponse: String?
+        /// MET Norway's locationforecast body, when Open-Meteo failed (the
+        /// Mac app's backup), read by the Mac app's own MetNorwayClient.
+        var metNorwayResponse: String?
         var forecast: WeatherForecast?
         /// MPC's CometEls.txt, if the page has it.
         var cometElements: String?
@@ -270,6 +273,8 @@ public enum EngineAPI {
             let forecast: WeatherForecast
             if let body = request.openMeteoResponse {
                 forecast = try OpenMeteoClient.decode(Data(body.utf8))
+            } else if let body = request.metNorwayResponse {
+                forecast = try MetNorwayClient.decode(Data(body.utf8))
             } else {
                 forecast = request.forecast ?? .empty
             }

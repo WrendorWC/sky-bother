@@ -5,26 +5,36 @@
 const hourly = ['cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'temperature_2m', 'dew_point_2m',
   'relative_humidity_2m', 'wind_speed_10m', 'wind_gusts_10m', 'visibility', 'precipitation_probability', 'wind_direction_10m'];
 
+/**
+ * The forecast for a spot, as { source, body }: `source` is 'open-meteo' (the
+ * Mac app's primary: both models), 'met-norway' (the Mac's backup, through
+ * skybother.com's /api/metno) or 'open-meteo-basic' (Open-Meteo's own model
+ * alone, the last resort). The body goes to the engine to read.
+ *
+ * Open-Meteo's two-model request sometimes stalls; after 3 s MET Norway is
+ * asked too, and whichever answers first is used, the primary preferred if
+ * both are in.
+ */
 export async function fetchForecast(latitude, longitude, nights) {
   const days = Math.min(16, Math.max(2, nights + 1));
   const url = models => `https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(4)}&longitude=${longitude.toFixed(4)}` +
     `&hourly=${hourly.join(',')}&timeformat=unixtime&timezone=UTC&wind_speed_unit=kmh&temperature_unit=celsius` +
     `&forecast_days=${days}&models=${models}`;
-  // Both models, as the Mac app asks. Open-Meteo's NBM backend sometimes
-  // stalls or sends back a broken body; Open-Meteo's own model alone still
-  // gives a forecast. So if the pair hasn't answered in 3 s, ask for that too
-  // and take the first usable answer, preferring the pair. (The Mac app falls
-  // back to MET Norway instead, which a browser can't reach without a proxy.)
-  const both = fetchJSONText(url('best_match,ncep_nbm_conus'));
+  const primary = fetchJSONText(url('best_match,ncep_nbm_conus'), json => json.hourly).then(body => ({ source: 'open-meteo', body }));
   const head = new Promise(resolve => setTimeout(resolve, 3000, 'slow'));
-  const first = await Promise.race([both.then(text => ({ text }), error => ({ error })), head]);
-  if (first !== 'slow' && first.text) return first.text;
-  const alone = fetchJSONText(url('best_match'));
-  return Promise.any([both, alone]).catch(failure => { throw failure.errors?.[failure.errors.length - 1] ?? failure; });
+  const first = await Promise.race([primary.then(r => r, error => ({ error })), head]);
+  if (first !== 'slow' && first.body) return first;
+  const backup = fetchJSONText(`/api/metno?lat=${latitude.toFixed(4)}&lon=${longitude.toFixed(4)}`, json => json.properties?.timeseries?.length)
+    .then(body => ({ source: 'met-norway', body }));
+  try {
+    return await Promise.any([primary, backup]);
+  } catch {
+    return { source: 'open-meteo-basic', body: await fetchJSONText(url('best_match'), json => json.hourly) };
+  }
 }
 
-/** The body, if it's a JSON object with an hourly forecast; throws otherwise. */
-async function fetchJSONText(url) {
+/** The body, if it's JSON that `looksRight` accepts; throws otherwise. */
+async function fetchJSONText(url, looksRight) {
   // Like the Mac app's 8 s: a healthy answer takes well under a second.
   // (An AbortController rather than AbortSignal.timeout, which older
   // iPhones don't have.)
@@ -34,7 +44,7 @@ async function fetchJSONText(url) {
   if (!response.ok) throw new Error(`Weather service returned HTTP ${response.status}.`);
   const text = await response.text();
   try {
-    if (!JSON.parse(text).hourly) throw new Error();
+    if (!looksRight(JSON.parse(text))) throw new Error();
   } catch {
     throw new Error('The weather service sent back an unreadable forecast.');
   }

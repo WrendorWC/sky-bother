@@ -24,6 +24,7 @@ struct MetNorwayClient {
         return components?.url
     }
 
+    #if !os(WASI) // the web app fetches through its own server and hands the response to `decode`
     func fetch(latitude: Double, longitude: Double) async throws -> WeatherForecast {
         guard let url = forecastURL(latitude: latitude, longitude: longitude) else {
             throw WeatherError.malformedData
@@ -45,12 +46,18 @@ struct MetNorwayClient {
             throw WeatherError.badResponse(http.statusCode)
         }
 
+        return try Self.decode(data)
+    }
+    #endif
+
+    /// Reads a successful response body into a forecast. Shared with the web
+    /// app's engine, which gets the body through skybother.com's /api/metno.
+    static func decode(_ data: Data) throws -> WeatherForecast {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         guard let payload = try? decoder.decode(Payload.self, from: data) else {
             throw WeatherError.malformedData
         }
-
         return payload.forecast()
     }
 

@@ -27,6 +27,8 @@
   let status = $state('');
   let error = $state('');
   let updatedAt = $state(null);
+  // Which forecast the week came from; anything but 'open-meteo' is a backup.
+  let forecastSource = $state('open-meteo');
   let editingSettings = $state(false);
   // Where Settings opens: 'location' from the site name.
   let settingsFocus = $state(null);
@@ -188,11 +190,12 @@
     status = `Getting the forecast for ${settings.site.name || 'your site'}…`;
     try {
       const { site, preferences } = settings;
-      const [openMeteoResponse, cometElements] = await Promise.all([
+      const [forecast, cometElements] = await Promise.all([
         fetchForecast(site.latitude, site.longitude, preferences.forecastNights),
         fetchCometElements(),
       ]);
-      fetched = { key: `${site.latitude},${site.longitude}`, openMeteoResponse, cometElements };
+      fetched = { key: `${site.latitude},${site.longitude}`, forecast, cometElements };
+      forecastSource = forecast.source;
       status = 'Planning the week…';
       await plan();
       updatedAt = Date.now();
@@ -216,8 +219,9 @@
   }
 
   async function plan() {
-    const { openMeteoResponse, cometElements } = fetched;
-    nights = await planNights({ ...$state.snapshot(settings), openMeteoResponse, cometElements, now: new Date().toISOString().replace(/\.\d+Z$/, 'Z') });
+    const { forecast, cometElements } = fetched;
+    const body = forecast.source === 'met-norway' ? { metNorwayResponse: forecast.body } : { openMeteoResponse: forecast.body };
+    nights = await planNights({ ...$state.snapshot(settings), ...body, cometElements, now: new Date().toISOString().replace(/\.\d+Z$/, 'Z') });
     catalog = await catalogEntries();
   }
 
@@ -361,7 +365,12 @@
           <p class="muted">Loading forecast…</p>
         {/if}
         <footer class="muted">
-          {#if updatedAt}<div>Forecast updated {(clock, age(updatedAt))}</div>{/if}
+          {#if updatedAt}
+            <div>Forecast updated {(clock, age(updatedAt))}{forecastSource !== 'open-meteo' ? ' · backup source' : ''}</div>
+            {#if forecastSource !== 'open-meteo'}
+              <div class="backup">Open-Meteo's main forecast wasn't answering, so this week is from {forecastSource === 'met-norway' ? 'MET Norway' : "Open-Meteo's basic model"}. Scores can differ from the Mac app until it's back; refresh to try again.</div>
+            {/if}
+          {/if}
           <div>Bortle {settings.site.bortleClass} · {settings.rig.name}</div>
         </footer>
       </aside>
@@ -435,6 +444,7 @@
   .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; margin-top: 16px; }
   .sidebar { display: grid; gap: 6px; align-content: start; position: sticky; top: 72px; }
   .sidebar h3 { margin: 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
+  .backup { color: var(--marginal); }
   .sidebar footer { display: grid; gap: 3px; margin: 14px 8px 0; padding-top: 14px; border-top: 1px solid var(--panel-border); font-size: 12px; }
   .back { display: none; }
   /* The planner takes the whole window, as on the Mac. */
