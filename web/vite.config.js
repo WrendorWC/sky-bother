@@ -1,7 +1,45 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { createReadStream, existsSync, cpSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { join, resolve, normalize } from 'node:path';
+
+// The target photos live in the Mac app's catalogue (40 MB); rather than a
+// second copy in web/, they're served from there in development and copied
+// into the build. /catalog/photos/… are Wikipedia photos, /catalog/sky/… the
+// sky-survey thumbnails used where there's no photo. See src/lib/images.js.
+const catalog = fileURLToPath(new URL('../SkyBother/Catalog', import.meta.url));
+const folders = { photos: 'Images', sky: 'SkyThumbnails' };
+
+function catalogImages() {
+  let outDir;
+  return {
+    name: 'sky-bother-catalog-images',
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+    },
+    configureServer(server) {
+      server.middlewares.use('/catalog', (request, response, next) => {
+        const [, folder, file] = request.url.split('?')[0].split('/');
+        const directory = folders[folder];
+        const path = directory && file && normalize(join(catalog, directory, decodeURIComponent(file)));
+        if (!path || !path.startsWith(join(catalog, directory)) || !existsSync(path)) return next();
+        response.setHeader('Content-Type', 'image/jpeg');
+        response.setHeader('Cache-Control', 'public, max-age=86400');
+        createReadStream(path).pipe(response);
+      });
+    },
+    closeBundle() {
+      for (const [name, directory] of Object.entries(folders)) {
+        cpSync(join(catalog, directory), join(outDir, 'catalog', name), { recursive: true });
+      }
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: [svelte(), catalogImages()],
   worker: { format: 'es' },
+  // The image manifests are imported from the Mac app's catalogue.
+  server: { fs: { allow: ['..'] } },
 });

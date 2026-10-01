@@ -8,10 +8,12 @@
   import PlanStrip from './PlanStrip.svelte';
   import TargetRow from './TargetRow.svelte';
   import AvailabilityBar from './AvailabilityBar.svelte';
+  import Thumbnail from './Thumbnail.svelte';
+  import TargetDetail from './TargetDetail.svelte';
   import { scoreColor, dewColor } from './palette.js';
   import * as format from './format.js';
 
-  let { night, isTonight, timeZone, preferences } = $props();
+  let { night, isTonight, timeZone, preferences, targetID = null } = $props();
 
   const imperial = $derived(preferences.usesImperialUnits);
   const usable = $derived(night.targets.filter(t => t.usableMinutes > 0));
@@ -27,6 +29,16 @@
   function select(id) {
     chosenID = id;
     chosenFor = night.planKey;
+  }
+
+  /** The target's details, at its own link; selects it too. */
+  function open(id) {
+    select(id);
+    location.hash = `#/${night.planKey}/${encodeURIComponent(id)}`;
+  }
+
+  function closeDetail() {
+    location.hash = `#/${night.planKey}`;
   }
 
   const planned = $derived(new Set(night.plan.map(b => b.targetID)));
@@ -58,7 +70,7 @@
       </div>
       <p class="muted-strong">{summaryLine}</p>
       {#if best}
-        <button type="button" class="best" onclick={() => select(best.id)}>
+        <button type="button" class="best" onclick={() => open(best.id)}>
           <span class="label">{night.isCloudedOut ? 'If it clears' : 'Best target'}</span>
           {best.displayName} · {Math.round(best.score)} <span class="chevron">›</span>
         </button>
@@ -131,6 +143,11 @@
                 <span>{format.duration((Date.parse(block.window.end) - Date.parse(block.window.start)) / 60000)}</span>
               </div>
             </button>
+            {#if target}
+              <button type="button" class="thumb-button" onclick={() => open(block.targetID)} aria-label="Details for {block.targetName}">
+                <Thumbnail designation={target.designation} size={44} label={block.targetName} />
+              </button>
+            {/if}
           </li>
         {/each}
       </ol>
@@ -142,7 +159,7 @@
       <h3>{showsAll ? 'Everything up tonight' : night.isCloudedOut ? 'If it clears' : 'Other targets of interest'}</h3>
       <div class="panel target-list">
         {#each listed as target (target.id)}
-          <TargetRow {night} {target} {timeZone} selected={selectedID === target.id} onselect={select} />
+          <TargetRow {night} {target} {timeZone} selected={selectedID === target.id} onselect={select} onopen={open} />
         {/each}
       </div>
       <button type="button" class="link" onclick={() => (showsAll = !showsAll)}>
@@ -151,6 +168,10 @@
     </section>
   {/if}
 </article>
+
+{#if targetID}
+  <TargetDetail {night} {targetID} {timeZone} onclose={closeDetail} />
+{/if}
 
 <style>
   .detail { display: grid; gap: 14px; min-width: 0; }
@@ -179,13 +200,16 @@
   h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
   .badge { font-size: 11px; color: var(--muted); border: 1px solid var(--panel-border); border-radius: 999px; padding: 0 7px; }
   .blocks { list-style: none; margin: 0; padding: 0; overflow: hidden; }
+  .blocks li { display: flex; align-items: center; }
   .blocks li + li { border-top: 1px solid var(--divider); }
+  .thumb-button { padding: 0; margin-right: 12px; border: none; background: none; border-radius: 8px; }
   .block {
-    display: flex; gap: 12px; align-items: center; width: 100%; text-align: left;
+    display: flex; gap: 12px; align-items: center; flex: 1; min-width: 0; text-align: left;
     padding: 8px 12px; background: none; border: none; border-radius: 0; box-shadow: inset 0 0 0 transparent;
   }
   .block:hover { background: rgba(158, 133, 250, 0.07); }
-  .block.selected { background: rgba(158, 133, 250, 0.18); box-shadow: inset 3px 0 0 var(--accent); }
+  .block.selected { box-shadow: inset 3px 0 0 var(--accent); }
+  .blocks li:has(.block.selected) { background: rgba(158, 133, 250, 0.18); }
   .block-body { flex: 1; min-width: 0; display: grid; gap: 2px; }
   .block-bar { margin-top: 2px; }
   .block-body > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

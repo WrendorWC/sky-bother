@@ -1,0 +1,178 @@
+<script>
+  // TargetDetailView: one target on one night. Its score and why, when it's
+  // up, how it sits in your frame, and what's worth knowing. The words come
+  // from the engine (EngineAPI.targetDetail), the same functions the Mac
+  // app's panel uses.
+  import { targetDetail } from '../engine/engine.js';
+  import ScoreBadge from './ScoreBadge.svelte';
+  import VerdictTag from './VerdictTag.svelte';
+  import { targetImage } from './images.js';
+  import { verdictColor, verdictFor } from './palette.js';
+  import { time, degrees } from './format.js';
+
+  let { night, targetID, timeZone, onclose } = $props();
+
+  let detail = $state(null);
+  let error = $state('');
+  let showsTechnical = $state(false);
+
+  // Fetched again whenever the night is re-planned (a new `night` object).
+  $effect(() => {
+    const request = { planKey: night.planKey, targetID };
+    error = '';
+    targetDetail(request).then(d => (detail = d), e => (error = e.message));
+  });
+
+  const image = $derived(detail && targetImage(detail.designation));
+  const blocks = $derived(night.plan.filter(b => b.targetID === targetID));
+
+  function onkeydown(event) {
+    if (event.key === 'Escape') onclose();
+  }
+
+  // FactorBar's colour for the points lost.
+  const impactClass = impact => (impact >= 8 ? 'skip' : impact >= 3 ? 'marginal' : '');
+</script>
+
+<svelte:window {onkeydown} />
+
+<div class="backdrop" onclick={onclose} aria-hidden="true"></div>
+<aside class="drawer" aria-label="Target details">
+  <button type="button" class="close" onclick={onclose} aria-label="Close">✕</button>
+  {#if error}
+    <p class="error">{error}</p>
+  {:else if detail}
+    <header>
+      <div>
+        <h2>{detail.displayName}</h2>
+        <p class="muted-strong">{detail.subtitle}</p>
+      </div>
+      <ScoreBadge score={detail.score} size={50} />
+    </header>
+    <div class="verdict-row">
+      <VerdictTag verdict={detail.verdict} />
+      <span class="muted-strong">{detail.recommendation}</span>
+    </div>
+    <p class="sentence">{detail.verdictSentence}</p>
+
+    {#if blocks.length}
+      <p class="planned">✓ Planned · {blocks.map(b => `${time(b.window.start, timeZone)}–${time(b.window.end, timeZone)}`).join(', ')}</p>
+    {/if}
+
+    <section>
+      <h3>Through the night</h3>
+      {#if detail.transitTime}<p class="muted-strong">Highest at {time(detail.transitTime, timeZone)} · {degrees(detail.maximumAltitude)}</p>{/if}
+      {#if detail.bestWindow}
+        <p class="muted-strong">Best window {time(detail.bestWindow.start, timeZone)}–{time(detail.bestWindow.end, timeZone)}</p>
+      {/if}
+      {#if detail.zenithRisk}
+        <p class="warn">⚠︎ Zenith risk {time(detail.zenithRisk.start, timeZone)}–{time(detail.zenithRisk.end, timeZone)}</p>
+      {/if}
+    </section>
+
+    <section>
+      <h3>Framing</h3>
+      {#if image}
+        <img class="photo" src={image.url} alt={detail.displayName} />
+      {/if}
+      <p>{detail.framingNote}</p>
+      {#if detail.samplingNote}<p class="muted">{detail.samplingNote}</p>{/if}
+      <p class="muted faint">{detail.rigSummary}</p>
+      {#if image}
+        {#if image.sourceURL}
+          <a class="credit" href={image.sourceURL} target="_blank" rel="noopener">{image.credit}</a>
+        {:else}
+          <p class="muted faint">{image.credit}</p>
+        {/if}
+      {/if}
+    </section>
+
+    {#if detail.whyNot.length}
+      <section>
+        <h3>Why not recommended</h3>
+        {#each detail.whyNot as line}<p class="warn">⚠︎ {line}</p>{/each}
+      </section>
+    {/if}
+
+    {#if detail.warnings.length}
+      <section>
+        <h3>Worth knowing</h3>
+        {#each detail.warnings as line}<p class="warn">⚠︎ {line}</p>{/each}
+      </section>
+    {/if}
+
+    {#if detail.facts.length}
+      <section>
+        <h3>Did you know</h3>
+        <ul class="facts">{#each detail.facts as fact}<li>{fact}</li>{/each}</ul>
+      </section>
+    {/if}
+
+    <section>
+      <h3>Why this score</h3>
+      {#each detail.factors as factor}
+        {@const verdict = verdictFor(factor.value * 100)}
+        <div class="factor">
+          <div class="factor-head">
+            <span>{factor.name}</span>
+            <span class="factor-verdict" style:color={verdictColor(verdict)}>{verdict}</span>
+            <span class="impact {impactClass(Math.round(factor.impact))}">{Math.round(factor.impact) >= 1 ? `−${Math.round(factor.impact)}` : '0'}</span>
+          </div>
+          <div class="factor-bar"><span style:width="{Math.max(1, factor.value * 100)}%" style:background={verdictColor(verdict)}></span></div>
+          <p class="muted">{factor.detail}</p>
+        </div>
+      {/each}
+      {#if detail.filterNote}<p class="muted">{detail.filterNote}</p>{/if}
+    </section>
+
+    <section>
+      <button type="button" class="disclosure" onclick={() => (showsTechnical = !showsTechnical)} aria-expanded={showsTechnical}>
+        <h3>{showsTechnical ? '▾' : '▸'} Technical details</h3>
+      </button>
+      {#if showsTechnical}
+        <dl class="numbers">
+          {#each detail.numbers as number}<dt>{number.label}</dt><dd>{number.value}</dd>{/each}
+        </dl>
+      {/if}
+    </section>
+  {:else}
+    <p class="muted">Loading…</p>
+  {/if}
+</aside>
+
+<style>
+  .backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 10; }
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 11; width: min(440px, 100vw);
+    overflow-y: auto; padding: 20px 20px 40px; display: grid; gap: 16px; align-content: start;
+    background: linear-gradient(var(--space-top), var(--space-bottom)); border-left: 1px solid var(--panel-border);
+    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.4);
+  }
+  .close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; padding: 0; border-radius: 50%; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding-right: 40px; }
+  h2 { margin: 0; font-size: 22px; }
+  h3 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
+  p { margin: 0; }
+  section { display: grid; gap: 5px; }
+  .verdict-row { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; margin-top: -6px; }
+  .sentence { font-weight: 500; }
+  .planned { color: var(--accent); font-weight: 600; }
+  .warn { color: var(--marginal); }
+  .photo { width: 100%; max-height: 300px; object-fit: cover; border-radius: 10px; border: 1px solid var(--panel-border); }
+  .faint { color: var(--tertiary); }
+  .credit { font-size: 13px; }
+  .facts { margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 4px; }
+  .facts li::marker { color: var(--accent); }
+  .factor { display: grid; gap: 3px; margin-bottom: 6px; }
+  .factor-head { display: flex; gap: 8px; align-items: baseline; }
+  .factor-verdict { font-size: 11px; font-weight: 600; }
+  .impact { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
+  .impact.marginal { color: var(--marginal); font-weight: 700; }
+  .impact.skip { color: var(--poor); font-weight: 700; }
+  .factor-bar { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+  .factor-bar span { display: block; height: 100%; border-radius: 3px; }
+  .disclosure { background: none; border: none; padding: 0; text-align: left; }
+  .numbers { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0; font-size: 14px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; font-variant-numeric: tabular-nums; }
+</style>

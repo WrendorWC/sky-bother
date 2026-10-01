@@ -42,3 +42,10 @@ public func sbPlanNights(_ pointer: UnsafeRawPointer, _ count: Int32) -> UnsafeR
     lastResult = Array(EngineAPI.planNights(Data(bytes: pointer, count: Int(count))))
     return lastResult.withUnsafeBytes { UnsafeRawPointer($0.baseAddress!) }
 }
+
+@_expose(wasm, "sb_target_detail")
+@_cdecl("sb_target_detail")
+public func sbTargetDetail(_ pointer: UnsafeRawPointer, _ count: Int32) -> UnsafeRawPointer {
+    lastResult = Array(EngineAPI.targetDetail(Data(bytes: pointer, count: Int(count))))
+    return lastResult.withUnsafeBytes { UnsafeRawPointer($0.baseAddress!) }
+}

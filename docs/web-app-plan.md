@@ -132,9 +132,17 @@ phone (list, then night, with `#/YYYY-MM-DD` links).
   hover/touch readout), legend, plan strip + plan rows (read-only), other targets with
   "Show all".
 - `Format.time` now builds "HH:mm" from Calendar components: `DateFormatter` traps in Wasm.
-- Still to do in Phase 1: target detail (Mac's TargetCatalogDetail: photo, why/why-not,
-  factors), the catalogue browser, thumbnails, night score breakdown, first deploy to
+- Still to do in Phase 1: the catalogue browser, night score breakdown, first deploy to
   Cloudflare Pages (the shareable link).
+
+**Session 2 (2026-10-01):** timeline sky (stars, score dulling, layers on hover); settings
+panel (rig preset, kind of night, cloud limit, units); thumbnails and target detail
+(`EngineAPI.targetDetail`, same wording as the Mac's panel) at `#/date/targetID` links.
+- Wanted later (user, 2026-10-01): on a wide screen the target detail should be a
+  permanent right-hand column showing the selected target, as on the Mac; the drawer
+  only on narrower windows.
+- Target detail shows the photo only; the Mac's frame-to-scale preview comes with the
+  Aladin Lite sky browser (Phase 2).
 
 ## Notes for next week (engineering detail)
 

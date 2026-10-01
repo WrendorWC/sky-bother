@@ -9,6 +9,7 @@ web/
   engine/           Swift package: SkyBother/Core, Planner, Model… symlinked in, plus a JSON API
   build-engine.sh   engine → public/engine.wasm (checked in: Cloudflare can't build Swift)
   public/           engine.wasm, catalog-extended.json
+                    (target photos come from SkyBother/Catalog via vite.config.js)
   src/              Svelte page; the engine runs in a Web Worker (src/engine)
   src/lib/          the page's views, each named after the Mac view it ports
   fixtures/         recorded forecasts for the parity check (local/ is gitignored)

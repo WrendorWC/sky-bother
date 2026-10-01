@@ -22,9 +22,12 @@
   // without fetching them again.
   let fetched = null;
 
-  // #/2026-10-01 is a night; anything else is the list (on a phone) or tonight.
+  // #/2026-10-01 is a night, #/2026-10-01/M76 a target on it; anything else
+  // is the list (on a phone) or tonight.
   let route = $state(location.hash);
-  const routeKey = $derived(/^#\/(\d{4}-\d{2}-\d{2})$/.exec(route)?.[1] ?? null);
+  const routeMatch = $derived(/^#\/(\d{4}-\d{2}-\d{2})(?:\/(.+))?$/.exec(route));
+  const routeKey = $derived(routeMatch?.[1] ?? null);
+  const routeTarget = $derived(routeMatch?.[2] ? decodeURIComponent(routeMatch[2]) : null);
   const night = $derived(nights.find(n => n.planKey === routeKey) ?? nights[0] ?? null);
 
   function loadSettings() {
@@ -165,7 +168,8 @@
           <a class="back" href="#/">‹ All nights</a>
           {#key night.planKey}
             <NightDetail {night} isTonight={night.planKey === nights[0]?.planKey}
-                         timeZone={settings.site.timeZoneIdentifier} preferences={settings.preferences} />
+                         timeZone={settings.site.timeZoneIdentifier} preferences={settings.preferences}
+                         targetID={routeKey === night.planKey ? routeTarget : null} />
           {/key}
         {/if}
       </main>

@@ -122,6 +122,53 @@ public enum EngineAPI {
 
     struct Failure: Encodable { var error: String }
 
+    /// The selected-target panel (TargetDetailView), worded by the same
+    /// shared functions the Mac app uses.
+    struct TargetDetail: Encodable {
+        var id: String
+        var displayName: String
+        var designation: String
+        /// "M76 · Planetary Nebula in Perseus"
+        var subtitle: String
+        var score: Double
+        var verdict: String
+        /// "1h 9m usable, best around 04:00 at 61° in the NNW"
+        var recommendation: String
+        var verdictSentence: String
+        var transitTime: Date?
+        var maximumAltitude: Double
+        var bestWindow: TimeWindow?
+        var zenithRisk: TimeWindow?
+        var framingNote: String
+        var samplingNote: String?
+        /// "ZWO Seestar S50 Pro · 1.38° × 2.45° · 50mm f/5.2"
+        var rigSummary: String
+        /// Only for Marginal and Poor, as the Mac shows it.
+        var whyNot: [String]
+        var warnings: [String]
+        var facts: [String]
+        var factors: [DetailFactor]
+        var filterNote: String?
+        var numbers: [Number]
+    }
+
+    struct DetailFactor: Encodable {
+        var name: String
+        var value: Double
+        var detail: String
+        /// Points the score loses to this factor (FactorBar's "−n").
+        var impact: Double
+    }
+
+    struct Number: Encodable {
+        var label: String
+        var value: String
+    }
+
+    /// The last week planned, so a target's detail is a lookup, not a re-plan.
+    nonisolated(unsafe) private static var lastNights: [NightPlan] = []
+    nonisolated(unsafe) private static var lastRig: Rig?
+
     /// The catalogue's extended part ships as JSON next to the page rather
     /// than inside the binary; `BuiltInCatalog.extended` reads it from the
     /// app bundle, which doesn't exist here. Same order as `BuiltInCatalog.all`.
@@ -172,8 +219,10 @@ public enum EngineAPI {
                                   catalog: catalog + (request.customTargets ?? []),
                                   forecast: forecast,
                                   comets: request.cometElements.map(CometOrbit.parse) ?? [])
-            let nights = planner.plan(from: request.now).map { summary($0, preferences: request.preferences) }
-            return try encoder.encode(nights)
+            let plans = planner.plan(from: request.now)
+            lastNights = plans
+            lastRig = request.rig
+            return try encoder.encode(plans.map { summary($0, preferences: request.preferences) })
         } catch {
             return (try? encoder.encode(Failure(error: String(describing: error)))) ?? Data()
         }
@@ -241,6 +290,77 @@ public enum EngineAPI {
     }
 
     static func finite(_ value: Double) -> Double? { value.isFinite ? value : nil }
+
+    struct TargetRequest: Decodable {
+        var planKey: String
+        var targetID: String
+    }
+
+    /// One target on one night of the last week planned, or `{"error": …}`.
+    public static func targetDetail(_ requestJSON: Data) -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.sortedKeys]
+        guard let request = try? JSONDecoder().decode(TargetRequest.self, from: requestJSON),
+              let night = lastNights.first(where: { $0.planKey == request.planKey }),
+              let plan = night.targets.first(where: { $0.id == request.targetID }),
+              let rig = lastRig
+        else {
+            return (try? encoder.encode(Failure(error: "No such target on that night."))) ?? Data()
+        }
+        return (try? encoder.encode(detail(plan, night: night, rig: rig))) ?? Data()
+    }
+
+    static func detail(_ plan: TargetPlan, night: NightPlan, rig: Rig) -> TargetDetail {
+        let target = plan.target
+        let zone = night.timeZone
+        var recommendation = ["\(plan.usableHoursText) usable"]
+        if let best = plan.bestTime {
+            let compass = HorizontalCoordinate(altitude: plan.altitudeAtBest, azimuth: plan.azimuthAtBest).compassPoint
+            recommendation.append("best around \(Format.time(best, in: zone)) at \(Format.degrees(plan.altitudeAtBest)) in the \(compass)")
+        }
+        var numbers = [
+            Number(label: "Coordinates", value: Format.coordinates(target.coordinate)),
+            Number(label: "Magnitude", value: String(format: "%.1f", target.magnitude)),
+            Number(label: "Apparent size", value: target.sizeSummary),
+        ]
+        if !target.type.isStarField {
+            numbers.append(Number(label: "Surface brightness", value: String(format: "%.1f mag/arcsec²", target.surfaceBrightness)))
+        }
+        numbers.append(Number(label: "Peak altitude", value: Format.degrees(plan.maximumAltitude)))
+        numbers.append(Number(label: "Air mass at peak", value: String(format: "%.2f", SkyCoordinates.airMass(altitude: plan.maximumAltitude))))
+        numbers.append(Number(label: "Moon separation", value: Format.degrees(plan.minimumMoonSeparation)))
+        if rig.mountType.rotatesField && plan.maximumFieldRotation > 0 {
+            numbers.append(Number(label: "Peak field rotation", value: String(format: "%.1f°/h", plan.maximumFieldRotation)))
+        }
+        return TargetDetail(
+            id: plan.id,
+            displayName: target.displayName,
+            designation: target.designation,
+            subtitle: "\(target.designation) · \(target.type.displayName)\(target.inConstellation)",
+            score: plan.score,
+            verdict: plan.verdict.rawValue,
+            recommendation: recommendation.joined(separator: ", "),
+            verdictSentence: targetVerdictSentence(plan),
+            transitTime: plan.transitTime,
+            maximumAltitude: plan.maximumAltitude,
+            bestWindow: plan.bestWindow,
+            zenithRisk: plan.bestWindowZenithRisk,
+            framingNote: plan.fit.framingNote,
+            samplingNote: plan.fit.samplingNote,
+            rigSummary: "\(rig.name) · \(rig.fieldOfViewSummary) · \(rig.opticalSummary)",
+            whyNot: plan.verdict == .marginal || plan.verdict == .poor ? whyNotBullets(factors: plan.factors) : [],
+            warnings: plan.warnings,
+            facts: CuratedFacts.facts(for: target.designation),
+            factors: plan.factors.map {
+                DetailFactor(name: $0.name, value: $0.value, detail: $0.detail,
+                             impact: scoreImpact(of: $0, in: plan.factors, actualScore: plan.score))
+            },
+            filterNote: target.type.respondsToNarrowband && rig.hasNarrowbandFilter
+                ? "Scored with your dual-band (light-pollution) filter in use. It cuts moonlight and light pollution on this target; without it, this would score lower."
+                : nil,
+            numbers: numbers)
+    }
 
     /// AppState.suggestedSlots/suggestedPlan, which live in the Mac UI layer.
     static func suggestedPlan(for night: NightPlan, preferences: Preferences) -> [PlanSegment] {

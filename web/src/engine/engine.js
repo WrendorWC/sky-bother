@@ -25,3 +25,6 @@ export const defaults = () => send('defaults');
  * openMeteoResponse, cometElements, now } — see EngineAPI.PlanRequest.
  */
 export const planNights = request => send('planNights', request);
+
+/** One target on one night of the last week planned: { planKey, targetID }. */
+export const targetDetail = request => send('targetDetail', request);
