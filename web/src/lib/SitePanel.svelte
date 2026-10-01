@@ -1,7 +1,7 @@
 <script>
   // Choosing where you observe from: a town, your location, or the Mac app's
   // settings file. Same starting values as Site.unset in the Mac app.
-  import { searchPlaces, elevationAt } from '../weather.js';
+  import { searchPlaces, elevationAt, placeDetails } from '../weather.js';
   import { uuid } from './uuid.js';
 
   let { settings, onsite, onimport, onbortle, oncancel } = $props();
@@ -25,15 +25,27 @@
     }
   }
 
-  function choosePlace(place) {
+  async function choosePlace(place) {
     places = [];
     query = '';
+    let { timezone, elevation } = place;
+    if (!timezone) {
+      busy = 'Looking up that place…';
+      try {
+        ({ timezone, elevation } = await placeDetails(place.latitude, place.longitude));
+      } catch (e) {
+        busy = '';
+        error = e.message;
+        return;
+      }
+      busy = '';
+    }
     onsite(newSite({
-      name: [place.name, place.admin1, place.country_code].filter(Boolean).join(', '),
+      name: place.name,
       latitude: place.latitude,
       longitude: place.longitude,
-      elevationMeters: place.elevation ?? 0,
-      timeZoneIdentifier: place.timezone,
+      elevationMeters: elevation ?? 0,
+      timeZoneIdentifier: timezone,
     }));
   }
 
@@ -99,7 +111,7 @@
   {/if}
 
   <form onsubmit={e => { e.preventDefault(); search(); }}>
-    <input type="search" placeholder="Search for a town or place" bind:value={query} />
+    <input type="search" placeholder="Town, place or postal code" bind:value={query} />
     <button type="submit" disabled={!query.trim()}>Search</button>
     <button type="button" onclick={useMyLocation}>Use My Location</button>
     <label class="button">
@@ -113,7 +125,7 @@
     <ul class="places">
       {#each places as place}
         <li><button type="button" onclick={() => choosePlace(place)}>
-          {place.name}<span class="muted">{[place.admin1, place.country].filter(Boolean).join(', ')}</span>
+          {place.label}<span class="muted">{place.detail}</span>
         </button></li>
       {/each}
     </ul>
