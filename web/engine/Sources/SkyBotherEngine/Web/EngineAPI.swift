@@ -14,6 +14,10 @@ public enum EngineAPI {
         var rig: Rig
         var preferences: Preferences
         var customTargets: [Target]?
+        /// Your own plans by night (StoredSettings.sessionPlans): a night with
+        /// an entry shows it, an empty one is a night deliberately cleared,
+        /// and one without follows the suggestion.
+        var sessionPlans: [String: [PlanSegment]]?
         /// Raw Open-Meteo response body, fetched by the page — parsed here by
         /// the Mac app's own parser. Either this or `forecast`.
         var openMeteoResponse: String?
@@ -60,6 +64,8 @@ public enum EngineAPI {
         var samples: [Sample]
         /// The app's suggested running order (AppState.suggestedPlan).
         var plan: [Block]
+        /// True when `plan` is your own rather than the suggestion.
+        var isManualPlan: Bool
         var targets: [TargetSummary]
     }
 
@@ -81,6 +87,7 @@ public enum EngineAPI {
     }
 
     struct Block: Encodable {
+        var id: String
         var targetID: String
         var targetName: String
         var window: TimeWindow
@@ -189,6 +196,7 @@ public enum EngineAPI {
     nonisolated(unsafe) private static var lastRig: Rig?
     nonisolated(unsafe) private static var lastSite: Site?
     nonisolated(unsafe) private static var lastForecast: WeatherForecast = .empty
+    nonisolated(unsafe) private static var lastStoredPlans: [String: [PlanSegment]] = [:]
     nonisolated(unsafe) private static var lastPreferences: Preferences?
     /// Every target the week was planned from, comets placed for `now`.
     nonisolated(unsafe) private static var lastCatalog: [Target] = []
@@ -279,20 +287,23 @@ public enum EngineAPI {
             lastPreferences = request.preferences
             let comets = request.cometElements.map(CometOrbit.parse) ?? []
             lastCatalog = catalog + (request.customTargets ?? []) + comets.compactMap { $0.target(at: request.now) }
-            return try encoder.encode(plans.map { summary($0, preferences: request.preferences) })
+            lastStoredPlans = request.sessionPlans ?? [:]
+            return try encoder.encode(plans.map {
+                summary($0, preferences: request.preferences, stored: request.sessionPlans?[$0.planKey])
+            })
         } catch {
             return (try? encoder.encode(Failure(error: String(describing: error)))) ?? Data()
         }
     }
 
-    static func summary(_ night: NightPlan, preferences: Preferences) -> NightSummary {
+    static func summary(_ night: NightPlan, preferences: Preferences, stored: [PlanSegment]? = nil) -> NightSummary {
         let skyScore = weightedGeometricScore(night.factors)
         let factors = night.factors.map {
             Factor(name: $0.name, value: $0.value, weight: $0.weight, detail: $0.detail,
                    impact: scoreImpact(of: $0, in: night.factors, actualScore: skyScore))
         }
         let cappedBy = night.isCloudedOut ? nil : night.bestTarget.flatMap { $0.score < skyScore - 0.5 ? $0.id : nil }
-        let segments = suggestedPlan(for: night, preferences: preferences)
+        let segments = stored?.chronological ?? suggestedPlan(for: night, preferences: preferences)
         let ranked = night.targets.sorted { a, b in a.score != b.score ? a.score > b.score : a.id < b.id }
         let planned = Set(segments.map(\.targetID))
         let targets = ranked.map { (plan: TargetPlan) -> TargetSummary in
@@ -311,7 +322,7 @@ public enum EngineAPI {
                           altitudeTrace: plan.usableMinutes > 0 || planned.contains(plan.id) ? plan.altitudeTrace.map { ($0 * 10).rounded() / 10 } : nil)
         }
         let blocks = segments.map { segment in
-            Block(targetID: segment.targetID, targetName: segment.targetName, window: segment.window,
+            Block(id: segment.id.uuidString, targetID: segment.targetID, targetName: segment.targetName, window: segment.window,
                   unusableMinutes: segment.unusableMinutes(against: night.targets.first { $0.id == segment.targetID }))
         }
         let dew = DewRisk.Assessment.forPlan(segments, in: night).map {
@@ -354,6 +365,7 @@ public enum EngineAPI {
                             factors: factors,
                             samples: samples,
                             plan: blocks,
+                            isManualPlan: stored != nil,
                             targets: targets)
     }
 
@@ -446,6 +458,83 @@ public enum EngineAPI {
                              },
                              highlights: famousTargets.map(\.id))
         return (try? encoder.encode(track)) ?? Data()
+    }
+
+    /// One edit to a night's plan, done by SessionPlanRules exactly as the
+    /// Mac's planner does it (PlanStripView, PlannerWorkspaceView.add).
+    struct PlanEditRequest: Decodable {
+        var planKey: String
+        /// "move", "resize", "add", "seed" (the displayed plan to start from),
+        /// "suggest" (the app's suggestion)
+        /// or "check" (just the unusable minutes of `segments`).
+        var op: String
+        var segments: [PlanSegment]
+        var id: String?
+        var seconds: Double?
+        var movingStart: Bool?
+        var targetID: String?
+        /// "move" only: whether a neighbour may hop across (always, on the Mac).
+        var allowSwap: Bool?
+    }
+
+    struct PlanEditResult: Encodable {
+        /// Nil when the edit can't be made (the caller keeps the last layout).
+        var segments: [PlanSegment]?
+        var blocks: [Block]?
+        /// "add": the new block's id.
+        var added: String?
+        var error: String?
+    }
+
+    public static func planEdit(_ requestJSON: Data) -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        func reply(_ result: PlanEditResult) -> Data { (try? encoder.encode(result)) ?? Data() }
+        guard let request = try? decoder.decode(PlanEditRequest.self, from: requestJSON),
+              let night = lastNights.first(where: { $0.planKey == request.planKey })
+        else { return reply(PlanEditResult(error: "No such night.")) }
+        let window = night.chartWindow
+        var segments = request.segments
+        var added: String?
+
+        switch request.op {
+        case "seed", "suggest":
+            // "seed": what the night shows now, yours or the suggestion;
+            // "suggest": the suggestion, for Reset. On the 5-minute grid.
+            let stored = request.op == "seed" ? lastStoredPlans[night.planKey] : nil
+            segments = (stored ?? suggestedPlan(for: night, preferences: lastPreferences ?? .default))
+                .map { var s = $0; s.window = SessionPlanRules.snapped(s.window); return s }
+        case "move", "resize":
+            guard let id = request.id, let seconds = request.seconds,
+                  let segment = segments.first(where: { $0.id.uuidString == id })
+            else { return reply(PlanEditResult(error: "No such block.")) }
+            let dragged = request.op == "move"
+                ? SessionPlanRules.moved(segment, by: seconds, within: window)
+                : SessionPlanRules.resized(segment, movingStart: request.movingStart ?? false, by: seconds, within: window)
+            guard let resolved = SessionPlanRules.resolve(dragged: dragged, against: segments, within: window,
+                                                          allowSwap: request.op == "move" && (request.allowSwap ?? true))
+            else { return reply(PlanEditResult()) }
+            segments = resolved
+        case "add":
+            guard let targetID = request.targetID,
+                  let targetPlan = night.targets.first(where: { $0.id == targetID })
+            else { return reply(PlanEditResult(error: "No such target.")) }
+            guard let slot = SessionPlanRules.placement(for: targetPlan, among: segments, within: window,
+                                                         preferredMinutes: (lastPreferences ?? .default).sessionCapMinutes)
+            else { return reply(PlanEditResult(error: "Every stretch of the night is already taken.")) }
+            let segment = PlanSegment(targetID: targetID, targetName: targetPlan.target.displayName, window: slot)
+            added = segment.id.uuidString
+            segments = (segments + [segment]).chronological
+        default:
+            break
+        }
+        let blocks = segments.map { segment in
+            Block(id: segment.id.uuidString, targetID: segment.targetID, targetName: segment.targetName, window: segment.window,
+                  unusableMinutes: segment.unusableMinutes(against: night.targets.first { $0.id == segment.targetID }))
+        }
+        return reply(PlanEditResult(segments: segments, blocks: blocks, added: added))
     }
 
     struct TargetRequest: Decodable {

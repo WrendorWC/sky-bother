@@ -63,3 +63,10 @@ public func sbSkyTrack(_ pointer: UnsafeRawPointer, _ count: Int32) -> UnsafeRaw
     lastResult = Array(EngineAPI.skyTrack(Data(bytes: pointer, count: Int(count))))
     return lastResult.withUnsafeBytes { UnsafeRawPointer($0.baseAddress!) }
 }
+
+@_expose(wasm, "sb_plan_edit")
+@_cdecl("sb_plan_edit")
+public func sbPlanEdit(_ pointer: UnsafeRawPointer, _ count: Int32) -> UnsafeRawPointer {
+    lastResult = Array(EngineAPI.planEdit(Data(bytes: pointer, count: Int(count))))
+    return lastResult.withUnsafeBytes { UnsafeRawPointer($0.baseAddress!) }
+}

@@ -4,13 +4,13 @@
   import MoonDisc from './MoonDisc.svelte';
   import { weekday, dayAndMonth, hours } from './format.js';
 
-  let { nights, selectedKey = null } = $props();
+  let { nights, selectedKey = null, linkPrefix = '#/' } = $props();
 </script>
 
 <ol class="nights">
   {#each nights as night, index (night.planKey)}
     <li>
-      <a href="#/{night.planKey}" class:selected={night.planKey === selectedKey}
+      <a href="{linkPrefix}{night.planKey}" class:selected={night.planKey === selectedKey}
          aria-current={night.planKey === selectedKey ? 'page' : undefined}>
         <ScoreBadge score={night.score} size={38} />
         <div class="body">

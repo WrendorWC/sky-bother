@@ -8,6 +8,7 @@
   import ImportSettings from './lib/ImportSettings.svelte';
   import Catalog from './lib/Catalog.svelte';
   import SkyView from './lib/SkyView.svelte';
+  import Planner from './lib/Planner.svelte';
   import { age } from './lib/format.js';
   import { isSetupHash, readSetup } from './lib/setupLink.js';
   import { view } from './lib/view.svelte.js';
@@ -44,6 +45,20 @@
   // #/sky/2026-10-01, or #/sky/2026-10-01/M76 with a target selected.
   const skyMatch = $derived(/^#\/sky\/(\d{4}-\d{2}-\d{2})(?:\/(.+))?$/.exec(route));
   const skyNight = $derived(skyMatch ? nights.find(n => n.planKey === skyMatch[1]) ?? null : null);
+  // #/plan/2026-10-01: the planner on that night.
+  const planMatch = $derived(/^#\/plan\/(\d{4}-\d{2}-\d{2})$/.exec(route));
+  const planNight = $derived(planMatch ? nights.find(n => n.planKey === planMatch[1]) ?? null : null);
+
+  // Done in the planner: a night's plan becomes yours (null goes back to
+  // the suggestion), stored as the Mac app stores it (sessionPlans).
+  function savePlan(planKey, segments) {
+    const plans = { ...(settings.sessionPlans ?? {}) };
+    if (segments) plans[planKey] = segments;
+    else delete plans[planKey];
+    settings = { ...settings, sessionPlans: plans };
+    saveSettings();
+    replan();
+  }
   const night = $derived(nights.find(n => n.planKey === routeKey) ?? nights[0] ?? null);
 
   function loadSettings() {
@@ -185,13 +200,16 @@
   refresh();
 </script>
 
-<div class="app" class:showing-night={routeKey != null || showingCatalog || skyMatch}>
+<div class="app" class:showing-night={routeKey != null || showingCatalog || skyMatch || planMatch} class:planning={planMatch}>
+  <!-- The Mac window's toolbar: the site and refresh on the left of the
+       tools, then Settings, Catalog and Night Mode as labelled buttons in
+       one group (icons only on a phone). -->
   <header class="topbar">
     <a class="brand" href="#/">Sky Bother</a>
     {#if settings}
-      <a class="nav" href="#/catalog" aria-current={showingCatalog ? 'page' : undefined}>Catalog</a>
       <button type="button" class="site-button" onclick={() => { settingsFocus = 'location'; editingSettings = true; }} title="Change location">
-        {settings.site.name || 'Unnamed site'} <span aria-hidden="true">▾</span>
+        <svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>
+        <span class="site-name">{settings.site.name || 'Unnamed site'}</span>
       </button>
       <button type="button" class="icon" onclick={refresh} disabled={loading} title="Fetch the latest forecast" aria-label="Refresh">
         <svg class:spinning={loading} viewBox="0 0 24 24" aria-hidden="true">
@@ -200,13 +218,22 @@
         </svg>
       </button>
     {/if}
-    <button type="button" class="icon" onclick={() => { settingsFocus = null; editingSettings = !editingSettings; }}
+    <nav class="tools" aria-label="Tools">
+      <button type="button" class="tool" class:on={editingSettings} onclick={() => { settingsFocus = null; editingSettings = !editingSettings; }}
               title="Settings" aria-label="Settings" aria-expanded={editingSettings}>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M9.96 5.10 L10.17 2.58 L13.83 2.58 L14.04 5.10 L15.44 5.67 L17.37 4.04 L19.96 6.63 L18.33 8.56 L18.90 9.96 L21.42 10.17 L21.42 13.83 L18.90 14.04 L18.33 15.44 L19.96 17.37 L17.37 19.96 L15.44 18.33 L14.04 18.90 L13.83 21.42 L10.17 21.42 L9.96 18.90 L8.56 18.33 L6.63 19.96 L4.04 17.37 L5.67 15.44 L5.10 14.04 L2.58 13.83 L2.58 10.17 L5.10 9.96 L5.67 8.56 L4.04 6.63 L6.63 4.04 L8.56 5.67 Z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.96 5.10 L10.17 2.58 L13.83 2.58 L14.04 5.10 L15.44 5.67 L17.37 4.04 L19.96 6.63 L18.33 8.56 L18.90 9.96 L21.42 10.17 L21.42 13.83 L18.90 14.04 L18.33 15.44 L19.96 17.37 L17.37 19.96 L15.44 18.33 L14.04 18.90 L13.83 21.42 L10.17 21.42 L9.96 18.90 L8.56 18.33 L6.63 19.96 L4.04 17.37 L5.67 15.44 L5.10 14.04 L2.58 13.83 L2.58 10.17 L5.10 9.96 L5.67 8.56 L4.04 6.63 L6.63 4.04 L8.56 5.67 Z" /><circle cx="12" cy="12" r="3" /></svg><span class="tool-label">Settings</span>
       </button>
+      {#if settings}
+        <a class="tool" href="#/catalog" aria-current={showingCatalog ? 'page' : undefined} title="Catalog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg><span class="tool-label">Catalog</span>
+        </a>
+        <button type="button" class="tool" class:on={settings.preferences.nightMode} title="Night mode: red light only"
+                aria-pressed={!!settings.preferences.nightMode}
+                onclick={() => changeSettings({ ...settings, preferences: { ...settings.preferences, nightMode: !settings.preferences.nightMode } })}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg><span class="tool-label">Night Mode</span>
+        </button>
+      {/if}
+    </nav>
   </header>
 
   {#if offeredSetup}
@@ -247,7 +274,8 @@
       <aside class="sidebar">
         <h3>Nights</h3>
         {#if nights.length}
-          <NightList {nights} selectedKey={showingCatalog ? null : skyNight?.planKey ?? night?.planKey} />
+          <NightList {nights} selectedKey={showingCatalog ? null : planNight?.planKey ?? skyNight?.planKey ?? night?.planKey}
+                     linkPrefix={planNight ? '#/plan/' : '#/'} />
         {:else if loading}
           <p class="muted">Loading forecast…</p>
         {/if}
@@ -258,7 +286,12 @@
       </aside>
 
       <main class="content">
-        {#if skyNight}
+        {#if planNight}
+          {#key planNight.planKey}
+            <Planner night={planNight} {nights} timeZone={settings.site.timeZoneIdentifier} preferences={settings.preferences}
+                     onsave={savePlan} onleave={() => (location.hash = `#/${planNight.planKey}`)} />
+          {/key}
+        {:else if skyNight}
           {#key skyNight.planKey}
             <SkyView night={skyNight} timeZone={settings.site.timeZoneIdentifier}
                      targetID={skyMatch[2] ? decodeURIComponent(skyMatch[2]) : null}
@@ -289,8 +322,19 @@
     padding: 12px 0; background: var(--space-top); border-bottom: 1px solid var(--panel-border);
   }
   .brand { font-weight: 700; font-size: 19px; color: var(--text); text-decoration: none; margin-right: auto; white-space: nowrap; }
-  .nav { color: var(--muted); text-decoration: none; font-weight: 600; padding: 6px 4px; }
-  .nav[aria-current='page'], .nav:hover { color: var(--accent); }
+  .tools {
+    display: flex; gap: 2px; padding: 3px; border-radius: 12px; flex: none;
+    background: var(--panel); border: 1px solid var(--panel-border);
+  }
+  .tool {
+    display: flex; gap: 7px; align-items: center; padding: 7px 11px; border-radius: 9px; border: none;
+    background: none; color: var(--text); font-weight: 600; text-decoration: none; font-size: 15px;
+  }
+  .tool:hover { background: rgba(158, 133, 250, 0.12); }
+  .tool.on, .tool[aria-current='page'] { background: rgba(158, 133, 250, 0.25); color: var(--accent); }
+  .tool svg, .pin { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .site-button { display: flex; gap: 6px; align-items: center; }
+  .site-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .site-button { background: none; border-color: transparent; color: var(--muted); min-width: 0; max-width: 50vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* 44 px: a comfortable tap on a phone. */
   .icon { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; flex: none; }
@@ -315,6 +359,9 @@
   .sidebar h3 { margin: 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
   .sidebar footer { display: grid; gap: 3px; margin: 14px 8px 0; padding-top: 14px; border-top: 1px solid var(--panel-border); font-size: 12px; }
   .back { display: none; }
+  /* The planner takes the whole window, as on the Mac. */
+  .planning .layout { grid-template-columns: minmax(0, 1fr); }
+  .planning .sidebar { display: none; }
 
   /* Phone: the list is one screen and a night is the next. */
   @media (max-width: 860px) {
@@ -322,6 +369,9 @@
     .sidebar { position: static; }
     .showing-night .sidebar { display: none; }
     .app:not(.showing-night) .content { display: none; }
+    .tool-label { display: none; }
+    .tool { padding: 9px; }
+    .tool svg { width: 24px; height: 24px; }
     .back { display: inline-block; margin-bottom: 10px; color: var(--accent); text-decoration: none; font-weight: 600; }
   }
 </style>

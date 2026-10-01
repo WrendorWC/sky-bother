@@ -170,7 +170,19 @@ panel (rig preset, kind of night, cloud limit, units); thumbnails and target det
   panel on wide screens so the dome fills the height; camera frame to scale with roll;
   showpiece highlights (tap to select); side panel with score, shootable-now status, jump
   to best window; Show clouds. www.skybother.com redirects to skybother.com.
-- Not yet: zenith-risk path colouring, the "In your frame" sky cutout, Session View.
+- Not yet: zenith-risk path colouring, Session View.
+
+## Phase 3 progress
+
+**Session 1 (2026-10-01):** the planner (`#/plan/date`, "Plan Session" / "Edit Plan" on a
+night): session timeline with blocks to drag and resize (`PlanEditor`), candidates with Add,
+inspector column on wide screens, Done / Cancel / Clear / Reset to Suggested. Every edit is
+`EngineAPI.planEdit`, i.e. the Mac's `SessionPlanRules` (snap, trim, swap, placement), and
+plans are stored as the Mac stores them (`sessionPlans`), so an imported Mac file's plans show.
+Also: all the Mac's Settings ("More settings"), location inside Settings, night mode, the
+Mac-style labelled toolbar on wide screens, a full-width planner.
+- Not yet: the setup wizard; keyboard Delete on the web strip needs focus; plans don't
+  travel in setup links.
 - Target detail shows the photo only; the Mac's frame-to-scale preview comes with the
   Aladin Lite sky browser (Phase 2).
 

@@ -42,6 +42,9 @@ self.onmessage = async ({ data: { id, kind, request } }) => {
       result = readResult(engine, call(engine, engine.sb_plan_nights, JSON.stringify(request)));
       if (result.error) throw new Error(result.error);
       console.debug(`[engine] planned ${result.length} nights in ${Math.round(performance.now() - started)} ms`);
+    } else if (kind === 'planEdit') {
+      result = readResult(engine, call(engine, engine.sb_plan_edit, JSON.stringify(request)));
+      if (result.error) throw new Error(result.error);
     } else if (kind === 'skyTrack') {
       result = readResult(engine, call(engine, engine.sb_sky_track, JSON.stringify(request)));
       if (result.error) throw new Error(result.error);

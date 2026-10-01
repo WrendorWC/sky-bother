@@ -24,7 +24,8 @@ function send(kind, request) {
   const id = nextID++;
   return new Promise((resolve, reject) => {
     pending.set(id, { resolve, reject });
-    worker.postMessage({ id, kind, request });
+    // A plain copy: Svelte's reactive state can't cross to a worker as it is.
+    worker.postMessage({ id, kind, request: request === undefined ? undefined : JSON.parse(JSON.stringify(request)) });
     // The first call waits for the engine to download and start; give a slow
     // phone connection a minute, then say so.
     setTimeout(() => {
@@ -52,3 +53,11 @@ export const catalogEntries = () => send('catalog');
 
 /** Sky View's Sun, Moon, wind, horizon and signpost stars for a night: { planKey }. */
 export const skyTrack = request => send('skyTrack', request);
+
+/**
+ * One edit to a night's plan, by the Mac's SessionPlanRules: { planKey, op:
+ * 'seed' | 'move' | 'resize' | 'add' | 'check', segments, id?, seconds?,
+ * movingStart?, targetID? } → { segments, blocks, added? }, segments null when
+ * the edit can't be made.
+ */
+export const planEdit = request => send('planEdit', request);

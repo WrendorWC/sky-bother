@@ -97,10 +97,13 @@
       {/if}
       {#if night.limitation}<p class="muted-strong limitation">ⓘ Main limitation: {night.limitation}</p>{/if}
       <!-- Carries a target you picked on this night (not the default one). -->
+      <div class="summary-actions">
+        <a class="plan-button" href="#/plan/{night.planKey}">Plan Session</a>
       <a class="sky-link" href="#/sky/{night.planKey}{chosenFor === night.planKey && chosenID ? `/${encodeURIComponent(chosenID)}` : ''}">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
         Open Sky View
       </a>
+      </div>
     </div>
   </section>
 
@@ -150,16 +153,17 @@
   <section class="plan">
     <header>
       <h3>{isTonight ? 'Tonight’s plan' : `${format.fullWeekday(night.planKey)}’s plan`}</h3>
-      <span class="badge">Suggested</span>
+      <span class="badge">{night.isManualPlan ? 'Manual' : 'Suggested'}</span>
       {#if night.plan.length}
         <span class="muted" class:warn={unshootable > 0}>
           {night.plan.length} block{night.plan.length === 1 ? '' : 's'} · {format.duration(planMinutes)}{unshootable > 0 ? ` · ${format.duration(unshootable)} unshootable` : ''}
         </span>
       {/if}
+      <a class="edit-plan" href="#/plan/{night.planKey}">Edit Plan</a>
     </header>
 
     {#if !night.plan.length}
-      <p class="muted-strong">{night.isCloudedOut ? 'Clouded out — nothing to plan.' : 'Nothing clears your minimum score for long enough on this night.'}</p>
+      <p class="muted-strong">{night.isManualPlan ? 'Your plan for this night is empty.' : night.isCloudedOut ? 'Clouded out — nothing to plan.' : 'Nothing clears your minimum score for long enough on this night.'}</p>
     {:else}
       {#if night.plan.length > 1}<PlanStrip {night} selectedID={selectedID} onselect={select} />{/if}
       <ol class="panel blocks">
@@ -232,6 +236,11 @@
     font-size: 12px; font-weight: 600; color: var(--marginal); padding: 2px 7px;
     border-radius: 999px; background: rgba(242, 179, 61, 0.15);
   }
+  .summary-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+  .plan-button {
+    padding: 8px 16px; border-radius: 9px; background: var(--accent); color: #120e22; font-weight: 700; text-decoration: none;
+  }
+  .edit-plan { margin-left: auto; color: var(--accent); font-weight: 600; text-decoration: none; font-size: 14px; }
   .sky-link {
     justify-self: start; display: inline-flex; gap: 6px; align-items: center; margin-top: 4px;
     color: var(--accent); text-decoration: none; font-weight: 600;
