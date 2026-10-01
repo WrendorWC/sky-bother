@@ -56,3 +56,10 @@ public func sbCatalog() -> UnsafeRawPointer {
     lastResult = Array(EngineAPI.catalogEntries())
     return lastResult.withUnsafeBytes { UnsafeRawPointer($0.baseAddress!) }
 }
+
+@_expose(wasm, "sb_sky_track")
+@_cdecl("sb_sky_track")
+public func sbSkyTrack(_ pointer: UnsafeRawPointer, _ count: Int32) -> UnsafeRawPointer {
+    lastResult = Array(EngineAPI.skyTrack(Data(bytes: pointer, count: Int(count))))
+    return lastResult.withUnsafeBytes { UnsafeRawPointer($0.baseAddress!) }
+}

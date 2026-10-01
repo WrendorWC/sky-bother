@@ -10,6 +10,8 @@ import { join, resolve, normalize } from 'node:path';
 // sky-survey thumbnails used where there's no photo. See src/lib/images.js.
 const catalog = fileURLToPath(new URL('../SkyBother/Catalog', import.meta.url));
 const folders = { photos: 'Images', sky: 'SkyThumbnails' };
+// Single files: Sky View's whole-sky map.
+const files = { 'starmap.jpg': 'StarMap.jpg' };
 
 function catalogImages() {
   let outDir;
@@ -21,6 +23,10 @@ function catalogImages() {
     configureServer(server) {
       server.middlewares.use('/catalog', (request, response, next) => {
         const [, folder, file] = request.url.split('?')[0].split('/');
+        if (files[folder] && !file) {
+          response.setHeader('Content-Type', 'image/jpeg');
+          return createReadStream(join(catalog, files[folder])).pipe(response);
+        }
         const directory = folders[folder];
         const path = directory && file && normalize(join(catalog, directory, decodeURIComponent(file)));
         if (!path || !path.startsWith(join(catalog, directory)) || !existsSync(path)) return next();
@@ -33,6 +39,7 @@ function catalogImages() {
       for (const [name, directory] of Object.entries(folders)) {
         cpSync(join(catalog, directory), join(outDir, 'catalog', name), { recursive: true });
       }
+      for (const [name, file] of Object.entries(files)) cpSync(join(catalog, file), join(outDir, 'catalog', name));
     },
   };
 }

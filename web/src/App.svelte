@@ -6,6 +6,7 @@
   import SitePanel from './lib/SitePanel.svelte';
   import SettingsPanel from './lib/SettingsPanel.svelte';
   import Catalog from './lib/Catalog.svelte';
+  import SkyView from './lib/SkyView.svelte';
   import { age } from './lib/format.js';
   import { isSetupHash, readSetup } from './lib/setupLink.js';
 
@@ -37,6 +38,9 @@
   const routeKey = $derived(routeMatch?.[1] ?? null);
   const routeTarget = $derived(routeMatch?.[2] ? decodeURIComponent(routeMatch[2]) : null);
   const showingCatalog = $derived(route === '#/catalog');
+  // #/sky/2026-10-01, or #/sky/2026-10-01/M76 with a target selected.
+  const skyMatch = $derived(/^#\/sky\/(\d{4}-\d{2}-\d{2})(?:\/(.+))?$/.exec(route));
+  const skyNight = $derived(skyMatch ? nights.find(n => n.planKey === skyMatch[1]) ?? null : null);
   const night = $derived(nights.find(n => n.planKey === routeKey) ?? nights[0] ?? null);
 
   function loadSettings() {
@@ -168,7 +172,7 @@
   refresh();
 </script>
 
-<div class="app" class:showing-night={routeKey != null || showingCatalog}>
+<div class="app" class:showing-night={routeKey != null || showingCatalog || skyMatch}>
   <header class="topbar">
     <a class="brand" href="#/">Sky Bother</a>
     {#if settings}
@@ -228,7 +232,7 @@
       <aside class="sidebar">
         <h3>Nights</h3>
         {#if nights.length}
-          <NightList {nights} selectedKey={showingCatalog ? null : night?.planKey} />
+          <NightList {nights} selectedKey={showingCatalog ? null : skyNight?.planKey ?? night?.planKey} />
         {:else if loading}
           <p class="muted">Loading forecast…</p>
         {/if}
@@ -239,7 +243,13 @@
       </aside>
 
       <main class="content">
-        {#if showingCatalog && nights.length}
+        {#if skyNight}
+          {#key skyNight.planKey}
+            <SkyView night={skyNight} timeZone={settings.site.timeZoneIdentifier}
+                     targetID={skyMatch[2] ? decodeURIComponent(skyMatch[2]) : null}
+                     showsClouds={settings.preferences.showsClouds ?? true} />
+          {/key}
+        {:else if showingCatalog && nights.length}
           <a class="back" href="#/">‹ All nights</a>
           <Catalog entries={catalog} {nights} timeZone={settings.site.timeZoneIdentifier} />
         {:else if night}

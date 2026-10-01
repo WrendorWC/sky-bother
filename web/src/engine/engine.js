@@ -49,3 +49,6 @@ export const targetDetail = request => send('targetDetail', request);
 
 /** Every target the last week was planned from (catalogue, custom, comets). */
 export const catalogEntries = () => send('catalog');
+
+/** Sky View's Sun, Moon, wind, horizon and signpost stars for a night: { planKey }. */
+export const skyTrack = request => send('skyTrack', request);

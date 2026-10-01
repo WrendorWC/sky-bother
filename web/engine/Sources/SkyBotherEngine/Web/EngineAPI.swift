@@ -121,6 +121,8 @@ public enum EngineAPI {
         var zenithRisk: TimeWindow?
         var fillFraction: Double
         var needsMosaic: Bool
+        var rightAscension: Double
+        var declination: Double
         var framingNote: String
         /// Only for targets that are usable at all: the rest never show a bar.
         /// To 0.1°, finer than a pixel on either chart: at full precision a
@@ -180,6 +182,7 @@ public enum EngineAPI {
     nonisolated(unsafe) private static var lastNights: [NightPlan] = []
     nonisolated(unsafe) private static var lastRig: Rig?
     nonisolated(unsafe) private static var lastSite: Site?
+    nonisolated(unsafe) private static var lastForecast: WeatherForecast = .empty
     nonisolated(unsafe) private static var lastPreferences: Preferences?
     /// Every target the week was planned from, comets placed for `now`.
     nonisolated(unsafe) private static var lastCatalog: [Target] = []
@@ -264,6 +267,7 @@ public enum EngineAPI {
                                   comets: request.cometElements.map(CometOrbit.parse) ?? [])
             let plans = planner.plan(from: request.now)
             lastNights = plans
+            lastForecast = forecast
             lastRig = request.rig
             lastSite = request.site
             lastPreferences = request.preferences
@@ -294,6 +298,7 @@ public enum EngineAPI {
                           bestTime: plan.bestTime, windows: plan.windows, bestWindow: plan.bestWindow,
                           zenithRisk: plan.bestWindowZenithRisk, fillFraction: plan.fit.fillFraction,
                           needsMosaic: plan.fit.needsMosaic,
+                          rightAscension: plan.target.rightAscension, declination: plan.target.declination,
                           framingNote: plan.fit.framingNote,
                           altitudeTrace: plan.usableMinutes > 0 || planned.contains(plan.id) ? plan.altitudeTrace.map { ($0 * 10).rounded() / 10 } : nil)
         }
@@ -345,6 +350,76 @@ public enum EngineAPI {
     }
 
     static func finite(_ value: Double) -> Double? { value.isFinite ? value : nil }
+
+    /// What Sky View needs beyond the page's own geometry (sidereal time,
+    /// horizontal coordinates and the dome projection are simple enough to do
+    /// in JavaScript with the same formulas): the Sun and Moon through the
+    /// night, the wind that carries the dome's clouds, the horizon and the
+    /// signpost stars. Every `stepMinutes` from `start`.
+    struct SkyTrack: Encodable {
+        var latitude: Double
+        var longitude: Double
+        /// Blocked altitude by compass sector, N, NE … NW (Site.horizonByDirection).
+        var horizon: [Double]
+        var start: Date
+        var stepMinutes: Double
+        /// [right ascension, declination] per step.
+        var sun: [[Double]]
+        /// [right ascension, declination, illuminated fraction, apparent diameter °, waxing 1/0] per step.
+        var moon: [[Double]]
+        /// [km/h toward east, km/h toward north] per step; wind direction is
+        /// where it blows from, so this is reversed (SkyView.windVector).
+        var wind: [[Double]]
+        var stars: [Star]
+    }
+
+    struct Star: Encodable {
+        var name: String
+        var rightAscension: Double
+        var declination: Double
+    }
+
+    struct TrackRequest: Decodable { var planKey: String }
+
+    /// Sky View's data for a night of the last week planned, from an hour
+    /// before the chart window to an hour after.
+    public static func skyTrack(_ requestJSON: Data) -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        guard let request = try? JSONDecoder().decode(TrackRequest.self, from: requestJSON),
+              let night = lastNights.first(where: { $0.planKey == request.planKey })
+        else {
+            return (try? encoder.encode(Failure(error: "No such night."))) ?? Data()
+        }
+        let step = 10.0
+        let start = night.chartWindow.start.addingTimeInterval(-3600)
+        let count = Int((night.chartWindow.duration + 7200) / (step * 60)) + 1
+        var sun: [[Double]] = [], moon: [[Double]] = [], wind: [[Double]] = []
+        for index in 0..<count {
+            let date = start.addingTimeInterval(Double(index) * step * 60)
+            let d = date.daysSinceJ2000
+            let sunPosition = Sun.position(daysSinceJ2000: d)
+            sun.append([sunPosition.rightAscension, sunPosition.declination])
+            let moonPosition = Moon.position(daysSinceJ2000: d)
+            moon.append([moonPosition.coordinate.rightAscension, moonPosition.coordinate.declination,
+                         Moon.illuminatedFraction(daysSinceJ2000: d),
+                         (3474.8 / moonPosition.distanceKilometers) * (180 / Double.pi),
+                         Moon.isWaxing(daysSinceJ2000: d) ? 1 : 0])
+            if let hour = lastForecast.interpolated(at: date) {
+                let toward = ((hour.windDirectionDegrees ?? 270) + 180) * .pi / 180
+                wind.append([sin(toward) * hour.windSpeedKilometersPerHour, cos(toward) * hour.windSpeedKilometersPerHour])
+            } else {
+                wind.append([0, 0])
+            }
+        }
+        let track = SkyTrack(latitude: night.site.latitude, longitude: night.site.longitude,
+                             horizon: night.site.horizonByDirection, start: start, stepMinutes: step,
+                             sun: sun, moon: moon, wind: wind,
+                             stars: BuiltInCatalog.signpostStars.map {
+                                 Star(name: $0.displayName, rightAscension: $0.rightAscension, declination: $0.declination)
+                             })
+        return (try? encoder.encode(track)) ?? Data()
+    }
 
     struct TargetRequest: Decodable {
         var planKey: String

@@ -96,6 +96,10 @@
         </button>
       {/if}
       {#if night.limitation}<p class="muted-strong limitation">ⓘ Main limitation: {night.limitation}</p>{/if}
+      <a class="sky-link" href="#/sky/{night.planKey}{selectedID ? `/${encodeURIComponent(selectedID)}` : ''}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
+        Open Sky View
+      </a>
     </div>
   </section>
 
@@ -227,6 +231,11 @@
     font-size: 12px; font-weight: 600; color: var(--marginal); padding: 2px 7px;
     border-radius: 999px; background: rgba(242, 179, 61, 0.15);
   }
+  .sky-link {
+    justify-self: start; display: inline-flex; gap: 6px; align-items: center; margin-top: 4px;
+    color: var(--accent); text-decoration: none; font-weight: 600;
+  }
+  .sky-link svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; }
   .best { justify-self: start; display: flex; gap: 6px; align-items: baseline; padding: 0; background: none; border: none; font-weight: 500; }
   .best .label { color: var(--accent); font-size: 12px; font-weight: 600; }
   .chevron { color: var(--accent); }

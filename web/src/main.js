@@ -16,7 +16,11 @@ function showError(message) {
   }
   box.textContent = `Something went wrong: ${message} (tap to dismiss)`;
 }
-addEventListener('error', event => showError(event.message || String(event.error)));
+// ResizeObserver's loop notice is the browser being chatty, not a failure.
+addEventListener('error', event => {
+  if (/ResizeObserver loop/.test(event.message ?? '')) return;
+  showError(event.message || String(event.error));
+});
 addEventListener('unhandledrejection', event => showError(event.reason?.message ?? String(event.reason)));
 
 mount(App, { target: document.getElementById('app') });

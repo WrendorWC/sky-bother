@@ -147,7 +147,24 @@ panel (rig preset, kind of night, cloud limit, units); thumbnails and target det
 - Night "Why this score": the four sky factors with points lost, and the best-target cap
   when it applies (EngineAPI sends skyScore, cappedBy, factor impacts). The Mac app has no
   night breakdown yet.
-- Phase 1 left: first Cloudflare Pages deploy.
+- Deployed 2026-10-01: https://skybother.com, a Cloudflare Worker serving web/dist
+  (`wrangler.jsonc`), rebuilt on every push to main. Also added that day: postal-code search
+  (Nominatim), setup links (`#setup=`, Mac File → Copy Web Setup Link / Open on the Web),
+  https enforced.
+
+## Phase 2 progress
+
+**Session 1 (2026-10-01):** Sky View at `#/sky/date(/target)`, opened from each night.
+- `domeShader.js` ports `skyDome` from SkyDome.metal (star map, twilight, moonlight,
+  representative clouds drifting with the wind), clipped to the horizon profile; the dome
+  scales so the visible sky fills the space.
+- `sky.js` has the Mac's sidereal time, horizontal coordinates and projection; the engine's
+  `skyTrack` supplies the Sun, Moon, wind, horizon and signpost stars; target summaries now
+  carry RA/Dec.
+- Overlay: rim, 30°/60° rings, pole, N/E/S/W, signpost star names, Sun, Moon, the selected
+  target's daily path and brackets. Play (night in ~25 s), Now, scrubber, plan strip jumps.
+- Not yet: the camera frame to scale (CameraFrame.footprint), playback modes ("follow
+  planned targets"), zenith-risk path colouring, Session View, tapping a target on the dome.
 - Target detail shows the photo only; the Mac's frame-to-scale preview comes with the
   Aladin Lite sky browser (Phase 2).
 
