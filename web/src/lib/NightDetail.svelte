@@ -160,7 +160,7 @@
       <ol class="panel blocks">
         {#each night.plan as block (block.targetID + block.window.start)}
           {@const target = scoreOf(block.targetID)}
-          <li>
+          <li class:selected={selectedID === block.targetID}>
             <button type="button" class="block" class:selected={selectedID === block.targetID} onclick={() => select(block.targetID)}>
               <ScoreBadge score={target?.score ?? 0} size={30} />
               <div class="block-body">
@@ -256,7 +256,7 @@
   }
   .block:hover { background: rgba(158, 133, 250, 0.07); }
   .block.selected { box-shadow: inset 3px 0 0 var(--accent); }
-  .blocks li:has(.block.selected) { background: rgba(158, 133, 250, 0.18); }
+  .blocks li.selected { background: rgba(158, 133, 250, 0.18); }
   .block-body { flex: 1; min-width: 0; display: grid; gap: 2px; }
   .block-bar { margin-top: 2px; }
   .block-body > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

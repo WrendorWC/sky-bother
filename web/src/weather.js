@@ -20,13 +20,17 @@ export async function fetchForecast(latitude, longitude, nights) {
   const first = await Promise.race([both.then(text => ({ text }), error => ({ error })), head]);
   if (first !== 'slow' && first.text) return first.text;
   const alone = fetchJSONText(url('best_match'));
-  return Promise.any([both, alone]).catch(failure => { throw failure.errors?.at(-1) ?? failure; });
+  return Promise.any([both, alone]).catch(failure => { throw failure.errors?.[failure.errors.length - 1] ?? failure; });
 }
 
 /** The body, if it's a JSON object with an hourly forecast; throws otherwise. */
 async function fetchJSONText(url) {
   // Like the Mac app's 8 s: a healthy answer takes well under a second.
-  const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
+  // (An AbortController rather than AbortSignal.timeout, which older
+  // iPhones don't have.)
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  const response = await fetch(url, { cache: 'no-store', signal: controller.signal }).finally(() => clearTimeout(timer));
   if (!response.ok) throw new Error(`Weather service returned HTTP ${response.status}.`);
   const text = await response.text();
   try {

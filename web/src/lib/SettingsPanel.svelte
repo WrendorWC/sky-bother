@@ -4,6 +4,7 @@
   // and units. The Mac app's Settings has the rest; Import Mac Settings
   // brings those over.
   import { duration } from './format.js';
+  import { uuid } from './uuid.js';
 
   let { settings, rigPresets, onchange, ondone } = $props();
 
@@ -30,7 +31,7 @@
   function chooseRig(index) {
     if (index < 0) return;
     // Applying a preset is a fresh rig, as Settings → Equipment does.
-    onchange({ ...settings, rig: { ...rigPresets[index], id: crypto.randomUUID().toUpperCase() } });
+    onchange({ ...settings, rig: { ...rigPresets[index], id: uuid() } });
   }
 
   function setFilter(on) {

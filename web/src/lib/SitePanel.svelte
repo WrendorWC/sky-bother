@@ -2,6 +2,7 @@
   // Choosing where you observe from: a town, your location, or the Mac app's
   // settings file. Same starting values as Site.unset in the Mac app.
   import { searchPlaces, elevationAt } from '../weather.js';
+  import { uuid } from './uuid.js';
 
   let { settings, onsite, onimport, onbortle, oncancel } = $props();
 
@@ -11,7 +12,7 @@
   let busy = $state('');
 
   function newSite(fields) {
-    return { id: crypto.randomUUID().toUpperCase(), bortleClass: 5, horizonAltitude: 20, ...fields };
+    return { id: uuid(), bortleClass: 5, horizonAltitude: 20, ...fields };
   }
 
   async function search() {

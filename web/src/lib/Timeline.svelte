@@ -82,7 +82,7 @@
       const perHour = Math.max(1, Math.round(60 / interval));
       const indices = [];
       for (let i = 0; i < n; i += perHour) indices.push(i);
-      if (indices.at(-1) !== n - 1) indices.push(n - 1);
+      if (indices[indices.length - 1] !== n - 1) indices.push(n - 1);
       const depth = height * 0.68;
       const points = indices
         .filter(i => samples[i].cloudCover != null)
