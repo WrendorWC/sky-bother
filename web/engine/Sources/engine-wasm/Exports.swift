@@ -49,3 +49,10 @@ public func sbTargetDetail(_ pointer: UnsafeRawPointer, _ count: Int32) -> Unsaf
     lastResult = Array(EngineAPI.targetDetail(Data(bytes: pointer, count: Int(count))))
     return lastResult.withUnsafeBytes { UnsafeRawPointer($0.baseAddress!) }
 }
+
+@_expose(wasm, "sb_catalog")
+@_cdecl("sb_catalog")
+public func sbCatalog() -> UnsafeRawPointer {
+    lastResult = Array(EngineAPI.catalogEntries())
+    return lastResult.withUnsafeBytes { UnsafeRawPointer($0.baseAddress!) }
+}

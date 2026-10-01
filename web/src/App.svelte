@@ -1,16 +1,18 @@
 <script>
-  import { defaults, planNights } from './engine/engine.js';
+  import { defaults, planNights, catalogEntries } from './engine/engine.js';
   import { fetchForecast, fetchCometElements } from './weather.js';
   import NightList from './lib/NightList.svelte';
   import NightDetail from './lib/NightDetail.svelte';
   import SitePanel from './lib/SitePanel.svelte';
   import SettingsPanel from './lib/SettingsPanel.svelte';
+  import Catalog from './lib/Catalog.svelte';
   import { age } from './lib/format.js';
 
   const storageKey = 'skybother.settings.v1';
 
   let settings = $state(loadSettings());
   let nights = $state([]);
+  let catalog = $state([]);
   let loading = $state(false);
   let error = $state('');
   let updatedAt = $state(null);
@@ -28,6 +30,7 @@
   const routeMatch = $derived(/^#\/(\d{4}-\d{2}-\d{2})(?:\/(.+))?$/.exec(route));
   const routeKey = $derived(routeMatch?.[1] ?? null);
   const routeTarget = $derived(routeMatch?.[2] ? decodeURIComponent(routeMatch[2]) : null);
+  const showingCatalog = $derived(route === '#/catalog');
   const night = $derived(nights.find(n => n.planKey === routeKey) ?? nights[0] ?? null);
 
   function loadSettings() {
@@ -105,6 +108,7 @@
   async function plan() {
     const { openMeteoResponse, cometElements } = fetched;
     nights = await planNights({ ...$state.snapshot(settings), openMeteoResponse, cometElements, now: new Date().toISOString().replace(/\.\d+Z$/, 'Z') });
+    catalog = await catalogEntries();
   }
 
   $effect(() => {
@@ -118,10 +122,11 @@
   refresh();
 </script>
 
-<div class="app" class:showing-night={routeKey != null}>
+<div class="app" class:showing-night={routeKey != null || showingCatalog}>
   <header class="topbar">
     <a class="brand" href="#/">Sky Bother</a>
     {#if settings}
+      <a class="nav" href="#/catalog" aria-current={showingCatalog ? 'page' : undefined}>Catalog</a>
       <button type="button" class="site-button" onclick={() => { editingSite = !editingSite; editingSettings = false; }} title="Change site">
         {settings.site.name || 'Unnamed site'} <span aria-hidden="true">▾</span>
       </button>
@@ -153,7 +158,7 @@
       <aside class="sidebar">
         <h3>Nights</h3>
         {#if nights.length}
-          <NightList {nights} selectedKey={night?.planKey} />
+          <NightList {nights} selectedKey={showingCatalog ? null : night?.planKey} />
         {:else if loading}
           <p class="muted">Loading forecast…</p>
         {/if}
@@ -164,7 +169,10 @@
       </aside>
 
       <main class="content">
-        {#if night}
+        {#if showingCatalog && nights.length}
+          <a class="back" href="#/">‹ All nights</a>
+          <Catalog entries={catalog} {nights} timeZone={settings.site.timeZoneIdentifier} />
+        {:else if night}
           <a class="back" href="#/">‹ All nights</a>
           {#key night.planKey}
             <NightDetail {night} isTonight={night.planKey === nights[0]?.planKey}
@@ -180,13 +188,15 @@
 </div>
 
 <style>
-  .app { max-width: 1280px; margin: 0 auto; padding: 0 16px 48px; }
+  .app { max-width: 1760px; margin: 0 auto; padding: 0 16px 48px; }
   .topbar {
     position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px;
     padding: 12px 0; background: var(--space-top); border-bottom: 1px solid var(--panel-border);
   }
-  .brand { font-weight: 700; font-size: 19px; color: var(--text); text-decoration: none; margin-right: auto; }
-  .site-button { background: none; border-color: transparent; color: var(--muted); max-width: 50vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .brand { font-weight: 700; font-size: 19px; color: var(--text); text-decoration: none; margin-right: auto; white-space: nowrap; }
+  .nav { color: var(--muted); text-decoration: none; font-weight: 600; padding: 6px 4px; }
+  .nav[aria-current='page'], .nav:hover { color: var(--accent); }
+  .site-button { background: none; border-color: transparent; color: var(--muted); min-width: 0; max-width: 50vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .icon { width: 36px; padding: 6px 0; }
   .spinning { display: inline-block; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }

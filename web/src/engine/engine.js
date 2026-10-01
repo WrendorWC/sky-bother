@@ -28,3 +28,6 @@ export const planNights = request => send('planNights', request);
 
 /** One target on one night of the last week planned: { planKey, targetID }. */
 export const targetDetail = request => send('targetDetail', request);
+
+/** Every target the last week was planned from (catalogue, custom, comets). */
+export const catalogEntries = () => send('catalog');

@@ -7,12 +7,32 @@ const hourly = ['cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cove
 
 export async function fetchForecast(latitude, longitude, nights) {
   const days = Math.min(16, Math.max(2, nights + 1));
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(4)}&longitude=${longitude.toFixed(4)}` +
+  const url = models => `https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(4)}&longitude=${longitude.toFixed(4)}` +
     `&hourly=${hourly.join(',')}&timeformat=unixtime&timezone=UTC&wind_speed_unit=kmh&temperature_unit=celsius` +
-    `&forecast_days=${days}&models=best_match,ncep_nbm_conus`;
-  const response = await fetch(url, { cache: 'no-store' });
+    `&forecast_days=${days}&models=${models}`;
+  // Both models, as the Mac app asks. When that request stalls or comes back
+  // broken (Open-Meteo's NBM backend sometimes does), Open-Meteo's own model
+  // alone still gives a forecast; the Mac app falls back to MET Norway
+  // instead, which a browser can't reach without a proxy.
+  try {
+    return await fetchJSONText(url('best_match,ncep_nbm_conus'));
+  } catch {
+    return fetchJSONText(url('best_match'));
+  }
+}
+
+/** The body, if it's a JSON object with an hourly forecast; throws otherwise. */
+async function fetchJSONText(url) {
+  // Like the Mac app's 8 s: a healthy answer takes well under a second.
+  const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
   if (!response.ok) throw new Error(`Weather service returned HTTP ${response.status}.`);
-  return response.text();
+  const text = await response.text();
+  try {
+    if (!JSON.parse(text).hourly) throw new Error();
+  } catch {
+    throw new Error('The weather service sent back an unreadable forecast.');
+  }
+  return text;
 }
 
 /** Towns and places, with their time zone and elevation, from Open-Meteo. */

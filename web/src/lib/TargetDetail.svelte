@@ -8,9 +8,11 @@
   import VerdictTag from './VerdictTag.svelte';
   import { targetImage } from './images.js';
   import { verdictColor, verdictFor } from './palette.js';
-  import { time, degrees } from './format.js';
+  import { time, degrees, weekday, dayAndMonth, hours } from './format.js';
 
-  let { night, targetID, timeZone, onclose } = $props();
+  // `inline`: a permanent column on a wide screen, not a drawer.
+  // `nights`, when given, lets the panel point to a better night this week.
+  let { night, targetID, timeZone, onclose = null, inline = false, nights = null } = $props();
 
   let detail = $state(null);
   let error = $state('');
@@ -26,8 +28,23 @@
   const image = $derived(detail && targetImage(detail.designation));
   const blocks = $derived(night.plan.filter(b => b.targetID === targetID));
 
+  // "Better on Sunday", as the Mac's catalogue card says: the week's best
+  // night for this target, when it isn't this one.
+  const better = $derived.by(() => {
+    if (!nights) return null;
+    const here = night.targets.find(t => t.id === targetID && t.usableMinutes > 0)?.score ?? -1;
+    let best = null;
+    nights.forEach((n, i) => {
+      const t = n.targets.find(t => t.id === targetID && t.usableMinutes > 0);
+      if (t && n.planKey !== night.planKey && t.score > here + 0.5 && (!best || t.score > best.target.score)) {
+        best = { night: n, target: t, name: `${i === 0 ? 'tonight' : weekday(n.planKey)} ${dayAndMonth(n.planKey)}` };
+      }
+    });
+    return best;
+  });
+
   function onkeydown(event) {
-    if (event.key === 'Escape') onclose();
+    if (event.key === 'Escape' && !inline) onclose?.();
   }
 
   // FactorBar's colour for the points lost.
@@ -36,9 +53,13 @@
 
 <svelte:window {onkeydown} />
 
-<div class="backdrop" onclick={onclose} aria-hidden="true"></div>
-<aside class="drawer" aria-label="Target details">
-  <button type="button" class="close" onclick={onclose} aria-label="Close">✕</button>
+{#if !inline}<div class="backdrop" onclick={onclose} aria-hidden="true"></div>{/if}
+<aside class="drawer" class:inline aria-label="Target details">
+  {#if inline}
+    <h3 class="column-title">Selected target</h3>
+  {:else}
+    <button type="button" class="close" onclick={onclose} aria-label="Close">✕</button>
+  {/if}
   {#if error}
     <p class="error">{error}</p>
   {:else if detail}
@@ -47,18 +68,22 @@
         <h2>{detail.displayName}</h2>
         <p class="muted-strong">{detail.subtitle}</p>
       </div>
-      <ScoreBadge score={detail.score} size={50} />
+      {#if detail.scored}<ScoreBadge score={detail.score} size={50} />{/if}
     </header>
     <div class="verdict-row">
-      <VerdictTag verdict={detail.verdict} />
+      {#if detail.scored}<VerdictTag verdict={detail.verdict} />{/if}
       <span class="muted-strong">{detail.recommendation}</span>
     </div>
     <p class="sentence">{detail.verdictSentence}</p>
+    {#if better}
+      <p class="better">Better on {better.name} · {Math.round(better.target.score)} {verdictFor(better.target.score)} · {hours(better.target.usableMinutes / 60)} usable</p>
+    {/if}
 
     {#if blocks.length}
       <p class="planned">✓ Planned · {blocks.map(b => `${time(b.window.start, timeZone)}–${time(b.window.end, timeZone)}`).join(', ')}</p>
     {/if}
 
+    {#if detail.scored}
     <section>
       <h3>Through the night</h3>
       {#if detail.transitTime}<p class="muted-strong">Highest at {time(detail.transitTime, timeZone)} · {degrees(detail.maximumAltitude)}</p>{/if}
@@ -69,13 +94,14 @@
         <p class="warn">⚠︎ Zenith risk {time(detail.zenithRisk.start, timeZone)}–{time(detail.zenithRisk.end, timeZone)}</p>
       {/if}
     </section>
+    {/if}
 
     <section>
       <h3>Framing</h3>
       {#if image}
         <img class="photo" src={image.url} alt={detail.displayName} />
       {/if}
-      <p>{detail.framingNote}</p>
+      {#if detail.framingNote}<p>{detail.framingNote}</p>{/if}
       {#if detail.samplingNote}<p class="muted">{detail.samplingNote}</p>{/if}
       <p class="muted faint">{detail.rigSummary}</p>
       {#if image}
@@ -108,6 +134,7 @@
       </section>
     {/if}
 
+    {#if detail.scored}
     <section>
       <h3>Why this score</h3>
       {#each detail.factors as factor}
@@ -124,6 +151,7 @@
       {/each}
       {#if detail.filterNote}<p class="muted">{detail.filterNote}</p>{/if}
     </section>
+    {/if}
 
     <section>
       <button type="button" class="disclosure" onclick={() => (showsTechnical = !showsTechnical)} aria-expanded={showsTechnical}>
@@ -148,6 +176,13 @@
     background: linear-gradient(var(--space-top), var(--space-bottom)); border-left: 1px solid var(--panel-border);
     box-shadow: -12px 0 40px rgba(0, 0, 0, 0.4);
   }
+  .drawer.inline {
+    position: sticky; top: 72px; z-index: auto; width: auto; max-height: calc(100vh - 88px);
+    padding: 16px; border: 1px solid var(--panel-border); border-radius: 14px; box-shadow: none;
+    background: var(--panel);
+  }
+  .inline header { padding-right: 0; }
+  .column-title { margin: 0; }
   .close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; padding: 0; border-radius: 50%; }
   header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding-right: 40px; }
   h2 { margin: 0; font-size: 22px; }
@@ -157,6 +192,7 @@
   .verdict-row { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; margin-top: -6px; }
   .sentence { font-weight: 500; }
   .planned { color: var(--accent); font-weight: 600; }
+  .better { color: var(--accent); }
   .warn { color: var(--marginal); }
   .photo { width: 100%; max-height: 300px; object-fit: cover; border-radius: 10px; border: 1px solid var(--panel-border); }
   .faint { color: var(--tertiary); }

@@ -113,6 +113,7 @@ public enum EngineAPI {
         var bestWindow: TimeWindow?
         var zenithRisk: TimeWindow?
         var fillFraction: Double
+        var needsMosaic: Bool
         var framingNote: String
         /// Only for targets that are usable at all: the rest never show a bar.
         /// To 0.1°, finer than a pixel on either chart: at full precision a
@@ -125,6 +126,9 @@ public enum EngineAPI {
     /// The selected-target panel (TargetDetailView), worded by the same
     /// shared functions the Mac app uses.
     struct TargetDetail: Encodable {
+        /// False for a target with no usable time on the night: the rest is
+        /// then just the catalogue's card, and `verdictSentence` says why.
+        var scored: Bool
         var id: String
         var displayName: String
         var designation: String
@@ -168,6 +172,38 @@ public enum EngineAPI {
     /// The last week planned, so a target's detail is a lookup, not a re-plan.
     nonisolated(unsafe) private static var lastNights: [NightPlan] = []
     nonisolated(unsafe) private static var lastRig: Rig?
+    nonisolated(unsafe) private static var lastSite: Site?
+    nonisolated(unsafe) private static var lastPreferences: Preferences?
+    /// Every target the week was planned from, comets placed for `now`.
+    nonisolated(unsafe) private static var lastCatalog: [Target] = []
+
+    /// One row of the catalogue browser.
+    struct CatalogEntry: Encodable {
+        var id: String
+        var displayName: String
+        var designation: String
+        var commonName: String?
+        var type: String
+        /// TargetType.filterName: what the type filter calls it.
+        var typeName: String
+        var constellation: String
+        var magnitude: Double
+        var majorAxisArcminutes: Double
+        var searchText: String
+    }
+
+    /// The whole catalogue of the last week planned.
+    public static func catalogEntries() -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let entries = lastCatalog.map {
+            CatalogEntry(id: $0.id, displayName: $0.displayName, designation: $0.designation,
+                         commonName: $0.commonName, type: $0.type.rawValue, typeName: $0.type.filterName,
+                         constellation: $0.constellationName, magnitude: $0.magnitude,
+                         majorAxisArcminutes: $0.majorAxisArcminutes, searchText: $0.searchText)
+        }
+        return (try? encoder.encode(entries)) ?? Data()
+    }
 
     /// The catalogue's extended part ships as JSON next to the page rather
     /// than inside the binary; `BuiltInCatalog.extended` reads it from the
@@ -222,6 +258,10 @@ public enum EngineAPI {
             let plans = planner.plan(from: request.now)
             lastNights = plans
             lastRig = request.rig
+            lastSite = request.site
+            lastPreferences = request.preferences
+            let comets = request.cometElements.map(CometOrbit.parse) ?? []
+            lastCatalog = catalog + (request.customTargets ?? []) + comets.compactMap { $0.target(at: request.now) }
             return try encoder.encode(plans.map { summary($0, preferences: request.preferences) })
         } catch {
             return (try? encoder.encode(Failure(error: String(describing: error)))) ?? Data()
@@ -241,6 +281,7 @@ public enum EngineAPI {
                           usableMinutes: plan.usableMinutes, maximumAltitude: plan.maximumAltitude,
                           bestTime: plan.bestTime, windows: plan.windows, bestWindow: plan.bestWindow,
                           zenithRisk: plan.bestWindowZenithRisk, fillFraction: plan.fit.fillFraction,
+                          needsMosaic: plan.fit.needsMosaic,
                           framingNote: plan.fit.framingNote,
                           altitudeTrace: plan.usableMinutes > 0 || planned.contains(plan.id) ? plan.altitudeTrace.map { ($0 * 10).rounded() / 10 } : nil)
         }
@@ -303,12 +344,45 @@ public enum EngineAPI {
         encoder.outputFormatting = [.sortedKeys]
         guard let request = try? JSONDecoder().decode(TargetRequest.self, from: requestJSON),
               let night = lastNights.first(where: { $0.planKey == request.planKey }),
-              let plan = night.targets.first(where: { $0.id == request.targetID }),
               let rig = lastRig
         else {
-            return (try? encoder.encode(Failure(error: "No such target on that night."))) ?? Data()
+            return (try? encoder.encode(Failure(error: "No such night."))) ?? Data()
         }
-        return (try? encoder.encode(detail(plan, night: night, rig: rig))) ?? Data()
+        if let plan = night.targets.first(where: { $0.id == request.targetID }) {
+            return (try? encoder.encode(detail(plan, night: night, rig: rig))) ?? Data()
+        }
+        guard let target = lastCatalog.first(where: { $0.id == request.targetID }) else {
+            return (try? encoder.encode(Failure(error: "No such target."))) ?? Data()
+        }
+        return (try? encoder.encode(unscoredDetail(target, rig: rig))) ?? Data()
+    }
+
+    /// The catalogue's card for a target with nothing usable on the night.
+    static func unscoredDetail(_ target: Target, rig: Rig) -> TargetDetail {
+        let minimum = lastPreferences?.minimumUsefulAltitude ?? 30
+        let reason: String
+        if let site = lastSite, !target.isEverVisible(latitude: site.latitude, aboveAltitude: minimum) {
+            reason = "Never gets above your minimum altitude of \(Format.degrees(minimum)) from here."
+        } else {
+            reason = "Not above your minimum altitude while it's dark on this night."
+        }
+        var numbers = [
+            Number(label: "Coordinates", value: Format.coordinates(target.coordinate)),
+            Number(label: "Magnitude", value: String(format: "%.1f", target.magnitude)),
+            Number(label: "Apparent size", value: target.sizeSummary),
+        ]
+        if !target.type.isStarField {
+            numbers.append(Number(label: "Surface brightness", value: String(format: "%.1f mag/arcsec²", target.surfaceBrightness)))
+        }
+        return TargetDetail(
+            scored: false, id: target.id, displayName: target.displayName, designation: target.designation,
+            subtitle: "\(target.designation) · \(target.type.displayName)\(target.inConstellation)",
+            score: 0, verdict: "", recommendation: "Not usable on this night", verdictSentence: reason,
+            transitTime: nil, maximumAltitude: 0, bestWindow: nil, zenithRisk: nil,
+            framingNote: "", samplingNote: nil,
+            rigSummary: "\(rig.name) · \(rig.fieldOfViewSummary) · \(rig.opticalSummary)",
+            whyNot: [], warnings: [], facts: CuratedFacts.facts(for: target.designation), factors: [],
+            filterNote: nil, numbers: numbers)
     }
 
     static func detail(_ plan: TargetPlan, night: NightPlan, rig: Rig) -> TargetDetail {
@@ -334,6 +408,7 @@ public enum EngineAPI {
             numbers.append(Number(label: "Peak field rotation", value: String(format: "%.1f°/h", plan.maximumFieldRotation)))
         }
         return TargetDetail(
+            scored: true,
             id: plan.id,
             displayName: target.displayName,
             designation: target.designation,

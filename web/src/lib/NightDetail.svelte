@@ -31,6 +31,21 @@
     chosenFor = night.planKey;
   }
 
+  // A wide screen keeps the selected target's details in a column of their
+  // own, as the Mac's wide layout does; narrower ones open them in a drawer.
+  const wideQuery = matchMedia('(min-width: 1360px)');
+  let wide = $state(wideQuery.matches);
+  $effect(() => {
+    const changed = () => (wide = wideQuery.matches);
+    wideQuery.addEventListener('change', changed);
+    return () => wideQuery.removeEventListener('change', changed);
+  });
+
+  // A target's link selects it (and, on a wide screen, shows it in the column).
+  $effect(() => {
+    if (targetID && night.targets.some(t => t.id === targetID)) select(targetID);
+  });
+
   /** The target's details, at its own link; selects it too. */
   function open(id) {
     select(id);
@@ -59,6 +74,7 @@
   const scoreOf = id => night.targets.find(t => t.id === id);
 </script>
 
+<div class="night-layout" class:wide>
 <article class="detail">
   <section class="panel summary">
     <ScoreBadge score={night.score} size={58} />
@@ -169,11 +185,16 @@
   {/if}
 </article>
 
-{#if targetID}
+{#if wide && selected}
+  <TargetDetail {night} targetID={selected.id} {timeZone} inline />
+{:else if !wide && targetID}
   <TargetDetail {night} {targetID} {timeZone} onclose={closeDetail} />
 {/if}
+</div>
 
 <style>
+  .night-layout { display: grid; gap: 24px; }
+  .night-layout.wide { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; }
   .detail { display: grid; gap: 14px; min-width: 0; }
   .summary { display: flex; gap: 16px; align-items: center; padding: 16px; border-radius: 14px; }
   .summary-body { display: grid; gap: 6px; min-width: 0; }
