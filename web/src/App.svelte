@@ -177,9 +177,17 @@
         {settings.site.name || 'Unnamed site'} <span aria-hidden="true">▾</span>
       </button>
       <button type="button" class="icon" onclick={() => { editingSettings = !editingSettings; editingSite = false; }}
-              title="Settings" aria-label="Settings" aria-expanded={editingSettings}>⚙︎</button>
+              title="Settings" aria-label="Settings" aria-expanded={editingSettings}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.5 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      </button>
       <button type="button" class="icon" onclick={refresh} disabled={loading} title="Fetch the latest forecast" aria-label="Refresh">
-        <span class:spinning={loading}>↻</span>
+        <svg class:spinning={loading} viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+          <path d="M20 4v5h-5" />
+        </svg>
       </button>
     {/if}
   </header>
@@ -259,7 +267,8 @@
   .nav { color: var(--muted); text-decoration: none; font-weight: 600; padding: 6px 4px; }
   .nav[aria-current='page'], .nav:hover { color: var(--accent); }
   .site-button { background: none; border-color: transparent; color: var(--muted); min-width: 0; max-width: 50vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .icon { width: 36px; padding: 6px 0; }
+  .icon { width: 40px; height: 40px; padding: 0; display: grid; place-items: center; flex: none; }
+  .icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .spinning { display: inline-block; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .site-area { margin-top: 14px; }
