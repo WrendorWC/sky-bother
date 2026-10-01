@@ -71,7 +71,9 @@
       error = `Sky Bother couldn't start on this browser: ${e.message}`;
       return;
     }
-    settings = { rig: base.rig, preferences: base.preferences, customTargets: base.customTargets ?? [], site };
+    // Saved sites and rigs come along (a fresh browser has none yet).
+    settings = { ...base, rig: base.rig, preferences: base.preferences, customTargets: base.customTargets ?? [], site };
+    delete settings.rigPresets;
     editingSite = false;
     saveSettings();
     refresh();
@@ -162,6 +164,12 @@
   // The rig every frame drawing uses (Sky View, "In your frame").
   $effect(() => {
     view.rig = settings?.rig ?? null;
+  });
+
+  // Night mode: everything in shades of red (app.css), to keep your eyes
+  // dark-adapted at the scope.
+  $effect(() => {
+    document.documentElement.classList.toggle('night-mode', !!settings?.preferences?.nightMode);
   });
 
   $effect(() => {
@@ -257,7 +265,7 @@
           {/key}
         {:else if showingCatalog && nights.length}
           <a class="back" href="#/">‹ All nights</a>
-          <Catalog entries={catalog} {nights} timeZone={settings.site.timeZoneIdentifier} />
+          <Catalog entries={catalog} {nights} timeZone={settings.site.timeZoneIdentifier} preferences={settings.preferences} />
         {:else if night}
           <a class="back" href="#/">‹ All nights</a>
           {#key night.planKey}

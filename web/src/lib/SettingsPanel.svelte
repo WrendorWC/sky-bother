@@ -1,11 +1,12 @@
 <script>
-  // The few settings that change the scores, set the guided way: a rig
+  // The few settings that change the scores most, set the guided way: a rig
   // preset, the kind of night you want, how much cloud you'll put up with,
-  // and units. The Mac app's Settings has the rest; Import Mac Settings
-  // brings those over.
+  // and units. Everything else the Mac's Settings has is under "More
+  // settings" (MoreSettings.svelte), closed by default.
   import { duration } from './format.js';
   import { uuid } from './uuid.js';
   import { setupLink } from './setupLink.js';
+  import MoreSettings from './MoreSettings.svelte';
 
   let { settings, rigPresets, onchange, ondone } = $props();
 
@@ -73,6 +74,7 @@
     } catch {}
   }
   const canShare = typeof navigator.share === 'function';
+  let showsMore = $state(false);
 
   function setImperial(on) {
     onchange({ ...settings, preferences: { ...settings.preferences, usesImperialUnits: on } });
@@ -126,6 +128,12 @@
     <span>Use Fahrenheit and mph</span>
   </label>
 
+  <button type="button" class="disclosure" onclick={() => (showsMore = !showsMore)} aria-expanded={showsMore}>
+    {showsMore ? '▾' : '▸'} More settings
+    <span class="muted">site, horizon, your own rig, darkness, altitude, what to show, night mode</span>
+  </button>
+  {#if showsMore}<MoreSettings {settings} {onchange} />{/if}
+
   <div class="row">
     <span class="label">Use this setup elsewhere</span>
     <div class="link-buttons">
@@ -151,4 +159,6 @@
   .segments button.on { background: rgba(158, 133, 250, 0.25); border-color: var(--accent); }
   p { margin: 0; }
   .link-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+  .disclosure { display: grid; gap: 2px; text-align: left; background: none; border: none; padding: 0; font-weight: 600; color: var(--accent); }
+  .disclosure .muted { font-weight: 400; }
 </style>

@@ -9,7 +9,14 @@
   import { verdictFor, verdictColor } from './palette.js';
   import { weekday, dayAndMonth, hours } from './format.js';
 
-  let { entries, nights, timeZone } = $props();
+  let { entries, nights, timeZone, preferences = {} } = $props();
+
+  // Bright stars and comets start hidden when Settings says so; choosing
+  // their type in the filter still shows them (AppState's hidden types).
+  const hiddenTypes = $derived(new Set([
+    ...(preferences.includeStars === false ? ['star'] : []),
+    ...(preferences.includeComets === false ? ['comet'] : []),
+  ]));
 
   let search = $state('');
   let types = $state(new Set());
@@ -42,6 +49,7 @@
     const byNight = goodOnly || fitsFrameOnly || minimumHours > 0;
     const filtered = entries.filter(entry => {
       if (types.size && !types.has(entry.typeName)) return false;
+      if (!types.size && hiddenTypes.has(entry.type)) return false;
       if (query && !entry.searchText.includes(query)) return false;
       if (!byNight) return true;
       const result = scored.get(entry.id);

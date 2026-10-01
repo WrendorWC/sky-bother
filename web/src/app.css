@@ -35,3 +35,8 @@ button, .button { cursor: pointer; background: var(--panel); }
 button:hover, .button:hover { border-color: var(--accent); }
 button:disabled { opacity: 0.5; cursor: default; }
 a { color: var(--accent); }
+
+/* Night mode, the Mac's NightMode.swift: each pixel's brightness to red,
+   green and blue to nothing. On the root element, so fixed panels still
+   position against the window. The matrix lives in index.html. */
+html.night-mode { filter: url(#night-mode); }
