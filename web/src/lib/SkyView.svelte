@@ -17,12 +17,15 @@
 
   let track = $state(null);
   let error = $state('');
-  // The moment shown. Like the Mac: the middle of the best imaging window,
-  // or of the night; Now when tonight is under way.
+  // The moment shown. Like the Mac's Sky View: astronomical dusk, where the
+  // part of the night worth looking at starts (sunset if there's none).
   let at = $state(0);
   let playing = $state(false);
   let followingNow = $state(false);
   let selectedID = $state(null);
+  // SkyView.PlaybackMode: follow the plan's blocks as time moves, or stay
+  // on the selected target.
+  let mode = $state('follow');
 
   let size = $state(0);
   let domeCanvas;
@@ -34,12 +37,29 @@
     track = null;
     error = '';
     skyTrack({ planKey: key }).then(t => (track = t), e => (error = e.message));
-    const best = night.bestImagingWindow;
-    const now = Date.now();
-    at = now > start && now < end ? now
-      : best ? (Date.parse(best.start) + Date.parse(best.end)) / 2 : (start + end) / 2;
-    followingNow = now > start && now < end;
-    selectedID = targetID ?? night.plan[0]?.targetID ?? night.targets.find(t => t.usableMinutes > 0 && !t.isStar)?.id ?? null;
+    const dusk = night.astronomicalDusk ? Date.parse(night.astronomicalDusk) : null;
+    at = dusk && dusk > start && dusk < end ? dusk : start;
+    followingNow = false;
+    playing = false;
+    // (A local, not `selectedID`: reading that here would rerun all this,
+    // back to dusk, every time the plan moves the selection on.)
+    const first = targetID ?? night.plan[0]?.targetID ?? night.targets.find(t => t.usableMinutes > 0 && !t.isStar)?.id ?? null;
+    selectedID = first;
+    // Something picked from outside the plan has nothing to follow on to.
+    mode = !first || night.plan.some(b => b.targetID === first) ? 'follow' : 'stay';
+  });
+
+  // SkyView.syncSelectionToPlayback: blocks never overlap, so at most one
+  // holds `at`. Its target is selected; between blocks, and after the last,
+  // nothing is (nothing is being shot); before the first, the selection
+  // stays. Here it follows the slider as well as playback.
+  $effect(() => {
+    if (mode !== 'follow') return;
+    const blocks = [...night.plan].sort((a, b) => Date.parse(a.window.start) - Date.parse(b.window.start));
+    if (!blocks.length || at < Date.parse(blocks[0].window.start)) return;
+    const running = blocks.find(b => at >= Date.parse(b.window.start) && at < Date.parse(b.window.end));
+    const next = running ? running.targetID : null;
+    if (next !== selectedID) selectedID = next;
   });
 
   const selected = $derived(night.targets.find(t => t.id === selectedID) ?? null);
@@ -307,7 +327,10 @@
     playing = false;
     followingNow = false;
     selectedID = id;
-    if (block) at = (Date.parse(block.window.start) + Date.parse(block.window.end)) / 2;
+    if (block) {
+      at = (Date.parse(block.window.start) + Date.parse(block.window.end)) / 2;
+      mode = 'follow';
+    }
   }
 
   // The side panel's readings.
@@ -357,6 +380,12 @@
              value={Math.round(Math.min(1, Math.max(0, (at - start) / (end - start))) * 1000)} oninput={scrub} />
       {#if night.plan.length}
         <PlanStrip {night} selectedID={selectedID} onselect={jumpTo} />
+        <div class="modes" role="radiogroup" aria-label="As time moves">
+          <button type="button" role="radio" aria-checked={mode === 'follow'} class:on={mode === 'follow'}
+                  onclick={() => (mode = 'follow')}>Follow planned targets</button>
+          <button type="button" role="radio" aria-checked={mode === 'stay'} class:on={mode === 'stay'}
+                  onclick={() => (mode = 'stay')} disabled={!selectedID}>Stay on selected target</button>
+        </div>
       {/if}
       <p class="credit">Star map: NASA/Goddard SVS, from Gaia DR2 (ESA/Gaia/DPAC), Hipparcos and Tycho-2</p>
     </div>
@@ -421,6 +450,9 @@
   /* Now, by day: the slider only spans the night. */
   .scrubber.outside { opacity: 0.4; }
   .credit { font-size: 11px; color: var(--tertiary); }
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; }
+  .modes button { border-radius: 999px; padding: 4px 12px; font-size: 14px; }
+  .modes button.on { background: rgba(158, 133, 250, 0.3); border-color: var(--accent); font-weight: 600; }
   .side { padding: 14px; display: grid; gap: 8px; }
   .target-name { margin-top: 8px; color: var(--text); text-transform: none; letter-spacing: 0; font-size: 17px; }
   .warn { color: var(--marginal); }
