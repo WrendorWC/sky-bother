@@ -718,7 +718,7 @@
   h2 { margin: 0; font-size: 22px; }
   h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
   p { margin: 0; }
-  .layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr) 280px; align-items: start; }
+  .layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
   .dome-area { display: grid; gap: 10px; min-width: 0; max-width: 900px; }
   /* As wide as there's room for, but never taller than the window less the
      header and the controls below it, so the whole dome and its controls
@@ -751,7 +751,7 @@
   .modes { display: flex; gap: 6px; flex-wrap: wrap; }
   .modes button { border-radius: 999px; padding: 4px 12px; font-size: 14px; }
   .modes button.on { background: rgba(158, 133, 250, 0.3); border-color: var(--accent); font-weight: 600; }
-  .side { padding: 14px; display: grid; gap: 8px; }
+  .side { padding: 14px; display: grid; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
   .target-name { margin-top: 8px; color: var(--text); text-transform: none; letter-spacing: 0; font-size: 17px; }
   .warn { color: var(--marginal); }
   .good { color: var(--excellent); }
@@ -773,6 +773,8 @@
     .wide-only { display: none; }
     .dome { width: min(100%, max(260px, calc(100dvh - 400px))); }
   }
-  .side .controls { margin-bottom: 4px; }
+  /* In the side panel: Play across the top, Now and the clock beneath. */
+  .side .controls { margin-bottom: 4px; flex-wrap: wrap; }
+  .side .play { flex: 1 1 100%; justify-content: center; }
   .side .modes { margin-bottom: 8px; }
 </style>
