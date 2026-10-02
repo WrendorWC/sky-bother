@@ -8,10 +8,9 @@
 //   NearbySpotSelection.swift which spots to suggest
 //   ParkHours.swift          posted hours
 // What differs: Apple Maps found the places on the Mac; here it's
-// OpenStreetMap, which also carries posted hours and websites, so there's no
-// separate hours lookup. Both it and WorldCover are reached through
-// skybother.com (/api/places, /api/worldcover): Overpass is busy and flaky
-// from a browser, and WorldCover's bucket sends no CORS headers.
+// OpenStreetMap (through Nominatim), which also carries posted hours and
+// websites, so there's no separate hours lookup. WorldCover is read through skybother.com
+// (/api/worldcover), since its bucket sends no CORS headers.
 
 const rad = Math.PI / 180;
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
@@ -221,29 +220,64 @@ const UNSUITABLE = ['dog park', 'playground', 'skate', 'splash', 'water park', '
   'golf', 'cemetery', 'tennis', 'soccer', 'baseball', 'softball', 'pool'];
 const GENERIC = new Set(['park', 'beach', 'marina', 'campground', 'boat ramp', 'boat launch', 'nature reserve', 'playground']);
 
-// Through skybother.com (/api/places), which queries OpenStreetMap's Overpass
-// servers, falls back between them and caches each answer for a week.
-async function places(kind, boxes) {
-  // The servers behind it are often briefly overloaded; one more try
-  // usually gets through.
-  try {
-    return await placesOnce(kind, boxes);
-  } catch {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    return placesOnce(kind, boxes);
-  }
+// OpenStreetMap places through Nominatim, its own search, asked from this
+// device. Like Apple Maps on the Mac it returns a limited number (40) per
+// search, so — as on the Mac — several small searches are aimed where they
+// matter: one per kind of place per area. Nominatim asks for no more than
+// one request a second, so they run one after another. Each answer is kept
+// on this device for a week. (The Overpass servers, tried first, were too
+// busy to rely on, and turn away requests from skybother.com's server.)
+const PHRASES = {
+  nature: ['nature reserve', 'state park', 'beach'],
+  parks: ['park', 'nature reserve'],
+  horizon: ['park', 'slipway', 'marina', 'beach', 'nature reserve'],
+};
+// What counts as a place to set up — a phrase search also turns up paths,
+// neighbourhoods and the like that merely share a word.
+const PLACE_TYPES = new Set(['leisure=park', 'leisure=nature_reserve', 'leisure=slipway', 'leisure=marina',
+  'boundary=protected_area', 'boundary=national_park', 'natural=beach', 'tourism=camp_site', 'tourism=viewpoint']);
+const PLACE_CACHE_DAYS = 7;
+const unavailable = () => new Error('OpenStreetMap’s place search isn’t answering right now. Try again in a minute.');
+let lastAsked = 0;
+
+async function nominatim(phrase, b) {
+  const [south, west, north, east] = b.map(x => x.toFixed(3));
+  const url = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
+    q: phrase, format: 'jsonv2', viewbox: `${west},${north},${east},${south}`, bounded: '1', limit: '40', extratags: '1',
+  })}`;
+  const cache = await caches.open('skybother-nearby').catch(() => null);
+  const hit = await cache?.match(url);
+  if (hit && Date.now() - Number(hit.headers.get('X-Retrieved')) < PLACE_CACHE_DAYS * 86_400_000) return hit.json();
+  const wait = lastAsked + 1100 - Date.now();
+  if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait));
+  lastAsked = Date.now();
+  const response = await fetch(url, { signal: timeout(20_000) });
+  if (!response.ok) throw unavailable();
+  const results = await response.json();
+  try { await cache?.put(url, new Response(JSON.stringify(results), { headers: { 'X-Retrieved': String(Date.now()) } })); } catch {}
+  return results;
 }
 
-async function placesOnce(kind, boxes) {
-  const bbox = boxes.map(b => b.map(x => x.toFixed(4)).join(',')).join(';');
-  let response;
-  try {
-    response = await fetch(`/api/places?kind=${kind}&bbox=${bbox}`, { signal: timeout(70_000) });
-  } catch {
-    throw new Error('OpenStreetMap’s place search isn’t answering right now. Try again in a minute.');
+/** Places of a kind in each box, as Overpass-style elements for toPlaces. */
+async function places(kind, boxes) {
+  const elements = [];
+  let failures = 0, asked = 0;
+  for (const b of boxes) {
+    for (const phrase of PHRASES[kind]) {
+      asked++;
+      try {
+        for (const r of await nominatim(phrase, b)) {
+          if (!PLACE_TYPES.has(`${r.category}=${r.type}`)) continue;
+          elements.push({ lat: Number(r.lat), lon: Number(r.lon), tags: { name: r.name, ...(r.extratags ?? {}) } });
+        }
+      } catch {
+        failures++;
+      }
+    }
   }
-  if (!response.ok) throw new Error((await response.json().catch(() => null))?.error ?? 'OpenStreetMap’s place search isn’t answering right now. Try again in a minute.');
-  return (await response.json()).elements ?? [];
+  // One failed search doesn't sink the rest; all of them failing does.
+  if (asked && failures === asked) throw unavailable();
+  return elements;
 }
 
 /** A box `metres` around a point: [south, west, north, east]. */
@@ -343,12 +377,20 @@ export async function findDarkerSky(site, radiusKm, onstage = () => {}) {
   // Stage two: real places — parks of every size around each dark patch,
   // larger nature areas across the whole search — each scored where it is.
   onstage('Looking for parks and nature areas…');
-  const [nearPatches, wholeArea] = await Promise.allSettled([
-    places('parks', patches.map(p => box(p.lat, p.lon, 4000))),
-    places('nature', [box(site.latitude, site.longitude, radiusKm * 1000)]),
+  // As DarkSkyFinder: around each dark patch, then the whole area (its
+  // bigger nature areas), then the site's own surroundings, which a
+  // whole-area search tends to crowd out.
+  const elements = await places('parks', [
+    ...patches.map(p => box(p.lat, p.lon, 4000)),
+    box(site.latitude, site.longitude, Math.min(radiusKm * 1000, 8000)),
   ]);
-  if (nearPatches.status === 'rejected' && wholeArea.status === 'rejected') throw nearPatches.reason;
-  const elements = [...(nearPatches.value ?? []), ...(wholeArea.value ?? [])];
+  // A search returns at most 40, so a wide area is searched in quarters.
+  const whole = box(site.latitude, site.longitude, radiusKm * 1000);
+  const quarters = radiusKm > 20
+    ? [[whole[0], whole[1], site.latitude, site.longitude], [whole[0], site.longitude, site.latitude, whole[3]],
+       [site.latitude, whole[1], whole[2], site.longitude], [site.latitude, site.longitude, whole[2], whole[3]]]
+    : [whole];
+  elements.push(...await places('nature', quarters).catch(() => []));
   const candidates = toPlaces(elements).flatMap(place => {
     const distance = distanceKm(site.latitude, site.longitude, place.latitude, place.longitude);
     if (distance > radiusKm || !field.contains(place.latitude, place.longitude)) return [];

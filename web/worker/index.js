@@ -1,7 +1,6 @@
 // The site's Worker: static files (web/dist) for everything except /api/:
 // the sync store at /api/sync/<id>, MET Norway's forecast at /api/metno, and
-// byte ranges of ESA WorldCover's land-cover files at /api/worldcover/<file>,
-// and OpenStreetMap parks and nature areas at /api/places.
+// and byte ranges of ESA WorldCover's land-cover files at /api/worldcover/<file>.
 //
 // Sync stores one encrypted blob per sync code, in a Durable Object of its
 // own. The id is a hash of the code and the blob is AES-GCM encrypted on the
@@ -116,65 +115,6 @@ async function worldCover(name, url, ctx) {
   return new Response(response.body, { status: 200, headers });
 }
 
-// Parks and nature areas from OpenStreetMap, for Better Spot Nearby (where the
-// Mac uses Apple Maps). The public Overpass servers are busy and often turn
-// requests away, so this builds the query itself — only these kinds of place,
-// only small boxes — tries a second server if the first is slow, and keeps
-// each answer for a week (parks don't move).
-const OVERPASS = ['https://maps.mail.ru/osm/tools/overpass/api/interpreter', 'https://overpass-api.de/api/interpreter'];
-const PLACE_AGENT = 'SkyBother/1.0 (https://skybother.com; nearby spots)';
-const NATURE = ['nwr["leisure"="nature_reserve"]["name"]', 'nwr["boundary"="protected_area"]["name"]', 'nwr["boundary"="national_park"]["name"]',
-  'nwr["natural"="beach"]["name"]', 'nwr["tourism"~"^(camp_site|viewpoint)$"]["name"]'];
-const PLACE_KINDS = {
-  nature: NATURE,
-  parks: [...NATURE, 'nwr["leisure"="park"]["name"]'],
-  horizon: [...NATURE, 'nwr["leisure"="park"]["name"]', 'nwr["leisure"="slipway"]', 'nwr["leisure"="marina"]["name"]'],
-};
-
-async function places(url, ctx) {
-  const kind = url.searchParams.get('kind');
-  const boxes = (url.searchParams.get('bbox') ?? '').split(';').filter(Boolean).map(b => b.split(',').map(Number));
-  const valid = PLACE_KINDS[kind] && boxes.length >= 1 && boxes.length <= 6 && boxes.every(b =>
-    b.length === 4 && b.every(Number.isFinite) && b[0] < b[2] && b[1] < b[3] && b[2] - b[0] <= 1.2 && b[3] - b[1] <= 1.6
-    && Math.abs(b[0]) <= 90 && Math.abs(b[2]) <= 90 && Math.abs(b[1]) <= 180 && Math.abs(b[3]) <= 180);
-  if (!valid) return Response.json({ error: 'Bad request.' }, { status: 400, headers: cors });
-  const rounded = boxes.map(b => [Math.floor(b[0] * 100) / 100, Math.floor(b[1] * 100) / 100, Math.ceil(b[2] * 100) / 100, Math.ceil(b[3] * 100) / 100]);
-  const statements = rounded.flatMap(b => PLACE_KINDS[kind].map(q => `${q}(${b.join(',')});`)).join('');
-  const query = `[out:json][timeout:50];(${statements});out tags center;`;
-  const cache = caches.default;
-  const key = new Request(`https://skybother.com/places-cache/${kind}/${rounded.map(b => b.join(',')).join(';')}`);
-  let response = await cache.match(key);
-  if (!response) {
-    const ask = server => fetch(server, {
-      method: 'POST', headers: { 'User-Agent': PLACE_AGENT, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ data: query }),
-    }).then(async r => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const text = await r.text();
-      if (!text.trimStart().startsWith('{')) throw new Error('not JSON');
-      return text;
-    });
-    // The first server, with the second joining in if it hasn't answered in 8 s.
-    const first = ask(OVERPASS[0]);
-    const second = new Promise(resolve => setTimeout(resolve, 8000)).then(() => ask(OVERPASS[1]));
-    // Whichever loses may fail later; that's expected, not an error.
-    first.catch(() => {});
-    second.catch(() => {});
-    let text;
-    try {
-      text = await Promise.any([first, second]);
-    } catch (e) {
-      console.log('places failed:', e.errors?.map(x => x.message).join(' / '));
-      return Response.json({ error: 'OpenStreetMap’s place search isn’t answering right now. Try again in a minute.' }, { status: 502, headers: cors });
-    }
-    response = new Response(text, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=604800' } });
-    ctx.waitUntil(cache.put(key, response.clone()));
-  }
-  const headers = new Headers(response.headers);
-  for (const [k, v] of Object.entries(cors)) if (k !== 'Cache-Control') headers.set(k, v);
-  return new Response(response.body, { status: 200, headers });
-}
-
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -182,7 +122,6 @@ export default {
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     if (url.pathname === '/api/metno' && request.method === 'GET') return metNorway(url, ctx);
-    if (url.pathname === '/api/places' && request.method === 'GET') return places(url, ctx);
     const cover = /^\/api\/worldcover\/([^/]+)$/.exec(url.pathname);
     if (cover && request.method === 'GET') return worldCover(cover[1], url, ctx);
     if (!match || !ID.test(match[1])) return Response.json({ error: 'Not found.' }, { status: 404, headers: cors });

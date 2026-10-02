@@ -150,7 +150,7 @@ export const topics = [
       { heading: 'Comets', body: 'Orbits from the IAU Minor Planet Center.' },
       { heading: 'Images', body: 'Framing images: Digitized Sky Survey (STScI/NASA), colour by CDS. Photographs: Wikipedia, credited under each. Sky View star map: NASA Goddard SVS Deep Star Maps 2020, from Gaia DR2, Hipparcos-2 and Tycho-2. Moon: NASA SVS CGI Moon Kit, from Lunar Reconnaissance Orbiter data.' },
       { heading: 'Places', body: 'Place search: Open-Meteo’s geocoder and, for postal codes, OpenStreetMap Nominatim.' },
-      { heading: 'Nearby Spots', body: 'Places and park hours: © OpenStreetMap contributors (ODbL), through Overpass. Night lights: NASA Black Marble (VIIRS), through GIBS. Land cover: ESA WorldCover 2021 (© ESA WorldCover project / Copernicus Sentinel data, CC BY 4.0). Searches are cached, so a second look at the same area is quick.' },
+      { heading: 'Nearby Spots', body: 'Places and park hours: © OpenStreetMap contributors (ODbL), through Nominatim. Night lights: NASA Black Marble (VIIRS), through GIBS. Land cover: ESA WorldCover 2021 (© ESA WorldCover project / Copernicus Sentinel data, CC BY 4.0). Searches are cached, so a second look at the same area is quick.' },
     ],
   },
 ];

@@ -162,7 +162,7 @@
             <p class="muted">{detail(featured)}</p>
             {#if featured.hours}
               {@const [text, good] = hoursLine(featured.hours)}
-              <p class="hours" class:good class:bad={!good} title={featured.hours.raw}>{text}{#if featured.website} · <a href={featured.website} target="_blank" rel="noopener">Website</a>{/if}</p>
+              <p class="hours" class:good class:bad={!good} title={featured.hours.raw}>{text}{#if featured.website}{' · '}<a href={featured.website} target="_blank" rel="noopener">Website</a>{/if}</p>
             {:else if featured.website}
               <p class="hours"><a href={featured.website} target="_blank" rel="noopener">Website — check the hours</a></p>
             {/if}
