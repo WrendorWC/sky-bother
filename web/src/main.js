@@ -24,3 +24,9 @@ addEventListener('error', event => {
 addEventListener('unhandledrejection', event => showError(event.reason?.message ?? String(event.reason)));
 
 mount(App, { target: document.getElementById('app') });
+
+// Offline support (src/sw-template.js), on the real site only: in
+// development it would serve stale files.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}

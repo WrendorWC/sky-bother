@@ -131,7 +131,10 @@ opening anything.
 nights, the night chart, Sky View, the Moon card, the planner, Session View for
 use at the telescope (with a Keep Screen On button), the catalog with custom
 targets, Better Spot Nearby, Help, and night mode. It's built to work on a
-phone. The scoring and planning are the Mac app's own Swift code compiled to
+phone: **Add to Home Screen** gives it its own icon and full screen, and once
+opened with a connection it keeps working with none — the app, catalogue and
+maps are kept on the device, and the week is planned from the last forecast
+saved there. The scoring and planning are the Mac app's own Swift code compiled to
 WebAssembly and run in the browser, so with the same forecast they give the
 same numbers.
 

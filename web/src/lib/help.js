@@ -12,6 +12,8 @@ export const topics = [
       { body: 'The Setup Wizard runs the first time you open Sky Bother in a browser: your site, horizon, telescope and goal. Only the site is required; the other steps have sensible defaults. Its first step also lets you bring everything across from the Mac app — with a sync code, or a settings file.' },
       { heading: 'Running It Later', body: 'Settings → Location → Setup Wizard.' },
       { heading: 'On Your Phone', body: 'Everything works on a phone. Tap where you’d click. Session View is made for using at the telescope.' },
+      { heading: 'Add to Home Screen', body: 'On an iPhone, open skybother.com in Safari, tap Share, then Add to Home Screen; on Android, Chrome’s menu has Add to Home Screen (or Install app). Sky Bother then opens from its own icon, full screen, without the browser’s bars. On an iPhone the Home Screen app keeps its own settings, separate from Safari’s — so open Settings → Sync inside it and enter your sync code once.' },
+      { heading: 'With No Signal', body: 'Once Sky Bother has been opened with a connection, it keeps working without one — at a dark site, say. The app itself, the catalogue, the star map and the Moon are kept on the device, and so is the last forecast for your site: with no signal the week is planned from it, and the night list says how old it is. Target photos and framing pictures work offline once you’ve seen them. Refresh when you’re back online.' },
     ],
   },
   {

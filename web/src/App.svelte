@@ -9,6 +9,7 @@
   import Planner from './lib/Planner.svelte';
   import SessionView from './lib/SessionView.svelte';
   import HelpPage from './lib/HelpPage.svelte';
+  import { saveForecast, savedForecast, saveComets, savedComets } from './offline.js';
   import NearbySpots from './lib/NearbySpots.svelte';
   import { uuid as newID } from './lib/uuid.js';
   import SetupWizard from './lib/SetupWizard.svelte';
@@ -285,22 +286,39 @@
     replan();
   }
 
+  // With no signal, the week is planned from the last forecast kept on this
+  // device for this site (offline.js), and the footer says how old it is.
+  let offlineSince = $state(null);
   async function refresh() {
     if (!settings) return;
     error = '';
     loading = true;
     status = `Getting the forecast for ${settings.site.name || 'your site'}…`;
+    const { site, preferences } = settings;
     try {
-      const { site, preferences } = settings;
-      const [forecast, cometElements] = await Promise.all([
-        fetchForecast(site.latitude, site.longitude, preferences.forecastNights),
-        fetchCometElements(),
-      ]);
+      let forecast, cometElements;
+      try {
+        if (navigator.onLine === false) throw new Error('offline');
+        [forecast, cometElements] = await Promise.all([
+          fetchForecast(site.latitude, site.longitude, preferences.forecastNights),
+          fetchCometElements(),
+        ]);
+        saveForecast(site.latitude, site.longitude, forecast);
+        if (cometElements) saveComets(cometElements); else cometElements = await savedComets();
+        offlineSince = null;
+        updatedAt = Date.now();
+      } catch (e) {
+        const saved = await savedForecast(site.latitude, site.longitude);
+        if (!saved) throw navigator.onLine === false ? new Error('No signal, and no forecast for this site saved on this device yet.') : e;
+        forecast = saved.forecast;
+        cometElements = await savedComets();
+        offlineSince = saved.fetchedAt;
+        updatedAt = saved.fetchedAt;
+      }
       fetched = { key: `${site.latitude},${site.longitude}`, forecast, cometElements };
       forecastSource = forecast.source;
       status = 'Planning the week…';
       await plan();
-      updatedAt = Date.now();
     } catch (e) {
       error = e.message;
     } finally {
@@ -477,7 +495,11 @@
         {/if}
         <footer class="muted">
           {#if updatedAt}
-            <div>Forecast updated {(clock, age(updatedAt))}{forecastSource !== 'open-meteo' ? ' · backup source' : ''}</div>
+            {#if offlineSince}
+              <div class="offline">No signal — using the forecast saved {(clock, age(offlineSince))}. Refresh when you're back online.</div>
+            {:else}
+              <div>Forecast updated {(clock, age(updatedAt))}{forecastSource !== 'open-meteo' ? ' · backup source' : ''}</div>
+            {/if}
             {#if forecastSource !== 'open-meteo'}
               <div class="backup">Open-Meteo's main forecast wasn't answering, so this week is from {forecastSource === 'met-norway' ? 'MET Norway' : "Open-Meteo's basic model"}. Scores can differ from the Mac app until it's back; refresh to try again.</div>
             {/if}
@@ -561,6 +583,7 @@
   .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; margin-top: 16px; }
   .sidebar { display: grid; gap: 6px; align-content: start; position: sticky; top: 72px; }
   .sidebar h3 { margin: 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
+  .offline { color: var(--marginal); }
   .backup { color: var(--marginal); }
   .sidebar footer { display: grid; gap: 3px; margin: 14px 8px 0; padding-top: 14px; border-top: 1px solid var(--panel-border); font-size: 12px; }
   .back { display: none; }

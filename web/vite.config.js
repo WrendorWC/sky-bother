@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
-import { createReadStream, existsSync, cpSync } from 'node:fs';
+import { createReadStream, existsSync, cpSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { join, resolve, normalize } from 'node:path';
 
@@ -44,8 +45,37 @@ function catalogImages() {
   };
 }
 
+// The service worker (src/sw-template.js), written into the build with the
+// list of files the app needs to start, and a version that changes whenever
+// any of them does.
+function serviceWorker() {
+  let outDir;
+  return {
+    name: 'sky-bother-service-worker',
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+    },
+    closeBundle: {
+      order: 'post',
+      handler() {
+        const files = ['index.html', 'engine.wasm', 'catalog-extended.json', 'moon-map.jpg', 'catalog/starmap.jpg',
+          'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png',
+          ...readdirSync(join(outDir, 'assets')).map(f => `assets/${f}`)];
+        const hash = createHash('sha256');
+        for (const f of files) hash.update(f).update(readFileSync(join(outDir, f)));
+        const version = hash.digest('hex').slice(0, 12);
+        const precache = files.map(f => (f === 'index.html' ? '/' : `/${f}`));
+        const source = readFileSync(fileURLToPath(new URL('./src/sw-template.js', import.meta.url)), 'utf8')
+          .replace("'__VERSION__'", JSON.stringify(version))
+          .replace('__PRECACHE__', JSON.stringify(precache));
+        writeFileSync(join(outDir, 'sw.js'), source);
+      },
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [svelte(), catalogImages()],
+  plugins: [svelte(), catalogImages(), serviceWorker()],
   worker: { format: 'es' },
   // The image manifests are imported from the Mac app's catalogue.
   // /api/ is the Worker (web/worker); run `npx wrangler dev --port 8787` from
