@@ -128,7 +128,7 @@ opening anything.
 ## On the web and your phone
 
 [skybother.com](https://skybother.com) is Sky Bother in a browser: the week of
-nights, the night chart, Sky View, the Moon card, the planner, Session View for
+nights, the night chart, Sky View, Sky Browser, the Moon card, the planner, Session View for
 use at the telescope (with a Keep Screen On button), the catalog with custom
 targets, Better Spot Nearby, Help, and night mode. It's built to work on a
 phone: **Add to Home Screen** gives it its own icon and full screen, and once

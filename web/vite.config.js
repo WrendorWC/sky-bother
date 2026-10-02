@@ -60,7 +60,9 @@ function serviceWorker() {
       handler() {
         const files = ['index.html', 'engine.wasm', 'catalog-extended.json', 'moon-map.jpg', 'catalog/starmap.jpg',
           'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png',
-          ...readdirSync(join(outDir, 'assets')).map(f => `assets/${f}`)];
+          // Not Aladin (Sky Browser's sky viewer): 2.6 MB for a page that
+          // needs the network for its survey anyway.
+          ...readdirSync(join(outDir, 'assets')).filter(f => !f.startsWith('aladin-')).map(f => `assets/${f}`)];
         const hash = createHash('sha256');
         for (const f of files) hash.update(f).update(readFileSync(join(outDir, f)));
         const version = hash.digest('hex').slice(0, 12);
@@ -76,6 +78,8 @@ function serviceWorker() {
 
 export default defineConfig({
   plugins: [svelte(), catalogImages(), serviceWorker()],
+  // Aladin Lite is one 2.6 MB chunk, loaded only by Sky Browser.
+  build: { chunkSizeWarningLimit: 3000 },
   worker: { format: 'es' },
   // The image manifests are imported from the Mac app's catalogue.
   // /api/ is the Worker (web/worker); run `npx wrangler dev --port 8787` from

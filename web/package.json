@@ -16,6 +16,7 @@
     "vite": "^8.3.2"
   },
   "dependencies": {
-    "@bjorn3/browser_wasi_shim": "^0.4.2"
+    "@bjorn3/browser_wasi_shim": "^0.4.2",
+    "aladin-lite": "^3.9.2-beta"
   }
 }

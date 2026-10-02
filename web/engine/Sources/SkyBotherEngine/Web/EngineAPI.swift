@@ -233,6 +233,9 @@ public enum EngineAPI {
         var magnitude: Double
         var majorAxisArcminutes: Double
         var searchText: String
+        /// J2000, degrees: Sky Browser's markers and search.
+        var rightAscension: Double
+        var declination: Double
     }
 
     /// The whole catalogue of the last week planned.
@@ -243,7 +246,8 @@ public enum EngineAPI {
             CatalogEntry(id: $0.id, displayName: $0.displayName, designation: $0.designation,
                          commonName: $0.commonName, type: $0.type.rawValue, typeName: $0.type.filterName,
                          constellation: $0.constellationName, magnitude: $0.magnitude,
-                         majorAxisArcminutes: $0.majorAxisArcminutes, searchText: $0.searchText)
+                         majorAxisArcminutes: $0.majorAxisArcminutes, searchText: $0.searchText,
+                         rightAscension: $0.rightAscension, declination: $0.declination)
         }
         return (try? encoder.encode(entries)) ?? Data()
     }

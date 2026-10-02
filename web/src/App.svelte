@@ -9,6 +9,7 @@
   import Planner from './lib/Planner.svelte';
   import SessionView from './lib/SessionView.svelte';
   import HelpPage from './lib/HelpPage.svelte';
+  import SkyBrowser from './lib/SkyBrowser.svelte';
   import { saveForecast, savedForecast, saveComets, savedComets } from './offline.js';
   import NearbySpots from './lib/NearbySpots.svelte';
   import { uuid as newID } from './lib/uuid.js';
@@ -53,11 +54,13 @@
   // Where the Catalog's Done (or the Catalog button again) goes back to.
   let catalogReturn = $state('#/');
   $effect(() => {
-    if (route !== '#/catalog' && !route.startsWith('#/help')) catalogReturn = route || '#/';
+    if (route !== '#/catalog' && !route.startsWith('#/help') && !route.startsWith('#/browse')) catalogReturn = route || '#/';
   });
   function leaveCatalog() {
     location.hash = catalogReturn;
   }
+  // #/browse/<designation>: Sky Browser, on that target.
+  const browseMatch = $derived(/^#\/browse(?:\/(.+))?$/.exec(route));
   // #/help or #/help/<topic>
   const helpMatch = $derived(/^#\/help(?:\/([a-z]+))?$/.exec(route));
   function openHelp(event) {
@@ -480,6 +483,10 @@
   <!-- Settings is a screen of its own: nothing else shows until it's closed. -->
   {#if helpMatch && !editingSettings}
     <HelpPage topic={helpMatch[1] ?? null} />
+  {:else if browseMatch && settings && catalog.length && !editingSettings}
+    {#key browseMatch[1]}
+      <SkyBrowser entries={catalog} rig={settings.rig} designation={browseMatch[1] ? decodeURIComponent(browseMatch[1]) : null} backHref={catalogReturn} />
+    {/key}
   {:else if settings && !inSetup && !editingSettings}
     <div class="layout">
       <aside class="sidebar">

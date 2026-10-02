@@ -99,6 +99,7 @@
     <section>
       <h3>In your frame</h3>
       <FramePreview target={detail} />
+      <a class="browse" href="#/browse/{encodeURIComponent(detail.designation)}">Explore around it in Sky Browser ›</a>
       {#if image}
         <img class="photo" src={image.url} alt={detail.displayName} />
       {/if}
@@ -193,4 +194,5 @@
   .numbers { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0; font-size: 14px; }
   dt { color: var(--muted); }
   dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .browse { justify-self: start; color: var(--accent); font-weight: 600; text-decoration: none; font-size: 14px; }
 </style>

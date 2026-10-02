@@ -86,6 +86,7 @@ export const topics = [
   {
     id: 'frame', title: 'In Your Frame', sections: [
       { body: 'A Digitized Sky Survey image centred on the target at your rig’s field of view, with your frame drawn on it. Green means it fits; dashed amber means it needs a mosaic. The cross marks the catalogued position — faint targets can be hard to see in the survey.' },
+      { heading: 'Sky Browser', body: '“Explore around it in Sky Browser”, under the picture on any target’s card, opens the real sky — the colour Digitized Sky Survey — centred on it, with your frame fixed in the middle. Drag to pan, pinch or scroll to zoom, or search for another object. Catalogue objects in view are marked and named. “What’s This?” names whatever is at the centre, from Sky Bother’s catalogue or, failing that, Simbad. The centre’s coordinates (J2000) are in the corner, with Copy, to type into your telescope’s app. It needs a connection.' },
       { heading: 'Rig Presets', body: 'Presets use published specifications. Check them against your own equipment; every number can be edited in Settings → Equipment → Optics.' },
     ],
   },
