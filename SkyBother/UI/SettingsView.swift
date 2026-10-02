@@ -61,6 +61,8 @@ struct SettingsView: View {
                 .tabItem { Label("Equipment", systemImage: "camera.aperture") }
             PlanningSettings()
                 .tabItem { Label("Planning", systemImage: "slider.horizontal.3") }
+            DisplaySettings()
+                .tabItem { Label("Display", systemImage: "moon") }
             SyncSettings()
                 .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
         }
@@ -91,39 +93,7 @@ private struct LocationSettings: View {
     var body: some View {
         Form {
             if !isInGuidedSetup { SetupWizardBanner() }
-            Section("Find a site") {
-                HStack {
-                    TextField("Town, city or landmark", text: $query)
-                        .onSubmit { Task { await search() } }
-                    Button("Search") { Task { await search() } }
-                        .disabled(query.trimmingCharacters(in: .whitespaces).count < 2 || isSearching)
-                    if isSearching { ProgressView().controlSize(.small) }
-                }
-                if let searchError {
-                    Text(searchError)
-                        .font(.scaled(.caption, scale: uiTextScale))
-                        .foregroundStyle(Palette.skip)
-                }
-                ForEach(results) { result in
-                    Button {
-                        state.apply(result)
-                        results = []
-                        query = ""
-                    } label: {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(result.name)
-                            Text(result.subtitle)
-                                .font(.scaled(.caption, scale: uiTextScale))
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
-            Section("Current site") {
+            Section("Site in use") {
                 TextField("Name", text: $state.site.name)
 
                 Picker("Time zone", selection: $state.site.timeZoneIdentifier) {
@@ -160,9 +130,36 @@ private struct LocationSettings: View {
                 }
             }
 
-            Section("Horizon") {
-                HorizonEditor(site: $state.site)
-                    .padding(.vertical, 4)
+            Section("Change site") {
+                HStack {
+                    TextField("Town, city or landmark", text: $query)
+                        .onSubmit { Task { await search() } }
+                    Button("Search") { Task { await search() } }
+                        .disabled(query.trimmingCharacters(in: .whitespaces).count < 2 || isSearching)
+                    if isSearching { ProgressView().controlSize(.small) }
+                }
+                if let searchError {
+                    Text(searchError)
+                        .font(.scaled(.caption, scale: uiTextScale))
+                        .foregroundStyle(Palette.skip)
+                }
+                ForEach(results) { result in
+                    Button {
+                        state.apply(result)
+                        results = []
+                        query = ""
+                    } label: {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(result.name)
+                            Text(result.subtitle)
+                                .font(.scaled(.caption, scale: uiTextScale))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
             }
 
             if state.settings.savedSites.count > 1 {
@@ -202,7 +199,12 @@ private struct LocationSettings: View {
                     }
                 }
             }
-        }
+            Section("Horizon at \(state.site.name.isEmpty ? "this site" : state.site.name)") {
+                HorizonEditor(site: $state.site)
+                    .padding(.vertical, 4)
+            }
+
+}
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .background(Palette.spaceBackground)
@@ -239,8 +241,19 @@ private struct EquipmentSettings: View {
 
     var body: some View {
         Form {
-            SetupWizardBanner()
-            Section("Presets") {
+            Section("Telescope") {
+                TextField("Name", text: $state.rig.name)
+                let problems = state.rig.validationProblems
+                if problems.isEmpty {
+                    LabeledContent("Field of view", value: "\(state.rig.fieldOfViewSummary) — \(state.rig.fieldOfViewInMoons)")
+                    LabeledContent("Focal ratio", value: String(format: "f/%.1f", state.rig.focalRatio))
+                    LabeledContent("Image scale", value: String(format: "%.2f″ per pixel", state.rig.arcsecondsPerPixel))
+                } else {
+                    ForEach(problems, id: \.self) { problem in
+                        Label(problem, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(Palette.marginal)
+                    }
+                }
                 Menu("Load a Preset") {
                     ForEach(Rig.PresetGroup.allCases) { group in
                         Section(group.rawValue) {
@@ -250,7 +263,7 @@ private struct EquipmentSettings: View {
                         }
                     }
                 }
-                Text("Presets fill in every number below.")
+                Text("Presets fill in every number for you.")
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
             }
@@ -270,7 +283,7 @@ private struct EquipmentSettings: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        if saved.id == state.rig.id {
+                        if state.isInUse(saved) {
                             Text("in use")
                                 .font(.scaled(.caption, scale: uiTextScale))
                                 .foregroundStyle(.secondary)
@@ -295,19 +308,10 @@ private struct EquipmentSettings: View {
                         .help("Keep these numbers as a separate saved rig")
                 }
                 .disabled(!state.rig.validationProblems.isEmpty)
-                Text("Edits apply now. The saved copy changes only with Update Saved Rig.")
-                    .font(.scaled(.caption, scale: uiTextScale))
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("Optics") {
-                TextField("Name", text: $state.rig.name)
-                // A preset's numbers are right as they are; tucked away so
-                // they aren't edited by accident. Custom rigs keep them open.
-                if state.rigIsUnchangedPreset {
-                    DisclosureGroup("Advanced: optics numbers") { opticsFields }
-                } else {
-                    opticsFields
+                if state.isCurrentRigSaved {
+                    Text("Edits apply now. The saved copy changes only with Update Saved Rig.")
+                        .font(.scaled(.caption, scale: uiTextScale))
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -334,17 +338,13 @@ private struct EquipmentSettings: View {
                 }
             }
 
-            Section("What that gives you") {
-                let problems = state.rig.validationProblems
-                if problems.isEmpty {
-                    LabeledContent("Field of view", value: "\(state.rig.fieldOfViewSummary) — \(state.rig.fieldOfViewInMoons)")
-                    LabeledContent("Focal ratio", value: String(format: "f/%.1f", state.rig.focalRatio))
-                    LabeledContent("Image scale", value: String(format: "%.2f″ per pixel", state.rig.arcsecondsPerPixel))
+            Section("Optics") {
+                // A preset's numbers are right as they are; tucked away so
+                // they aren't edited by accident. Custom rigs keep them open.
+                if state.rigIsUnchangedPreset {
+                    DisclosureGroup("Optics numbers") { opticsFields }
                 } else {
-                    ForEach(problems, id: \.self) { problem in
-                        Label(problem, systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(Palette.marginal)
-                    }
+                    opticsFields
                 }
             }
         }
@@ -370,20 +370,40 @@ private struct EquipmentSettings: View {
 private struct PlanningSettings: View {
     @Environment(\.uiTextScale) private var uiTextScale
     @EnvironmentObject private var state: AppState
+    @State private var isFineTuning = false
 
     var body: some View {
         Form {
-            SetupWizardBanner()
             Section("Goal") {
                 Picker("Kind of night", selection: goalBinding) {
                     ForEach(GoalPreset.allCases) { preset in
                         Text(preset.title).tag(preset)
                     }
                 }
-                Text(GoalPreset.matching(state.preferences).summary + " Changing the values below makes it Custom.")
+                Text(GoalPreset.matching(state.preferences).summary)
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                // The goal's own numbers: changing them makes it Custom.
+                DisclosureGroup("Fine-tune", isExpanded: $isFineTuning) {
+                    sliderRow(title: "Integration goal",
+                              value: $state.preferences.integrationGoalMinutes,
+                              range: 30...480, step: 15,
+                              display: Format.duration(minutes: state.preferences.integrationGoalMinutes),
+                              caption: "Full marks for time once a target is usable this long.")
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Picker("Suggested plan favours", selection: $state.preferences.planEmphasis) {
+                            ForEach(PlanEmphasis.allCases, id: \.self) { emphasis in
+                                Text(emphasis.title).tag(emphasis)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        Text(planEmphasisCaption)
+                            .font(.scaled(.caption, scale: uiTextScale))
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             Section("What counts as usable") {
@@ -404,24 +424,6 @@ private struct PlanningSettings: View {
                           range: 10...60, step: 5,
                           display: Format.degrees(state.preferences.minimumUsefulAltitude),
                           caption: "Targets lower than this are ignored — there you look through \(String(format: "%.1f", SkyCoordinates.airMass(altitude: state.preferences.minimumUsefulAltitude))) times as much air as straight up.")
-
-                sliderRow(title: "Integration goal",
-                          value: $state.preferences.integrationGoalMinutes,
-                          range: 30...480, step: 15,
-                          display: Format.duration(minutes: state.preferences.integrationGoalMinutes),
-                          caption: "Full marks for time once a target is usable this long.")
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Picker("Suggested plan favours", selection: $state.preferences.planEmphasis) {
-                        ForEach(PlanEmphasis.allCases, id: \.self) { emphasis in
-                            Text(emphasis.title).tag(emphasis)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    Text(planEmphasisCaption)
-                        .font(.scaled(.caption, scale: uiTextScale))
-                        .foregroundStyle(.secondary)
-                }
             }
 
             Section("What to show") {
@@ -440,8 +442,6 @@ private struct PlanningSettings: View {
                 Toggle("Show visible comets", isOn: $state.preferences.includeComets)
                     .help("Unticked, comets start hidden in the catalog and planner type filters")
                 Toggle("Include targets larger than the frame", isOn: $state.preferences.includeOversizedTargets)
-                Toggle("Use Fahrenheit and mph", isOn: $state.preferences.usesImperialUnits)
-                Toggle("Night mode (red light only)", isOn: $state.preferences.nightMode)
             }
 
         }
@@ -511,6 +511,73 @@ private struct PlanningSettings: View {
 
 /// The way back into the Setup Wizard, at the top of every Settings tab:
 /// the quickest route to a sensible setup, for someone new or starting over.
+// MARK: - Display
+
+/// What suits this screen: the UI scale, night mode and units. They stay on
+/// this Mac; sync leaves them alone.
+private struct DisplaySettings: View {
+    @Environment(\.uiTextScale) private var uiTextScale
+    @EnvironmentObject private var state: AppState
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: autoScale) {
+                    Text("Size the UI to the window")
+                        .font(.scaled(.body, scale: uiTextScale))
+                    Text("Now \(Int((uiTextScale * 100).rounded()))%.")
+                        .font(.scaled(.caption, scale: uiTextScale))
+                }
+                if !state.preferences.autoFitsText {
+                    LabeledContent("UI scale") {
+                        HStack {
+                            Slider(value: $state.preferences.textScale, in: 0.85...1.5, step: 0.05)
+                            Text("\(Int((state.preferences.textScale * 100).rounded()))%")
+                                .monospacedDigit()
+                                .frame(minWidth: 40, alignment: .trailing)
+                        }
+                    }
+                }
+                Toggle(isOn: $state.preferences.nightMode) {
+                    Text("Night mode")
+                        .font(.scaled(.body, scale: uiTextScale))
+                    Text("Red light only, to keep your eyes dark-adapted at the scope.")
+                        .font(.scaled(.caption, scale: uiTextScale))
+                }
+                Toggle(isOn: $state.preferences.usesImperialUnits) {
+                    Text("Fahrenheit and mph")
+                        .font(.scaled(.body, scale: uiTextScale))
+                    Text("Off: Celsius and km/h.")
+                        .font(.scaled(.caption, scale: uiTextScale))
+                }
+            } header: {
+                Text("Display")
+            } footer: {
+                Text("These stay on this Mac; sync leaves them alone.")
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(Palette.spaceBackground)
+    }
+
+    /// As the sidebar's Auto: turning it off starts the slider from
+    /// whatever size Auto had reached, so nothing jumps.
+    private var autoScale: Binding<Bool> {
+        Binding(
+            get: { state.preferences.autoFitsText },
+            set: { auto in
+                if !auto {
+                    state.preferences.textScale = min(max((Double(uiTextScale) / 0.05).rounded() * 0.05, 0.85), 1.5)
+                }
+                state.preferences.autoFitsText = auto
+                if auto { state.refitTextScale() }
+            })
+    }
+}
+
 private struct SetupWizardBanner: View {
     @Environment(\.uiTextScale) private var uiTextScale
     @Environment(\.openWindow) private var openWindow
@@ -560,6 +627,7 @@ private struct SetupWizardBanner: View {
 /// (SyncController). No account; the server only holds an encrypted copy.
 private struct SyncSettings: View {
     @Environment(\.uiTextScale) private var uiTextScale
+    @EnvironmentObject private var state: AppState
     @ObservedObject private var sync = SyncController.shared
     @State private var typed = ""
     @State private var joinError: String?
@@ -635,8 +703,35 @@ private struct SyncSettings: View {
                     if let error = sync.errorMessage { Text(error).foregroundStyle(Palette.marginal) }
                 }
             }
+
+            Section("Setup link") {
+                Text("A one-time link that gives the web app, your phone or a friend your site, telescope and settings. Unlike sync, it doesn't keep them in step afterwards.")
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    Button("Copy Web Setup Link") {
+                        if let link = state.settings.webSetupLink { copy(link.absoluteString) }
+                    }
+                    Button("Open on the Web") {
+                        if let link = state.settings.webSetupLink { NSWorkspace.shared.open(link) }
+                    }
+                }
+                .disabled(!state.settings.hasSetLocation)
+            }
+
+            Section("Settings file") {
+                Text("Everything — sites, rigs, plans and settings — in one file, for a backup or the web app's Import Mac Settings File.")
+                    .font(.scaled(.caption, scale: uiTextScale))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Export Settings…") { SkyBotherApp.exportSettings(state.settings) }
+                    .disabled(!state.settings.hasSetLocation)
+            }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(Palette.spaceBackground)
         .confirmationDialog("Stop syncing on every device?", isPresented: $confirmingStop) {
             Button("Stop Syncing Everywhere", role: .destructive) { sync.stopEverywhere() }
         } message: {

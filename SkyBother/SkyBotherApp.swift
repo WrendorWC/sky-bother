@@ -117,7 +117,7 @@ struct SkyBotherApp: App {
                 // A copy of settings.json somewhere you can find it: the real
                 // one lives in ~/Library/Application Support/SkyBother, which
                 // Finder hides. The web app's "Import Mac Settings File" reads it.
-                Button("Export Settings…") { exportSettings() }
+                Button("Export Settings…") { Self.exportSettings(state.settings) }
                     .disabled(!state.settings.hasSetLocation)
             }
             CommandGroup(after: .toolbar) {
@@ -367,7 +367,7 @@ extension SkyBotherApp {
     /// File → Export Settings…: settings.json, saved where you choose, in
     /// the same form the app keeps it (and the web app imports).
     @MainActor
-    func exportSettings() {
+    static func exportSettings(_ settings: StoredSettings) {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "Sky Bother Settings.json"
         panel.allowedContentTypes = [.json]
@@ -377,7 +377,7 @@ extension SkyBotherApp {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
         do {
-            try encoder.encode(state.settings).write(to: url, options: .atomic)
+            try encoder.encode(settings).write(to: url, options: .atomic)
         } catch {
             NSAlert(error: error).runModal()
         }

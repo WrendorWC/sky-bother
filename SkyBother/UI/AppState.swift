@@ -1104,8 +1104,10 @@ final class AppState: ObservableObject {
     /// Keeps the current rig in the saved list so you can switch between several
     /// instruments without re-typing their numbers.
     func saveCurrentRig() {
-        if let index = settings.savedRigs.firstIndex(where: { $0.id == rig.id }) {
-            settings.savedRigs[index] = rig
+        if let match = savedRigMatchingCurrent, let index = settings.savedRigs.firstIndex(where: { $0.id == match.id }) {
+            var updated = rig
+            updated.id = match.id
+            settings.savedRigs[index] = updated
         } else {
             settings.savedRigs.append(rig)
         }
@@ -1145,8 +1147,17 @@ final class AppState: ObservableObject {
         Task { await rebuildPlans() }
     }
 
-    var isCurrentRigSaved: Bool {
-        settings.savedRigs.contains { $0.id == rig.id }
+    var isCurrentRigSaved: Bool { savedRigMatchingCurrent != nil }
+
+    /// Whether a saved rig is the one in use: the same rig, or a copy of it —
+    /// a preset loaded again is a fresh rig with the same name and numbers,
+    /// and calling its saved twin "not in use" offered to save it twice.
+    func isInUse(_ saved: Rig) -> Bool {
+        saved.id == rig.id || (saved.name == rig.name && saved.hasSameSpecs(as: rig))
+    }
+
+    private var savedRigMatchingCurrent: Rig? {
+        settings.savedRigs.first { $0.id == rig.id } ?? settings.savedRigs.first(where: isInUse)
     }
 
     // MARK: - Custom targets
