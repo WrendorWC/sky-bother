@@ -2,8 +2,9 @@
 
 *Is the sky worth the bother tonight?*
 
-A Mac app that answers exactly that: whether tonight is worth setting up for, and
-what to point at if it is.
+A Mac app — and now a web app, phone included, at **[skybother.com](https://skybother.com)** —
+that answers exactly that: whether tonight is worth setting up for, and what to
+point at if it is.
 
 ![Sky Bother's main window: a week of nights scored down the left, tonight's darkness, cloud, moon and dew risk across the night, a suggested plan of 47 Tucanae then the Orion Nebula, and the Orion Nebula framed in a Seestar S50's field of view](docs/main-window.png)
 
@@ -13,6 +14,11 @@ Open the first time (it isn't notarized yet, so macOS needs that one-time nudge)
 
 *On Windows?* Matt Palulis is developing a Windows version in parallel:
 [mpalulis/sky-bother-windows](https://github.com/mpalulis/sky-bother-windows).
+
+*On your phone, or any browser?* Open **[skybother.com](https://skybother.com)**.
+It runs the Mac app's own scoring and planning code (compiled to WebAssembly), so
+the same site, rig and settings give the same scores — see
+[On the web and your phone](#on-the-web-and-your-phone).
 
 It combines four things that normally live in four different tabs:
 
@@ -69,7 +75,11 @@ signing setup, but on your own Mac it just works.
 
 ## Using it
 
-**Set your site first.** ⌘, opens Settings.
+**Set your site first.** ⌘, opens Settings. Changes in Location, Equipment and
+Planning wait for **Save** (⌘S) in the bar at the bottom of the window — nothing
+changes, here or on synced devices, until you save. **Display** (UI scale, night
+mode, units) applies at once and stays on this Mac. **Sync** keeps everything in
+step with the web app and your phone (below).
 
 - **Location** — search for your town, or type coordinates directly. Then set two
   things that no API can tell you:
@@ -112,6 +122,38 @@ signing setup, but on your own Mac it just works.
 
 The **menu bar icon** gives you tonight's verdict and top three targets without
 opening anything.
+
+---
+
+## On the web and your phone
+
+[skybother.com](https://skybother.com) is Sky Bother in a browser: the week of
+nights, the night chart, Sky View, the Moon card, the planner, Session View for
+use at the telescope (with a Keep Screen On button), the catalog with custom
+targets, Better Spot Nearby, Help, and night mode. It's built to work on a
+phone. The scoring and planning are the Mac app's own Swift code compiled to
+WebAssembly and run in the browser, so with the same forecast they give the
+same numbers.
+
+**Getting your setup across** — three ways:
+
+- **Sync** (Settings → Sync on either): turn it on on one device, and enter
+  the code (or scan the QR code) on the others. Sites, rigs, settings, custom
+  targets and plans then stay in step everywhere, with the newest change to
+  each winning. There's no account; everything is encrypted on the device
+  before it leaves, and the server keeps only a copy it can't read. Each
+  browser on each device joins once — the web app's Sync tab shows a green dot
+  while that browser is syncing. UI scale, night mode and units stay per device.
+- **Setup link** (File → Copy Web Setup Link): a one-time link with your site,
+  rig and settings, for a phone or a friend. It doesn't keep them in step.
+- **Settings file** (File → Export Settings…): everything in one file, which
+  the web app's Settings → Sync → Import Mac Settings File reads.
+
+**What's different on the web.** A browser can't reach a telescope on your
+network, so there's no Seestar live picture. Better Spot Nearby finds places
+from OpenStreetMap rather than Apple Maps, so it can suggest different spots.
+If the main forecast service is slow, the web app uses MET Norway and says so,
+and scores can differ from the Mac's until it's back.
 
 ---
 
@@ -215,6 +257,9 @@ Some deliberate modelling choices worth knowing about:
   cloud texture and city lights, not just a daylight photo). Fetched on the
   same cadence and throttle as the weather. Covers the Americas only (GOES-East's
   footprint); the panel just doesn't appear outside it.
+- **Sync**: an encrypted copy of your settings is kept by skybother.com (a
+  Cloudflare Worker) under a number derived from your sync code. The code
+  never leaves your devices, and without it the copy can't be read.
 - **Astronomy**: computed locally, no network. Solar position uses the standard
   low-precision Meeus series (accurate to about 0.01°); the moon uses a truncated
   ELP series good to a few arcminutes in position and about a quarter hour in
@@ -268,7 +313,10 @@ SkyBother/
   DarkSky/    Night-lights and land-cover clients, sky-glow model, nearby-spot finders
   Planner/    Sky quality, equipment fit, and the planner that ties it together
   UI/         SwiftUI views, charts and app state
-  Support/    Formatting and settings persistence
+  Support/    Formatting, settings persistence, sync
+web/          The web app at skybother.com: the engine (the Swift above, compiled
+              to WebAssembly), the Svelte front end, and the Cloudflare Worker
+              (sync store, weather and land-cover pass-throughs)
 ```
 
 Settings live in `~/Library/Application Support/SkyBother/settings.json`.

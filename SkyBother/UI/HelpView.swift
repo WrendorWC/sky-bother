@@ -29,7 +29,7 @@ enum HelpContent {
         HelpTopic(title: "Getting Started", systemImage: "sparkles", sections: [
             HelpSection(body: "The Setup Wizard runs the first time Sky Bother opens. It has five steps: site, horizon, rig, goal and your first plan. Only the site is required; the other steps have defaults and a Skip button. Progress is saved, so quitting part-way resumes at the same step."),
             HelpSection(heading: "Advanced Setup", body: "“Advanced Setup…” at the top of the Setup Wizard opens every setting at once: exact coordinates and elevation, the horizon by direction, optics numbers, mount and filters, and all planning thresholds. It uses the same controls as Settings."),
-            HelpSection(heading: "Running It Later", body: "Use the “Setup Wizard” button at the top of any Settings tab, or “Setup Wizard” at the foot of the night list. It isn’t available while the planner has unsaved changes; an open planner with none is simply closed.")
+            HelpSection(heading: "Running It Later", body: "Use the “Setup Wizard” button at the top of Settings → Location, or “Setup Wizard” at the foot of the night list. It isn’t available while the planner has unsaved changes; an open planner with none is simply closed.")
         ]),
 
         HelpTopic(title: "Scores & Verdicts", systemImage: "target", sections: [
@@ -86,7 +86,7 @@ enum HelpContent {
         HelpTopic(title: "Session View", systemImage: "play.circle", sections: [
             HelpSection(body: "“View Session”, under Plan Session on tonight’s Home and in the planner’s header, opens Session View, the plan for use at the telescope: what’s on now and how long is left, or what’s next and when it starts; side by side, your frame on the target and the sky dome as it is right now, with the target marked; then the weather and sky at this minute — temperature and dew point, humidity, wind and its direction, cloud by layer, the Moon and how long darkness lasts — a few facts about the target, and what comes after. When dew risk is High or worse, a reminder beside the target’s name says when to turn on your dew heater. It follows the clock, so there’s nothing to press — your telescope’s own app runs the night. The dim red-black screen is easy on dark-adapted eyes. It’s available for tonight only."),
             HelpSection(heading: "Live Picture from a Seestar", body: "With a Seestar as your rig, “Connect to Telescope” in Session View shows the stack the scope is building. Start stacking in the Seestar app, then leave its live view or close it: the scope sends its picture to one app at a time. Each stack is the full-resolution raw image, so a new one takes a minute or so to arrive over Wi-Fi; the percentage shows the next one coming. Click the picture to open it in a window you can zoom into. Sky Bother only watches — it never controls the scope — and saves nothing."),
-            HelpSection(heading: "Night Mode", body: "“Night Mode” in the toolbar (⇧⌘N, also under View and in Settings → Planning → What to show) turns every Sky Bother window red, pictures and popups included, and the background nearly black, so looking at the screen at the scope doesn’t cost you your dark adaptation. Turn your display brightness down as well. “Day Mode” switches back; Sky Bother remembers which you left it in.")
+            HelpSection(heading: "Night Mode", body: "“Night Mode” in the toolbar (⇧⌘N, also under View and in Settings → Display) turns every Sky Bother window red, pictures and popups included, and the background nearly black, so looking at the screen at the scope doesn’t cost you your dark adaptation. Turn your display brightness down as well. “Day Mode” switches back; Sky Bother remembers which you left it in.")
         ]),
 
         HelpTopic(title: "Availability Bars", systemImage: "chart.xyaxis.line", sections: [
@@ -129,13 +129,14 @@ enum HelpContent {
         ]),
 
         HelpTopic(title: "Planning Settings", systemImage: "slider.horizontal.3", sections: [
-            HelpSection(heading: "Goal", body: "Quick session, Deep integration and Variety each set the integration goal and plan emphasis. Changing either value makes it Custom."),
+            HelpSection(heading: "Saving Changes", body: "Changes in Settings → Location, Equipment and Planning wait for Save (⌘S) in the bar at the bottom of the window — nothing changes, here or on your synced devices, until then. Cancel throws them away, and closing the window with changes asks first. Display applies at once."),
+            HelpSection(heading: "Goal", body: "Quick session, Deep integration and Variety each set the integration goal and plan emphasis. Changing either under Fine-tune makes it Custom."),
             HelpSection(heading: "Maximum Cloud Cover", body: "Cloud up to this counts as clear. Over it, every 6 points halves what an hour counts for. See Scores & Verdicts → Cloud: No Hard Cutoff for why. Around 20% works well."),
             HelpSection(heading: "Minimum Darkness", body: "The Sun’s altitude at which the sky counts as dark. −18° is full astronomical darkness."),
             HelpSection(heading: "Minimum Altitude", body: "Targets lower than this are skipped, even where the horizon is open."),
             HelpSection(heading: "Integration Goal", body: "The usable time a target needs for full marks on time on target."),
             HelpSection(heading: "Hide Below Score", body: "Targets under this score are left out of lists and suggestions. It doesn’t change any score."),
-            HelpSection(heading: "UI Scale", body: "Under the night list. With Auto on, the interface sizes itself to the window. Turn Auto off to set it yourself."),
+            HelpSection(heading: "UI Scale", body: "Under the night list, and in Settings → Display. With Auto on, the interface sizes itself to the window. Turn Auto off to set it yourself. UI scale, night mode and units stay on this Mac; sync leaves them alone."),
             HelpSection(heading: "Nights Ahead", body: "How many nights to plan. Cloud forecasts beyond about a week are unreliable.")
         ]),
 
@@ -148,12 +149,22 @@ enum HelpContent {
             HelpSection(heading: "Custom Targets", body: "“Add Custom Target” adds anything missing. Custom targets are scored like any other; click one to edit or delete it.")
         ]),
 
+        HelpTopic(title: "Sync & the Web", systemImage: "arrow.triangle.2.circlepath", sections: [
+            HelpSection(body: "Sky Bother also runs in any web browser, phone included, at skybother.com — the same scoring and planning as this app, with Sky View, the planner and Session View."),
+            HelpSection(heading: "Sync", body: "Settings → Sync keeps your sites, rig, settings, custom targets and plans the same here, on the web and on your phone. There’s no account: Turn On Sync gives a code, and every other device enters it (or scans the QR code). Everything is encrypted on the device before it leaves, so the server only ever holds a copy it can’t read. Each device keeps its own UI scale, night mode and units. Changes go out a few seconds after you make them, and others’ arrive when Sky Bother comes to the front and every couple of minutes while it’s there."),
+            HelpSection(heading: "Each Browser Joins Once", body: "A browser keeps its settings and sync code to itself, so each browser on each device enters the code once. The web app’s Sync tab shows a green dot while that browser is syncing. A browser that isn’t keeps its own copy, and its changes never reach this Mac."),
+            HelpSection(heading: "Setup Link", body: "File → Copy Web Setup Link (or Settings → Sync) copies a one-time link that gives the web app, your phone or a friend your site, rig and settings. Unlike sync, it doesn’t keep them in step afterwards. Open on the Web opens it in your browser."),
+            HelpSection(heading: "Settings File", body: "File → Export Settings… saves everything — sites, rigs, plans and settings — in one file, for a backup or for the web app’s Import Mac Settings File."),
+            HelpSection(heading: "What’s Different on the Web", body: "A browser can’t reach a telescope on your network, so there’s no Seestar live picture. Better Spot Nearby finds places from OpenStreetMap rather than Apple Maps, so it can suggest different spots.")
+        ]),
+
         HelpTopic(title: "Data Sources", systemImage: "antenna.radiowaves.left.and.right", sections: [
             HelpSection(heading: "Weather", body: "Open-Meteo, free and keyless. In the US and southern Canada the cloud totals come from NOAA’s National Blend of Models. If Open-Meteo is unreachable, MET Norway is used and the sidebar says “backup source”. Automatic refreshes happen at most hourly; Refresh (⌘R) always fetches."),
             HelpSection(heading: "Astronomy", body: "Sun, Moon and target positions and all rise, set and twilight times are computed on your Mac. The Sun is accurate to about 0.01°, the Moon to a few arcminutes."),
             HelpSection(heading: "Catalog", body: "About 1,150 targets: the Messier catalogue, 49 other showpieces, and about 1,000 NGC/IC objects from OpenNGC (CC-BY-SA-4.0), plus 58 bright and double stars with positions and magnitudes from SIMBAD. Positions are J2000."),
             HelpSection(heading: "Comets", body: "Orbits from the IAU Minor Planet Center, downloaded about once a week and kept for offline use. Positions are computed on your Mac and agree with JPL Horizons to about a hundredth of a degree."),
             HelpSection(heading: "Images", body: "Framing images: Digitized Sky Survey (STScI/NASA), colour by CDS. Photographs: Wikipedia, credited under each. Satellite clouds: NASA GIBS, GOES-East GeoColor (Americas only). Sky View star map: NASA Goddard SVS Deep Star Maps 2020, from Gaia DR2, Hipparcos-2 and Tycho-2. Moon: NASA SVS CGI Moon Kit, from Lunar Reconnaissance Orbiter data."),
+            HelpSection(heading: "Sync", body: "An encrypted copy of your settings is kept by skybother.com (on Cloudflare) under a number derived from your sync code. The code itself never leaves your devices, and without it the copy can’t be read."),
             HelpSection(heading: "Nearby Spots", body: "Places: Apple Maps. Night lights: NASA Black Marble. Land cover: ESA WorldCover 2021 (© ESA WorldCover project / Copernicus Sentinel data, CC BY 4.0). Park hours: © OpenStreetMap contributors.")
         ])
     ]
