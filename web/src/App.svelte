@@ -49,6 +49,14 @@
   const routeKey = $derived(routeMatch?.[1] ?? null);
   const routeTarget = $derived(routeMatch?.[2] ? decodeURIComponent(routeMatch[2]) : null);
   const showingCatalog = $derived(route === '#/catalog');
+  // Where the Catalog's Done (or the Catalog button again) goes back to.
+  let catalogReturn = $state('#/');
+  $effect(() => {
+    if (route !== '#/catalog' && !route.startsWith('#/help')) catalogReturn = route || '#/';
+  });
+  function leaveCatalog() {
+    location.hash = catalogReturn;
+  }
   // #/help or #/help/<topic>
   const helpMatch = $derived(/^#\/help(?:\/([a-z]+))?$/.exec(route));
   function openHelp(event) {
@@ -396,7 +404,8 @@
         <a class="tool" href="#/help" onclick={openHelp} aria-current={helpMatch ? 'page' : undefined} title="Help">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9.6 9.3a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.6" /><circle cx="12" cy="16.8" r="0.4" /></svg><span class="tool-label">Help</span>
         </a>
-        <a class="tool" href="#/catalog" aria-current={showingCatalog ? 'page' : undefined} title="Catalog">
+        <a class="tool" href={showingCatalog ? catalogReturn : '#/catalog'} aria-current={showingCatalog ? 'page' : undefined}
+           title={showingCatalog ? 'Close the catalog' : 'Catalog'}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg><span class="tool-label">Catalog</span>
         </a>
         <button type="button" class="tool" class:on={settings.preferences.nightMode} title="Night mode: red light only"
@@ -498,7 +507,8 @@
         {:else if showingCatalog && nights.length}
           <a class="back" href="#/">‹ All nights</a>
           <Catalog entries={catalog} {nights} timeZone={settings.site.timeZoneIdentifier} preferences={settings.preferences}
-                   customTargets={settings.customTargets ?? []} oncustom={list => changeSettings({ ...settings, customTargets: list })} />
+                   customTargets={settings.customTargets ?? []} oncustom={list => changeSettings({ ...settings, customTargets: list })}
+                   onclose={leaveCatalog} />
         {:else if night}
           <a class="back" href="#/">‹ All nights</a>
           {#key night.planKey}

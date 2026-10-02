@@ -109,8 +109,9 @@ const DATES = 6, DAYS_BETWEEN = 61, NEWEST_AGE = 10, MIN_DATES = 2;
 const NIGHT_CACHE_DAYS = 60;
 
 // The colour map's grey levels and their radiance band midpoints, exactly as
-// NightLightsClient has them. (The 91st midpoint, 54.9 between 9.7 and 10.05,
-// looks like a slip in the Mac's table; kept the same so the two apps agree.)
+// NightLightsClient has them. Grey 166 is 9.8–10: NASA's colour map gives its
+// source range as "[9.8,100)", a typo, and both apps' tables once carried the
+// resulting 54.9. Caches made with it are named differently (v2).
 const GRAY = [7, 13, 19, 24, 29, 33, 37, 41, 45, 48, 52, 55, 58, 61, 64, 67, 69, 72, 74, 77, 79, 81, 83, 85, 87, 89, 91, 93, 95, 96, 98, 100,
   101, 103, 105, 106, 108, 109, 111, 112, 113, 115, 116, 117, 118, 120, 121, 122, 123, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139,
   140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171,
@@ -121,7 +122,7 @@ const MIDPOINTS = [0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95, 1
   2.05, 2.15, 2.25, 2.35, 2.45, 2.55, 2.65, 2.75, 2.85, 2.95, 3.05, 3.15, 3.25, 3.35, 3.45, 3.55, 3.65, 3.75, 3.85, 3.95,
   4.05, 4.15, 4.25, 4.35, 4.45, 4.55, 4.65, 4.75, 4.85, 4.95, 5.05, 5.15, 5.25, 5.35, 5.45, 5.55, 5.65, 5.75, 5.85, 5.95,
   6.05, 6.15, 6.25, 6.35, 6.45, 6.55, 6.65, 6.75, 6.9, 7.05, 7.15, 7.25, 7.35, 7.5, 7.65, 7.75, 7.85, 8.0, 8.15, 8.25,
-  8.4, 8.55, 8.7, 8.85, 8.95, 9.1, 9.25, 9.4, 9.55, 9.7, 54.9, 10.05, 10.2, 10.35, 10.5, 10.7, 10.9, 11.05, 11.2, 11.4,
+  8.4, 8.55, 8.7, 8.85, 8.95, 9.1, 9.25, 9.4, 9.55, 9.7, 9.9, 10.05, 10.2, 10.35, 10.5, 10.7, 10.9, 11.05, 11.2, 11.4,
   11.6, 11.75, 11.9, 12.1, 12.3, 12.5, 12.7, 12.9, 13.1, 13.3, 13.5, 13.75, 14.0, 14.2, 14.4, 14.6, 14.85, 15.1, 15.3, 15.55,
   15.8, 16.05, 16.3, 16.55, 16.8, 17.05, 17.35, 17.6, 17.85, 18.15, 18.45, 18.7, 18.95, 19.25, 19.55, 19.85, 20.15, 20.5, 20.85, 21.15,
   21.45, 21.75, 22.1, 22.45, 22.8, 23.15, 23.5, 23.85, 24.2, 24.6, 24.95, 25.3, 25.7, 26.1, 26.5, 26.9, 27.3, 27.7, 28.1, 28.55,
@@ -181,7 +182,7 @@ function timeout(ms) {
 /** The radiance grid around a site — the median of six dates over the past year — cached for 60 days. */
 export async function nightLightsGrid(latitude, longitude) {
   const lat = Math.round(latitude * 10) / 10, lon = Math.round(longitude * 10) / 10;
-  const cacheKey = `/nearby-cache/nightlights_${lat.toFixed(1)}_${lon.toFixed(1)}`;
+  const cacheKey = `/nearby-cache/nightlights_v2_${lat.toFixed(1)}_${lon.toFixed(1)}`;
   const cache = await caches.open('skybother-nearby').catch(() => null);
   const hit = await cache?.match(cacheKey);
   if (hit && Date.now() - Number(hit.headers.get('X-Retrieved')) < NIGHT_CACHE_DAYS * 86_400_000) {

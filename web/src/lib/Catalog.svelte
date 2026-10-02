@@ -11,7 +11,7 @@
   import { weekday, dayAndMonth, hours } from './format.js';
 
   // `customTargets` are the ones you added; `oncustom(list)` saves a changed list.
-  let { entries, nights, timeZone, preferences = {}, customTargets = [], oncustom = null } = $props();
+  let { entries, nights, timeZone, preferences = {}, customTargets = [], oncustom = null, onclose = null } = $props();
 
   const customIDs = $derived(new Set(customTargets.map(t => t.designation)));
   const catalogIDs = $derived(new Set(entries.map(e => e.id).filter(id => !customIDs.has(id))));
@@ -108,7 +108,10 @@
   <header>
     <h2>Catalog</h2>
     <span class="muted">{results.length} target{results.length === 1 ? '' : 's'}</span>
-    {#if oncustom}<button type="button" class="add" onclick={() => (editing = { existing: null })}>+ Add Custom Target</button>{/if}
+    <div class="header-buttons">
+      {#if oncustom}<button type="button" class="add" onclick={() => (editing = { existing: null })}>+ Add Custom Target</button>{/if}
+      {#if onclose}<button type="button" class="done" onclick={onclose}>Done</button>{/if}
+    </div>
   </header>
 
   <div class="toolbar">
@@ -211,7 +214,10 @@
   .verdict { font-size: 13px; font-weight: 600; }
   .faint { color: var(--tertiary); }
   .more { justify-self: center; }
-  header .add { margin-left: auto; font-weight: 600; }
+  header { flex-wrap: wrap; }
+  .header-buttons { margin-left: auto; display: flex; gap: 8px; }
+  .add { font-weight: 600; }
+  .done { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; padding: 7px 18px; }
   .cards li { position: relative; }
   .custom-tag { font-size: 11px; font-weight: 700; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 0 6px; vertical-align: 2px; }
   /* Edit sits over the card's corner, clear of its score. */

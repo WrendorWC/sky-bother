@@ -211,7 +211,7 @@ struct NightLightsClient: Sendable {
 
     private static func cacheURL(latitude: Double, longitude: Double) -> URL? {
         guard let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else { return nil }
-        let name = String(format: "nightlights_%+.1f_%+.1f.json", latitude, longitude)
+        let name = String(format: "nightlights_v2_%+.1f_%+.1f.json", latitude, longitude)
         return base.appendingPathComponent("SkyBother", isDirectory: true).appendingPathComponent(name)
     }
 
@@ -235,6 +235,11 @@ struct NightLightsClient: Sendable {
 
     // MARK: - Colour map
 
+    // Grey 166 is 9.8–10. NASA's colour map gives its source range as
+    // "[9.8,100)" — a typo beside its own "[9.8,10)" — and this table once
+    // carried the resulting 54.9, which made that shade of suburb count five
+    // times too bright. Caches made with it are named differently (v2).
+    //
     // The colour map's saturation point is 38.2 nW/(cm² sr); anything brighter
     // renders pure white. The top band is given 60 — a deliberately modest
     // stand-in for a city core, which undercounts the brightest downtowns but
@@ -264,7 +269,7 @@ struct NightLightsClient: Sendable {
         6.05, 6.15, 6.25, 6.35, 6.45, 6.55, 6.65, 6.75, 6.9, 7.05,
         7.15, 7.25, 7.35, 7.5, 7.65, 7.75, 7.85, 8.0, 8.15, 8.25,
         8.4, 8.55, 8.7, 8.85, 8.95, 9.1, 9.25, 9.4, 9.55, 9.7,
-        54.9, 10.05, 10.2, 10.35, 10.5, 10.7, 10.9, 11.05, 11.2, 11.4,
+        9.9, 10.05, 10.2, 10.35, 10.5, 10.7, 10.9, 11.05, 11.2, 11.4,
         11.6, 11.75, 11.9, 12.1, 12.3, 12.5, 12.7, 12.9, 13.1, 13.3,
         13.5, 13.75, 14.0, 14.2, 14.4, 14.6, 14.85, 15.1, 15.3, 15.55,
         15.8, 16.05, 16.3, 16.55, 16.8, 17.05, 17.35, 17.6, 17.85, 18.15,
