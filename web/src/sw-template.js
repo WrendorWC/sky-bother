@@ -34,6 +34,11 @@ const imageHosts = ['alasky.cds.unistra.fr', 'alaskybis.cds.unistra.fr'];
 // tiles, which Aladin loads itself and which, passed through here, never
 // arrived (the sky stayed black).
 const isFramingCutout = url => imageHosts.includes(url.hostname) && url.pathname.includes('hips2fits');
+// Sky Browser's survey tiles, kept once seen (as the Mac keeps its sky
+// pictures), so going back to somewhere is instant. They never change.
+const SKY = 'skybother-sky';
+const MAX_SKY = 3000;
+const isSurveyTile = url => imageHosts.includes(url.hostname) && /^\/DSS\/DSSColor\/+Norder\d+\//.test(url.pathname);
 
 self.addEventListener('fetch', event => {
   const request = event.request;
@@ -46,6 +51,10 @@ self.addEventListener('fetch', event => {
   // Pictures: from storage once seen.
   if ((own && /^\/catalog\/(photos|sky)\//.test(url.pathname)) || isFramingCutout(url)) {
     event.respondWith(fromStorageFirst(request, IMAGES, true));
+    return;
+  }
+  if (isSurveyTile(url)) {
+    event.respondWith(fromStorageFirst(request, SKY, false).then(response => { trimLater(SKY, MAX_SKY); return response; }));
     return;
   }
   if (!own) return;
@@ -67,13 +76,27 @@ async function fromStorageFirst(request, name, trim) {
   if (hit) return hit;
   const response = await fetch(request);
   if (response.ok || response.type === 'opaque') {
-    await cache.put(request, response.clone());
+    // Stored alongside, not before, handing it over.
+    const stored = cache.put(request, response.clone()).catch(() => {});
+    if (!trim) return response;
+    await stored;
     if (trim) {
       const keys = await cache.keys();
       for (const key of keys.slice(0, Math.max(0, keys.length - MAX_IMAGES))) await cache.delete(key);
     }
   }
   return response;
+}
+
+// Trimmed in the background, now and then, so a tile isn't kept waiting.
+let trimming = false;
+function trimLater(name, max) {
+  if (trimming || Math.random() > 0.05) return;
+  trimming = true;
+  caches.open(name).then(async cache => {
+    const keys = await cache.keys();
+    for (const key of keys.slice(0, Math.max(0, keys.length - max))) await cache.delete(key);
+  }).finally(() => (trimming = false));
 }
 
 async function networkFirst(request, fallbackPath = null) {

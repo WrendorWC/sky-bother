@@ -61,12 +61,53 @@
         aladin.on('zoomChanged', changed);
         title = start.displayName;
         changed();
+        showFirstPicture(start.rightAscension, start.declination, fitFor(start));
       } catch (e) {
         failed = `The sky couldn't be loaded: ${e.message}`;
       }
     })();
     return () => { cancelled = true; };
   });
+
+  // The first picture (as the Mac shows every view): one cutout of exactly
+  // what's on screen, asked for at once and shown in place of Aladin's image
+  // layer — its marks stay on top — until you pan or zoom. Survey tiles come
+  // one at a time from France, a second or so each, so without this the
+  // first view took ten or fifteen seconds to fill in.
+  let firstPicture = $state(null);
+  let pictureFor = 0;
+  const cutouts = ['https://alaskybis.cds.unistra.fr/hips-image-services/hips2fits', 'https://alasky.cds.unistra.fr/hips-image-services/hips2fits'];
+  // Given where the view was sent rather than read back from Aladin, which
+  // hasn't settled yet (its first answer is a near-whole-sky field, and the
+  // picture came back as streaks).
+  async function showFirstPicture(ra, dec, fovAcross) {
+    if (!aladin || !size.width || !size.height) return;
+    const id = ++pictureFor;
+    const fx = fovAcross, fy = fovAcross * size.height / size.width;
+    const ratio = Math.min(2, devicePixelRatio || 1);
+    const query = new URLSearchParams({
+      hips: 'CDS/P/DSS2/color', ra: String(ra), dec: String(dec), projection: 'TAN', format: 'jpg',
+      // hips2fits's field of view is along the picture's longer side.
+      fov: String(Math.max(fx, fy)),
+      width: String(Math.min(1600, Math.round(size.width * ratio))), height: String(Math.min(1600, Math.round(size.height * ratio))),
+    });
+    for (const endpoint of cutouts) {
+      try {
+        const response = await fetch(`${endpoint}?${query}`);
+        if (!response.ok) continue;
+        const blob = await response.blob();
+        if (id !== pictureFor) return;
+        if (firstPicture) URL.revokeObjectURL(firstPicture);
+        firstPicture = URL.createObjectURL(blob);
+        return;
+      } catch {}
+    }
+  }
+  function dropFirstPicture() {
+    pictureFor++;
+    if (firstPicture) URL.revokeObjectURL(firstPicture);
+    firstPicture = null;
+  }
 
   let markTimer = null;
   function changed() {
@@ -96,11 +137,16 @@
   function go(entry) {
     search = '';
     title = entry.displayName;
+    dropFirstPicture();
     aladin?.gotoRaDec(entry.rightAscension, entry.declination);
     aladin?.setFoV(fitFor(entry));
     changed();
+    showFirstPicture(entry.rightAscension, entry.declination, fitFor(entry));
   }
-  const zoom = factor => aladin?.setFoV(Math.min(MAX_FOV, Math.max(MIN_FOV, fov[0] * factor)));
+  function zoom(factor) {
+    dropFirstPicture();
+    aladin?.setFoV(Math.min(MAX_FOV, Math.max(MIN_FOV, fov[0] * factor)));
+  }
 
   // --- Search ------------------------------------------------------------------
   let search = $state('');
@@ -223,7 +269,9 @@
     <p class="identified">{resolving ? 'Looking…' : centreName ?? 'Nothing catalogued here'}</p>
   {/if}
 
-  <div class="sky" bind:clientWidth={size.width} bind:clientHeight={size.height}>
+  <div class="sky" class:picture={firstPicture} bind:clientWidth={size.width} bind:clientHeight={size.height}
+       onpointerdown={dropFirstPicture} onwheel={dropFirstPicture}>
+    {#if firstPicture}<img class="first" src={firstPicture} alt="" />{/if}
     <div class="aladin" bind:this={host}></div>
     {#if frameBox}
       <div class="frame" style:width="{frameBox.width}px" style:height="{frameBox.height}px"
@@ -261,8 +309,13 @@
   .fov { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; margin-left: auto; }
   .zoom { width: 38px; padding: 6px 0; font-size: 18px; font-weight: 700; }
   .identified { margin: 0; font-weight: 600; color: var(--accent); }
-  .sky { position: relative; height: max(360px, calc(100vh - 240px)); border-radius: 12px; overflow: hidden; border: 1px solid var(--panel-border); background: #000; touch-action: none; }
-  .aladin { position: absolute; inset: 0; }
+  .sky { position: relative; height: clamp(280px, 60vh, 640px); border-radius: 12px; overflow: hidden; border: 1px solid var(--panel-border); background: #000; touch-action: none; }
+  .aladin { position: absolute; inset: 0; z-index: 1; }
+  .first { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  /* While the first picture shows, Aladin's image layer steps aside; its
+     marks stay drawn over the picture. */
+  .sky.picture .aladin, .sky.picture .aladin :global(.aladin-container) { background: transparent !important; }
+  .sky.picture .aladin :global(.aladin-imageCanvas) { opacity: 0; }
   .frame { position: absolute; left: 50%; top: 50%; border: 2px solid #3dc778; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6); pointer-events: none; z-index: 2; }
   .readout { position: absolute; left: 12px; bottom: 12px; z-index: 2; display: flex; gap: 8px; align-items: center; padding: 5px 9px; border-radius: 6px; background: rgba(0, 0, 0, 0.75); color: #fff; font-variant-numeric: tabular-nums; font-size: 14px; }
   .readout button { padding: 2px 8px; font-size: 12px; background: rgba(255, 255, 255, 0.12); border-color: transparent; color: #fff; }
