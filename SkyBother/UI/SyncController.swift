@@ -133,7 +133,24 @@ final class SyncController: ObservableObject {
                 version = newVersion
                 lastSynced = Date()
                 persist()
-                apply(merged)
+                // Anything changed here while the round was out — a Save in
+                // Settings, say — is newer than what came back. Applying the
+                // round's result over it put the old value back, and since
+                // it then matched the synced copy, the change was lost. Those
+                // sections stay as they are, and go up in another round.
+                var incoming = merged
+                var changedMeanwhile = false
+                if let local {
+                    let now = SyncDocument.from(state.settings, previous: local)
+                    for (name, section) in now.sections where local.sections[name]?.modifiedAt != section.modifiedAt {
+                        incoming.sections[name] = nil
+                        changedMeanwhile = true
+                    }
+                }
+                apply(incoming)
+                if changedMeanwhile {
+                    Task { @MainActor in self.syncNow() }
+                }
             } catch {
                 errorMessage = error.localizedDescription
             }

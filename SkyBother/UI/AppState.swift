@@ -113,6 +113,11 @@ final class AppState: ObservableObject {
     @Published var searchText: String = ""
     @Published var typeFilter: Set<TargetType> = []
 
+    /// What the Settings window edits until Save, and the Setup Wizard's
+    /// panes, which apply as they go.
+    lazy var settingsDraft = SettingsDraft(app: self)
+    lazy var setupDraft = SettingsDraft(app: self, appliesImmediately: true)
+
     private let weatherClient = OpenMeteoClient()
     private let backupWeatherClient = MetNorwayClient()
     private let cloudMapClient = CloudMapClient()
@@ -968,44 +973,7 @@ final class AppState: ObservableObject {
     // MARK: - Site and rig management
 
     func apply(_ result: GeocodingResult) {
-        let previousHorizon = settings.hasSetLocation ? site.horizonAltitude : Site.unset.horizonAltitude
-        // Keep the id stable if this is the same place, so saved sites do not
-        // duplicate. With more than one spot saved at one address, though,
-        // "the saved site near these coordinates" is ambiguous — a front yard
-        // and a back yard are metres apart — so the one already in use wins.
-        // Searching your own town again should leave you where you are rather
-        // than silently move you to the other end of the house.
-        let nearby = settings.savedSites.filter {
-            abs($0.latitude - result.latitude) < 0.01 && abs($0.longitude - result.longitude) < 0.01
-        }
-        let existing = nearby.first { $0.id == site.id } ?? nearby.first
-        // A genuinely new site gets a first guess at its Bortle class from
-        // the geocoder's population figure, rather than silently inheriting
-        // whatever the previous site happened to be set to — population is a
-        // loose proxy for light pollution, but it is better than a copy-paste
-        // default the user has to remember to change. Re-picking a place
-        // that is already saved keeps whatever Bortle class was set for it.
-        let bortle = existing?.bortleClass
-            ?? result.estimatedBortleClass
-            ?? (settings.hasSetLocation ? site.bortleClass : Site.unset.bortleClass)
-        var newSite = result.makeSite(bortleClass: bortle, horizonAltitude: previousHorizon)
-        if let existing {
-            newSite.id = existing.id
-            // Re-picking a place you already have keeps what you told the app
-            // about it — its name and its horizon, profile and all — rather
-            // than resetting them from the geocoder and the baseline of
-            // wherever you happened to be standing. That mattered little when
-            // a horizon was one number; it matters a lot once it is eight and
-            // named "Back yard".
-            newSite.name = existing.name
-            newSite.horizonAltitude = existing.horizonAltitude
-            newSite.horizonProfile = existing.horizonProfile
-        }
-        settings.site = newSite
-        settings.hasSetLocation = true
-        if !settings.savedSites.contains(where: { $0.id == newSite.id }) {
-            settings.savedSites.append(newSite)
-        }
+        settings.apply(result)
         Task { await refresh(force: true) }
     }
 
@@ -1034,15 +1002,7 @@ final class AppState: ObservableObject {
     /// would be lost, and coming back via Use would quietly restore an older
     /// version of the site as though nothing had happened.
     func switchToSavedSite(_ saved: Site) {
-        var updated = settings
-        if let index = updated.savedSites.firstIndex(where: { $0.id == site.id }) {
-            updated.savedSites[index] = site
-        } else if settings.hasSetLocation {
-            updated.savedSites.append(site)
-        }
-        updated.site = saved
-        settings = updated
-
+        settings.switchToSavedSite(saved)
         Task { await refresh(force: true) }
     }
 
@@ -1056,29 +1016,7 @@ final class AppState: ObservableObject {
     /// want to do is describe the spot you just created, not hunt for it in the
     /// list below.
     func duplicateCurrentSite() {
-        var updated = settings
-        // The original may never have been saved (nothing saves a site until
-        // you switch away from it), and may hold edits newer than its saved
-        // copy, so it is written back first.
-        if let index = updated.savedSites.firstIndex(where: { $0.id == site.id }) {
-            updated.savedSites[index] = site
-        } else {
-            updated.savedSites.append(site)
-        }
-
-        // Named only now, against the list *after* that write-back. Taking the
-        // names beforehand meant checking against a stale one — a site renamed
-        // "Back yard" still listed under the town it was found in — so the
-        // copy saw no collision and came out sharing its original's name,
-        // which is precisely the confusion the unique name exists to avoid.
-        var copy = site
-        copy.id = UUID()
-        copy.name = Site.uniqueName(basedOn: site.name, avoiding: updated.savedSites.map(\.name))
-        updated.savedSites.append(copy)
-        updated.site = copy
-        updated.hasSetLocation = true
-        settings = updated
-
+        settings.duplicateCurrentSite()
         Task { await refresh(force: true) }
     }
 
@@ -1091,55 +1029,18 @@ final class AppState: ObservableObject {
     }
 
     func removeSite(_ target: Site) {
-        settings.savedSites.removeAll { $0.id == target.id }
+        settings.removeSite(target)
     }
 
     func applyPreset(_ preset: Rig) {
-        var copy = preset
-        copy.id = UUID()
-        settings.rig = copy
+        settings.applyPreset(preset)
         Task { await rebuildPlans() }
     }
 
-    /// Keeps the current rig in the saved list so you can switch between several
-    /// instruments without re-typing their numbers.
-    func saveCurrentRig() {
-        if let match = savedRigMatchingCurrent, let index = settings.savedRigs.firstIndex(where: { $0.id == match.id }) {
-            var updated = rig
-            updated.id = match.id
-            settings.savedRigs[index] = updated
-        } else {
-            settings.savedRigs.append(rig)
-        }
-    }
-
-    /// Keeps the current numbers as a new saved rig, leaving any rig they
-    /// started from untouched.
-    func saveCurrentRigAsNew() {
-        var copy = rig
-        copy.id = UUID()
-        let names = settings.savedRigs.map(\.name)
-        if names.contains(copy.name) {
-            var n = 2
-            while names.contains("\(rig.name) \(n)") { n += 1 }
-            copy.name = "\(rig.name) \(n)"
-        }
-        settings.savedRigs.append(copy)
-        settings.rig = copy
-    }
-
-    /// True when the active rig is exactly one of the built-in presets.
-    var rigIsUnchangedPreset: Bool {
-        Rig.presets.contains { preset in
-            var candidate = rig
-            candidate.id = preset.id
-            return candidate == preset
-        }
-    }
-
-    func removeRig(_ target: Rig) {
-        settings.savedRigs.removeAll { $0.id == target.id }
-    }
+    func saveCurrentRig() { settings.saveCurrentRig() }
+    func saveCurrentRigAsNew() { settings.saveCurrentRigAsNew() }
+    var rigIsUnchangedPreset: Bool { settings.rigIsUnchangedPreset }
+    func removeRig(_ target: Rig) { settings.removeRig(target) }
 
     /// Switches to a saved rig, keeping its identity so edits update in place.
     func useSavedRig(_ saved: Rig) {
@@ -1147,18 +1048,8 @@ final class AppState: ObservableObject {
         Task { await rebuildPlans() }
     }
 
-    var isCurrentRigSaved: Bool { savedRigMatchingCurrent != nil }
-
-    /// Whether a saved rig is the one in use: the same rig, or a copy of it —
-    /// a preset loaded again is a fresh rig with the same name and numbers,
-    /// and calling its saved twin "not in use" offered to save it twice.
-    func isInUse(_ saved: Rig) -> Bool {
-        saved.id == rig.id || (saved.name == rig.name && saved.hasSameSpecs(as: rig))
-    }
-
-    private var savedRigMatchingCurrent: Rig? {
-        settings.savedRigs.first { $0.id == rig.id } ?? settings.savedRigs.first(where: isInUse)
-    }
+    var isCurrentRigSaved: Bool { settings.isCurrentRigSaved }
+    func isInUse(_ saved: Rig) -> Bool { settings.isInUse(saved) }
 
     // MARK: - Custom targets
 

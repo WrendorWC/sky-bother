@@ -44,6 +44,7 @@ struct SettingsView: View {
                     case .planning: PlanningSettings()
                     }
                 }
+                .environmentObject(state.setupDraft)
             }
             .frame(width: 640, height: 580)
             .onChange(of: state.settings) { _, _ in state.requestReplan() }
@@ -66,6 +67,9 @@ struct SettingsView: View {
             SyncSettings()
                 .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
         }
+        .environmentObject(state.settingsDraft)
+        .safeAreaInset(edge: .bottom, spacing: 0) { SettingsSaveBar().environmentObject(state.settingsDraft) }
+        .onDisappear { state.settingsDraft.settingsWindowClosed() }
         .background(FitWindowToContent())
         // Resizable both ways: the panes scroll, so a smaller window only
         // means less at once.
@@ -82,7 +86,7 @@ struct SettingsView: View {
 
 private struct LocationSettings: View {
     @Environment(\.uiTextScale) private var uiTextScale
-    @EnvironmentObject private var state: AppState
+    @EnvironmentObject private var state: SettingsDraft
     var isInGuidedSetup = false
     @Environment(\.openWindow) private var openWindow
     @State private var query = ""
@@ -237,7 +241,7 @@ private struct LocationSettings: View {
 
 private struct EquipmentSettings: View {
     @Environment(\.uiTextScale) private var uiTextScale
-    @EnvironmentObject private var state: AppState
+    @EnvironmentObject private var state: SettingsDraft
 
     var body: some View {
         Form {
@@ -369,7 +373,7 @@ private struct EquipmentSettings: View {
 
 private struct PlanningSettings: View {
     @Environment(\.uiTextScale) private var uiTextScale
-    @EnvironmentObject private var state: AppState
+    @EnvironmentObject private var state: SettingsDraft
     @State private var isFineTuning = false
 
     var body: some View {
@@ -511,6 +515,47 @@ private struct PlanningSettings: View {
 
 /// The way back into the Setup Wizard, at the top of every Settings tab:
 /// the quickest route to a sensible setup, for someone new or starting over.
+// MARK: - Save bar
+
+/// Shown while the Settings window holds changes not yet saved.
+private struct SettingsSaveBar: View {
+    @Environment(\.uiTextScale) private var uiTextScale
+    @EnvironmentObject private var draft: SettingsDraft
+
+    var body: some View {
+        if draft.justSaved && !draft.isDirty {
+            HStack(spacing: 8) {
+                Label(SyncController.shared.code == nil ? "Saved" : "Saved — on its way to your synced devices",
+                      systemImage: "checkmark.circle.fill")
+                    .font(.scaled(.callout, scale: uiTextScale).weight(.semibold))
+                    .foregroundStyle(Palette.go)
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(.bar)
+            .overlay(alignment: .top) { Divider() }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        } else if draft.isDirty {
+            HStack(spacing: 12) {
+                Label("Not saved yet: nothing changes, here or on synced devices, until you save.", systemImage: "exclamationmark.circle")
+                    .font(.scaled(.callout, scale: uiTextScale))
+                    .foregroundStyle(Palette.marginal)
+                Spacer(minLength: 8)
+                Button("Cancel") { draft.cancel() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Save") { draft.save() }
+                    .keyboardShortcut("s", modifiers: .command)
+                    .buttonStyle(.borderedProminent)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(.bar)
+            .overlay(alignment: .top) { Divider() }
+        }
+    }
+}
+
 // MARK: - Display
 
 /// What suits this screen: the UI scale, night mode and units. They stay on
@@ -725,7 +770,7 @@ private struct SyncSettings: View {
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Button("Export Settings…") { SkyBotherApp.exportSettings(state.settings) }
+                Button("Export Settings…") { SettingsExport.run(state.settings) }
                     .disabled(!state.settings.hasSetLocation)
             }
         }

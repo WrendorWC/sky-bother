@@ -4,6 +4,7 @@
   // tab of its own, and the ways to bring settings across between devices
   // gathered under Sync. Each tab is a column of grouped cards.
   import { setupLink } from './setupLink.js';
+  import { sync } from './syncState.svelte.js';
   import ImportSettings from './ImportSettings.svelte';
   import SyncSection from './SyncSection.svelte';
   import LocationSettings from './LocationSettings.svelte';
@@ -48,13 +49,21 @@
     onsave(next);
     base = copy(next);
     draft = copy(next);
+    clearTimeout(savedTimer);
+    saved = true;
+    savedTimer = setTimeout(() => (saved = false), 2200);
   }
+  let saved = $state(false);
+  let savedTimer;
   function cancel() {
     draft = copy(base);
   }
   const discardOK = () => !dirty || confirm('Discard your unsaved settings changes?');
-  function close() {
-    if (discardOK()) ondone();
+  // Cancel throws away what's here and closes Settings; it's what you
+  // pressed, so it doesn't ask.
+  function cancelAndClose() {
+    draft = copy(base);
+    ondone();
   }
   function wizard() {
     if (discardOK()) onsetup();
@@ -112,15 +121,11 @@
   <header>
     <h2>Settings</h2>
     <div class="row-buttons">
-      {#if dirty}
-        <button type="button" onclick={cancel}>Cancel</button>
-        <button type="button" class="done" onclick={save}>Save</button>
-      {:else}
-        <button type="button" class="wizard" onclick={wizard} title="Walks you through your site, horizon, telescope and goal">✦ Setup Wizard</button>
-        <button type="button" class="done" onclick={close}>Done</button>
-      {/if}
+      <button type="button" onclick={cancelAndClose}>Cancel</button>
+      <button type="button" class="done" onclick={save} disabled={!dirty}>Save</button>
     </div>
   </header>
+  {#if saved && !dirty}<p class="saved" role="status">✓ Saved{sync.code ? ' — on its way to your synced devices' : ''}</p>{/if}
   {#if dirty}<p class="unsaved">Not saved yet: nothing changes, here or on synced devices, until you tap Save.</p>{/if}
 
   <nav class="tabs" aria-label="Settings sections">
@@ -134,6 +139,12 @@
   </div>
 
   {#if tab === 'location'}
+    <div class="wizard-card card">
+      <div class="item inline">
+        <div><span class="title">New here, or starting over?</span><p class="caption">The Setup Wizard walks you through your site, horizon, telescope and goal.</p></div>
+        <button type="button" class="wizard" onclick={wizard}>✦ Setup Wizard</button>
+      </div>
+    </div>
     <LocationSettings settings={draft} {onsite} {onchange} autofocus={focus === 'location'} />
   {:else if tab === 'equipment'}
     <EquipmentSettings settings={draft} {rigPresets} {onchange} />
@@ -190,6 +201,8 @@
   header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
   h2 { margin: 0; font-size: 26px; }
   .done { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; padding: 7px 18px; }
+  .done:disabled { opacity: 0.4; cursor: default; }
+  .wizard { white-space: nowrap; }
   .wizard { font-weight: 600; }
   /* The header, Save and the tabs stay in reach while you scroll. */
   .top {
@@ -197,6 +210,8 @@
     margin: 0 -16px; padding: 10px 16px 12px; background: var(--space-top);
     border-bottom: 1px solid var(--divider);
   }
+  .saved { margin: 0; padding: 6px 12px; border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--excellent); background: color-mix(in srgb, var(--excellent) 14%, transparent); border: 1px solid color-mix(in srgb, var(--excellent) 40%, transparent); animation: pop 0.25s ease-out; }
+  @keyframes pop { from { transform: scale(0.96); opacity: 0; } }
   .unsaved { margin: 0; padding: 6px 12px; border-radius: 10px; font-size: 13px; color: var(--marginal); background: color-mix(in srgb, var(--marginal) 12%, transparent); border: 1px solid color-mix(in srgb, var(--marginal) 35%, transparent); }
   .tabs {
     display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 4px;

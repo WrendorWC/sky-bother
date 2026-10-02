@@ -38,6 +38,7 @@
 		29207A6D7F4230DC3884AC5D /* TargetFactCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B346A89CBB8B43A2D08D7C3 /* TargetFactCatalog.swift */; };
 		2A98D3C56C79D7E0DE27FBBE /* NearbySpotSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = E126116CAD84EF2B606A71C9 /* NearbySpotSelection.swift */; };
 		2B9DAB2E81A23A0F12B4ED8D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A8276F40E115B68D146ED7 /* AppState.swift */; };
+		2EB3EC088B74527140565C88 /* SettingsEdits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2294ADFC49F9C4CEEB104A61 /* SettingsEdits.swift */; };
 		315DC6FE2DCC961BB9D820C6 /* ScoreNarrative.swift in Sources */ = {isa = PBXBuildFile; fileRef = BADEDD5380AD76CBCA30A1C1 /* ScoreNarrative.swift */; };
 		3205068867F1696D45C52FE2 /* SessionModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5FF58CDCB84E27B67895123 /* SessionModeView.swift */; };
 		326F8BEC59E0A3AE3E8580AC /* RigFit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06609FAAB2A7F0C05A258C7D /* RigFit.swift */; };
@@ -90,6 +91,7 @@
 		6F4775EEC83B274C589737BF /* ParkHours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B29E97C5F533FF8DAFAA2B4 /* ParkHours.swift */; };
 		706D3FA5462E1A7AEB549C1C /* SkyResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C30ED2A029EDAA75CB7645E /* SkyResolver.swift */; };
 		71227EC5F44F1D4A98520221 /* SeestarFramesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C50DF354E8859A6342174F71 /* SeestarFramesTests.swift */; };
+		718747F90B9060785DC99FB8 /* SettingsDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = F550AD7F1140B022D4AA9E8F /* SettingsDraft.swift */; };
 		71F708AEF0F8A4663CDDAFAF /* Sun.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC03D2F23A9E28F04ACD72C3 /* Sun.swift */; };
 		743E80E460722257F44A8DC7 /* SkyBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC199764A5EF9A7CBF9B78B /* SkyBrowserView.swift */; };
 		7564F5DDEF980A49FEC6F501 /* SessionModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5FF58CDCB84E27B67895123 /* SessionModeView.swift */; };
@@ -109,6 +111,7 @@
 		9063B7BAE24EB38D5F0CFECC /* NightLightsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58BDA77DF11F11A3366FDE78 /* NightLightsClient.swift */; };
 		9178B89D9CCE5BD2E02AA0B4 /* SkyViewTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 494FAD9FF64CF24470E41183 /* SkyViewTimelineTests.swift */; };
 		9314FFECDED3602F219D7779 /* SkyCutoutClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B21991955A54E8BBF703ACE2 /* SkyCutoutClient.swift */; };
+		9474937CAE5E4F35E1A8E064 /* SettingsEdits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2294ADFC49F9C4CEEB104A61 /* SettingsEdits.swift */; };
 		947B542D1B3707021CAEA23D /* TargetImageCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB0607BD112BCCCEADD74AA /* TargetImageCatalog.swift */; };
 		95AE6C0DBCC56E5FED6E7120 /* NightTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121F6312FBA6A6551B7E5A5C /* NightTimelineView.swift */; };
 		964E681B54B225B637355B79 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916944C4D5E50DC97D5F6E2C /* ContentView.swift */; };
@@ -154,6 +157,7 @@
 		C984A842B76C1B84D255E943 /* Rig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6BB733E25C9D2AEC6029E7 /* Rig.swift */; };
 		CA3E88DDD147614D983171AC /* Constellation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 907954043CD0C303D7D3E582 /* Constellation.swift */; };
 		CA5EF8580BC1BC01906137AA /* ParkHours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B29E97C5F533FF8DAFAA2B4 /* ParkHours.swift */; };
+		CB965FA37A97AB942671FEC7 /* SettingsDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = F550AD7F1140B022D4AA9E8F /* SettingsDraft.swift */; };
 		CB9E6C5F22ED9AD7DC87757A /* DarkSkyFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A248B14A8FBB175A31D3EB /* DarkSkyFinder.swift */; };
 		CD9785BFC6F5680BBEC7DC4D /* SkyViewScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9147CD88A151E37523D49B13 /* SkyViewScreen.swift */; };
 		CDC5E8413B81154920B7D955 /* SetupFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B96727E01755A72F611AEDC /* SetupFlowView.swift */; };
@@ -209,6 +213,7 @@
 		1B96727E01755A72F611AEDC /* SetupFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupFlowView.swift; sourceTree = "<group>"; };
 		1C9EEDCDA3EC7A04EB4FED6A /* CameraFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraFrame.swift; sourceTree = "<group>"; };
 		21C5A347B7B38F09484F2E56 /* SkyBother.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SkyBother.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2294ADFC49F9C4CEEB104A61 /* SettingsEdits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsEdits.swift; sourceTree = "<group>"; };
 		256FB6DE32F301123F193DBF /* TargetImages.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = TargetImages.json; sourceTree = "<group>"; };
 		2AB56774EDA919324B27FDD0 /* SessionClockTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionClockTests.swift; sourceTree = "<group>"; };
 		2AE177D284D57249F5D35949 /* SyncController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncController.swift; sourceTree = "<group>"; };
@@ -292,6 +297,7 @@
 		EA6D28E6965C02BF8E656A61 /* SeestarFrames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeestarFrames.swift; sourceTree = "<group>"; };
 		EE9218A5DDDA723F9B6A81C3 /* PlanDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanDraftTests.swift; sourceTree = "<group>"; };
 		F3C0D660B9E2BB51D1FDE213 /* Planner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planner.swift; sourceTree = "<group>"; };
+		F550AD7F1140B022D4AA9E8F /* SettingsDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDraft.swift; sourceTree = "<group>"; };
 		F63BE2419188960C65B98408 /* SkyBotherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyBotherApp.swift; sourceTree = "<group>"; };
 		F7A123B8D06CD7F1E48A51CF /* SkyCoordinates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyCoordinates.swift; sourceTree = "<group>"; };
 		F8A4697D00ED56792C87CDE5 /* PlannerWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlannerWorkspaceView.swift; sourceTree = "<group>"; };
@@ -313,6 +319,7 @@
 			children = (
 				89216F01CDADC4FD5ABB6250 /* Formatting.swift */,
 				DC95A35A7813EA06C25324A2 /* Persistence.swift */,
+				2294ADFC49F9C4CEEB104A61 /* SettingsEdits.swift */,
 				AF5C751AF4A460B91ED021D7 /* SyncClient.swift */,
 			);
 			path = Support;
@@ -383,6 +390,7 @@
 				F8A4697D00ED56792C87CDE5 /* PlannerWorkspaceView.swift */,
 				31C65B07DCED75574C6A918D /* PlanStripView.swift */,
 				C5FF58CDCB84E27B67895123 /* SessionModeView.swift */,
+				F550AD7F1140B022D4AA9E8F /* SettingsDraft.swift */,
 				0867EA4E9C35E7C5BA67DC75 /* SettingsView.swift */,
 				1B96727E01755A72F611AEDC /* SetupFlowView.swift */,
 				B1B5DCAF4E542405646E34C3 /* SiteFinder.swift */,
@@ -660,6 +668,8 @@
 				3DC77A95419D180FD3E4BF2D /* SessionClock.swift in Sources */,
 				7564F5DDEF980A49FEC6F501 /* SessionModeView.swift in Sources */,
 				089AD8B54EEE930AA6D97EA4 /* SessionPlan.swift in Sources */,
+				718747F90B9060785DC99FB8 /* SettingsDraft.swift in Sources */,
+				2EB3EC088B74527140565C88 /* SettingsEdits.swift in Sources */,
 				4F3A5995DE781AF21D00FB3C /* SettingsView.swift in Sources */,
 				CDC5E8413B81154920B7D955 /* SetupFlowView.swift in Sources */,
 				D408F65C75BBF4D425AB19D7 /* Shootability.swift in Sources */,
@@ -757,6 +767,8 @@
 				504AFFB86159DC2053B76770 /* SessionClockTests.swift in Sources */,
 				3205068867F1696D45C52FE2 /* SessionModeView.swift in Sources */,
 				AC196A3CD18126E3C4A7FFB8 /* SessionPlan.swift in Sources */,
+				CB965FA37A97AB942671FEC7 /* SettingsDraft.swift in Sources */,
+				9474937CAE5E4F35E1A8E064 /* SettingsEdits.swift in Sources */,
 				3CC3C48445F09E957E8832D8 /* SettingsView.swift in Sources */,
 				EA3B63BC7D8C9FE72C2CF7EB /* SetupFlowView.swift in Sources */,
 				D3E6B3CD9B8D03AF3D6387D2 /* SetupTests.swift in Sources */,

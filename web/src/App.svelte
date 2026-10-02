@@ -13,7 +13,7 @@
   import { isSetupHash, readSetup } from './lib/setupLink.js';
   import { view } from './lib/view.svelte.js';
   import { sync, runSync, startSync } from './lib/syncState.svelte.js';
-  import { format as formatCode, normalize as normalizeCode } from './lib/sync.js';
+  import { format as formatCode, normalize as normalizeCode, SECTIONS as SYNC_SECTIONS } from './lib/sync.js';
 
   const storageKey = 'skybother.settings.v1';
 
@@ -109,8 +109,29 @@
   }
 
   async function syncNow({ joining = false } = {}) {
-    const next = await runSync(settings, { joining });
-    if (!next) return;
+    const sent = settings;
+    let next = await runSync(sent, { joining });
+    // A change saved while a round was out (or while one was busy, when
+    // this one did nothing) still needs to go up.
+    if (!next) {
+      if (sent && settings !== sent && JSON.stringify(settings) !== JSON.stringify(sent)) setTimeout(() => syncNow(), 0);
+      return;
+    }
+    // Anything changed here while the round was out — a Save in Settings,
+    // say — is newer than what came back, and taking the round's result
+    // over it put the old value back for good. Those sections stay, and go
+    // up in another round.
+    let changedMeanwhile = false;
+    if (!joining && sent && settings !== sent) {
+      next = { ...next };
+      for (const key of SYNC_SECTIONS) {
+        if (JSON.stringify(settings[key]) !== JSON.stringify(sent[key])) {
+          next[key] = settings[key];
+          changedMeanwhile = true;
+        }
+      }
+      if (changedMeanwhile) setTimeout(() => syncNow(), 0);
+    }
     const siteChanged = JSON.stringify(next.site) !== JSON.stringify(settings?.site);
     settings = next;
     try { localStorage.setItem(storageKey, JSON.stringify(settings)); } catch {}
@@ -369,7 +390,7 @@
     <div class="site-area">
       <SettingsPanel {settings} {rigPresets} onsave={saveFromSettings} onimport={importSettings} onsetup={startSetup}
                      onsyncjoin={joinSync} onsyncstart={() => syncNow()} onsyncnow={() => syncNow()}
-                     ondirty={d => (settingsDirty = d)} focus={settingsFocus} ondone={() => (editingSettings = false)} />
+                     ondirty={d => (settingsDirty = d)} focus={settingsFocus} ondone={() => { editingSettings = false; settingsDirty = false; }} />
     </div>
   {/if}
 
