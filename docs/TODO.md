@@ -1,5 +1,20 @@
 # Sky Bother to-do
 
+## Make www.skybother.com the main address (planned for Monday 2026-10-05)
+
+Jon wants the address bar to show www.skybother.com. A browser keeps the web app's settings and
+sync code per exact address, so pick one main address and redirect the other — now www.
+
+1. Cloudflare (walk Jon through it): delete the existing `www` DNS record (it blocked adding the
+   domain before); Workers & Pages → skybother → Settings → Domains & Routes → add custom domain
+   `www.skybother.com`; replace the "Redirect from WWW to root" rule with root → www, leaving
+   `/api/*` out of the redirect so sync and the MET Norway proxy keep working on either host.
+2. Code: the Mac's web addresses → www — `Support/Persistence.swift` (setup link),
+   `Support/SyncClient.swift` (sync API base), `UI/SyncController.swift` (sync link/QR), the
+   Settings → Sync caption in `UI/SettingsView.swift`; web comments in `setupLink.js`,
+   `weather.js`, and the MET Norway User-Agent in `web/worker/index.js`. Build, install, push.
+3. Each browser rejoins sync once at the new address (its old copy stays with skybother.com).
+
 ## Web version, alongside the Mac app
 
 Planned 2026-09-25, to start the following week. Full plan: `docs/web-app-plan.md` (approach,
