@@ -77,3 +77,10 @@ public func sbMoonCard(_ pointer: UnsafeRawPointer, _ count: Int32) -> UnsafeRaw
     lastResult = Array(EngineAPI.moonCard(Data(bytes: pointer, count: Int(count))))
     return lastResult.withUnsafeBytes { UnsafeRawPointer($0.baseAddress!) }
 }
+
+@_expose(wasm, "sb_compare_site")
+@_cdecl("sb_compare_site")
+public func sbCompareSite(_ pointer: UnsafeRawPointer, _ count: Int32) -> UnsafeRawPointer {
+    lastResult = Array(EngineAPI.compareSite(Data(bytes: pointer, count: Int(count))))
+    return lastResult.withUnsafeBytes { UnsafeRawPointer($0.baseAddress!) }
+}

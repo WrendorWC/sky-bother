@@ -45,6 +45,8 @@ self.onmessage = async ({ data: { id, kind, request } }) => {
     } else if (kind === 'planEdit') {
       result = readResult(engine, call(engine, engine.sb_plan_edit, JSON.stringify(request)));
       if (result.error) throw new Error(result.error);
+    } else if (kind === 'compareSite') {
+      result = readResult(engine, call(engine, engine.sb_compare_site, JSON.stringify(request)));
     } else if (kind === 'moonCard') {
       result = readResult(engine, call(engine, engine.sb_moon_card, JSON.stringify(request)));
     } else if (kind === 'skyTrack') {

@@ -1,0 +1,112 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-10-02T17:32:01Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 358735508,
+  "lat": 28.3544509,
+  "lon": -81.9581350,
+  "tags": {
+    "ele": "30",
+    "gnis:feature_id": "308559",
+    "leisure": "park",
+    "name": "Green Swamp Wildlife Management Area"
+  }
+},
+{
+  "type": "node",
+  "id": 4664575655,
+  "lat": 28.3568509,
+  "lon": -82.0382185,
+  "tags": {
+    "leisure": "park",
+    "name": "Check Station"
+  }
+},
+{
+  "type": "way",
+  "id": 84968078,
+  "center": {
+    "lat": 28.2848026,
+    "lon": -82.0394046
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "name": "Colt Creek State Park",
+    "note": "Activities: Bicycling, Birding, Camping, Fishing, Geo-seeking, Hiking, Horseback Riding, Paddling, Wildlife",
+    "protect_class": "5",
+    "wikidata": "Q5149398",
+    "wikipedia": "en:Colt Creek State Park"
+  }
+},
+{
+  "type": "way",
+  "id": 85102900,
+  "center": {
+    "lat": 28.3741105,
+    "lon": -82.0166182
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Green Swamp Wilderness Preserve"
+  }
+},
+{
+  "type": "way",
+  "id": 727160219,
+  "center": {
+    "lat": 28.2689253,
+    "lon": -81.9529595
+  },
+  "tags": {
+    "access": "private",
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Green Swamp Authority Land Protection Agreements",
+    "operator": "FL Dept. of Environmental Protection, Div. of State Lands"
+  }
+},
+{
+  "type": "way",
+  "id": 727160339,
+  "center": {
+    "lat": 28.2850222,
+    "lon": -81.9195266
+  },
+  "tags": {
+    "access": "private",
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Green Swamp Authority Land Protection Agreements",
+    "operator": "FL Dept. of Environmental Protection, Div. of State Lands"
+  }
+},
+{
+  "type": "relation",
+  "id": 8968104,
+  "center": {
+    "lat": 28.7143063,
+    "lon": -82.2846454
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Withlacoochee State Forest",
+    "protect_class": "6",
+    "protected_area": "forest_reserve",
+    "protection_title": "State Forest",
+    "type": "multipolygon",
+    "wikidata": "Q8028208",
+    "wikipedia": "en:Withlacoochee State Forest"
+  }
+}
+
+  ]
+}

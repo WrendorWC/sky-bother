@@ -216,6 +216,9 @@ public enum EngineAPI {
     nonisolated(unsafe) private static var lastPreferences: Preferences?
     /// Every target the week was planned from, comets placed for `now`.
     nonisolated(unsafe) private static var lastCatalog: [Target] = []
+    nonisolated(unsafe) private static var lastComets: [CometOrbit] = []
+    nonisolated(unsafe) private static var lastCustomTargets: [Target] = []
+    nonisolated(unsafe) private static var lastNow = Date()
 
     /// One row of the catalogue browser.
     struct CatalogEntry: Encodable {
@@ -306,6 +309,9 @@ public enum EngineAPI {
             let comets = request.cometElements.map(CometOrbit.parse) ?? []
             lastCatalog = catalog + (request.customTargets ?? []) + comets.compactMap { $0.target(at: request.now) }
             lastStoredPlans = request.sessionPlans ?? [:]
+            lastComets = comets
+            lastCustomTargets = request.customTargets ?? []
+            lastNow = request.now
             return try encoder.encode(plans.map {
                 summary($0, preferences: request.preferences, stored: request.sessionPlans?[$0.planKey])
             })
@@ -434,6 +440,31 @@ public enum EngineAPI {
     }
 
     struct TrackRequest: Decodable { var planKey: String }
+
+    /// AppState.tonightComparison: tonight's good targets (60 and up, usable,
+    /// not stars) from a nearby spot and from the site in use, with the same
+    /// forecast, rig and settings. Leaves the planned week alone.
+    struct CompareRequest: Decodable { var site: Site }
+    struct CompareResult: Encodable { var targetsHere: Int; var targetsThere: Int; var isCloudedOut: Bool }
+
+    public static func compareSite(_ requestJSON: Data) -> Data {
+        let encoder = JSONEncoder()
+        guard let request = try? JSONDecoder().decode(CompareRequest.self, from: requestJSON),
+              let here = lastSite, let rig = lastRig, var preferences = lastPreferences
+        else {
+            return (try? encoder.encode(Failure(error: "Nothing planned yet."))) ?? Data()
+        }
+        preferences.forecastNights = 1
+        func good(from site: Site) -> (count: Int, cloudedOut: Bool) {
+            guard let night = Planner(site: site, rig: rig, preferences: preferences, catalog: catalog + lastCustomTargets,
+                                      forecast: lastForecast, comets: lastComets).plan(from: lastNow).first
+            else { return (0, false) }
+            return (night.targets.filter { $0.usableMinutes > 0 && $0.score >= 60 && !$0.target.type.isStar }.count, night.isCloudedOut)
+        }
+        let fromHere = good(from: here), fromThere = good(from: request.site)
+        return (try? encoder.encode(CompareResult(targetsHere: fromHere.count, targetsThere: fromThere.count,
+                                                  isCloudedOut: fromHere.cloudedOut))) ?? Data()
+    }
 
     /// MoonCard's numbers: the Moon at the moment it stands highest between
     /// sunset and sunrise (sampled every ten minutes), and the Sun then, in

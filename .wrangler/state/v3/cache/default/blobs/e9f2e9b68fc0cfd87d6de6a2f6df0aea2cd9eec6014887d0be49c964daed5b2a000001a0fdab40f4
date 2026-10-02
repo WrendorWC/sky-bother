@@ -1,0 +1,466 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-10-02T17:29:01Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 454711494,
+  "lat": 28.0913903,
+  "lon": -82.3097000,
+  "tags": {
+    "name": "River View",
+    "tourism": "viewpoint"
+  }
+},
+{
+  "type": "node",
+  "id": 1509221797,
+  "lat": 28.0626150,
+  "lon": -82.4153902,
+  "tags": {
+    "name": "401 Gardened Gazebo",
+    "source": "GPS",
+    "tourism": "viewpoint"
+  }
+},
+{
+  "type": "node",
+  "id": 1510025780,
+  "lat": 28.0626643,
+  "lon": -82.4144381,
+  "tags": {
+    "name": "402 Gardened Gazebo",
+    "source": "GPS",
+    "tourism": "viewpoint"
+  }
+},
+{
+  "type": "node",
+  "id": 3513744248,
+  "lat": 28.0737326,
+  "lon": -82.3702438,
+  "tags": {
+    "name": "Cypress Dome",
+    "tourism": "viewpoint"
+  }
+},
+{
+  "type": "node",
+  "id": 4763221389,
+  "lat": 28.3284590,
+  "lon": -82.5696688,
+  "tags": {
+    "description": "Equestrian riding campsite; Pavillion with benches; Primitive = Camping",
+    "fee": "no",
+    "name": "Serenova Tract Campsite",
+    "operator": "SWFWMD",
+    "source": "SWFWMD",
+    "tourism": "camp_site",
+    "website": "https://www.swfwmd.state.fl.us/recreation/areas/starkey-serenova.html"
+  }
+},
+{
+  "type": "node",
+  "id": 5250181219,
+  "lat": 28.1511911,
+  "lon": -82.2264890,
+  "tags": {
+    "name": "Hillsborough River Rapids",
+    "tourism": "viewpoint"
+  }
+},
+{
+  "type": "node",
+  "id": 6572856589,
+  "lat": 28.3529550,
+  "lon": -82.1249846,
+  "tags": {
+    "name": "Green Swamp Wilderness Reserve",
+    "tourism": "viewpoint"
+  }
+},
+{
+  "type": "node",
+  "id": 7542512091,
+  "lat": 28.3515495,
+  "lon": -82.1277192,
+  "tags": {
+    "name": "Withlacoochee River Park",
+    "tourism": "camp_site"
+  }
+},
+{
+  "type": "node",
+  "id": 11742809369,
+  "lat": 28.3957069,
+  "lon": -82.1300044,
+  "tags": {
+    "caravans": "no",
+    "name": "Foster Bridge (Backcountry)",
+    "static_caravans": "no",
+    "tents": "yes",
+    "tourism": "camp_site"
+  }
+},
+{
+  "type": "node",
+  "id": 11967646166,
+  "lat": 28.3221799,
+  "lon": -82.0967094,
+  "tags": {
+    "backcountry": "yes",
+    "name": "BSA Camp",
+    "tourism": "camp_site"
+  }
+},
+{
+  "type": "way",
+  "id": 35014944,
+  "center": {
+    "lat": 28.1472872,
+    "lon": -82.2343943
+  },
+  "tags": {
+    "addr:city": "Thonotosassa",
+    "addr:country": "US",
+    "addr:housenumber": "15402",
+    "addr:postcode": "33592",
+    "addr:state": "FL",
+    "addr:street": "U.S. 301 North",
+    "boundary": "protected_area",
+    "leisure": "park",
+    "name": "Hillsborough River State Park",
+    "opening_hours": "08:00-sunset",
+    "operator": "Florida State Park",
+    "operator:type": "public",
+    "website": "https://www.floridastateparks.org/parks-and-trails/hillsborough-river-state-park",
+    "wikidata": "Q166221"
+  }
+},
+{
+  "type": "way",
+  "id": 69333779,
+  "center": {
+    "lat": 28.0951256,
+    "lon": -82.4389431
+  },
+  "tags": {
+    "leisure": "nature_reserve",
+    "name": "Violet Cury Nature Preserve"
+  }
+},
+{
+  "type": "way",
+  "id": 75693480,
+  "center": {
+    "lat": 28.1506186,
+    "lon": -82.5569871
+  },
+  "tags": {
+    "landuse": "conservation",
+    "leisure": "nature_reserve",
+    "name": "Brooker Creek Headwaters Nature Preserve"
+  }
+},
+{
+  "type": "way",
+  "id": 77806662,
+  "center": {
+    "lat": 28.1361939,
+    "lon": -82.5626765
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "layer": "2",
+    "leisure": "nature_reserve",
+    "name": "Brooker Creek Headwaters Nature Preserve"
+  }
+},
+{
+  "type": "way",
+  "id": 84872985,
+  "center": {
+    "lat": 28.3069874,
+    "lon": -82.4550621
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Conner Preserve",
+    "note": "boundary approximate, traced from public-domain map",
+    "opening_hours": "sunrise-sunset",
+    "operator": "South Florida Water Management District",
+    "operator:type": "public",
+    "operator:wikidata": "Q7567249",
+    "website": "https://www.swfwmd.state.fl.us/recreation/conner-preserve",
+    "wikidata": "Q5161774",
+    "wikipedia": "en:Conner Preserve"
+  }
+},
+{
+  "type": "way",
+  "id": 84892145,
+  "center": {
+    "lat": 28.1423680,
+    "lon": -82.4008248
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Cypress Creek"
+  }
+},
+{
+  "type": "way",
+  "id": 84967917,
+  "center": {
+    "lat": 28.1262690,
+    "lon": -82.1031082
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Cone Ranch"
+  }
+},
+{
+  "type": "way",
+  "id": 84967918,
+  "center": {
+    "lat": 28.1384272,
+    "lon": -82.1676762
+  },
+  "tags": {
+    "leisure": "nature_reserve",
+    "name": "Cone Ranch"
+  }
+},
+{
+  "type": "way",
+  "id": 84968975,
+  "center": {
+    "lat": 28.1460815,
+    "lon": -82.2662618
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Oakridge"
+  }
+},
+{
+  "type": "way",
+  "id": 84968976,
+  "center": {
+    "lat": 28.1371210,
+    "lon": -82.2401174
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Dairy Farm"
+  }
+},
+{
+  "type": "way",
+  "id": 85102900,
+  "center": {
+    "lat": 28.3741105,
+    "lon": -82.0166182
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Green Swamp Wilderness Preserve"
+  }
+},
+{
+  "type": "way",
+  "id": 85138832,
+  "center": {
+    "lat": 28.2505458,
+    "lon": -82.4084598
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Cypress Creek Preserve",
+    "note": "boundary approximate, traced from public domain map"
+  }
+},
+{
+  "type": "way",
+  "id": 85150400,
+  "center": {
+    "lat": 28.2290248,
+    "lon": -82.1062285
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Upper Hillsborough Preserve",
+    "note": "boundary approximate, traced from public-domain map"
+  }
+},
+{
+  "type": "way",
+  "id": 85362898,
+  "center": {
+    "lat": 28.2650150,
+    "lon": -82.6002604
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "description": "This sizable tract of public land offers opportunities for camping, nature viewing, fishing & more.",
+    "fee": "yes",
+    "leisure": "nature_reserve",
+    "name": "J. B. Starkey Wilderness Park"
+  }
+},
+{
+  "type": "way",
+  "id": 87324444,
+  "center": {
+    "lat": 28.0955915,
+    "lon": -82.4264181
+  },
+  "tags": {
+    "leisure": "nature_reserve",
+    "name": "Cypress Creek Nature Preserve"
+  }
+},
+{
+  "type": "way",
+  "id": 99735437,
+  "center": {
+    "lat": 28.0360838,
+    "lon": -82.3753954
+  },
+  "tags": {
+    "addr:city": "Temple Terrace",
+    "addr:housenumber": "6324",
+    "addr:postcode": "33617",
+    "addr:state": "FL",
+    "addr:street": "Temple Terrace Highway",
+    "boundary": "protected_area",
+    "description": "Enter from North 78th Street!",
+    "leisure": "nature_reserve",
+    "name": "Riverfront Preserve",
+    "natural": "wood",
+    "operator": "City of Temple Terrace",
+    "toilets": "no",
+    "trail_visibility": "good",
+    "website": "https://templeterrace.com/515/Riverfront-Preserve"
+  }
+},
+{
+  "type": "way",
+  "id": 135831981,
+  "center": {
+    "lat": 28.1444816,
+    "lon": -82.4666820
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Wilson's Duck Haven",
+    "natural": "wetland",
+    "wetland": "swamp"
+  }
+},
+{
+  "type": "way",
+  "id": 666697123,
+  "center": {
+    "lat": 28.2302749,
+    "lon": -82.4376256
+  },
+  "tags": {
+    "leisure": "nature_reserve",
+    "name": "Rosebud Continuum Sustainability Center",
+    "short_name": "Rosebud Continuum"
+  }
+},
+{
+  "type": "way",
+  "id": 961625139,
+  "center": {
+    "lat": 28.1019391,
+    "lon": -82.4975522
+  },
+  "tags": {
+    "leisure": "nature_reserve",
+    "name": "Northlakes - Sagebrush Wood Stork Colony",
+    "operator": "United States Fish and Wildlife Service",
+    "operator:short": "USFWS",
+    "operator:wikidata": "Q674113"
+  }
+},
+{
+  "type": "way",
+  "id": 1109016800,
+  "center": {
+    "lat": 28.1224779,
+    "lon": -82.5141738
+  },
+  "tags": {
+    "name": "Bobcat Campground",
+    "tourism": "camp_site"
+  }
+},
+{
+  "type": "way",
+  "id": 1109016801,
+  "center": {
+    "lat": 28.1232183,
+    "lon": -82.5141402
+  },
+  "tags": {
+    "name": "Panther Campground",
+    "tourism": "camp_site"
+  }
+},
+{
+  "type": "relation",
+  "id": 8968104,
+  "center": {
+    "lat": 28.7143063,
+    "lon": -82.2846454
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Withlacoochee State Forest",
+    "protect_class": "6",
+    "protected_area": "forest_reserve",
+    "protection_title": "State Forest",
+    "type": "multipolygon",
+    "wikidata": "Q8028208",
+    "wikipedia": "en:Withlacoochee State Forest"
+  }
+},
+{
+  "type": "relation",
+  "id": 11887952,
+  "center": {
+    "lat": 28.1055599,
+    "lon": -82.3016764
+  },
+  "tags": {
+    "boundary": "protected_area",
+    "leisure": "nature_reserve",
+    "name": "Lower Hillsborough Wilderness Preserve",
+    "official_name": "Lower Hillsborough Flood Detention Area",
+    "operator": "Southwest Florida Water Management District",
+    "short_name": "Lower Hillsborough FDA",
+    "type": "multipolygon"
+  }
+}
+
+  ]
+}

@@ -9,6 +9,8 @@
   import Planner from './lib/Planner.svelte';
   import SessionView from './lib/SessionView.svelte';
   import HelpPage from './lib/HelpPage.svelte';
+  import NearbySpots from './lib/NearbySpots.svelte';
+  import { uuid as newID } from './lib/uuid.js';
   import SetupWizard from './lib/SetupWizard.svelte';
   import { age } from './lib/format.js';
   import { isSetupHash, readSetup } from './lib/setupLink.js';
@@ -231,6 +233,45 @@
     if (!editingSettings) settingsDirty = false;
   }
 
+  // Better Spot Nearby (AppState.useNearbySpot): plan from the spot, saved
+  // beside the site it came from, with "Back to …" while it's in use.
+  let spotDetour = $state(null);
+  const spotReturnSite = $derived(spotDetour && settings?.site.id === spotDetour.toID
+    ? (settings.savedSites ?? []).find(s => s.id === spotDetour.from.id) ?? spotDetour.from : null);
+  function useNearbySpot(spot) {
+    const previous = settings.site;
+    const saved = [...(settings.savedSites ?? [])];
+    const index = saved.findIndex(s => s.id === previous.id);
+    if (index >= 0) saved[index] = { ...previous }; else saved.push({ ...previous });
+    // Picking the same place twice reuses it, with any corrections since.
+    const site = saved.find(s => Math.abs(s.latitude - spot.latitude) < 0.002 && Math.abs(s.longitude - spot.longitude) < 0.002) ?? {
+      id: newID(), name: spot.name, latitude: spot.latitude, longitude: spot.longitude,
+      elevationMeters: previous.elevationMeters, timeZoneIdentifier: previous.timeZoneIdentifier,
+      bortleClass: spot.estimatedBortleClass, horizonAltitude: spot.horizonAltitude ?? previous.horizonAltitude,
+    };
+    if (!saved.some(s => s.id === site.id)) saved.push(site);
+    spotDetour = { from: previous, toID: site.id };
+    settings = { ...settings, site, savedSites: saved };
+    saveSettings();
+    nights = [];
+    refresh();
+  }
+  function returnFromSpot() {
+    const home = spotReturnSite;
+    if (!home) return;
+    spotDetour = null;
+    settings = { ...settings, site: home };
+    saveSettings();
+    nights = [];
+    refresh();
+  }
+  // Adopts the satellite estimate as this site's Bortle class, saved copy too.
+  function useEstimatedBortle(bortleClass) {
+    const site = { ...settings.site, bortleClass };
+    changeSettings({ ...settings, site, savedSites: (settings.savedSites ?? []).map(s => (s.id === site.id ? { ...site } : s)) });
+  }
+  const startsOpen = matchMedia('(min-width: 900px)').matches;
+
   function changeSettings(changed) {
     settings = changed;
     saveSettings();
@@ -422,6 +463,10 @@
                      linkPrefix={planNight ? '#/plan/' : '#/'} />
         {:else if loading}
           <p class="muted">Loading forecast…</p>
+        {/if}
+        {#if nights.length}
+          <NearbySpots site={settings.site} preferences={settings.preferences} tonight={nights[0]} timeZone={settings.site.timeZoneIdentifier}
+                       {startsOpen} returnSite={spotReturnSite} onuse={useNearbySpot} onback={returnFromSpot} onbortle={useEstimatedBortle} />
         {/if}
         <footer class="muted">
           {#if updatedAt}

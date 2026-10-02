@@ -54,6 +54,7 @@ export const catalogEntries = () => send('catalog');
 /** Sky View's Sun, Moon, wind, horizon and signpost stars for a night: { planKey }. */
 export const skyTrack = request => send('skyTrack', request);
 export const moonCard = request => send('moonCard', request);
+export const compareSite = request => send('compareSite', request);
 
 /**
  * One edit to a night's plan, by the Mac's SessionPlanRules: { planKey, op:

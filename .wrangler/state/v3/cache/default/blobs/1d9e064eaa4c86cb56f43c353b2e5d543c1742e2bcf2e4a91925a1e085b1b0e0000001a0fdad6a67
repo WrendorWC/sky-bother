@@ -1,0 +1,163 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-10-02T17:32:01Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "way",
+  "id": 468389108,
+  "center": {
+    "lat": 28.2073783,
+    "lon": -82.3719555
+  },
+  "tags": {
+    "leisure": "park",
+    "name": "Shoregrass Park"
+  }
+},
+{
+  "type": "way",
+  "id": 468389765,
+  "center": {
+    "lat": 28.2093030,
+    "lon": -82.3690366
+  },
+  "tags": {
+    "leisure": "park",
+    "name": "Stillbrook Park"
+  }
+},
+{
+  "type": "way",
+  "id": 468396778,
+  "center": {
+    "lat": 28.2136063,
+    "lon": -82.3711898
+  },
+  "tags": {
+    "leisure": "park",
+    "name": "Lakeside Park"
+  }
+},
+{
+  "type": "way",
+  "id": 468396782,
+  "center": {
+    "lat": 28.2036814,
+    "lon": -82.3601695
+  },
+  "tags": {
+    "leisure": "park",
+    "name": "Edenfield Park"
+  }
+},
+{
+  "type": "way",
+  "id": 526552515,
+  "center": {
+    "lat": 28.2690829,
+    "lon": -82.3243393
+  },
+  "tags": {
+    "addr:city": "Wesley Chapel",
+    "addr:housenumber": "7727",
+    "addr:postcode": "33544",
+    "addr:state": "FL",
+    "addr:street": "Boyette Road",
+    "contact:website": "http://www.pascocountyfl.net/index.aspx?NID=678",
+    "leisure": "park",
+    "name": "Wesley Chapel District Park"
+  }
+},
+{
+  "type": "way",
+  "id": 745992956,
+  "center": {
+    "lat": 28.2559453,
+    "lon": -82.3036061
+  },
+  "tags": {
+    "leisure": "park",
+    "name": "Bridgewater Community Park"
+  }
+},
+{
+  "type": "way",
+  "id": 750267990,
+  "center": {
+    "lat": 28.2300968,
+    "lon": -82.3663452
+  },
+  "tags": {
+    "leisure": "park",
+    "name": "Westbrook Park",
+    "opening_hours": "sunrise-sunset"
+  }
+},
+{
+  "type": "way",
+  "id": 1062195643,
+  "center": {
+    "lat": 28.2144876,
+    "lon": -82.3001230
+  },
+  "tags": {
+    "leisure": "park",
+    "name": "Meadow Pointe IV Community Association"
+  }
+},
+{
+  "type": "way",
+  "id": 1062234648,
+  "center": {
+    "lat": 28.2069158,
+    "lon": -82.3450337
+  },
+  "tags": {
+    "leisure": "park",
+    "name": "Marquee Park"
+  }
+},
+{
+  "type": "way",
+  "id": 1062234652,
+  "center": {
+    "lat": 28.2070403,
+    "lon": -82.3469234
+  },
+  "tags": {
+    "leisure": "park",
+    "name": "Arbor Club"
+  }
+},
+{
+  "type": "way",
+  "id": 1063721557,
+  "center": {
+    "lat": 28.2157170,
+    "lon": -82.3404775
+  },
+  "tags": {
+    "leisure": "park",
+    "name": "Estancia Club"
+  }
+},
+{
+  "type": "way",
+  "id": 1064954014,
+  "center": {
+    "lat": 28.2677421,
+    "lon": -82.2755052
+  },
+  "tags": {
+    "leisure": "park",
+    "name": "Watergrass Club"
+  }
+}
+
+  ]
+}
