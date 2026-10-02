@@ -2,7 +2,7 @@
   // SessionModeView: at the scope. What's on now (or next, with a countdown),
   // how far through it you are, the target in your frame and in the sky right
   // now, the conditions, a little about the target, and what comes after —
-  // in the app's colours (night mode turns it red, as everything else).
+  // in the Mac's dim reds; the frame picture and the dome keep their colours.
   // On a phone it can keep the screen awake.
   import { targetDetail } from '../engine/engine.js';
   import SkyView from './SkyView.svelte';
@@ -186,12 +186,14 @@
 </section>
 
 <style>
-  /* The app's own colours; night mode turns the whole page red, this included. */
+  /* SessionModeView's palette: the page in dim reds and near-black, so a
+     glance at the scope doesn't cost your dark adaptation — but, as on the
+     Mac, the frame picture and the sky dome keep their own colours. */
   .session {
-    --bg: transparent; --panel-bg: var(--panel); --line: var(--panel-border);
-    --ink: var(--text); --dim: var(--muted); --red: var(--accent); --amber: var(--marginal);
+    --bg: rgb(9, 5, 8); --panel-bg: rgb(23, 13, 15); --line: rgb(69, 38, 46);
+    --ink: rgb(255, 237, 237); --dim: rgb(204, 168, 173); --red: rgb(219, 77, 77); --amber: rgb(242, 179, 102);
     display: grid; gap: 14px; color: var(--ink); background: var(--bg);
-    padding: 0 0 24px;
+    margin: 0 -16px; padding: 0 16px 24px; min-height: calc(100vh - 80px);
   }
   header { display: flex; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
   .back { color: var(--dim); text-decoration: none; }
