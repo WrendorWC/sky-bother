@@ -210,7 +210,8 @@
   .progress span { display: block; height: 100%; background: var(--red); }
   .dew { display: grid; gap: 2px; padding: 8px 10px; border-radius: 8px; color: var(--amber); background: color-mix(in srgb, var(--amber) 12%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent); justify-self: start; }
   .dew span { font-size: 13px; opacity: 0.85; }
-  .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; align-items: start; }
+  /* Side by side when there is room, but no bigger than a glance needs. */
+  .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 440px)); gap: 14px; align-items: start; }
   .view { display: grid; gap: 6px; }
   .sky { padding: 10px; background: rgba(0, 0, 0, 0.35); border-radius: 10px; }
   .warn, .warnText { color: var(--amber); }
