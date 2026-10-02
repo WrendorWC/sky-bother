@@ -88,7 +88,6 @@
   const previewAt = $derived(middle(night.bestImagingWindow && Date.parse(night.bestImagingWindow.end) > Date.parse(night.bestImagingWindow.start)
     ? night.bestImagingWindow : night.chartWindow));
   const domeAt = $derived(isTonight ? clock : previewAt);
-  const domeTarget = $derived(night.plan.find(b => domeAt >= Date.parse(b.window.start) && domeAt < Date.parse(b.window.end))?.targetID ?? null);
   const skyHref = $derived(`#/sky/${night.planKey}${chosenFor === night.planKey && chosenID ? `/${encodeURIComponent(chosenID)}` : ''}`);
 
   let showsMoon = $state(false);
@@ -120,9 +119,10 @@
         {#if isTonight && night.plan.length}<a class="session-button" href="#/session/{night.planKey}">▶ View Session</a>{/if}
       </div>
     </div>
-    <!-- The night's own sky, small; the picture is the button. -->
+    <!-- The night's own sky, small; the picture is the button. Just the sky:
+         a target marked at this size is a green speck that says nothing. -->
     <a class="dome-button" href={skyHref} aria-label="Open Sky View">
-      <div class="mini-dome"><SkyView {night} {timeZone} {preferences} targetID={domeTarget} fixedAt={domeAt} compact labels={false} /></div>
+      <div class="mini-dome"><SkyView {night} {timeZone} {preferences} fixedAt={domeAt} compact labels={false} /></div>
       <span>Open Sky View</span>
     </a>
   </section>
