@@ -10,7 +10,60 @@
   import EquipmentSettings from './EquipmentSettings.svelte';
   import PlanningSettings from './PlanningSettings.svelte';
 
-  let { settings, rigPresets, onchange, onimport, onsite, ondone, onsetup, onsyncjoin, onsyncstart, onsyncnow, focus = null } = $props();
+  // Changes here are a draft until Save: a nudged slider shouldn't reach
+  // every synced device before you meant it to. `settings` is what's saved.
+  let { settings, rigPresets, onsave, onimport, ondone, onsetup, onsyncjoin, onsyncstart, onsyncnow, ondirty, focus = null } = $props();
+
+  const copy = value => JSON.parse(JSON.stringify(value));
+  let base = $state(copy(settings));
+  let draft = $state(copy(settings));
+  const dirty = $derived(JSON.stringify(draft) !== JSON.stringify(base));
+  $effect(() => ondirty?.(dirty));
+  // What's saved changed underneath (sync, say) with nothing edited here:
+  // start again from it.
+  $effect(() => {
+    const now = settings;
+    if (!dirty) {
+      base = copy(now);
+      draft = copy(now);
+    }
+  });
+  const onchange = changed => (draft = changed);
+
+  // Picking a new place, as App.setSite: the site being left joins your
+  // saved sites first, so it isn't lost.
+  function onsite(site) {
+    const saved = [...(draft.savedSites ?? [])];
+    if (!saved.some(s => s.id === draft.site.id)) saved.push({ ...draft.site });
+    draft = { ...draft, site, savedSites: saved };
+  }
+
+  // Only the sections changed here are saved, onto what's saved now, so
+  // anything sync brought in meanwhile stays.
+  function save() {
+    const next = { ...settings };
+    for (const key of Object.keys(draft)) {
+      if (JSON.stringify(draft[key]) !== JSON.stringify(base[key])) next[key] = draft[key];
+    }
+    onsave(next);
+    base = copy(next);
+    draft = copy(next);
+  }
+  function cancel() {
+    draft = copy(base);
+  }
+  const discardOK = () => !dirty || confirm('Discard your unsaved settings changes?');
+  function close() {
+    if (discardOK()) ondone();
+  }
+  function wizard() {
+    if (discardOK()) onsetup();
+  }
+  $effect(() => {
+    const warn = e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  });
 
   const tabs = [
     { id: 'location', title: 'Location', icon: 'M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Zm0-8.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z' },
@@ -29,8 +82,8 @@
     window.scrollTo({ top: 0 });
   });
 
-  const prefs = $derived(settings.preferences);
-  const setPrefs = fields => onchange({ ...settings, preferences: { ...prefs, ...fields } });
+  const prefs = $derived(draft.preferences);
+  const setPrefs = fields => onchange({ ...draft, preferences: { ...prefs, ...fields } });
 
   // Your setup as a link, for your phone or a friend.
   let linkNote = $state('');
@@ -55,13 +108,20 @@
 </script>
 
 <section class="settings">
+  <div class="top">
   <header>
     <h2>Settings</h2>
     <div class="row-buttons">
-      <button type="button" class="wizard" onclick={onsetup} title="Walks you through your site, horizon, telescope and goal">✦ Setup Wizard</button>
-      <button type="button" class="done" onclick={ondone}>Done</button>
+      {#if dirty}
+        <button type="button" onclick={cancel}>Cancel</button>
+        <button type="button" class="done" onclick={save}>Save</button>
+      {:else}
+        <button type="button" class="wizard" onclick={wizard} title="Walks you through your site, horizon, telescope and goal">✦ Setup Wizard</button>
+        <button type="button" class="done" onclick={close}>Done</button>
+      {/if}
     </div>
   </header>
+  {#if dirty}<p class="unsaved">Not saved yet: nothing changes, here or on synced devices, until you tap Save.</p>{/if}
 
   <nav class="tabs" aria-label="Settings sections">
     {#each tabs as t}
@@ -71,13 +131,14 @@
       </button>
     {/each}
   </nav>
+  </div>
 
   {#if tab === 'location'}
-    <LocationSettings {settings} {onsite} {onchange} autofocus={focus === 'location'} />
+    <LocationSettings settings={draft} {onsite} {onchange} autofocus={focus === 'location'} />
   {:else if tab === 'equipment'}
-    <EquipmentSettings {settings} {rigPresets} {onchange} />
+    <EquipmentSettings settings={draft} {rigPresets} {onchange} />
   {:else if tab === 'planning'}
-    <PlanningSettings {settings} {onchange} />
+    <PlanningSettings settings={draft} {onchange} />
   {:else if tab === 'display'}
     <div class="pane">
       <div class="group">
@@ -130,10 +191,16 @@
   h2 { margin: 0; font-size: 26px; }
   .done { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; padding: 7px 18px; }
   .wizard { font-weight: 600; }
+  /* The header, Save and the tabs stay in reach while you scroll. */
+  .top {
+    display: grid; gap: 12px; position: sticky; top: 0; z-index: 5;
+    margin: 0 -16px; padding: 10px 16px 12px; background: var(--space-top);
+    border-bottom: 1px solid var(--divider);
+  }
+  .unsaved { margin: 0; padding: 6px 12px; border-radius: 10px; font-size: 13px; color: var(--marginal); background: color-mix(in srgb, var(--marginal) 12%, transparent); border: 1px solid color-mix(in srgb, var(--marginal) 35%, transparent); }
   .tabs {
     display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 4px;
     border-radius: 14px; background: var(--panel); border: 1px solid var(--panel-border);
-    position: sticky; top: 8px; z-index: 5;
   }
   .tabs button {
     display: grid; justify-items: center; gap: 3px; padding: 8px 2px; border: none; border-radius: 10px;

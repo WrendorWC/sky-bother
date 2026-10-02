@@ -181,6 +181,25 @@
     refresh();
   }
 
+  // Settings' Save: a new site needs a new forecast; anything else a replan.
+  let settingsDirty = $state(false);
+  function saveFromSettings(changed) {
+    const before = settings.site;
+    const siteMoved = before.latitude !== changed.site.latitude || before.longitude !== changed.site.longitude
+      || before.timeZoneIdentifier !== changed.site.timeZoneIdentifier
+      || changed.preferences.forecastNights !== settings.preferences.forecastNights;
+    settings = changed;
+    saveSettings();
+    if (siteMoved) { nights = []; refresh(); } else replan();
+  }
+  // Leaving Settings from the toolbar with unsaved changes asks first.
+  function toggleSettings(focus) {
+    if (editingSettings && settingsDirty && !confirm('Discard your unsaved settings changes?')) return;
+    settingsFocus = focus;
+    editingSettings = focus === 'location' ? true : !editingSettings;
+    if (!editingSettings) settingsDirty = false;
+  }
+
   function changeSettings(changed) {
     settings = changed;
     saveSettings();
@@ -285,7 +304,7 @@
   <header class="topbar">
     <a class="brand" href="#/">Sky Bother</a>
     {#if settings}
-      <button type="button" class="site-button" onclick={() => { settingsFocus = 'location'; editingSettings = true; }} title="Change location">
+      <button type="button" class="site-button" onclick={() => toggleSettings('location')} title="Change location">
         <svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>
         <span class="site-name">{settings.site.name || 'Unnamed site'}</span>
       </button>
@@ -297,7 +316,7 @@
       </button>
     {/if}
     <nav class="tools" aria-label="Tools">
-      <button type="button" class="tool" class:on={editingSettings} onclick={() => { settingsFocus = null; editingSettings = !editingSettings; }}
+      <button type="button" class="tool" class:on={editingSettings} onclick={() => toggleSettings(null)}
               title="Settings" aria-label="Settings" aria-expanded={editingSettings}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.96 5.10 L10.17 2.58 L13.83 2.58 L14.04 5.10 L15.44 5.67 L17.37 4.04 L19.96 6.63 L18.33 8.56 L18.90 9.96 L21.42 10.17 L21.42 13.83 L18.90 14.04 L18.33 15.44 L19.96 17.37 L17.37 19.96 L15.44 18.33 L14.04 18.90 L13.83 21.42 L10.17 21.42 L9.96 18.90 L8.56 18.33 L6.63 19.96 L4.04 17.37 L5.67 15.44 L5.10 14.04 L2.58 13.83 L2.58 10.17 L5.10 9.96 L5.67 8.56 L4.04 6.63 L6.63 4.04 L8.56 5.67 Z" /><circle cx="12" cy="12" r="3" /></svg><span class="tool-label">Settings</span>
       </button>
@@ -348,9 +367,9 @@
 
   {#if settings && !inSetup && editingSettings && rigPresets.length}
     <div class="site-area">
-      <SettingsPanel {settings} {rigPresets} onchange={changeSettings} onimport={importSettings} onsetup={startSetup}
+      <SettingsPanel {settings} {rigPresets} onsave={saveFromSettings} onimport={importSettings} onsetup={startSetup}
                      onsyncjoin={joinSync} onsyncstart={() => syncNow()} onsyncnow={() => syncNow()}
-                     onsite={setSite} focus={settingsFocus} ondone={() => (editingSettings = false)} />
+                     ondirty={d => (settingsDirty = d)} focus={settingsFocus} ondone={() => (editingSettings = false)} />
     </div>
   {/if}
 
