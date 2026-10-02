@@ -11,6 +11,7 @@
   import Thumbnail from './Thumbnail.svelte';
   import TargetDetail from './TargetDetail.svelte';
   import FactorBar from './FactorBar.svelte';
+  import SkyView from './SkyView.svelte';
   import { scoreColor, dewColor } from './palette.js';
   import * as format from './format.js';
 
@@ -74,6 +75,21 @@
   const unshootable = $derived(night.plan.reduce((sum, b) => sum + b.unusableMinutes, 0));
   const scoreOf = id => night.targets.find(t => t.id === id);
 
+  // NightDetailView's domes: tonight's sky right now, kept current; any
+  // other night's in the middle of its best imaging window. The plan's
+  // target at that moment is marked.
+  let clock = $state(Date.now());
+  $effect(() => {
+    const timer = setInterval(() => (clock = Date.now()), 60_000);
+    return () => clearInterval(timer);
+  });
+  const middle = w => (Date.parse(w.start) + Date.parse(w.end)) / 2;
+  const previewAt = $derived(middle(night.bestImagingWindow && Date.parse(night.bestImagingWindow.end) > Date.parse(night.bestImagingWindow.start)
+    ? night.bestImagingWindow : night.chartWindow));
+  const domeAt = $derived(isTonight ? clock : previewAt);
+  const domeTarget = $derived(night.plan.find(b => domeAt >= Date.parse(b.window.start) && domeAt < Date.parse(b.window.end))?.targetID ?? null);
+  const skyHref = $derived(`#/sky/${night.planKey}${chosenFor === night.planKey && chosenID ? `/${encodeURIComponent(chosenID)}` : ''}`);
+
   let showsScore = $state(false);
   const cap = $derived(night.cappedBy ? night.targets.find(t => t.id === night.cappedBy) : null);
 </script>
@@ -100,12 +116,22 @@
       <div class="summary-actions">
         <a class="plan-button" href="#/plan/{night.planKey}">Plan Session</a>
         {#if isTonight && night.plan.length}<a class="session-button" href="#/session/{night.planKey}">▶ View Session</a>{/if}
-      <a class="sky-link" href="#/sky/{night.planKey}{chosenFor === night.planKey && chosenID ? `/${encodeURIComponent(chosenID)}` : ''}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
-        Open Sky View
-      </a>
+      {#if wide}
+        <a class="sky-link" href={skyHref}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
+          Open Sky View
+        </a>
+      {/if}
       </div>
     </div>
+    <!-- The night's own sky, small; the picture is the button. Wide screens
+         have the big one instead. -->
+    {#if !wide}
+      <a class="dome-button" href={skyHref} aria-label="Open Sky View">
+        <div class="mini-dome"><SkyView {night} {timeZone} {preferences} targetID={domeTarget} fixedAt={domeAt} compact labels={false} /></div>
+        <span>Open Sky View</span>
+      </a>
+    {/if}
   </section>
 
   <dl class="stats">
@@ -217,8 +243,18 @@
   {/if}
 </article>
 
-{#if wide && selected}
-  <TargetDetail {night} targetID={selected.id} {timeZone} inline />
+{#if wide}
+  <aside class="side-column">
+    <section class="panel big-dome">
+      <header>
+        <h3>{isTonight ? 'In the sky now' : 'In the sky'} · {format.time(domeAt, timeZone)}</h3>
+        <a class="sky-link" href={skyHref}>Open Sky View</a>
+      </header>
+      <SkyView {night} {timeZone} {preferences} targetID={domeTarget} fixedAt={domeAt} compact highlights onhighlight={open} />
+      <p class="muted dome-note">Tap a marked target for its card.</p>
+    </section>
+    {#if selected}<TargetDetail {night} targetID={selected.id} {timeZone} inline />{/if}
+  </aside>
 {:else if !wide && targetID}
   <TargetDetail {night} {targetID} {timeZone} onclose={closeDetail} />
 {/if}
@@ -251,6 +287,19 @@
     color: var(--accent); text-decoration: none; font-weight: 600;
   }
   .sky-link svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+  .dome-button { margin-left: auto; align-self: center; display: grid; justify-items: center; gap: 4px; text-decoration: none; color: var(--accent); font-size: 12px; font-weight: 600; flex: none; }
+  .mini-dome { width: 104px; pointer-events: none; }
+  /* The dome and the target's card stay in view together while the night
+     scrolls, the column scrolling on its own when it's the taller. */
+  .side-column {
+    display: grid; gap: 16px; align-content: start; min-width: 0;
+    position: sticky; top: 72px; max-height: calc(100vh - 88px); overflow-y: auto; scrollbar-width: thin;
+  }
+  .side-column :global(.drawer.inline) { position: static; max-height: none; }
+  .big-dome { padding: 12px 14px; display: grid; gap: 8px; border-radius: 14px; }
+  .big-dome header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .big-dome .sky-link { margin: 0; font-size: 13px; }
+  .dome-note { margin: 0; font-size: 12px; }
   .best { justify-self: start; display: flex; gap: 6px; align-items: baseline; padding: 0; background: none; border: none; font-weight: 500; }
   .best .label { color: var(--accent); font-size: 12px; font-weight: 600; }
   .chevron { color: var(--accent); }
@@ -290,7 +339,14 @@
   .link { justify-self: start; background: none; border: none; padding: 0; color: var(--accent); font-weight: 600; }
 
   @media (max-width: 560px) {
-    .summary { align-items: flex-start; padding: 14px; gap: 12px; }
+    /* Score, date and the little dome share the top row; the rest of the
+       card runs full width beneath them. */
+    .summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; padding: 14px; }
+    .summary-body { display: contents; }
+    .summary-body > * { grid-column: 1 / -1; }
+    .summary-body > .headline { grid-column: 2; grid-row: 1; }
+    .dome-button { grid-column: 3; grid-row: 1; margin: 0; }
+    .mini-dome { width: 78px; }
     h2 { font-size: 19px; }
   }
 </style>

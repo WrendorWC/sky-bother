@@ -14,9 +14,13 @@
   import TargetDetail from './TargetDetail.svelte';
   import { view } from './view.svelte.js';
 
-  // `compact`: just the dome, following the clock, with `targetID` marked —
-  // Session View's "In the sky now".
-  let { night, timeZone, targetID = null, rig = null, preferences = {}, compact = false } = $props();
+  // `compact`: just the dome, with `targetID` marked — following the clock,
+  // or at `fixedAt` (ms) — for Session View's "In the sky now" and the
+  // night page's domes. `highlights` marks the plan's and famous targets
+  // there too, tapping one calling `onhighlight(id)`; `labels: false` leaves
+  // the signpost stars unnamed, for a dome too small to read them.
+  let { night, timeZone, targetID = null, rig = null, preferences = {}, compact = false,
+        fixedAt = null, highlights = false, onhighlight = null, labels = true } = $props();
 
   // The view options above the Mac's dome: representative clouds, and the
   // camera's roll for the frame drawn round the selected target.
@@ -78,14 +82,18 @@
     // it; with nothing selected, the plan is followed from dusk.
     mode = first ? 'stay' : 'follow';
     if (compact) {
-      followingNow = true;
+      followingNow = fixedAt == null;
+      if (fixedAt != null) at = fixedAt;
       mode = 'stay';
     }
   });
 
-  // Compact: the marked target is whatever Session View says is on now.
+  // Compact: the marked target is whatever the page says is on.
   $effect(() => {
     if (compact) selectedID = targetID;
+  });
+  $effect(() => {
+    if (compact && fixedAt != null) at = fixedAt;
   });
 
   // SkyView.syncSelectionToPlayback, stricter: blocks never overlap, so at
@@ -153,7 +161,8 @@
   // The dome's radius is the horizon's (altitude 0); a raised horizon trims
   // the rim, so it's scaled up until the visible sky fills the space.
   function geometry() {
-    const margin = 22;
+    // Room for the compass letters, unless this dome is too small to label.
+    const margin = labels ? 22 : 3;
     const widest = Math.max(...track.horizon.map(h => Math.min(1, Math.max(0.05, (90 - h) / 90))));
     return { width: size, height: size, centreX: size / 2, centreY: size / 2, radius: (size / 2 - margin) / widest };
   }
@@ -220,7 +229,7 @@
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     c.fillStyle = 'rgba(255,255,255,0.7)';
-    for (const [label, azimuth] of [['N', 0], ['E', 90], ['S', 180], ['W', 270]]) {
+    for (const [label, azimuth] of labels ? [['N', 0], ['E', 90], ['S', 180], ['W', 270]] : []) {
       const r = rimRadius(g, azimuth) + 11, a = azimuth * Math.PI / 180;
       c.fillText(label, g.centreX + Math.sin(a) * r, g.centreY - Math.cos(a) * r);
     }
@@ -263,7 +272,7 @@
       c.beginPath(); c.arc(p.x, p.y, moonDiameter(g) / 2, 0, Math.PI * 2); c.fill();
     }
 
-    placedHighlights = playing || compact ? [] : placeHighlights(c, g);
+    placedHighlights = playing || (compact && !highlights) ? [] : placeHighlights(c, g);
 
     const progress = reduceMotion ? 1 : Math.min(1, (performance.now() - fadeStart) / fadeDuration);
     const outgoing = fadingOutID && progress < 1 && fadingOutID !== selectedID
@@ -286,7 +295,7 @@
     c.font = '11px system-ui, sans-serif';
     c.textBaseline = 'middle';
     c.fillStyle = 'rgba(255,255,255,0.6)';
-    for (const star of track.stars) {
+    for (const star of labels ? track.stars : []) {
       const h = sky.horizontal(star.rightAscension, star.declination, d, lat, lon);
       if (h.altitude <= sky.blockedAltitude(track.horizon, h.azimuth)) continue;
       const p = screen(g, h);
@@ -378,7 +387,9 @@
       const distance = Math.hypot(h.x - x, h.y + 6 - y);
       if (distance < bestDistance) { best = h; bestDistance = distance; }
     }
-    if (best) {
+    if (best && compact) {
+      onhighlight?.(best.target.id);
+    } else if (best) {
       // Selected, and its card opened, as clicking one on the Mac does.
       playing = false;
       selectedID = best.target.id;
