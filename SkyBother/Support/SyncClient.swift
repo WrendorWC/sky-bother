@@ -177,11 +177,22 @@ struct SyncDocument: Codable, Equatable {
         typed(value, as: type).flatMap { try? encoder().encode($0) }
     }
 
+    /// Preferences that belong to one screen, never synced: a 4K desktop and
+    /// a laptop want different UI scales, and night mode is for the device
+    /// at the scope. Left out going up; this device's own kept coming down.
+    static let deviceOnlyPreferences = ["textScale", "autoFitsText", "nightMode"]
+
+    private static func sharedPreferences(_ preferences: Preferences) -> JSONValue? {
+        guard case .object(var fields) = json(preferences) else { return json(preferences) }
+        for key in deviceOnlyPreferences { fields[key] = nil }
+        return .object(fields)
+    }
+
     private static func values(of settings: StoredSettings) -> [String: (JSONValue?, (JSONValue) -> Data?)] {
         [
             "site": (json(settings.site), { canonical($0, as: Site.self) }),
             "rig": (json(settings.rig), { canonical($0, as: Rig.self) }),
-            "preferences": (json(settings.preferences), { canonical($0, as: Preferences.self) }),
+            "preferences": (sharedPreferences(settings.preferences), { canonical($0, as: Preferences.self) }),
             "customTargets": (json(settings.customTargets), { canonical($0, as: [Target].self) }),
             "savedSites": (json(settings.savedSites), { canonical($0, as: [Site].self) }),
             "savedRigs": (json(settings.savedRigs), { canonical($0, as: [Rig].self) }),
@@ -217,7 +228,13 @@ struct SyncDocument: Codable, Equatable {
                     updated.hasSetLocation = true
                 }
             case "rig": if let rig = Self.typed(section.value, as: Rig.self) { updated.rig = rig }
-            case "preferences": if let value = Self.typed(section.value, as: Preferences.self) { updated.preferences = value }
+            case "preferences":
+                if var value = Self.typed(section.value, as: Preferences.self) {
+                    value.textScale = settings.preferences.textScale
+                    value.autoFitsText = settings.preferences.autoFitsText
+                    value.nightMode = settings.preferences.nightMode
+                    updated.preferences = value
+                }
             case "customTargets": if let value = Self.typed(section.value, as: [Target].self) { updated.customTargets = value }
             case "savedSites": if let value = Self.typed(section.value, as: [Site].self) { updated.savedSites = value }
             case "savedRigs": if let value = Self.typed(section.value, as: [Rig].self) { updated.savedRigs = value }

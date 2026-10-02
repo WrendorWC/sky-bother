@@ -14,6 +14,11 @@
 export const SECTIONS = ['site', 'rig', 'preferences', 'customTargets', 'savedSites', 'savedRigs', 'sessionPlans'];
 
 // Crockford base32: no I, L, O or U to misread.
+// Preferences that belong to one screen and never sync (as on the Mac):
+// left out going up, this device's own kept coming down.
+const DEVICE_ONLY = ['textScale', 'autoFitsText', 'nightMode'];
+const shared = prefs => { const out = { ...prefs }; for (const k of DEVICE_ONLY) delete out[k]; return out; };
+
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
 export function newCode() {
@@ -155,8 +160,9 @@ export function documentFrom(settings, previous) {
   const now = Date.now();
   const sections = {};
   for (const name of SECTIONS) {
-    const value = settings[name] ?? (name === 'sessionPlans' ? {} : name === 'customTargets' || name.startsWith('saved') ? [] : null);
+    let value = settings[name] ?? (name === 'sessionPlans' ? {} : name === 'customTargets' || name.startsWith('saved') ? [] : null);
     if (value == null) continue;
+    if (name === 'preferences') value = shared(value);
     const before = previous?.sections?.[name];
     const same = before && JSON.stringify(before.value) === JSON.stringify(value);
     sections[name] = same ? before : { modifiedAt: now, value };
@@ -167,6 +173,8 @@ export function documentFrom(settings, previous) {
 /** Settings with every section from the document. */
 export function applyDocument(settings, doc) {
   const next = { ...settings };
-  for (const [name, section] of Object.entries(doc.sections ?? {})) next[name] = section.value;
+  for (const [name, section] of Object.entries(doc.sections ?? {})) {
+    next[name] = name === 'preferences' ? { ...shared(section.value), ...Object.fromEntries(DEVICE_ONLY.filter(k => settings.preferences && k in settings.preferences).map(k => [k, settings.preferences[k]])) } : section.value;
+  }
   return next;
 }
