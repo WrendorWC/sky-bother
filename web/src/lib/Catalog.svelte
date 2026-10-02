@@ -6,10 +6,27 @@
   import ScoreBadge from './ScoreBadge.svelte';
   import Thumbnail from './Thumbnail.svelte';
   import TargetDetail from './TargetDetail.svelte';
+  import CustomTargetEditor from './CustomTargetEditor.svelte';
   import { verdictFor, verdictColor } from './palette.js';
   import { weekday, dayAndMonth, hours } from './format.js';
 
-  let { entries, nights, timeZone, preferences = {} } = $props();
+  // `customTargets` are the ones you added; `oncustom(list)` saves a changed list.
+  let { entries, nights, timeZone, preferences = {}, customTargets = [], oncustom = null } = $props();
+
+  const customIDs = $derived(new Set(customTargets.map(t => t.designation)));
+  const catalogIDs = $derived(new Set(entries.map(e => e.id).filter(id => !customIDs.has(id))));
+  // null: closed; { existing: null }: adding; { existing: target }: editing.
+  let editing = $state(null);
+  function saveCustom(target, originalID) {
+    const others = customTargets.filter(t => t.designation !== originalID && t.designation !== target.designation);
+    oncustom?.([...others, target]);
+    editing = null;
+    search = '';
+  }
+  function deleteCustom(designation) {
+    oncustom?.(customTargets.filter(t => t.designation !== designation));
+    editing = null;
+  }
 
   // Bright stars and comets start hidden when Settings says so; choosing
   // their type in the filter still shows them (AppState's hidden types).
@@ -91,6 +108,7 @@
   <header>
     <h2>Catalog</h2>
     <span class="muted">{results.length} target{results.length === 1 ? '' : 's'}</span>
+    {#if oncustom}<button type="button" class="add" onclick={() => (editing = { existing: null })}>+ Add Custom Target</button>{/if}
   </header>
 
   <div class="toolbar">
@@ -126,11 +144,11 @@
   <ul class="cards">
     {#each results.slice(0, shown) as entry (entry.id)}
       {@const result = scored.get(entry.id)}
-      <li>
+      <li class:custom={customIDs.has(entry.id)}>
         <button type="button" class="card panel" onclick={() => (openID = entry.id)}>
           <Thumbnail designation={entry.designation} size={64} label={entry.displayName} />
           <div class="card-body">
-            <strong>{entry.displayName}</strong>
+            <strong>{entry.displayName}{#if customIDs.has(entry.id)} <span class="custom-tag">Custom</span>{/if}</strong>
             <span class="muted">{entry.commonName ? `${entry.designation} · ` : ''}{entry.typeName}{entry.constellation ? ` · ${entry.constellation}` : ''}</span>
             {#if result}
               <span class="verdict" style:color={verdictColor(verdictFor(result.score))}>{verdictFor(result.score)} · {hours(result.usableMinutes / 60)}</span>
@@ -140,6 +158,9 @@
           </div>
           {#if result}<ScoreBadge score={result.score} size={36} />{/if}
         </button>
+        {#if customIDs.has(entry.id) && oncustom}
+          <button type="button" class="edit" onclick={() => (editing = { existing: customTargets.find(t => t.designation === entry.id) })}>Edit</button>
+        {/if}
       </li>
     {/each}
   </ul>
@@ -147,7 +168,14 @@
     <button type="button" class="more" onclick={() => (shown += 240)}>Show more ({results.length - shown} left)</button>
   {/if}
   {#if results.length === 0}<p class="muted">Nothing matches.</p>{/if}
+  {#if oncustom}
+    <p class="muted add-note">Missing something? <button type="button" class="link" onclick={() => (editing = { existing: null })}>Add a custom target</button> — it's scored like any other, and syncs.</p>
+  {/if}
 </section>
+
+{#if editing}
+  <CustomTargetEditor existing={editing.existing} {catalogIDs} onsave={saveCustom} ondelete={deleteCustom} onclose={() => (editing = null)} />
+{/if}
 
 {#if openID}
   <TargetDetail {night} {nights} targetID={openID} {timeZone} onclose={() => (openID = null)} />
@@ -183,4 +211,11 @@
   .verdict { font-size: 13px; font-weight: 600; }
   .faint { color: var(--tertiary); }
   .more { justify-self: center; }
+  header .add { margin-left: auto; font-weight: 600; }
+  .cards li { position: relative; }
+  .custom-tag { font-size: 11px; font-weight: 700; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 0 6px; vertical-align: 2px; }
+  /* Edit sits over the card's corner, clear of its score. */
+  .edit { position: absolute; right: 54px; top: 50%; transform: translateY(-50%); padding: 4px 10px; font-size: 13px; font-weight: 600; }
+  .add-note { margin: 4px 0 0; }
+  .cards li.custom .card-body { padding-right: 64px; }
 </style>

@@ -452,7 +452,8 @@
           {/key}
         {:else if showingCatalog && nights.length}
           <a class="back" href="#/">‹ All nights</a>
-          <Catalog entries={catalog} {nights} timeZone={settings.site.timeZoneIdentifier} preferences={settings.preferences} />
+          <Catalog entries={catalog} {nights} timeZone={settings.site.timeZoneIdentifier} preferences={settings.preferences}
+                   customTargets={settings.customTargets ?? []} oncustom={list => changeSettings({ ...settings, customTargets: list })} />
         {:else if night}
           <a class="back" href="#/">‹ All nights</a>
           {#key night.planKey}
