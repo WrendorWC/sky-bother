@@ -563,6 +563,9 @@
   .site-button { display: flex; gap: 6px; align-items: center; }
   .site-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .site-button { background: none; border-color: transparent; color: var(--muted); min-width: 0; max-width: 50vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* No room for it beside the tools on a phone — it was always cut to a
+     letter or two. The site is in Settings → Location. */
+  @media (max-width: 600px) { .site-button { display: none; } }
   /* 44 px: a comfortable tap on a phone. */
   .icon { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; flex: none; }
   .icon svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
