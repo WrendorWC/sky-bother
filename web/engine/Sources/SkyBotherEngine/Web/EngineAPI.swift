@@ -140,6 +140,8 @@ public enum EngineAPI {
         var windows: [TimeWindow]
         var bestWindow: TimeWindow?
         var zenithRisk: TimeWindow?
+        /// Every stretch it passes too near the zenith (for an alt-az mount), drawn amber on the dome.
+        var zenithRiskWindows: [TimeWindow]
         var fillFraction: Double
         var needsMosaic: Bool
         var rightAscension: Double
@@ -329,7 +331,7 @@ public enum EngineAPI {
                           isStar: plan.target.type.isStar, score: plan.score,
                           usableMinutes: plan.usableMinutes, maximumAltitude: plan.maximumAltitude,
                           bestTime: plan.bestTime, windows: plan.windows, bestWindow: plan.bestWindow,
-                          zenithRisk: plan.bestWindowZenithRisk, fillFraction: plan.fit.fillFraction,
+                          zenithRisk: plan.bestWindowZenithRisk, zenithRiskWindows: plan.zenithRiskWindows, fillFraction: plan.fit.fillFraction,
                           needsMosaic: plan.fit.needsMosaic,
                           rightAscension: plan.target.rightAscension, declination: plan.target.declination,
                           majorAxisArcminutes: plan.target.majorAxisArcminutes,

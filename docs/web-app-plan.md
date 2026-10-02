@@ -173,7 +173,11 @@ panel (rig preset, kind of night, cloud limit, units); thumbnails and target det
 - Session View (`#/session/date`, "View Session" on tonight): NOW / NEXT with countdown and
   progress, dew-heater line, "In your frame", a compact live dome, right-now conditions from
   the night's samples, facts, what's after; red palette; Keep Screen On (Wake Lock).
-- Not yet: zenith-risk path colouring; the Seestar live stack (browsers can't reach it).
+- Night page domes (small in the summary; "In the sky now" atop the wide right column), the
+  Moon card (MoonGlobe as WebGL, engine `moonCard`), and zenith-risk path colouring (engine
+  sends every `zenithRiskWindows`) — 2026-10-02.
+- Not yet: Help, custom targets, Better Spot Nearby, Sky Browser, offline/PWA; the Seestar
+  live stack can't come to the web (browsers can't reach it).
 
 ## Phase 3 progress
 

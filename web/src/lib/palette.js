@@ -10,6 +10,7 @@ export const moonlight = rgb(0.98, 0.93, 0.74);
 export const cloud = rgb(0.86, 0.89, 0.94);
 export const accent = rgb(0.62, 0.52, 0.98);
 export const skip = rgb(0.85, 0.36, 0.34);
+export const marginal = rgb(0.95, 0.70, 0.24);
 export const spaceTop = rgb(0.055, 0.05, 0.11);
 
 const verdictColors = {

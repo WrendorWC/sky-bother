@@ -404,11 +404,19 @@
   function drawTarget(c, g, target) {
     const lat = track.latitude, lon = track.longitude;
     const middle = (start + end) / 2;
-    let run = [], runVisible = null;
+    // SkyView.PathStyle: bold above the horizon, faint below, and amber
+    // where an alt-az mount would pass too near the zenith.
+    const risks = (target.zenithRiskWindows ?? []).map(w => [Date.parse(w.start), Date.parse(w.end)]);
+    const styleAt = (t, visible) => (!visible ? 'below' : risks.some(([a, b]) => t >= a && t < b) ? 'zenith' : 'above');
+    const styles = {
+      zenith: [palette.css(palette.marginal, 0.55), 2.5],
+      above: [palette.css(palette.accent, 0.55), 2],
+      below: [palette.css(palette.accent, 0.16), 1.25],
+    };
+    let run = [], runStyle = null;
     const flush = () => {
       if (run.length > 1) {
-        c.strokeStyle = palette.css(palette.accent, runVisible ? 0.55 : 0.16);
-        c.lineWidth = runVisible ? 2 : 1.25;
+        [c.strokeStyle, c.lineWidth] = styles[runStyle];
         c.beginPath();
         run.forEach((p, i) => (i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)));
         c.stroke();
@@ -417,9 +425,9 @@
     };
     for (let t = middle - 12 * 3_600_000; t <= middle + 12 * 3_600_000; t += 360_000) {
       const h = sky.horizontal(target.rightAscension, target.declination, sky.daysSinceJ2000(t), lat, lon);
-      const visible = h.altitude > sky.blockedAltitude(track.horizon, h.azimuth);
-      if (runVisible !== null && visible !== runVisible) { run.push(screen(g, h)); flush(); }
-      runVisible = visible;
+      const style = styleAt(t, h.altitude > sky.blockedAltitude(track.horizon, h.azimuth));
+      if (runStyle !== null && style !== runStyle) { run.push(screen(g, h)); flush(); }
+      runStyle = style;
       run.push(screen(g, h));
     }
     flush();
