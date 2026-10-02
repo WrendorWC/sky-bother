@@ -118,22 +118,13 @@
       <div class="summary-actions">
         <a class="plan-button" href="#/plan/{night.planKey}">Plan Session</a>
         {#if isTonight && night.plan.length}<a class="session-button" href="#/session/{night.planKey}">▶ View Session</a>{/if}
-      {#if wide}
-        <a class="sky-link" href={skyHref}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
-          Open Sky View
-        </a>
-      {/if}
       </div>
     </div>
-    <!-- The night's own sky, small; the picture is the button. Wide screens
-         have the big one instead. -->
-    {#if !wide}
-      <a class="dome-button" href={skyHref} aria-label="Open Sky View">
-        <div class="mini-dome"><SkyView {night} {timeZone} {preferences} targetID={domeTarget} fixedAt={domeAt} compact labels={false} /></div>
-        <span>Open Sky View</span>
-      </a>
-    {/if}
+    <!-- The night's own sky, small; the picture is the button. -->
+    <a class="dome-button" href={skyHref} aria-label="Open Sky View">
+      <div class="mini-dome"><SkyView {night} {timeZone} {preferences} targetID={domeTarget} fixedAt={domeAt} compact labels={false} /></div>
+      <span>Open Sky View</span>
+    </a>
   </section>
 
   <dl class="stats">
