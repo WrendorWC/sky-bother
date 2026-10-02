@@ -51,3 +51,44 @@ html.night-mode body::before, html.night-mode body::after {
 html.night-mode body::before { -webkit-backdrop-filter: grayscale(1); backdrop-filter: grayscale(1); }
 /* …then red multiplies through on top. */
 html.night-mode body::after { background: #ff0000; mix-blend-mode: multiply; }
+
+/* Settings: grouped cards of rows, as in the Mac's grouped forms. */
+.group { display: grid; gap: 6px; }
+.group-title { margin: 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.group-note { margin: 0 4px; font-size: 13px; color: var(--muted); }
+.card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 14px; }
+.card > .item { padding: 12px 14px; display: grid; gap: 6px; }
+.card > .item + .item { border-top: 1px solid var(--divider); }
+.item.inline { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.item.inline > :first-child { min-width: 0; }
+.item .title { font-weight: 600; }
+.item .caption { font-size: 13px; color: var(--muted); }
+.item p { margin: 0; }
+.item .value { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.item .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.item input[type='range'] { width: 100%; padding: 0; accent-color: var(--accent); }
+.item select { max-width: 100%; }
+.row-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+button.primary:disabled { opacity: 0.5; }
+.text-button { white-space: nowrap; background: none; border: none; padding: 0; color: var(--accent); font-weight: 600; }
+.text-button.danger { color: var(--poor); }
+
+/* A switch, from a checkbox. */
+input.switch {
+  appearance: none; -webkit-appearance: none; flex: none; position: relative; margin: 0; padding: 0;
+  width: 46px; height: 28px; border-radius: 14px; border: none; cursor: pointer;
+  background: rgba(255, 255, 255, 0.16); transition: background 0.15s;
+}
+input.switch::before {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); transition: transform 0.15s;
+}
+input.switch:checked { background: var(--accent); }
+input.switch:checked::before { transform: translateX(18px); }
+input.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* A segmented control. */
+.seg { display: flex; gap: 3px; padding: 3px; border-radius: 10px; background: var(--space-top); border: 1px solid var(--panel-border); }
+.seg button { flex: 1; min-width: 0; border: none; background: none; padding: 7px 8px; border-radius: 7px; font-weight: 600; color: var(--muted); }
+.seg button.on { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); }

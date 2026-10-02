@@ -5,7 +5,9 @@
   import { searchPlaces, elevationAt, placeDetails } from '../weather.js';
   import { uuid } from './uuid.js';
 
-  let { settings, onsite, onchange = null, autofocus = false } = $props();
+  // `searchOnly`: just the search and Use My Location (Settings shows the
+  // site and saved sites in cards of their own).
+  let { settings, onsite, onchange = null, autofocus = false, searchOnly = false } = $props();
 
   let searchBox;
   $effect(() => {
@@ -103,7 +105,8 @@
 </script>
 
 <div class="location" id="settings-location">
-  {#if settings}
+  {#if searchOnly}
+  {:else if settings}
     <div class="current">
       <div>
         <div class="site-name">{settings.site.name || 'Unnamed site'}</div>
@@ -140,7 +143,7 @@
   {#if busy}<p class="muted">{busy}</p>{/if}
   {#if error}<p class="error">{error}</p>{/if}
 
-  {#if settings}
+  {#if settings && !searchOnly}
     <div class="saved-list">
       <span class="label">Saved sites</span>
       {#each savedSites as s (s.id)}

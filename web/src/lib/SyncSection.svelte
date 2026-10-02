@@ -52,7 +52,6 @@
 </script>
 
 <div class="sync">
-  {#if !joinOnly}<span class="label">Sync</span>{/if}
   {#if joinOnly}
     <p class="muted">Enter the sync code from Settings → Sync on that device.</p>
     <form onsubmit={e => { e.preventDefault(); join(); }}>
@@ -62,7 +61,7 @@
   {:else if !sync.code}
     <p class="muted">Keep your sites, telescope, settings and plans the same here, on your phone and in the Mac app. No account: one device gets a sync code, the others enter it. Everything is encrypted on the device first.</p>
     <div class="buttons">
-      <button type="button" onclick={turnOn}>Turn On Sync</button>
+      <button type="button" class="primary" onclick={turnOn}>Turn On Sync</button>
       <button type="button" onclick={() => (entering = !entering)}>I Have a Code</button>
     </div>
     {#if entering}

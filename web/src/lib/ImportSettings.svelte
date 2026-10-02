@@ -2,7 +2,8 @@
   // The Mac app's settings file (File → Export Settings… there), read whole:
   // the current site and rig, preferences and custom targets, and the saved
   // sites, saved rigs and plans with them (StoredSettings).
-  let { onimport } = $props();
+  // `bare`: without its heading, under one of Settings' own.
+  let { onimport, bare = false } = $props();
   let error = $state('');
 
   async function read(event) {
@@ -29,7 +30,7 @@
 </script>
 
 <div class="import">
-  <span class="label">From the Mac app</span>
+  {#if !bare}<span class="label">From the Mac app</span>{/if}
   <label class="button">
     Import Mac Settings File
     <!-- No accept filter: with one, macOS greys every file out while it

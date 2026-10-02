@@ -1,67 +1,36 @@
 <script>
-  // The few settings that change the scores most, set the guided way: a rig
-  // preset, the kind of night you want, how much cloud you'll put up with,
-  // and units. Everything else the Mac's Settings has is under "More
-  // settings" (MoreSettings.svelte), closed by default.
-  import { duration } from './format.js';
-  import { uuid } from './uuid.js';
+  // Settings, in the Mac app's tabs (UI/SettingsView.swift): Location,
+  // Equipment, Planning, and Sync — with Display (units and night mode) on a
+  // tab of its own, and the ways to bring settings across between devices
+  // gathered under Sync. Each tab is a column of grouped cards.
   import { setupLink } from './setupLink.js';
-  import MoreSettings from './MoreSettings.svelte';
   import ImportSettings from './ImportSettings.svelte';
-  import LocationSection from './LocationSection.svelte';
   import SyncSection from './SyncSection.svelte';
+  import LocationSettings from './LocationSettings.svelte';
+  import EquipmentSettings from './EquipmentSettings.svelte';
+  import PlanningSettings from './PlanningSettings.svelte';
 
   let { settings, rigPresets, onchange, onimport, onsite, ondone, onsetup, onsyncjoin, onsyncstart, onsyncnow, focus = null } = $props();
 
+  const tabs = [
+    { id: 'location', title: 'Location', icon: 'M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Zm0-8.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z' },
+    { id: 'equipment', title: 'Equipment', icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 5 3.5 2v4L12 16l-3.5-2v-4L12 8Zm0-5v5m7.8 4.5-4.3-2.5m4.3 7.5-4.3-2.5M12 21v-5m-7.8-1.5 4.3-2.5M4.2 7.5l4.3 2.5' },
+    { id: 'planning', title: 'Planning', icon: 'M4 6h10m4 0h2M4 12h4m4 0h8M4 18h12m4 0h0M16 4v4M10 10v4M18 16v4' },
+    { id: 'display', title: 'Display', icon: 'M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z' },
+    { id: 'sync', title: 'Sync', icon: 'M20 11a8 8 0 0 0-14.3-4.9L4 8m0-4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16m0 4v-4h-4' },
+  ];
+  let tab = $state('location');
   // Opened from the site name: straight to Location.
   $effect(() => {
-    if (focus !== 'location') window.scrollTo({ top: 0 });
-    if (focus === 'location') document.getElementById('settings-location')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    if (focus === 'location') tab = 'location';
+  });
+  $effect(() => {
+    tab;
+    window.scrollTo({ top: 0 });
   });
 
-  // Rig.presetGroup
-  const smartMakers = ['ZWO Seestar', 'Celestron Origin', 'Unistellar', 'Vaonis', 'DwarfLab'];
-  const isSmart = rig => smartMakers.some(maker => rig.name.startsWith(maker));
-  const groups = $derived([
-    ['Smart telescopes', rigPresets.filter(isSmart)],
-    ['Cameras, lenses and telescopes', rigPresets.filter(rig => !isSmart(rig))],
-  ]);
-
-  // An imported rig that isn't one of the presets keeps its own entry.
-  const presetIndex = $derived(rigPresets.findIndex(rig => rig.name === settings.rig.name));
-
-  // GoalPreset (Model/Preferences.swift)
-  const goals = [
-    { id: 'quickSession', title: 'Quick session', summary: 'About an hour per target.', minutes: 60, emphasis: 'longerIntegration' },
-    { id: 'deepIntegration', title: 'Deep integration', summary: 'Several hours on one or two targets.', minutes: 240, emphasis: 'longerIntegration' },
-    { id: 'variety', title: 'Variety', summary: 'Many targets, about an hour each.', minutes: 120, emphasis: 'moreTargets' },
-  ];
-  const goal = $derived(goals.find(g => g.minutes === settings.preferences.integrationGoalMinutes
-    && g.emphasis === settings.preferences.planEmphasis));
-
-  function chooseRig(index) {
-    if (index < 0) return;
-    // Applying a preset is a fresh rig, as Settings → Equipment does.
-    onchange({ ...settings, rig: { ...rigPresets[index], id: uuid() } });
-  }
-
-  function setFilter(on) {
-    onchange({ ...settings, rig: { ...settings.rig, hasNarrowbandFilter: on } });
-  }
-
-  function chooseGoal(id) {
-    const chosen = goals.find(g => g.id === id);
-    if (!chosen) return;
-    onchange({ ...settings, preferences: { ...settings.preferences, integrationGoalMinutes: chosen.minutes, planEmphasis: chosen.emphasis } });
-  }
-
-  // The slider moves freely; the night is re-planned when you let go.
-  let cloudLimit = $state(settings.preferences.maximumCloudCover);
-  $effect(() => { cloudLimit = settings.preferences.maximumCloudCover; });
-
-  function setCloudLimit() {
-    onchange({ ...settings, preferences: { ...settings.preferences, maximumCloudCover: cloudLimit } });
-  }
+  const prefs = $derived(settings.preferences);
+  const setPrefs = fields => onchange({ ...settings, preferences: { ...prefs, ...fields } });
 
   // Your setup as a link, for your phone or a friend.
   let linkNote = $state('');
@@ -83,106 +52,100 @@
     } catch {}
   }
   const canShare = typeof navigator.share === 'function';
-  let showsMore = $state(false);
-
-  function setImperial(on) {
-    onchange({ ...settings, preferences: { ...settings.preferences, usesImperialUnits: on } });
-  }
 </script>
 
-<section class="panel settings">
+<section class="settings">
   <header>
     <h2>Settings</h2>
-    <button type="button" onclick={ondone}>Done</button>
+    <div class="row-buttons">
+      <button type="button" class="wizard" onclick={onsetup} title="Walks you through your site, horizon, telescope and goal">✦ Setup Wizard</button>
+      <button type="button" class="done" onclick={ondone}>Done</button>
+    </div>
   </header>
 
-  <h3 class="section">Location</h3>
-  <LocationSection {settings} {onsite} {onchange} autofocus={focus === 'location'} />
+  <nav class="tabs" aria-label="Settings sections">
+    {#each tabs as t}
+      <button type="button" class:on={tab === t.id} aria-current={tab === t.id ? 'page' : undefined} onclick={() => (tab = t.id)}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d={t.icon} /></svg>
+        <span>{t.title}</span>
+      </button>
+    {/each}
+  </nav>
 
-  <h3 class="section">Telescope and night</h3>
-
-  <label class="row">
-    <span class="label">Telescope</span>
-    <select value={presetIndex} onchange={e => chooseRig(Number(e.currentTarget.value))}>
-      {#if presetIndex < 0}<option value={-1}>{settings.rig.name} (yours)</option>{/if}
-      {#each groups as [name, rigs]}
-        <optgroup label={name}>
-          {#each rigs as rig}<option value={rigPresets.indexOf(rig)}>{rig.name}</option>{/each}
-        </optgroup>
-      {/each}
-    </select>
-  </label>
-
-  <label class="row check">
-    <input type="checkbox" checked={settings.rig.hasNarrowbandFilter} onchange={e => setFilter(e.currentTarget.checked)} />
-    <span>Dual-band / narrowband filter</span>
-  </label>
-
-  <div class="row">
-    <span class="label">Kind of night</span>
-    <div class="segments" role="radiogroup" aria-label="Kind of night">
-      {#each goals as g}
-        <button type="button" role="radio" aria-checked={goal?.id === g.id} class:on={goal?.id === g.id}
-                onclick={() => chooseGoal(g.id)}>{g.title}</button>
-      {/each}
+  {#if tab === 'location'}
+    <LocationSettings {settings} {onsite} {onchange} autofocus={focus === 'location'} />
+  {:else if tab === 'equipment'}
+    <EquipmentSettings {settings} {rigPresets} {onchange} />
+  {:else if tab === 'planning'}
+    <PlanningSettings {settings} {onchange} />
+  {:else if tab === 'display'}
+    <div class="pane">
+      <div class="group">
+        <h3 class="group-title">Display</h3>
+        <div class="card">
+          <label class="item inline">
+            <div><span class="title">Night mode</span><p class="caption">Red light only, to keep your eyes dark-adapted at the scope.</p></div>
+            <input class="switch" type="checkbox" checked={prefs.nightMode ?? false} onchange={e => setPrefs({ nightMode: e.currentTarget.checked })} />
+          </label>
+          <label class="item inline">
+            <div><span class="title">Fahrenheit and mph</span><p class="caption">Off: Celsius and km/h.</p></div>
+            <input class="switch" type="checkbox" checked={prefs.usesImperialUnits} onchange={e => setPrefs({ usesImperialUnits: e.currentTarget.checked })} />
+          </label>
+        </div>
+        <p class="group-note">These stay on this device; sync leaves them alone.</p>
+      </div>
     </div>
-    <p class="muted">
-      {goal ? goal.summary : `Your own: up to ${duration(settings.preferences.integrationGoalMinutes)} per target.`}
-    </p>
-  </div>
+  {:else}
+    <div class="pane">
+      <div class="group">
+        <h3 class="group-title">Sync</h3>
+        <div class="card"><div class="item"><SyncSection onjoin={onsyncjoin} onstart={onsyncstart} {onsyncnow} /></div></div>
+      </div>
 
-  <label class="row">
-    <span class="label">Maximum cloud cover <strong>{cloudLimit}%</strong></span>
-    <input type="range" min="0" max="100" step="5" bind:value={cloudLimit} onchange={setCloudLimit} />
-    <span class="muted">Hours cloudier than this count less: half for every 6 points over.</span>
-  </label>
+      <div class="group">
+        <h3 class="group-title">Setup link</h3>
+        <div class="card">
+          <div class="item">
+            <p class="caption">{linkNote || 'A one-time link that gives another device, or a friend, your site, telescope and settings. Unlike sync, it doesn\'t keep them in step afterwards.'}</p>
+            <div class="row-buttons">
+              <button type="button" onclick={copyLink}>Copy Setup Link</button>
+              {#if canShare}<button type="button" onclick={shareLink}>Share…</button>{/if}
+            </div>
+            {#if linkShown}<input type="text" readonly value={linkShown} onfocus={e => e.currentTarget.select()} />{/if}
+          </div>
+        </div>
+      </div>
 
-  <label class="row check">
-    <input type="checkbox" checked={settings.preferences.usesImperialUnits} onchange={e => setImperial(e.currentTarget.checked)} />
-    <span>Use Fahrenheit and mph</span>
-  </label>
-
-  <button type="button" class="disclosure" onclick={() => (showsMore = !showsMore)} aria-expanded={showsMore}>
-    {showsMore ? '▾' : '▸'} More settings
-    <span class="muted">time zone, horizon, your own rig, darkness, altitude, what to show, night mode</span>
-  </button>
-  {#if showsMore}<MoreSettings {settings} {onchange} />{/if}
-
-  <SyncSection onjoin={onsyncjoin} onstart={onsyncstart} {onsyncnow} />
-
-  <ImportSettings {onimport} />
-
-  <div class="row">
-    <span class="label">Guided setup</span>
-    <button type="button" onclick={onsetup}>Run Setup Wizard</button>
-  </div>
-
-  <div class="row">
-    <span class="label">Use this setup elsewhere</span>
-    <div class="link-buttons">
-      <button type="button" onclick={copyLink}>Copy Setup Link</button>
-      {#if canShare}<button type="button" onclick={shareLink}>Share…</button>{/if}
+      <div class="group">
+        <h3 class="group-title">From the Mac app</h3>
+        <div class="card"><div class="item"><ImportSettings {onimport} bare /></div></div>
+      </div>
     </div>
-    <span class="muted">{linkNote || 'A link that gives another device your site, telescope and settings.'}</span>
-    {#if linkShown}<input type="text" readonly value={linkShown} onfocus={e => e.currentTarget.select()} />{/if}
-  </div>
+  {/if}
 </section>
 
 <style>
-  .settings { padding: 14px; display: grid; gap: 14px; }
-  header { display: flex; justify-content: space-between; align-items: center; }
-  h2 { margin: 0; font-size: 17px; }
-  .row { display: grid; gap: 6px; }
-  .label { font-weight: 600; display: flex; justify-content: space-between; }
-  .check { display: flex; align-items: center; gap: 8px; }
-  .check input { width: 16px; height: 16px; accent-color: var(--accent); }
-  select { max-width: 100%; }
-  input[type='range'] { width: 100%; accent-color: var(--accent); padding: 0; }
-  .segments { display: flex; flex-wrap: wrap; gap: 6px; }
-  .segments button.on { background: rgba(158, 133, 250, 0.25); border-color: var(--accent); }
-  p { margin: 0; }
-  .section { margin: 4px 0 -6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
-  .link-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-  .disclosure { display: grid; gap: 2px; text-align: left; background: none; border: none; padding: 0; font-weight: 600; color: var(--accent); }
-  .disclosure .muted { font-weight: 400; }
+  .settings { display: grid; gap: 18px; max-width: 720px; margin: 0 auto; width: 100%; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  h2 { margin: 0; font-size: 26px; }
+  .done { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; padding: 7px 18px; }
+  .wizard { font-weight: 600; }
+  .tabs {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 4px;
+    border-radius: 14px; background: var(--panel); border: 1px solid var(--panel-border);
+    position: sticky; top: 8px; z-index: 5;
+  }
+  .tabs button {
+    display: grid; justify-items: center; gap: 3px; padding: 8px 2px; border: none; border-radius: 10px;
+    background: none; color: var(--muted); font-size: 12px; font-weight: 600; min-width: 0;
+  }
+  .tabs button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .tabs button.on { background: rgba(158, 133, 250, 0.22); color: var(--text); }
+  .tabs svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tabs button.on svg { stroke: var(--accent); }
+  .pane { display: grid; gap: 22px; }
+  @media (min-width: 700px) {
+    .tabs button { grid-auto-flow: column; justify-content: center; gap: 7px; align-items: center; font-size: 14px; padding: 9px 4px; }
+    .tabs svg { width: 18px; height: 18px; }
+  }
 </style>
