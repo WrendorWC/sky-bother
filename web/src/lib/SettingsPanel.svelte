@@ -132,7 +132,8 @@
     {#each tabs as t}
       <button type="button" class:on={tab === t.id} aria-current={tab === t.id ? 'page' : undefined} onclick={() => (tab = t.id)}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d={t.icon} /></svg>
-        <span>{t.title}</span>
+        <span>{t.title}{#if t.id === 'sync'}<i class="sync-dot" class:on={!!sync.code} class:trouble={!!sync.error}
+             title={sync.error ? 'Sync has a problem' : sync.code ? 'Syncing' : 'Not syncing'}></i>{/if}</span>
       </button>
     {/each}
   </nav>
@@ -170,7 +171,11 @@
   {:else}
     <div class="pane">
       <div class="group">
-        <h3 class="group-title">Sync</h3>
+        <h3 class="group-title sync-title">Sync
+          <span class="sync-state" class:on={!!sync.code} class:trouble={!!sync.error}>
+            {sync.error ? 'Problem — see below' : sync.code ? 'On in this browser' : 'Off in this browser'}
+          </span>
+        </h3>
         <div class="card"><div class="item"><SyncSection onjoin={onsyncjoin} onstart={onsyncstart} {onsyncnow} /></div></div>
       </div>
 
@@ -226,6 +231,15 @@
   .tabs svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .tabs button.on svg { stroke: var(--accent); }
   .pane { display: grid; gap: 22px; }
+  /* Sync on or off in this browser, at a glance: each browser joins on its
+     own, and one that hasn't keeps its own copy. */
+  .sync-dot { display: inline-block; width: 7px; height: 7px; margin-left: 5px; vertical-align: 2px; border-radius: 50%; background: var(--tertiary); }
+  .sync-dot.on { background: var(--excellent); }
+  .sync-dot.trouble { background: var(--marginal); }
+  .sync-title { display: flex; align-items: center; gap: 10px; }
+  .sync-state { text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 12px; padding: 2px 9px; border-radius: 999px; color: var(--muted); background: var(--panel); border: 1px solid var(--panel-border); }
+  .sync-state.on { color: var(--excellent); border-color: color-mix(in srgb, var(--excellent) 45%, transparent); }
+  .sync-state.trouble { color: var(--marginal); border-color: color-mix(in srgb, var(--marginal) 45%, transparent); }
   @media (min-width: 700px) {
     .tabs button { grid-auto-flow: column; justify-content: center; gap: 7px; align-items: center; font-size: 14px; padding: 9px 4px; }
     .tabs svg { width: 18px; height: 18px; }
