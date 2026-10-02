@@ -30,6 +30,10 @@ self.addEventListener('activate', event => {
 });
 
 const imageHosts = ['alasky.cds.unistra.fr', 'alaskybis.cds.unistra.fr'];
+// Only the framing cutouts from those hosts — not Sky Browser's survey
+// tiles, which Aladin loads itself and which, passed through here, never
+// arrived (the sky stayed black).
+const isFramingCutout = url => imageHosts.includes(url.hostname) && url.pathname.includes('hips2fits');
 
 self.addEventListener('fetch', event => {
   const request = event.request;
@@ -40,7 +44,7 @@ self.addEventListener('fetch', event => {
   if (own && url.pathname.startsWith('/api/')) return;
 
   // Pictures: from storage once seen.
-  if ((own && /^\/catalog\/(photos|sky)\//.test(url.pathname)) || imageHosts.includes(url.hostname)) {
+  if ((own && /^\/catalog\/(photos|sky)\//.test(url.pathname)) || isFramingCutout(url)) {
     event.respondWith(fromStorageFirst(request, IMAGES, true));
     return;
   }
