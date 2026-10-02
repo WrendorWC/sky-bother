@@ -210,8 +210,7 @@
   .progress span { display: block; height: 100%; background: var(--red); }
   .dew { display: grid; gap: 2px; padding: 8px 10px; border-radius: 8px; color: var(--amber); background: color-mix(in srgb, var(--amber) 12%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent); justify-self: start; }
   .dew span { font-size: 13px; opacity: 0.85; }
-  /* Side by side when there is room, but no bigger than a glance needs. */
-  .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 440px)); gap: 14px; align-items: start; }
+  .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; align-items: start; }
   .view { display: grid; gap: 6px; }
   .sky { padding: 10px; background: rgba(0, 0, 0, 0.35); border-radius: 10px; }
   .warn, .warnText { color: var(--amber); }
@@ -225,4 +224,21 @@
   .after { display: flex; gap: 10px; align-items: center; }
   .wake { margin-top: 6px; background: var(--panel-bg); color: var(--ink); border-color: var(--line); }
   .wake.on { border-color: var(--red); color: var(--red); }
+  /* A desktop or tablet across the room: bigger type, the conditions in a
+     column on the right, and the pictures filling the rest — the dome no
+     taller than the window leaves room for. */
+  @media (min-width: 1100px) {
+    .session { grid-template-columns: minmax(0, 1fr) clamp(320px, 26vw, 440px); align-items: start; font-size: 17px; }
+    header { grid-column: 1 / -1; }
+    .panels { grid-template-columns: 1fr; }
+    .main { padding: 22px; gap: 14px; }
+    .big { font-size: 46px; }
+    .times { font-size: 24px; }
+    .clock { font-size: 34px; }
+    h2 { font-size: 24px; }
+    .heading, .label { font-size: 14px; }
+    .progress { height: 8px; }
+    .views { grid-template-columns: 1fr minmax(0, max(360px, calc(100vh - 520px))); }
+    .side { padding: 20px; gap: 10px; }
+  }
 </style>
