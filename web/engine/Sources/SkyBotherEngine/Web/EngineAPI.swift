@@ -433,6 +433,54 @@ public enum EngineAPI {
 
     struct TrackRequest: Decodable { var planKey: String }
 
+    /// MoonCard's numbers: the Moon at the moment it stands highest between
+    /// sunset and sunrise (sampled every ten minutes), and the Sun then, in
+    /// the sky at the site — the page lights a globe from them.
+    struct MoonCardResult: Encodable {
+        var at: Date
+        var altitude: Double
+        var azimuth: Double
+        var distanceKilometers: Double
+        var sunAltitude: Double
+        var sunAzimuth: Double
+        var latitude: Double
+        var illuminatedFraction: Double
+        var phaseName: String
+        var siteName: String
+    }
+
+    public static func moonCard(_ requestJSON: Data) -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        guard let request = try? JSONDecoder().decode(TrackRequest.self, from: requestJSON),
+              let night = lastNights.first(where: { $0.planKey == request.planKey })
+        else {
+            return (try? encoder.encode(Failure(error: "No such night."))) ?? Data()
+        }
+        func horizontal(_ coordinate: EquatorialCoordinate, at date: Date) -> HorizontalCoordinate {
+            SkyCoordinates.horizontal(coordinate, daysSinceJ2000: date.daysSinceJ2000,
+                                      latitude: night.site.latitude, longitude: night.site.longitude)
+        }
+        let window = night.chartWindow
+        let samples = stride(from: window.start.timeIntervalSince1970, through: window.end.timeIntervalSince1970, by: 600)
+            .map { Date(timeIntervalSince1970: $0) }
+        let moment = samples.max {
+            horizontal(Moon.position(daysSinceJ2000: $0.daysSinceJ2000).coordinate, at: $0).altitude
+                < horizontal(Moon.position(daysSinceJ2000: $1.daysSinceJ2000).coordinate, at: $1).altitude
+        } ?? window.start.addingTimeInterval(window.duration / 2)
+        let d = moment.daysSinceJ2000
+        let moon = Moon.position(daysSinceJ2000: d)
+        let moonSky = horizontal(moon.coordinate, at: moment)
+        let sunSky = horizontal(Sun.position(daysSinceJ2000: d), at: moment)
+        let result = MoonCardResult(at: moment, altitude: moonSky.altitude, azimuth: moonSky.azimuth,
+                                    distanceKilometers: moon.distanceKilometers,
+                                    sunAltitude: sunSky.altitude, sunAzimuth: sunSky.azimuth,
+                                    latitude: night.site.latitude,
+                                    illuminatedFraction: Moon.illuminatedFraction(daysSinceJ2000: d),
+                                    phaseName: Moon.phaseName(daysSinceJ2000: d), siteName: night.site.name)
+        return (try? encoder.encode(result)) ?? Data()
+    }
+
     /// Sky View's data for a night of the last week planned, from twelve
     /// hours before the chart window to twelve after.
     public static func skyTrack(_ requestJSON: Data) -> Data {

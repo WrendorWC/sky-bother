@@ -12,6 +12,7 @@
   import TargetDetail from './TargetDetail.svelte';
   import FactorBar from './FactorBar.svelte';
   import SkyView from './SkyView.svelte';
+  import MoonCard from './MoonCard.svelte';
   import { scoreColor, dewColor } from './palette.js';
   import * as format from './format.js';
 
@@ -90,6 +91,7 @@
   const domeTarget = $derived(night.plan.find(b => domeAt >= Date.parse(b.window.start) && domeAt < Date.parse(b.window.end))?.targetID ?? null);
   const skyHref = $derived(`#/sky/${night.planKey}${chosenFor === night.planKey && chosenID ? `/${encodeURIComponent(chosenID)}` : ''}`);
 
+  let showsMoon = $state(false);
   let showsScore = $state(false);
   const cap = $derived(night.cappedBy ? night.targets.find(t => t.id === night.cappedBy) : null);
 </script>
@@ -137,8 +139,9 @@
   <dl class="stats">
     <div><dt>Astronomical dark</dt><dd>{darkWindow}</dd></div>
     <div><dt>Moon down</dt><dd>{night.moonlessDarkHours > 0.02 ? format.hours(night.moonlessDarkHours) : 'none'}</dd></div>
-    <div><dt>Moon</dt><dd><MoonDisc fraction={night.moonIlluminatedFraction} waxing={night.moonIsWaxing} size={14} />
-      {Math.round(night.moonIlluminatedFraction * 100)}% {night.moonPhase.toLowerCase()}</dd></div>
+    <div><dt>Moon</dt><dd><button type="button" class="moon-button" onclick={() => (showsMoon = true)} title="The Moon tonight">
+      <MoonDisc fraction={night.moonIlluminatedFraction} waxing={night.moonIsWaxing} size={14} />
+      {Math.round(night.moonIlluminatedFraction * 100)}% {night.moonPhase.toLowerCase()}<span class="chevron">›</span></button></dd></div>
     {#if night.hasWeather}
       <div><dt>Cloud in the dark</dt><dd>{night.meanCloudDuringDark != null ? `${Math.round(night.meanCloudDuringDark)}%` : '—'}</dd></div>
       <div><dt>Low</dt><dd>{format.temperature(night.minimumTemperature, imperial)}</dd></div>
@@ -243,6 +246,8 @@
   {/if}
 </article>
 
+{#if showsMoon}<MoonCard {night} {timeZone} onclose={() => (showsMoon = false)} />{/if}
+
 {#if wide}
   <aside class="side-column">
     <section class="panel big-dome">
@@ -307,6 +312,8 @@
   .stats div { display: grid; gap: 1px; }
   dt { font-size: 12px; color: var(--muted); }
   dd { margin: 0; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+  .moon-button { display: flex; align-items: center; gap: 5px; padding: 0; background: none; border: none; font: inherit; font-weight: 600; color: inherit; }
+  .moon-button:hover { color: var(--accent); }
   .dot { width: 8px; height: 8px; border-radius: 50%; }
   .legend { list-style: none; padding: 0; margin: -6px 0 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
   .legend li { display: flex; align-items: center; gap: 6px; }

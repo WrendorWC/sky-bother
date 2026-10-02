@@ -70,3 +70,10 @@ public func sbPlanEdit(_ pointer: UnsafeRawPointer, _ count: Int32) -> UnsafeRaw
     lastResult = Array(EngineAPI.planEdit(Data(bytes: pointer, count: Int(count))))
     return lastResult.withUnsafeBytes { UnsafeRawPointer($0.baseAddress!) }
 }
+
+@_expose(wasm, "sb_moon_card")
+@_cdecl("sb_moon_card")
+public func sbMoonCard(_ pointer: UnsafeRawPointer, _ count: Int32) -> UnsafeRawPointer {
+    lastResult = Array(EngineAPI.moonCard(Data(bytes: pointer, count: Int(count))))
+    return lastResult.withUnsafeBytes { UnsafeRawPointer($0.baseAddress!) }
+}
