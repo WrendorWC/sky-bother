@@ -2,6 +2,7 @@
   // PlanStripView, read-only: the night's blocks on the same sunset–sunrise
   // axis as the timeline above it, each in its target's score colour.
   import { scoreColor } from './palette.js';
+  import Hatching from './Hatching.svelte';
 
   let { night, selectedID = null, onselect } = $props();
 
@@ -15,13 +16,14 @@
   {#each night.plan as block (block.targetID + block.window.start)}
     {@const score = scoreOf(block.targetID)}
     <button type="button" class="block" class:selected={selectedID === block.targetID}
-            class:unshootable={block.unusableMinutes > 0}
+           
             style:left="{percent(block.window.start)}%"
             style:width="{percent(block.window.end) - percent(block.window.start)}%"
             style:background={scoreColor(score, selectedID === block.targetID ? 0.95 : 0.75)}
             style:border-color={selectedID === block.targetID ? 'var(--accent)' : scoreColor(score)}
             title={block.targetName}
             onclick={() => onselect?.(block.targetID)}>
+      <Hatching {block} />
       <span>{block.targetName}</span>
     </button>
   {/each}
@@ -34,9 +36,6 @@
     border: 1px solid; border-radius: 5px; overflow: hidden; color: rgba(0,0,0,0.82);
     font-size: 11px; font-weight: 600; display: grid; place-items: center; min-width: 2px;
   }
-  .block span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .block > span:last-child { position: relative; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   .block.selected { border-width: 2px; }
-  .block.unshootable {
-    background-image: repeating-linear-gradient(-45deg, transparent 0 6px, rgba(0,0,0,0.28) 6px 9px);
-  }
 </style>

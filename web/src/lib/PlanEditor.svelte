@@ -7,6 +7,7 @@
   // last good one showing. Tap a block to select it.
   import { planEdit } from '../engine/engine.js';
   import { scoreColor } from './palette.js';
+  import Hatching from './Hatching.svelte';
   import { time } from './format.js';
 
   let { night, draft, selectedID = null, onchange, onselect, timeZone } = $props();
@@ -120,7 +121,7 @@
     {@const left = x(block.window.start)}
     {@const w = Math.max(3, x(block.window.end) - left)}
     {@const score = scoreOf(block.targetID)}
-    <button type="button" class="block" class:selected={block.id === selectedID} class:unshootable={block.unusableMinutes > 0}
+    <button type="button" class="block" class:selected={block.id === selectedID}
             style:left="{left}px" style:width="{w}px"
             style:background={scoreColor(score, block.id === selectedID ? 0.95 : 0.78)}
             style:border-color={block.id === selectedID ? 'var(--accent)' : scoreColor(score)}
@@ -128,6 +129,7 @@
             onpointerdown={e => down(e, block)} onpointermove={e => move(e, block)} onpointerup={e => up(e, block)}
             onpointerleave={() => { if (!drag) hover = ''; }} onkeydown={key}>
       {#if w > edge * 3}<span class="grip left"></span><span class="grip right"></span>{/if}
+      <Hatching {block} />
       <span class="name">{block.targetName}</span>
     </button>
   {/each}
@@ -145,8 +147,7 @@
     font-size: 13px; font-weight: 600; display: grid; place-items: center; touch-action: none; cursor: inherit;
   }
   .block.selected { border-width: 2px; box-shadow: 0 0 0 2px rgba(158, 133, 250, 0.4); }
-  .block.unshootable { background-image: repeating-linear-gradient(-45deg, transparent 0 6px, rgba(0,0,0,0.28) 6px 9px); }
-  .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; pointer-events: none; }
+  .name { position: relative; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; pointer-events: none; }
   .grip { position: absolute; top: 25%; bottom: 25%; width: 2px; border-radius: 1px; background: rgba(0,0,0,0.45); pointer-events: none; }
   .grip.left { left: 5px; }
   .grip.right { right: 5px; }

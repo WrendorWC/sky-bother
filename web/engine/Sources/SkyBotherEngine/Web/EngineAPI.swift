@@ -98,6 +98,14 @@ public enum EngineAPI {
         var targetName: String
         var window: TimeWindow
         var unusableMinutes: Double
+        /// The stretches of it that can't be shot, hatched on the strip.
+        var unusable: [TimeWindow]
+    }
+
+    static func block(_ segment: PlanSegment, in night: NightPlan) -> Block {
+        let fragments = segment.unusableFragments(against: night.targets.first { $0.id == segment.targetID })
+        return Block(id: segment.id.uuidString, targetID: segment.targetID, targetName: segment.targetName,
+                     window: segment.window, unusableMinutes: fragments.totalMinutes, unusable: fragments)
     }
 
     struct Dew: Encodable {
@@ -330,8 +338,7 @@ public enum EngineAPI {
                           altitudeTrace: plan.usableMinutes > 0 || planned.contains(plan.id) ? plan.altitudeTrace.map { ($0 * 10).rounded() / 10 } : nil)
         }
         let blocks = segments.map { segment in
-            Block(id: segment.id.uuidString, targetID: segment.targetID, targetName: segment.targetName, window: segment.window,
-                  unusableMinutes: segment.unusableMinutes(against: night.targets.first { $0.id == segment.targetID }))
+            Self.block(segment, in: night)
         }
         let dew = DewRisk.Assessment.forPlan(segments, in: night).map {
             Dew(level: $0.level.name, advice: $0.adviceLine(in: night.timeZone),
@@ -542,8 +549,7 @@ public enum EngineAPI {
             break
         }
         let blocks = segments.map { segment in
-            Block(id: segment.id.uuidString, targetID: segment.targetID, targetName: segment.targetName, window: segment.window,
-                  unusableMinutes: segment.unusableMinutes(against: night.targets.first { $0.id == segment.targetID }))
+            Self.block(segment, in: night)
         }
         return reply(PlanEditResult(segments: segments, blocks: blocks, added: added))
     }
