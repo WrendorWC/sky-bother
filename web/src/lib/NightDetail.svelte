@@ -241,14 +241,6 @@
 
 {#if wide}
   <aside class="side-column">
-    <section class="panel big-dome">
-      <header>
-        <h3>{isTonight ? 'In the sky now' : 'In the sky'} · {format.time(domeAt, timeZone)}</h3>
-        <a class="sky-link" href={skyHref}>Open Sky View</a>
-      </header>
-      <SkyView {night} {timeZone} {preferences} targetID={domeTarget} fixedAt={domeAt} compact highlights onhighlight={open} />
-      <p class="muted dome-note">Tap a marked target for its card.</p>
-    </section>
     {#if selected}<TargetDetail {night} targetID={selected.id} {timeZone} inline />{/if}
   </aside>
 {:else if !wide && targetID}
@@ -284,7 +276,7 @@
   }
   .sky-link svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; }
   .dome-button { margin-left: auto; align-self: center; display: grid; justify-items: center; gap: 4px; text-decoration: none; color: var(--accent); font-size: 12px; font-weight: 600; flex: none; }
-  .mini-dome { width: 104px; pointer-events: none; }
+  .mini-dome { width: 140px; pointer-events: none; }
   /* The dome and the target's card stay in view together while the night
      scrolls, the column scrolling on its own when it's the taller. */
   .side-column {
@@ -292,10 +284,6 @@
     position: sticky; top: 72px; max-height: calc(100vh - 88px); overflow-y: auto; scrollbar-width: thin;
   }
   .side-column :global(.drawer.inline) { position: static; max-height: none; }
-  .big-dome { padding: 12px 14px; display: grid; gap: 8px; border-radius: 14px; }
-  .big-dome header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-  .big-dome .sky-link { margin: 0; font-size: 13px; }
-  .dome-note { margin: 0; font-size: 12px; }
   .best { justify-self: start; display: flex; gap: 6px; align-items: baseline; padding: 0; background: none; border: none; font-weight: 500; }
   .best .label { color: var(--accent); font-size: 12px; font-weight: 600; }
   .chevron { color: var(--accent); }
