@@ -36,7 +36,18 @@ button:hover, .button:hover { border-color: var(--accent); }
 button:disabled { opacity: 0.5; cursor: default; }
 a { color: var(--accent); }
 
-/* Night mode, the Mac's NightMode.swift: each pixel's brightness to red,
-   green and blue to nothing. On the root element, so fixed panels still
-   position against the window. The matrix lives in index.html. */
-html.night-mode { filter: url(#night-mode); }
+/* Night mode, the Mac's NightMode.swift: everything in shades of red only.
+   The page goes grey, then a red layer over everything multiplies through,
+   so only red survives — (L, 0, 0). An SVG colour-matrix filter did this on
+   desktops, but iOS doesn't apply SVG filters to WebGL canvases (the timeline
+   and the dome stayed in colour on iPhones); a backdrop filter and blending
+   are done by the compositor and cover them too. Even where the grey step
+   were skipped, the multiply alone leaves nothing but red. Both are layers
+   over the page rather than filters on it, so fixed panels stay put. */
+html.night-mode body::before, html.night-mode body::after {
+  content: ''; position: fixed; inset: 0; z-index: 2147483647; pointer-events: none;
+}
+/* Grey what's beneath (a backdrop filter, so nothing is filtered twice)… */
+html.night-mode body::before { -webkit-backdrop-filter: grayscale(1); backdrop-filter: grayscale(1); }
+/* …then red multiplies through on top. */
+html.night-mode body::after { background: #ff0000; mix-blend-mode: multiply; }
