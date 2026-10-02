@@ -571,11 +571,13 @@
 
 {#snippet controls()}
 <div class="controls">
-  <button type="button" class="play" onclick={togglePlay} aria-label={playing ? 'Pause' : 'Play the night'}>
+  <button type="button" class="play" class:playing onclick={togglePlay}>
     {#if playing}
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
+      Pause
     {:else}
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" /></svg>
+      Play the Night
     {/if}
   </button>
   <button type="button" class:on={followingNow} onclick={goNow} disabled={!nowAvailable}
@@ -730,8 +732,15 @@
   .dome canvas { position: absolute; inset: 0; display: block; }
   .loading { position: absolute; inset: 0; display: grid; place-items: center; }
   .controls { display: flex; gap: 10px; align-items: center; }
-  .play { width: 52px; height: 52px; padding: 0; display: grid; place-items: center; border-radius: 50%; }
-  .play svg { width: 24px; height: 24px; fill: currentColor; }
+  /* The main control: filled and labelled, so it can't be missed. */
+  .play {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 20px 0 16px;
+    border-radius: 999px; background: var(--accent); border-color: var(--accent); color: #fff;
+    font-size: 16px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 10px rgba(158, 133, 250, 0.35);
+  }
+  .play:hover { filter: brightness(1.08); }
+  .play.playing { background: rgba(158, 133, 250, 0.2); color: var(--text); box-shadow: none; }
+  .play svg { width: 20px; height: 20px; fill: currentColor; }
   .controls > button:not(.play) { min-height: 44px; }
   .controls .on { background: rgba(158, 133, 250, 0.25); border-color: var(--accent); }
   .clock { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
