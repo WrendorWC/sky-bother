@@ -580,9 +580,9 @@
       Play the Night
     {/if}
   </button>
-  <button type="button" class:on={followingNow} onclick={goNow} disabled={!nowAvailable}
-          title={nowAvailable ? 'Show the sky now' : 'Now is a different day from this night'}>Now</button>
-  <span class="clock">{followingNow ? 'Now · ' : ''}{time(at, timeZone)}</span>
+  <button type="button" class="now" class:on={followingNow} onclick={goNow} disabled={!nowAvailable}
+          title={nowAvailable ? 'Show the sky now' : 'Now is a different day from this night'}>{#if followingNow}<i class="live" aria-hidden="true"></i>{/if}Now</button>
+  <span class="clock">{time(at, timeZone)}</span>
 </div>
 {/snippet}
 
@@ -743,7 +743,16 @@
   .play svg { width: 20px; height: 20px; fill: currentColor; }
   .controls > button:not(.play) { min-height: 44px; }
   .controls .on { background: rgba(158, 133, 250, 0.25); border-color: var(--accent); }
-  .clock { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  /* Second only to Play: an accent outline, and while it's following the
+     clock, filled with a beating "live" dot. */
+  .now { display: inline-flex; align-items: center; gap: 7px; padding: 0 16px; border: 1.5px solid var(--accent); color: var(--accent); font-weight: 700; background: transparent; }
+  .now:hover:not(:disabled) { background: rgba(158, 133, 250, 0.14); }
+  .now.on { background: rgba(158, 133, 250, 0.28); color: var(--text); }
+  .now:disabled { border-color: var(--panel-border); color: var(--muted); }
+  .live { width: 8px; height: 8px; border-radius: 50%; background: #ff6b6b; box-shadow: 0 0 6px #ff6b6b; animation: beat 1.6s ease-in-out infinite; }
+  @keyframes beat { 50% { opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) { .live { animation: none; } }
+  .clock { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .scrubber { width: 100%; accent-color: var(--accent); padding: 0; }
   /* Now, by day: the slider only spans the night. */
   .scrubber.outside { opacity: 0.4; }
