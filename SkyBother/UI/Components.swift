@@ -51,8 +51,14 @@ private struct OneLineFitProbe: ViewModifier {
                     .hidden()
                     .background(
                         GeometryReader { wanted in
+                            // Nothing while the row is squeezed to almost no
+                            // width — mid-way through switching screens, say.
+                            // Taken seriously, that read as "nothing fits" and
+                            // dropped the UI to its 80% floor, where it stayed
+                            // until something else on screen changed.
                             Color.clear.preference(key: OneLineFitKey.self,
-                                                   value: given.size.width / max(1, wanted.size.width))
+                                                   value: given.size.width < 120 ? .infinity
+                                                          : given.size.width / max(1, wanted.size.width))
                         }
                     )
             }
