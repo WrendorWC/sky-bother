@@ -20,7 +20,15 @@
   });
   const frameLong = $derived(frame ? Math.max(frame.width, frame.height) : 1);
   const MIN_FOV = 0.25, MAX_FOV = 120;
-  const fitFor = entry => Math.min(MAX_FOV, Math.max(MIN_FOV, frameLong * 2.2, (entry?.majorAxisArcminutes ?? 0) / 60 * 1.6));
+  // The field across that shows the whole frame with room around it — in
+  // both directions, so a wide, short view doesn't cut its top and bottom
+  // off — and the whole object.
+  function fitFor(entry) {
+    const aspect = size.width && size.height ? size.height / size.width : 1;
+    const frameFit = frame ? Math.max(frame.width * 1.8, frame.height * 1.6 / aspect) : frameLong * 2.2;
+    const object = (entry?.majorAxisArcminutes ?? 0) / 60 * 1.4;
+    return Math.min(MAX_FOV, Math.max(MIN_FOV, frameFit, object, object / aspect));
+  }
 
   // --- Aladin ------------------------------------------------------------------
   let host = $state(null);
@@ -309,7 +317,7 @@
   .fov { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; margin-left: auto; }
   .zoom { width: 38px; padding: 6px 0; font-size: 18px; font-weight: 700; }
   .identified { margin: 0; font-weight: 600; color: var(--accent); }
-  .sky { position: relative; height: clamp(280px, 60vh, 640px); border-radius: 12px; overflow: hidden; border: 1px solid var(--panel-border); background: #000; touch-action: none; }
+  .sky { position: relative; height: clamp(320px, 70vh, 860px); border-radius: 12px; overflow: hidden; border: 1px solid var(--panel-border); background: #000; touch-action: none; }
   .aladin { position: absolute; inset: 0; z-index: 1; }
   .first { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   /* While the first picture shows, Aladin's image layer steps aside; its
