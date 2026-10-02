@@ -193,7 +193,7 @@
     --bg: rgb(9, 5, 8); --panel-bg: rgb(23, 13, 15); --line: rgb(69, 38, 46);
     --ink: rgb(255, 237, 237); --dim: rgb(204, 168, 173); --red: rgb(219, 77, 77); --amber: rgb(242, 179, 102);
     display: grid; gap: 14px; color: var(--ink); background: var(--bg);
-    margin: 0 -16px; padding: 0 16px 24px; min-height: calc(100vh - 80px);
+    margin: 0 calc(-1 * var(--gutter, 16px)); padding: 0 var(--gutter, 16px) 24px; min-height: calc(100vh - 80px);
   }
   header { display: flex; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
   .back { color: var(--dim); text-decoration: none; }

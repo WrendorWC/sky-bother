@@ -193,6 +193,9 @@
   .check { display: flex; gap: 6px; align-items: center; color: var(--muted); }
   .check input { accent-color: var(--accent); }
   .types { position: relative; }
+  /* On a phone the menu hangs from the toolbar's left edge, not from the
+     button, which can sit near the right edge of the screen. */
+  @media (max-width: 600px) { .toolbar { position: relative; } .types { position: static; } }
   .types summary {
     list-style: none; cursor: pointer; padding: 7px 10px; border-radius: 8px;
     border: 1px solid var(--panel-border); background: var(--panel);
@@ -201,6 +204,7 @@
   .types summary::after { content: ' ▾'; color: var(--muted); }
   .menu {
     position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; padding: 10px; min-width: 220px;
+    max-width: calc(100vw - 32px); max-height: 60vh; overflow-y: auto;
     display: grid; gap: 6px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
   }
   .menu label { display: flex; gap: 8px; align-items: center; white-space: nowrap; }

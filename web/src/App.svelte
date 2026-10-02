@@ -543,7 +543,7 @@
 </div>
 
 <style>
-  .app { max-width: 1760px; margin: 0 auto; padding: 0 16px 48px; }
+  .app { --gutter: 16px; max-width: 1760px; margin: 0 auto; padding: 0 var(--gutter) 48px; }
   .topbar {
     position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px;
     padding: 12px 0; background: var(--space-top); border-bottom: 1px solid var(--panel-border);
@@ -604,5 +604,13 @@
     .tool { padding: 9px; }
     .tool svg { width: 24px; height: 24px; }
     .back { display: inline-block; margin-bottom: 10px; color: var(--accent); text-decoration: none; font-weight: 600; }
+  }
+  /* The narrowest phones (an iPhone SE is 320 wide): tighter toolbar. */
+  @media (max-width: 380px) {
+    .app { --gutter: 10px; padding: 0 var(--gutter) 40px; }
+    .brand { font-size: 17px; }
+    .topbar { gap: 6px; }
+    .tool { padding: 7px; }
+    .tool svg { width: 22px; height: 22px; }
   }
 </style>

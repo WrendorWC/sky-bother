@@ -731,7 +731,7 @@
   .dome.compact { width: 100%; }
   .dome canvas { position: absolute; inset: 0; display: block; }
   .loading { position: absolute; inset: 0; display: grid; place-items: center; }
-  .controls { display: flex; gap: 10px; align-items: center; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   /* The main control: filled and labelled, so it can't be missed. */
   .play {
     display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 20px 0 16px;

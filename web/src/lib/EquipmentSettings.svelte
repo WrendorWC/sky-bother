@@ -179,7 +179,8 @@
   .pane { display: grid; gap: 22px; }
   .name { font-size: 18px; font-weight: 700; background: none; border-color: transparent; padding: 4px 6px; margin: -4px -6px 0; }
   .name:hover, .name:focus { border-color: var(--panel-border); background: var(--space-top); }
-  .gives { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 4px; }
+  .gives { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
+  @media (max-width: 380px) { .gives strong { font-size: 13px; } .gives div { padding: 8px 4px; } }
   .gives div { display: grid; gap: 2px; padding: 10px; border-radius: 10px; background: var(--space-top); text-align: center; }
   .gives strong { font-size: 16px; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .gives span { font-size: 12px; color: var(--muted); }

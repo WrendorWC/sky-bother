@@ -276,8 +276,7 @@
   .pick { padding: 28px; text-align: center; display: grid; gap: 6px; }
   .actions {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; gap: 12px; align-items: center;
-    padding: 12px max(16px, calc((100vw - 1760px) / 2 + 16px)); background: var(--space-top); border-top: 1px solid var(--panel-border);
-  }
+    padding: 12px max(16px, calc((100vw - 1760px) / 2 + 16px)); background: var(--space-top); border-top: 1px solid var(--panel-border); flex-wrap: wrap; }
   .badge { font-size: 12px; color: var(--muted); border: 1px solid var(--panel-border); border-radius: 999px; padding: 2px 9px; }
   .spacer { flex: 1; }
   .primary { background: var(--accent); border-color: var(--accent); color: #120e22; font-weight: 700; padding: 8px 18px; }

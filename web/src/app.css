@@ -18,6 +18,11 @@
 }
 * { box-sizing: border-box; }
 html { min-height: 100%; background: linear-gradient(var(--space-top), var(--space-bottom)) var(--space-bottom); }
+/* The page never moves sideways on a phone, whatever's on it: anything
+   wider than the screen is clipped rather than scrolled to. (clip, not
+   hidden, so the sticky toolbar still sticks; hidden for older browsers.) */
+html, body { overflow-x: hidden; max-width: 100%; }
+@supports (overflow: clip) { html, body { overflow-x: clip; } }
 body {
   margin: 0;
   color: var(--text);

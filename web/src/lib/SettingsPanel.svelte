@@ -203,7 +203,9 @@
 
 <style>
   .settings { display: grid; gap: 18px; max-width: 720px; margin: 0 auto; width: 100%; }
-  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .settings :global(.item.inline) { flex-wrap: wrap; }
+  .wizard-card .item { flex-wrap: wrap; }
   h2 { margin: 0; font-size: 26px; }
   .done { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; padding: 7px 18px; }
   .done:disabled { opacity: 0.4; cursor: default; }
@@ -211,8 +213,8 @@
   .wizard { font-weight: 600; }
   /* The header, Save and the tabs stay in reach while you scroll. */
   .top {
-    display: grid; gap: 12px; position: sticky; top: 0; z-index: 5;
-    margin: 0 -16px; padding: 10px 16px 12px; background: var(--space-top);
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; position: sticky; top: 0; z-index: 5; min-width: 0;
+    margin: 0 calc(-1 * var(--gutter, 16px)); padding: 10px var(--gutter, 16px) 12px; background: var(--space-top);
     border-bottom: 1px solid var(--divider);
   }
   .saved { margin: 0; padding: 6px 12px; border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--excellent); background: color-mix(in srgb, var(--excellent) 14%, transparent); border: 1px solid color-mix(in srgb, var(--excellent) 40%, transparent); animation: pop 0.25s ease-out; }
