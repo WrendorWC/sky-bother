@@ -2,7 +2,7 @@
   // SessionModeView: at the scope. What's on now (or next, with a countdown),
   // how far through it you are, the target in your frame and in the sky right
   // now, the conditions, a little about the target, and what comes after —
-  // in dim reds, as on the Mac, so a glance doesn't cost your dark adaptation.
+  // in the app's colours (night mode turns it red, as everything else).
   // On a phone it can keep the screen awake.
   import { targetDetail } from '../engine/engine.js';
   import SkyView from './SkyView.svelte';
@@ -186,12 +186,12 @@
 </section>
 
 <style>
-  /* SessionModeView's palette: everything a dim red, whatever the theme. */
+  /* The app's own colours; night mode turns the whole page red, this included. */
   .session {
-    --bg: rgb(9, 5, 8); --panel-bg: rgb(23, 13, 15); --line: rgb(69, 38, 46);
-    --ink: rgb(255, 237, 237); --dim: rgb(204, 168, 173); --red: rgb(219, 77, 77); --amber: rgb(242, 179, 102);
+    --bg: transparent; --panel-bg: var(--panel); --line: var(--panel-border);
+    --ink: var(--text); --dim: var(--muted); --red: var(--accent); --amber: var(--marginal);
     display: grid; gap: 14px; color: var(--ink); background: var(--bg);
-    margin: 0 -16px; padding: 0 16px 24px; min-height: calc(100vh - 80px);
+    padding: 0 0 24px;
   }
   header { display: flex; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
   .back { color: var(--dim); text-decoration: none; }
@@ -208,7 +208,7 @@
   .times { color: var(--dim); font-size: 18px; font-variant-numeric: tabular-nums; }
   .progress { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
   .progress span { display: block; height: 100%; background: var(--red); }
-  .dew { display: grid; gap: 2px; padding: 8px 10px; border-radius: 8px; color: var(--amber); background: rgba(242, 179, 102, 0.12); border: 1px solid rgba(242, 179, 102, 0.35); justify-self: start; }
+  .dew { display: grid; gap: 2px; padding: 8px 10px; border-radius: 8px; color: var(--amber); background: color-mix(in srgb, var(--amber) 12%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent); justify-self: start; }
   .dew span { font-size: 13px; opacity: 0.85; }
   .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; align-items: start; }
   .view { display: grid; gap: 6px; }
@@ -224,7 +224,4 @@
   .after { display: flex; gap: 10px; align-items: center; }
   .wake { margin-top: 6px; background: var(--panel-bg); color: var(--ink); border-color: var(--line); }
   .wake.on { border-color: var(--red); color: var(--red); }
-  /* The dome and frame picture keep their colours unless night mode is on;
-     here they're toned toward red to match. */
-  .views :global(canvas), .views :global(.preview img), .views :global(.preview svg), .views :global(.preview .size) { filter: sepia(1) hue-rotate(-50deg) saturate(2.2) brightness(0.8); }
 </style>
