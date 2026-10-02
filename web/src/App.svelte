@@ -8,6 +8,7 @@
   import SkyView from './lib/SkyView.svelte';
   import Planner from './lib/Planner.svelte';
   import SessionView from './lib/SessionView.svelte';
+  import HelpPage from './lib/HelpPage.svelte';
   import SetupWizard from './lib/SetupWizard.svelte';
   import { age } from './lib/format.js';
   import { isSetupHash, readSetup } from './lib/setupLink.js';
@@ -46,6 +47,15 @@
   const routeKey = $derived(routeMatch?.[1] ?? null);
   const routeTarget = $derived(routeMatch?.[2] ? decodeURIComponent(routeMatch[2]) : null);
   const showingCatalog = $derived(route === '#/catalog');
+  // #/help or #/help/<topic>
+  const helpMatch = $derived(/^#\/help(?:\/([a-z]+))?$/.exec(route));
+  function openHelp(event) {
+    event.preventDefault();
+    if (editingSettings && settingsDirty && !confirm('Discard your unsaved settings changes?')) return;
+    editingSettings = false;
+    settingsDirty = false;
+    location.hash = '#/help';
+  }
   // #/sky/2026-10-01, or #/sky/2026-10-01/M76 with a target selected.
   const skyMatch = $derived(/^#\/sky\/(\d{4}-\d{2}-\d{2})(?:\/(.+))?$/.exec(route));
   const skyNight = $derived(skyMatch ? nights.find(n => n.planKey === skyMatch[1]) ?? null : null);
@@ -342,6 +352,9 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.96 5.10 L10.17 2.58 L13.83 2.58 L14.04 5.10 L15.44 5.67 L17.37 4.04 L19.96 6.63 L18.33 8.56 L18.90 9.96 L21.42 10.17 L21.42 13.83 L18.90 14.04 L18.33 15.44 L19.96 17.37 L17.37 19.96 L15.44 18.33 L14.04 18.90 L13.83 21.42 L10.17 21.42 L9.96 18.90 L8.56 18.33 L6.63 19.96 L4.04 17.37 L5.67 15.44 L5.10 14.04 L2.58 13.83 L2.58 10.17 L5.10 9.96 L5.67 8.56 L4.04 6.63 L6.63 4.04 L8.56 5.67 Z" /><circle cx="12" cy="12" r="3" /></svg><span class="tool-label">Settings</span>
       </button>
       {#if settings}
+        <a class="tool" href="#/help" onclick={openHelp} aria-current={helpMatch ? 'page' : undefined} title="Help">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9.6 9.3a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.6" /><circle cx="12" cy="16.8" r="0.4" /></svg><span class="tool-label">Help</span>
+        </a>
         <a class="tool" href="#/catalog" aria-current={showingCatalog ? 'page' : undefined} title="Catalog">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg><span class="tool-label">Catalog</span>
         </a>
@@ -398,7 +411,9 @@
   {#if error}<p class="error banner">{error}</p>{/if}
 
   <!-- Settings is a screen of its own: nothing else shows until it's closed. -->
-  {#if settings && !inSetup && !editingSettings}
+  {#if helpMatch && !editingSettings}
+    <HelpPage topic={helpMatch[1] ?? null} />
+  {:else if settings && !inSetup && !editingSettings}
     <div class="layout">
       <aside class="sidebar">
         <h3>Nights</h3>
