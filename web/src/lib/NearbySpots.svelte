@@ -1,19 +1,18 @@
 <script>
   // NearbySpotPanel: a real place a short drive away that's better to
   // observe from — a darker sky, or a more open horizon when the trouble is
-  // trees. Folded away until opened (on a phone it starts folded, so it's
-  // there without taking room); each device remembers whether it was open.
+  // trees. Folded away until opened, so it's there without taking room (or
+  // searching) until someone wants it.
   import { findDarkerSky, findOpenHorizon, recommend, spotID, typicalHorizon } from './nearby.js';
   import { compareSite } from '../engine/engine.js';
   import { time, degrees } from './format.js';
 
-  let { site, preferences, tonight = null, timeZone, startsOpen = false, returnSite = null, onuse, onback, onbortle } = $props();
+  let { site, preferences, tonight = null, timeZone, returnSite = null, onuse, onback, onbortle } = $props();
 
-  const openKey = 'skybother.nearby.open';
-  let open = $state((() => { try { const v = localStorage.getItem(openKey); return v == null ? startsOpen : v === '1'; } catch { return startsOpen; } })());
+  // Always starts folded: one row saying what it does, opened when wanted.
+  let open = $state(false);
   function toggle() {
     open = !open;
-    try { localStorage.setItem(openKey, open ? '1' : '0'); } catch {}
   }
 
   let goal = $state('darkerSky');

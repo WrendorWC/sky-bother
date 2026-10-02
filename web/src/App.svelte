@@ -278,7 +278,6 @@
     const site = { ...settings.site, bortleClass };
     changeSettings({ ...settings, site, savedSites: (settings.savedSites ?? []).map(s => (s.id === site.id ? { ...site } : s)) });
   }
-  const startsOpen = matchMedia('(min-width: 900px)').matches;
 
   function changeSettings(changed) {
     settings = changed;
@@ -474,8 +473,7 @@
           <p class="muted">Loading forecast…</p>
         {/if}
         {#if nights.length}
-          <NearbySpots site={settings.site} preferences={settings.preferences} tonight={nights[0]} timeZone={settings.site.timeZoneIdentifier}
-                       {startsOpen} returnSite={spotReturnSite} onuse={useNearbySpot} onback={returnFromSpot} onbortle={useEstimatedBortle} />
+          <NearbySpots site={settings.site} preferences={settings.preferences} tonight={nights[0]} timeZone={settings.site.timeZoneIdentifier} returnSite={spotReturnSite} onuse={useNearbySpot} onback={returnFromSpot} onbortle={useEstimatedBortle} />
         {/if}
         <footer class="muted">
           {#if updatedAt}
