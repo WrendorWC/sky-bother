@@ -376,7 +376,12 @@
   });
 
   // Night mode: everything in shades of red (app.css), to keep your eyes
-  // dark-adapted at the scope.
+  // dark-adapted at the scope. Display only, so no replan: that would hand
+  // Sky View new nights and send a playing night back to dusk.
+  function toggleNightMode() {
+    settings = { ...settings, preferences: { ...settings.preferences, nightMode: !settings.preferences.nightMode } };
+    saveSettings();
+  }
   $effect(() => {
     document.documentElement.classList.toggle('night-mode', !!settings?.preferences?.nightMode);
   });
@@ -430,7 +435,7 @@
         </a>
         <button type="button" class="tool" class:on={settings.preferences.nightMode} title="Night mode: red light only"
                 aria-pressed={!!settings.preferences.nightMode}
-                onclick={() => changeSettings({ ...settings, preferences: { ...settings.preferences, nightMode: !settings.preferences.nightMode } })}>
+                onclick={toggleNightMode}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg><span class="tool-label">Night Mode</span>
         </button>
       {/if}
