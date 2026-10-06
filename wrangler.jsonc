@@ -15,5 +15,12 @@
   "durable_objects": {
     "bindings": [{ "name": "SYNC", "class_name": "SyncStore" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SyncStore"] }]
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SyncStore"] }],
+  // Per-address request limits for /api/ (see limited() in the Worker).
+  // namespace_id is any number unique within the account.
+  "ratelimits": [
+    { "name": "SYNC_LIMIT", "namespace_id": "1001", "simple": { "limit": 60, "period": 60 } },
+    { "name": "METNO_LIMIT", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } },
+    { "name": "WORLDCOVER_LIMIT", "namespace_id": "1003", "simple": { "limit": 1000, "period": 60 } }
+  ]
 }

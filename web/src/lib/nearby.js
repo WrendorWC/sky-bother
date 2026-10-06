@@ -299,7 +299,7 @@ function toPlaces(elements) {
     if (places.some(p => p.name === name && Math.abs(p.latitude - lat) < 0.01 && Math.abs(p.longitude - lon) < 0.01)) continue;
     places.push({
       name, latitude: lat, longitude: lon,
-      website: tags.website ?? tags['contact:website'] ?? null,
+      website: webLink(tags.website ?? tags['contact:website']),
       hours: tags.opening_hours ? postedHours(tags.opening_hours) : null,
     });
   }
@@ -399,6 +399,20 @@ export async function findDarkerSky(site, radiusKm, onstage = () => {}) {
     return spot.zenithBrightness - home >= MIN_IMPROVEMENT ? [spot] : [];
   });
   return result(candidates);
+}
+
+// OpenStreetMap's website tags are written by anyone, so a link is made only
+// from a plain web address: never javascript: or the like. Many leave out
+// the https://, which is put back.
+export function webLink(tag) {
+  const text = tag?.split(';')[0].trim();
+  if (!text) return null;
+  try {
+    const url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(text) ? text : `https://${text}`);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 
 // --- LandCoverClient -------------------------------------------------------------

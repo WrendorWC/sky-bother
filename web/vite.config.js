@@ -58,7 +58,7 @@ function serviceWorker() {
     closeBundle: {
       order: 'post',
       handler() {
-        const files = ['index.html', 'engine.wasm', 'catalog-extended.json', 'moon-map.jpg', 'catalog/starmap.jpg',
+        const files = ['index.html', 'https.js', 'engine.wasm', 'catalog-extended.json', 'moon-map.jpg', 'catalog/starmap.jpg',
           'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png',
           // Not Aladin (Sky Browser's sky viewer): 2.6 MB for a page that
           // needs the network for its survey anyway.

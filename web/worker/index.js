@@ -115,19 +115,62 @@ async function worldCover(name, url, ctx) {
   return new Response(response.body, { status: 200, headers });
 }
 
+// The body of a PUT, read no further than MAX_BYTES whatever Content-Length
+// says (a chunked upload has none); null if it runs over.
+async function cappedBody(request) {
+  if (!request.body) return '';
+  const reader = request.body.getReader();
+  const chunks = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_BYTES) { reader.cancel(); return null; }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let at = 0;
+  for (const c of chunks) { bytes.set(c, at); at += c.byteLength; }
+  return bytes;
+}
+
+// Per-address limits (wrangler.jsonc's ratelimits), well above what the app
+// itself sends: sync checks in every two minutes, a forecast is one call, and
+// a Better Spot Nearby search reads a few hundred WorldCover ranges. They stop
+// anyone using the store as free storage or the proxies as a free pipe.
+async function limited(limiter, request) {
+  if (!limiter) return false;
+  const key = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+  const { success } = await limiter.limit({ key });
+  return !success;
+}
+const tooMany = () => Response.json({ error: 'Too many requests. Try again in a minute.' }, { status: 429, headers: { ...cors, 'Retry-After': '60' } });
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const match = /^\/api\/sync\/([^/]+)$/.exec(url.pathname);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
-    if (url.pathname === '/api/metno' && request.method === 'GET') return metNorway(url, ctx);
+    if (url.pathname === '/api/metno' && request.method === 'GET') {
+      return (await limited(env.METNO_LIMIT, request)) ? tooMany() : metNorway(url, ctx);
+    }
     const cover = /^\/api\/worldcover\/([^/]+)$/.exec(url.pathname);
-    if (cover && request.method === 'GET') return worldCover(cover[1], url, ctx);
+    if (cover && request.method === 'GET') {
+      return (await limited(env.WORLDCOVER_LIMIT, request)) ? tooMany() : worldCover(cover[1], url, ctx);
+    }
     if (!match || !ID.test(match[1])) return Response.json({ error: 'Not found.' }, { status: 404, headers: cors });
-    if (Number(request.headers.get('Content-Length') ?? 0) > MAX_BYTES) return Response.json({ error: 'Too large.' }, { status: 413, headers: cors });
+    if (await limited(env.SYNC_LIMIT, request)) return tooMany();
+    let forward = request;
+    if (request.method === 'PUT') {
+      if (Number(request.headers.get('Content-Length') ?? 0) > MAX_BYTES) return Response.json({ error: 'Too large.' }, { status: 413, headers: cors });
+      const body = await cappedBody(request);
+      if (body === null) return Response.json({ error: 'Too large.' }, { status: 413, headers: cors });
+      forward = new Request(request.url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body });
+    }
     const store = env.SYNC.get(env.SYNC.idFromName(match[1]));
-    const response = await store.fetch(request);
+    const response = await store.fetch(forward);
     const headers = new Headers(response.headers);
     for (const [k, v] of Object.entries(cors)) headers.set(k, v);
     return new Response(response.body, { status: response.status, headers });

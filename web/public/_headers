@@ -1,0 +1,14 @@
+# Security headers for every page and file Cloudflare serves from web/dist
+# (not /api/, which the Worker answers itself).
+#
+# The policy: scripts only from skybother.com itself (plus compiling the
+# engine's and Aladin's WebAssembly), no inline scripts, no plugins, and no
+# framing by other sites. Data and pictures may come from any https site,
+# since Aladin's sky surveys use many CDS mirrors; tighten connect-src and
+# img-src only with Sky Browser tested. Inline styles stay allowed: Svelte
+# and Aladin set them.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; connect-src 'self' https: data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self)
