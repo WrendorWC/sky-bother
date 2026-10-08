@@ -737,15 +737,24 @@ struct Planner: Sendable {
         let clearDarkHours = (best?.1 ?? 0) / 60
         let timeValue = clamp(clearDarkHours / goalHours, 0, 1)
 
+        // Clarity is judged against your cloud limit too, not just as a
+        // straight "100% minus cloud". On its own that cost a night hazy at
+        // 26% all night (over a 20% limit) only six points against a 5% one,
+        // and both read Excellent: on a long night the haze-discounted clear
+        // time still beat the integration goal, so the limit never bit. Now
+        // each hour's clear fraction is scaled by its cloud credit, so only
+        // nights under your limit reach Excellent.
+        let preferences = preferences
+        let clarityOf: (NightSample) -> Double = { $0.clearFactor * preferences.cloudCredit(cloudCover: $0.cloudCover) }
         let clarity: Double
         let inWindow = bestWindow.map { window in darkSamples.filter { window.contains($0.date) } } ?? []
         if hasWeather && !inWindow.isEmpty {
-            clarity = clamp(inWindow.map(\.clearFactor).reduce(0, +) / Double(inWindow.count), 0, 1)
+            clarity = clamp(inWindow.map(clarityOf).reduce(0, +) / Double(inWindow.count), 0, 1)
         } else if hasWeather {
             // No clear stretch at all: the night's own average, so a clouded-out
             // night still reads as cloudy rather than as neutral.
             clarity = darkSamples.isEmpty ? 0
-                : clamp(darkSamples.map(\.clearFactor).reduce(0, +) / Double(darkSamples.count), 0, 1)
+                : clamp(darkSamples.map(clarityOf).reduce(0, +) / Double(darkSamples.count), 0, 1)
         } else {
             clarity = 0.6
         }
@@ -767,7 +776,11 @@ struct Planner: Sendable {
 
         var comfort = 1.0
         if hasWeather {
-            let dewTerm = minimumDewSpread.isNaN ? 1 : smoothstep(0, 4, minimumDewSpread)
+            // Dew costs gently: smart telescopes and most serious rigs carry a
+            // dew heater, which keeps the optics clear. At full strength a
+            // humid coast (dew spread near zero most nights) lost about ten
+            // points on every night, which never helped choose between them.
+            let dewTerm = minimumDewSpread.isNaN ? 1 : 0.6 + 0.4 * smoothstep(0, 4, minimumDewSpread)
             let windTerm = 1 - clamp(maximumGust / 55, 0, 1)
             comfort = clamp(0.6 * dewTerm + 0.4 * windTerm, 0.05, 1)
         }

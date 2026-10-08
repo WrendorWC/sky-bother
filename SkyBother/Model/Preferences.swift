@@ -103,9 +103,10 @@ extension Preferences {
     /// Halving keeps the first few points over your limit costly and the
     /// far end of the scale small, with nothing in between that falls off
     /// an edge. Six points was chosen against a real week: that 30% night
-    /// scores 78, the 38% one 51, and nights near 50% stay in the 20s.
+    /// scored 78, the 38% one 51, and nights near 50% stayed in the 20s.
     /// Five left a 30-point gap between the first two; seven lifted 48%
-    /// nights into the high 30s.
+    /// nights into the high 30s. (Those scores predate the credit scaling
+    /// the night's sky clarity too, which brings hazy nights down further.)
     func cloudCredit(cloudCover: Double) -> Double {
         guard cloudCover > maximumCloudCover else { return 1 }
         let credit = pow(0.5, (cloudCover - maximumCloudCover) / Self.cloudCoverHalving)

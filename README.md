@@ -171,7 +171,11 @@ away by the others.
 framing (0.15), detectability (0.14), altitude (0.09).
 
 **Per night** — clear dark time (0.35), sky clarity (0.30), moon (0.25),
-conditions (0.10).
+conditions (0.10). Clarity is each hour's clear sky scaled by its cloud credit
+(below), so only nights under your cloud limit reach Exceptional. Dew counts
+lightly within conditions — at worst it takes 40% off that factor — because
+most rigs, smart telescopes included, carry a dew heater; at full strength a
+humid coast lost about ten points on every night.
 
 Some deliberate modelling choices worth knowing about:
 
@@ -197,9 +201,13 @@ Some deliberate modelling choices worth knowing about:
   beside a night with the same average cloud that cleared for four hours at
   80. A band ending 10 points over only moved that edge: 37% high cloud scored
   20 beside a 30% night at 66. Halving has no edge, so scores fall steadily with
-  cloud; on a real week, nights at 30%, 38%, 42% and 50% scored 78, 51, 43 and
-  24. Six points is a judgment call: 5 left a 30-point gap between the first
-  two, and 7 lifted nights near 50% into the high 30s.
+  cloud; on a real week, nights averaging 5%, 23%, 26%, 34% and 48% scored 94,
+  80, 76, 56 and 31. Six points is a judgment call: against an earlier week, 5
+  left a 30-point gap between nights at 30% and 38%, and 7 lifted nights near
+  50% into the high 30s. The credit scales sky clarity as well as clear time:
+  when it only scaled time, a night hazy at 26% all night scored 82 beside a 5%
+  night at 87, because a long night's discounted clear time still beat the
+  integration goal.
 - **Framing is judged against your real sensor.** A target filling 30–80% of the
   frame's long side scores full marks. Smaller wastes the sensor; larger needs a
   mosaic, which is penalised lightly if your rig can do mosaics and heavily if it

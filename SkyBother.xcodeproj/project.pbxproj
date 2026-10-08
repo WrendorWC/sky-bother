@@ -90,6 +90,7 @@
 		6EA6975162E923C3DEE5CC39 /* TimeWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B188A9E4BAF4E4E9F29FEC03 /* TimeWindow.swift */; };
 		6F4775EEC83B274C589737BF /* ParkHours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B29E97C5F533FF8DAFAA2B4 /* ParkHours.swift */; };
 		706D3FA5462E1A7AEB549C1C /* SkyResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C30ED2A029EDAA75CB7645E /* SkyResolver.swift */; };
+		71062B26986604EDB13A0012 /* NightScoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6401DB94D58E3B3B11EE3F28 /* NightScoreTests.swift */; };
 		71227EC5F44F1D4A98520221 /* SeestarFramesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C50DF354E8859A6342174F71 /* SeestarFramesTests.swift */; };
 		718747F90B9060785DC99FB8 /* SettingsDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = F550AD7F1140B022D4AA9E8F /* SettingsDraft.swift */; };
 		71F708AEF0F8A4663CDDAFAF /* Sun.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC03D2F23A9E28F04ACD72C3 /* Sun.swift */; };
@@ -241,6 +242,7 @@
 		5FDA99227F7CBC18F634F3AD /* WeatherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModels.swift; sourceTree = "<group>"; };
 		60A19186776A6FB21AD71803 /* StarMap.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = StarMap.jpg; sourceTree = "<group>"; };
 		60C7BF11E0A59AF1F76D6EA9 /* BrightStars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightStars.swift; sourceTree = "<group>"; };
+		6401DB94D58E3B3B11EE3F28 /* NightScoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightScoreTests.swift; sourceTree = "<group>"; };
 		640B873832B8639519CFB096 /* CometClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CometClient.swift; sourceTree = "<group>"; };
 		67A8276F40E115B68D146ED7 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		67B068C06E3D0F513EDC1027 /* TargetCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetCatalogView.swift; sourceTree = "<group>"; };
@@ -344,6 +346,7 @@
 				9B5D3663A14A3612EB0DB929 /* CloudCreditTests.swift */,
 				013589B91B1822268364F1BF /* CometTests.swift */,
 				8D4CA051BE49E839FDF95C5E /* Fixtures.swift */,
+				6401DB94D58E3B3B11EE3F28 /* NightScoreTests.swift */,
 				EE9218A5DDDA723F9B6A81C3 /* PlanDraftTests.swift */,
 				C50DF354E8859A6342174F71 /* SeestarFramesTests.swift */,
 				2AB56774EDA919324B27FDD0 /* SessionClockTests.swift */,
@@ -745,6 +748,7 @@
 				A123ADCEE0ED7FA16DFBC089 /* NightListView.swift in Sources */,
 				AE10BB577200737410EDE4D5 /* NightMode.swift in Sources */,
 				36AB3271D71079153445E30F /* NightPlan.swift in Sources */,
+				71062B26986604EDB13A0012 /* NightScoreTests.swift in Sources */,
 				95AE6C0DBCC56E5FED6E7120 /* NightTimelineView.swift in Sources */,
 				3C02C63ABA6D1FB01F7F3C66 /* OpenHorizonFinder.swift in Sources */,
 				833E343777B1DF683A0E18C4 /* OpenMeteoClient.swift in Sources */,
