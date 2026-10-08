@@ -128,7 +128,6 @@ struct Planner: Sendable {
                         cloudMid: context.weather?.cloudCoverMid ?? 0,
                         cloudHigh: context.weather?.cloudCoverHigh ?? 0,
                         transparency: context.weather?.transparency ?? 0.6,
-                        seeing: context.weather?.seeing ?? 0.6,
                         temperature: context.weather?.temperatureCelsius ?? .nan,
                         dewSpread: context.weather?.dewPointSpread ?? .nan,
                         windSpeed: context.weather?.windSpeedKilometersPerHour ?? .nan,

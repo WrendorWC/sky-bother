@@ -77,7 +77,6 @@ struct NightSample: Hashable, Sendable {
     var cloudMid: Double
     var cloudHigh: Double
     var transparency: Double
-    var seeing: Double
     var temperature: Double
     var dewSpread: Double
     /// Sustained wind, km/h — for dew risk, where still air is what lets the

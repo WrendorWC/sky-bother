@@ -61,12 +61,6 @@ struct HourlyWeather: Codable, Hashable, Identifiable, Sendable {
         return clamp(humidityTerm * visibilityTerm, 0.2, 1)
     }
 
-    /// Rough seeing proxy from surface gusts. This only captures ground-level
-    /// turbulence, not the jet stream, so treat it as a hint, not a forecast.
-    var seeing: Double {
-        clamp(1 - windGustsKilometersPerHour / 45, 0.15, 1)
-    }
-
     /// Temperature minus dew point. Below a couple of degrees expect dew or
     /// frost on the corrector plate.
     var dewPointSpread: Double { temperatureCelsius - dewPointCelsius }

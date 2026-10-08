@@ -301,8 +301,12 @@ Stated plainly so you are not left looking for it:
 - **No planets or moon as targets.** Planetary ephemerides are a separate
   piece of work and the moon is treated purely as a nuisance light source.
   (Comets bright enough to image are included.)
-- **No real seeing forecast.** The app shows a rough proxy derived from surface
-  gusts. Actual seeing depends on the jet stream, which no free API exposes.
+- **Seeing isn't scored.** It depends on the jet stream, which no free API
+  forecasts well, and at smart-telescope image scales (about 2–4″ per pixel)
+  ordinary 2–3″ seeing fits inside a pixel or two, so it barely shows in
+  deep-sky images. It matters for planets and long focal lengths, which are
+  outside what the app plans for. Wind shaking the telescope is scored, under
+  conditions.
 - **No measured light pollution.** You set your site's Bortle class by hand.
   Better Spot Nearby's satellite estimate is a model, good to roughly half a
   Bortle class — useful as a check on that setting, not a replacement for an
