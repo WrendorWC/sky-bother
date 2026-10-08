@@ -79,6 +79,8 @@ public enum EngineAPI {
         var moonBrightness: Double
         var darkness: Double
         var cloudCover: Double?
+        /// Cloud and fog/haze together — what's held against the cloud limit.
+        var skyCover: Double?
         var cloudLow: Double?
         var cloudMid: Double?
         var cloudHigh: Double?
@@ -359,8 +361,9 @@ public enum EngineAPI {
         let samples = night.samples.map {
             Sample(date: $0.date, sunAltitude: $0.sunAltitude, moonAltitude: $0.moonAltitude,
                    moonBrightness: $0.moonBrightness, darkness: $0.darkness, cloudCover: finite($0.cloudCover),
+                   skyCover: finite($0.skyCover),
                    cloudLow: finite($0.cloudLow), cloudMid: finite($0.cloudMid), cloudHigh: finite($0.cloudHigh),
-                   cloudCredit: $0.cloudCover.isFinite ? preferences.cloudCredit(cloudCover: $0.cloudCover) : nil,
+                   cloudCredit: $0.skyCover.isFinite ? preferences.cloudCredit(cloudCover: $0.skyCover) : nil,
                    temperature: finite($0.temperature),
                    dewSpread: $0.hasWeather ? finite($0.dewSpread) : nil,
                    windSpeed: $0.hasWeather ? finite($0.windSpeed) : nil,

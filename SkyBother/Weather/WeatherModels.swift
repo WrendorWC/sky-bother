@@ -32,9 +32,25 @@ struct HourlyWeather: Codable, Hashable, Identifiable, Sendable {
         return clamp(cloudCoverTotal * severity, 0, 100)
     }
 
-    /// 1 = clear, 0 = overcast.
+    /// How much of the sky fog or haze takes, 0–100, from forecast
+    /// visibility: none from 8 km up, all of it in fog under 1 km. Ground fog
+    /// ends a night as surely as low cloud, and the cloud forecast never
+    /// shows it. Forecasts stop resolving visibility after about three days
+    /// and sit at their maximum, so later nights come out clear of it.
+    var hazeCover: Double {
+        100 * (1 - smoothstep(1000, 8000, visibilityMeters))
+    }
+
+    /// Cloud and haze together — the share of sky lost to either, counting
+    /// them as independent so clear sky has to get past both. This, not
+    /// cloud alone, is what's held against the Maximum Cloud Cover.
+    var skyCover: Double {
+        clamp(100 - (100 - effectiveCloudCover) * (100 - hazeCover) / 100, 0, 100)
+    }
+
+    /// 1 = clear, 0 = overcast or fogged in.
     var clearFactor: Double {
-        clamp(1 - effectiveCloudCover / 100, 0, 1)
+        clamp(1 - skyCover / 100, 0, 1)
     }
 
     /// Rough transparency proxy from humidity and reported visibility. Real

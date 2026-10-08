@@ -123,6 +123,7 @@ struct Planner: Sendable {
                         darkness: context.darkness,
                         clearFactor: context.weather?.clearFactor ?? 0.6,
                         cloudCover: context.weather?.effectiveCloudCover ?? 40,
+                        skyCover: context.weather?.skyCover ?? 40,
                         cloudLow: context.weather?.cloudCoverLow ?? 0,
                         cloudMid: context.weather?.cloudCoverMid ?? 0,
                         cloudHigh: context.weather?.cloudCoverHigh ?? 0,
@@ -138,7 +139,7 @@ struct Planner: Sendable {
         // How much each moment counts as clear; beyond the forecast, all of it.
         let preferences = preferences
         let credit: (NightSample) -> Double = { sample in
-            sample.hasWeather ? preferences.cloudCredit(cloudCover: sample.cloudCover) : 1
+            sample.hasWeather ? preferences.cloudCredit(cloudCover: sample.skyCover) : 1
         }
 
         // Darkness windows are set by the Sun alone. The moon reduces the quality
@@ -497,7 +498,7 @@ struct Planner: Sendable {
 
             // Hazy moments count in part toward usable time; see
             // `Preferences.cloudCredit`.
-            let cloudCredit = ignoreCloud || !hasWeather ? 1 : preferences.cloudCredit(cloudCover: sample.cloudCover)
+            let cloudCredit = ignoreCloud || !hasWeather ? 1 : preferences.cloudCredit(cloudCover: sample.skyCover)
             let clearEnough = cloudCredit > 0
             let isUsable = aboveFloor && darkEnough && clearEnough
             usableFlags.append(isUsable)
@@ -745,7 +746,7 @@ struct Planner: Sendable {
         // each hour's clear fraction is scaled by its cloud credit, so only
         // nights under your limit reach Excellent.
         let preferences = preferences
-        let clarityOf: (NightSample) -> Double = { $0.clearFactor * preferences.cloudCredit(cloudCover: $0.cloudCover) }
+        let clarityOf: (NightSample) -> Double = { $0.clearFactor * preferences.cloudCredit(cloudCover: $0.skyCover) }
         let clarity: Double
         let inWindow = bestWindow.map { window in darkSamples.filter { window.contains($0.date) } } ?? []
         if hasWeather && !inWindow.isEmpty {
@@ -793,7 +794,7 @@ struct Planner: Sendable {
             ScoreFactor(name: "Sky clarity",
                         value: clarity,
                         weight: 0.30,
-                        detail: hasWeather ? "Cloud cover during the longest clear stretch" : "Beyond the forecast"),
+                        detail: hasWeather ? "Cloud and fog or haze during the longest clear stretch" : "Beyond the forecast"),
             ScoreFactor(name: "Moon",
                         value: clamp(1 - moonInterference, 0, 1),
                         weight: 0.25,

@@ -263,7 +263,7 @@
     <div class="readout" style:left="{clamp(pointerX - 70, 0, Math.max(0, width - 170))}px">
       <strong>{time(s.date, timeZone)}</strong>
       {#if s.hasWeather && s.cloudCover != null}
-        <div>{Math.round(s.cloudCover)}% cloud · {temperature(s.temperature, imperial)}</div>
+        <div>{Math.round(s.cloudCover)}% cloud{s.skyCover - s.cloudCover >= 10 ? ' · hazy' : ''} · {temperature(s.temperature, imperial)}</div>
         <div class="layers">high {Math.round(s.cloudHigh ?? 0)} · mid {Math.round(s.cloudMid ?? 0)} · low {Math.round(s.cloudLow ?? 0)}</div>
       {/if}
       <div>darkness {Math.round(s.darkness * 100)}%</div>

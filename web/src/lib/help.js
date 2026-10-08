@@ -92,7 +92,7 @@ export const topics = [
   },
   {
     id: 'weather', title: 'Cloud, Moon & Weather', sections: [
-      { heading: 'Cloud', body: 'Cloud figures are weighted by layer: low cloud counts fully, mid-level 85%, high cirrus 50%. Your maximum cloud cover is checked against this figure.' },
+      { heading: 'Cloud', body: 'Cloud figures are weighted by layer: low cloud counts fully, mid-level 85%, high cirrus 50%. Fog and haze count too, from forecast visibility: none from 5 miles (8 km) up, rising to the whole sky in fog under 0.6 miles (1 km). Your maximum cloud cover is checked against cloud and haze together, so a clear but foggy night scores like a cloudy one and says “fog or haze”. Visibility forecasts only reach about three days ahead; later nights assume none.' },
       { heading: 'Moon', body: 'The Moon doesn’t shorten the night; it lowers each target’s score depending on phase and the Moon’s altitude. A bright Moon lights the whole sky, so pointing away from it helps only a little; within about 30° of it the penalty is much worse. A dual-band filter softens the penalty somewhat for emission and planetary nebulae and supernova remnants. Tap the Moon on a night’s page to see it as it will look that night.' },
       { heading: 'Seeing', body: 'Estimated from wind gusts only. Treat it as a hint.' },
       {

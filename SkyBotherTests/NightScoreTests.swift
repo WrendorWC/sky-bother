@@ -10,7 +10,11 @@ final class NightScoreTests: XCTestCase {
     /// Near new Moon, so the Moon stays out of it.
     private let start = ISO8601DateFormatter().date(from: "2026-10-11T12:00:00Z")!
 
-    private func skyScore(cloud: Double, dewSpread: Double) -> Double {
+    private func skyScore(cloud: Double, dewSpread: Double, visibility: Double = 24000) -> Double {
+        weightedGeometricScore(night(cloud: cloud, dewSpread: dewSpread, visibility: visibility).factors)
+    }
+
+    private func night(cloud: Double, dewSpread: Double, visibility: Double) -> NightPlan {
         var preferences = Preferences()
         preferences.maximumCloudCover = 20
         preferences.integrationGoalMinutes = 240
@@ -19,14 +23,13 @@ final class NightScoreTests: XCTestCase {
                           cloudCoverTotal: cloud, cloudCoverLow: cloud, cloudCoverMid: 0, cloudCoverHigh: 0,
                           temperatureCelsius: 20, dewPointCelsius: 20 - dewSpread, relativeHumidity: 70,
                           windSpeedKilometersPerHour: 5, windGustsKilometersPerHour: 10,
-                          visibilityMeters: 24000, precipitationProbability: 0)
+                          visibilityMeters: visibility, precipitationProbability: 0)
         }
         let forecast = WeatherForecast(hours: hours, timeZoneIdentifier: site.timeZoneIdentifier,
                                        elevationMeters: 30, retrievedAt: start)
         let planner = Planner(site: site, rig: .seestarS50, preferences: preferences,
                               catalog: BuiltInCatalog.messier, forecast: forecast)
-        let night = planner.plan(from: start)[0]
-        return weightedGeometricScore(night.factors)
+        return planner.plan(from: start)[0]
     }
 
     func testHazeJustOverTheLimitReadsWellBelowAClearNight() {
@@ -42,5 +45,26 @@ final class NightScoreTests: XCTestCase {
         let damp = skyScore(cloud: 5, dewSpread: 0)
         XCTAssertLessThan(dry - damp, 6)
         XCTAssertGreaterThan(dry - damp, 0)
+    }
+
+    func testFogSinksAClearNightAndSaysSo() {
+        let foggy = night(cloud: 0, dewSpread: 0, visibility: 500)
+        XCTAssertLessThan(weightedGeometricScore(foggy.factors), 30)
+        XCTAssertTrue(foggy.isMostlyHaze)
+        XCTAssertTrue(nightLimitationPhrase(for: foggy)?.contains("fog") ?? false)
+    }
+
+    func testGoodVisibilityChangesNothing() {
+        let weather = HourlyWeather(date: start, cloudCoverTotal: 20, cloudCoverLow: 20, cloudCoverMid: 0,
+                                    cloudCoverHigh: 0, temperatureCelsius: 20, dewPointCelsius: 15,
+                                    relativeHumidity: 70, windSpeedKilometersPerHour: 5,
+                                    windGustsKilometersPerHour: 10, visibilityMeters: 9000,
+                                    precipitationProbability: 0)
+        XCTAssertEqual(weather.hazeCover, 0)
+        XCTAssertEqual(weather.skyCover, 20, accuracy: 1e-9)
+        var haze = weather
+        haze.visibilityMeters = 4500
+        XCTAssertEqual(haze.hazeCover, 50, accuracy: 1e-9)
+        XCTAssertEqual(haze.skyCover, 60, accuracy: 1e-9)
     }
 }

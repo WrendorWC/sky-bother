@@ -22,7 +22,7 @@ the same site, rig and settings give the same scores — see
 
 It combines four things that normally live in four different tabs:
 
-- **Weather** — hourly cloud cover split into low, mid and high layers, plus dew point, humidity, wind and gusts.
+- **Weather** — hourly cloud cover split into low, mid and high layers, plus visibility (for fog and haze), dew point, humidity, wind and gusts.
 - **Darkness** — real twilight boundaries for your latitude, and the moon's phase, altitude and separation from each target.
 - **What's up** — 1,159 deep-sky targets (plus any you add yourself), when each one clears your horizon, and for how long.
 - **Your equipment** — whether a target actually fits your frame, and whether it is bright enough to be worth the hours from your sky.
@@ -208,6 +208,12 @@ Some deliberate modelling choices worth knowing about:
   when it only scaled time, a night hazy at 26% all night scored 82 beside a 5%
   night at 87, because a long night's discounted clear time still beat the
   integration goal.
+- **Fog and haze count as cloud.** Forecast visibility under 8 km takes a
+  share of the sky, all of it in fog under 1 km, combined with cloud as
+  independent layers; that total is what meets your cloud limit. The cloud
+  forecast never shows ground fog, which ends a night as surely as low
+  stratus. Visibility forecasts stop resolving after about three days, so
+  later nights assume none.
 - **Framing is judged against your real sensor.** A target filling 30–80% of the
   frame's long side scores full marks. Smaller wastes the sensor; larger needs a
   mosaic, which is penalised lightly if your rig can do mosaics and heavily if it

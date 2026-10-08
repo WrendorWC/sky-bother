@@ -69,7 +69,10 @@ struct NightSample: Hashable, Sendable {
     var moonBrightness: Double
     var darkness: Double
     var clearFactor: Double
+    /// Cloud alone, for display; what's scored is `skyCover`.
     var cloudCover: Double
+    /// Cloud and fog/haze together, the figure held against the cloud limit.
+    var skyCover: Double
     var cloudLow: Double
     var cloudMid: Double
     var cloudHigh: Double
@@ -200,6 +203,16 @@ struct NightPlan: Identifiable, Hashable, Sendable {
     }
     var moonlessDarkHours: Double { moonlessDarkWindows.totalMinutes / 60 }
     var hasDewRisk: Bool { hasWeather && minimumDewSpread < 2.5 }
+    /// Whether fog or haze, more than cloud, is what the dark hours lose —
+    /// so the night can say "fog" rather than blame cloud the forecast
+    /// doesn't show.
+    var isMostlyHaze: Bool {
+        let dark = samples.filter { $0.hasWeather && $0.isDark }
+        guard !dark.isEmpty else { return false }
+        let cloud = dark.map(\.cloudCover).reduce(0, +)
+        let haze = dark.map { $0.skyCover - $0.cloudCover }.reduce(0, +)
+        return haze > cloud && haze / Double(dark.count) > 10
+    }
 
     var timeZone: TimeZone { site.timeZone }
 

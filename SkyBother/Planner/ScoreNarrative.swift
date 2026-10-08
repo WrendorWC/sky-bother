@@ -38,7 +38,7 @@ func limitationPhrase(for factor: ScoreFactor) -> String {
     switch factor.name {
     case "Moon": return "a bright Moon"
     case "Clear dark time": return "a short dark window"
-    case "Sky clarity": return "cloud during the dark hours"
+    case "Sky clarity": return "cloud or haze during the dark hours"
     case "Conditions": return "dew or wind"
     case "Time on target": return "how little time it's up"
     case "Sky darkness": return "twilight or moonlight"
@@ -67,14 +67,15 @@ func nightLimitationPhrase(for night: NightPlan) -> String? {
         // already does.
         let phase = night.moon.phaseName.lowercased()
         return phase.hasSuffix("moon") ? phase : phase + " moon"
-    case "Sky clarity": return "cloud during the dark hours"
+    case "Sky clarity": return night.isMostlyHaze ? "fog or haze during the dark hours" : "cloud during the dark hours"
     case "Clear dark time":
         // The clear stretch can be short because the night is (summer) or
         // because cloud chops it up; only the first is a short dark window.
-        if night.isCloudedOut { return "cloud all night" }
+        let obscurer = night.isMostlyHaze ? "fog or haze" : "cloud"
+        if night.isCloudedOut { return "\(obscurer) all night" }
         let darkHours = night.darkWindows.totalMinutes / 60
         let clearHours = night.bestImagingWindow.map { $0.duration / 3600 } ?? 0
-        return darkHours - clearHours > 1 ? "cloud breaking up the dark hours" : "short dark window"
+        return darkHours - clearHours > 1 ? "\(obscurer) breaking up the dark hours" : "short dark window"
     case "Conditions": return night.hasDewRisk ? "dew risk" : "wind"
     default: return limitationPhrase(for: primary.factor)
     }

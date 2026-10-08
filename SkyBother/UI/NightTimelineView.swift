@@ -117,7 +117,7 @@ struct NightTimelineView: View {
             return [Float(sample.sunAltitude), Float(wash),
                     Float(clamp(sample.cloudLow / 100, 0, 1)), Float(clamp(sample.cloudMid / 100, 0, 1)),
                     Float(clamp(sample.cloudHigh / 100, 0, 1)), Float(clamp(sample.cloudCover / 100, 0, 1)),
-                    Float(state.preferences.cloudCredit(cloudCover: sample.cloudCover)), 1]
+                    Float(state.preferences.cloudCredit(cloudCover: sample.skyCover)), 1]
         }
         context.fill(Path(CGRect(origin: .zero, size: size)),
                      with: .shader(ShaderLibrary.nightTimeline(
@@ -352,7 +352,7 @@ struct NightTimelineView: View {
             Text(Format.time(sample.date, in: plan.timeZone))
                 .font(.scaled(.callout, scale: uiTextScale).weight(.semibold).monospacedDigit())
             if sample.hasWeather {
-                Text("\(Int(sample.cloudCover))% cloud · \(Format.temperature(celsius: sample.temperature, imperial: state.preferences.usesImperialUnits))")
+                Text("\(Int(sample.cloudCover))% cloud\(sample.skyCover - sample.cloudCover >= 10 ? " · hazy" : "") · \(Format.temperature(celsius: sample.temperature, imperial: state.preferences.usesImperialUnits))")
                     .font(.scaled(.caption, scale: uiTextScale))
                 Text("high \(Int(sample.cloudHigh)) · mid \(Int(sample.cloudMid)) · low \(Int(sample.cloudLow))")
                     .font(.scaled(.caption, scale: uiTextScale))
