@@ -230,8 +230,9 @@ Some deliberate modelling choices worth knowing about:
   account. One request per location per refresh. If Open-Meteo fails, the app
   falls back to [MET Norway](https://api.met.no) (CC BY 4.0), also free and
   keyless; the sidebar footer says "backup source" when this happens.
-  Automatic refreshes (app launch, a changed setting) are throttled to once an
-  hour so a stuck launch loop can't hammer either service; the Refresh button
+  While the app is open it fetches a fresh forecast every 15 minutes (and
+  soon after the Mac wakes); automatic refreshes never run more often than
+  that, so a stuck launch loop can't hammer either service. The Refresh button
   and Cmd-R always fetch immediately.
 - **Place search**: Open-Meteo's geocoding API, same terms.
 - **Better Spot Nearby — darker sky**: NASA's Black Marble nightly radiance (VIIRS

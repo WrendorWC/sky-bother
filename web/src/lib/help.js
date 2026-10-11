@@ -147,7 +147,7 @@ export const topics = [
   },
   {
     id: 'data', title: 'Data Sources', sections: [
-      { heading: 'Weather', body: 'Open-Meteo, free and keyless. In the US and southern Canada the cloud totals come from NOAA’s National Blend of Models. If Open-Meteo is slow or unreachable, MET Norway is used and the night list says “backup source”.' },
+      { heading: 'Weather', body: 'Open-Meteo, free and keyless. In the US and southern Canada the cloud totals come from NOAA’s National Blend of Models. If Open-Meteo is slow or unreachable, MET Norway is used and the night list says “backup source”. While the page is open it fetches a fresh forecast every 15 minutes; Refresh always fetches straight away.' },
       { heading: 'Astronomy', body: 'Sun, Moon and target positions and all rise, set and twilight times are computed in your browser, by the same code as the Mac app. The Sun is accurate to about 0.01°, the Moon to a few arcminutes.' },
       { heading: 'Catalog', body: 'About 1,150 targets: the Messier catalogue, 49 other showpieces and about 1,000 NGC/IC objects from OpenNGC (CC-BY-SA-4.0), plus 58 bright and double stars from SIMBAD. Positions are J2000.' },
       { heading: 'Comets', body: 'Orbits from the IAU Minor Planet Center.' },

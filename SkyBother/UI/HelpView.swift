@@ -159,7 +159,7 @@ enum HelpContent {
         ]),
 
         HelpTopic(title: "Data Sources", systemImage: "antenna.radiowaves.left.and.right", sections: [
-            HelpSection(heading: "Weather", body: "Open-Meteo, free and keyless. In the US and southern Canada the cloud totals come from NOAA’s National Blend of Models. If Open-Meteo is unreachable, MET Norway is used and the sidebar says “backup source”. Automatic refreshes happen at most hourly; Refresh (⌘R) always fetches."),
+            HelpSection(heading: "Weather", body: "Open-Meteo, free and keyless. In the US and southern Canada the cloud totals come from NOAA’s National Blend of Models. If Open-Meteo is unreachable, MET Norway is used and the sidebar says “backup source”. While Sky Bother is open it fetches a fresh forecast every 15 minutes; Refresh (⌘R) always fetches straight away."),
             HelpSection(heading: "Astronomy", body: "Sun, Moon and target positions and all rise, set and twilight times are computed on your Mac. The Sun is accurate to about 0.01°, the Moon to a few arcminutes."),
             HelpSection(heading: "Catalog", body: "About 1,150 targets: the Messier catalogue, 49 other showpieces, and about 1,000 NGC/IC objects from OpenNGC (CC-BY-SA-4.0), plus 58 bright and double stars with positions and magnitudes from SIMBAD. Positions are J2000."),
             HelpSection(heading: "Comets", body: "Orbits from the IAU Minor Planet Center, downloaded about once a week and kept for offline use. Positions are computed on your Mac and agree with JPL Horizons to about a hundredth of a degree."),

@@ -182,6 +182,22 @@
     joinSync();
   }
 
+  // Keeps the week following the forecast while the page sits open: a fresh
+  // fetch every 15 minutes. Checked each minute, and on coming back to the
+  // tab, because a phone or a background tab pauses timers — so a page
+  // reopened after an hour catches up at once. Only while it's in front.
+  const refreshEvery = 15 * 60 * 1000;
+  let lastAttempt = 0;
+  function refreshIfDue() {
+    if (document.visibilityState !== 'visible' || loading || !settings || inSetup || navigator.onLine === false) return;
+    if (Date.now() - lastAttempt >= refreshEvery) refresh(true);
+  }
+  $effect(() => {
+    const timer = setInterval(refreshIfDue, 60_000);
+    document.addEventListener('visibilitychange', refreshIfDue);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', refreshIfDue); };
+  });
+
   $effect(() => {
     const visible = () => { if (document.visibilityState === 'visible') syncNow(); };
     // Only while the page is in front: a tab left open in the background
@@ -292,11 +308,14 @@
   // With no signal, the week is planned from the last forecast kept on this
   // device for this site (offline.js), and the footer says how old it is.
   let offlineSince = $state(null);
-  async function refresh() {
+  // `quiet` is the 15-minute background refresh: no status bar, so the page
+  // doesn't flash a banner every quarter hour.
+  async function refresh(quiet = false) {
     if (!settings) return;
     error = '';
     loading = true;
-    status = `Getting the forecast for ${settings.site.name || 'your site'}…`;
+    lastAttempt = Date.now();
+    if (quiet !== true) status = `Getting the forecast for ${settings.site.name || 'your site'}…`;
     const { site, preferences } = settings;
     try {
       let forecast, cometElements;
@@ -413,7 +432,7 @@
         <svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>
         <span class="site-name">{settings.site.name || 'Unnamed site'}</span>
       </button>
-      <button type="button" class="icon" onclick={refresh} disabled={loading} title="Fetch the latest forecast" aria-label="Refresh">
+      <button type="button" class="icon" onclick={() => refresh()} disabled={loading} title="Fetch the latest forecast" aria-label="Refresh">
         <svg class:spinning={loading} viewBox="0 0 24 24" aria-hidden="true">
           <path d="M20 12a8 8 0 1 1-2.34-5.66" />
           <path d="M20 4v5h-5" />

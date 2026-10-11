@@ -132,12 +132,11 @@ final class AppState: ObservableObject {
     private var saveTask: Task<Void, Never>?
     private var planTask: Task<Void, Never>?
     private var lastWeatherFetchAt: Date?
-    /// Open-Meteo asks for good citizenship, not a hard quota, but there's no
-    /// reason to hit it more than once an hour outside of someone deliberately
-    /// asking for the latest data — every automatic refresh (app launch,
-    /// window reopen, a setting that happens to call refresh) respects this;
-    /// the sidebar's Refresh button and Cmd-R always bypass it.
-    private static let minimumAutomaticFetchInterval: TimeInterval = 3600
+    /// Automatic refreshes (app launch, the 15-minute background check, a
+    /// setting that happens to call refresh) fetch at most this often, so the
+    /// week follows the forecast through an evening without hammering
+    /// Open-Meteo; the sidebar's Refresh button and Cmd-R always bypass it.
+    static let minimumAutomaticFetchInterval: TimeInterval = 15 * 60
     private var lastCloudMapFetchAt: Date?
     /// A much shorter gate than the weather forecast's — GOES imagery
     /// itself only meaningfully changes every several minutes (see
@@ -148,7 +147,7 @@ final class AppState: ObservableObject {
 
     init() {
         settings = SettingsStore.shared.load()
-        // Restores both the data and the timestamp the once-an-hour throttle
+        // Restores both the data and the timestamp the 15-minute throttle
         // above depends on — without this, `lastWeatherFetchAt` starts every
         // single launch as nil, so the throttle it's supposed to enforce
         // never actually held across a relaunch, only within one running
@@ -161,6 +160,27 @@ final class AppState: ObservableObject {
         }
         comets = CometClient.shared.cached()
         typeFilter = defaultTypeFilter
+        startBackgroundRefresh()
+    }
+
+    /// Keeps the forecast current while the app sits open. Checks once a
+    /// minute rather than firing every 15: a Mac that slept through the
+    /// quarter-hour catches up within a minute of waking, and the throttle
+    /// in `refresh` decides whether a fetch is actually due.
+    private func startBackgroundRefresh() {
+        backgroundRefreshTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+            Task { @MainActor in await self?.refreshIfDue() }
+        }
+    }
+    private var backgroundRefreshTimer: Timer?
+
+    private func refreshIfDue() async {
+        guard settings.hasSetLocation, !isLoading else { return }
+        if let lastWeatherFetchAt,
+           Date().timeIntervalSince(lastWeatherFetchAt) < Self.minimumAutomaticFetchInterval {
+            return
+        }
+        await refresh()
     }
 
     // MARK: - Convenience accessors
@@ -302,7 +322,7 @@ final class AppState: ObservableObject {
     // MARK: - Loading
 
     /// Fetches the forecast then rebuilds the plans. Safe to call repeatedly.
-    /// `force` skips the once-an-hour throttle on automatic calls — pass it
+    /// `force` skips the 15-minute throttle on automatic calls — pass it
     /// for anything the user directly clicked (the Refresh button, Cmd-R) or
     /// that requires fresh data to make sense (picking a different site).
     func refresh(force: Bool = false) async {
@@ -340,8 +360,13 @@ final class AppState: ObservableObject {
             do {
                 forecast = try await backupWeatherClient.fetch(latitude: site.latitude, longitude: site.longitude)
             } catch {
-                forecast = .empty
-                weatherErrorMessage = error.localizedDescription
+                // A background refresh that hits a Wi-Fi blip keeps the week
+                // it already has; the next check tries again. Only a refresh
+                // someone asked for reports the failure.
+                if force || forecast.isEmpty {
+                    forecast = .empty
+                    weatherErrorMessage = error.localizedDescription
+                }
             }
         }
         // Only a real result — an empty one is a failed fetch, not a fresh

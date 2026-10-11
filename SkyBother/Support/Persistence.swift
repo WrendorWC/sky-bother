@@ -168,7 +168,7 @@ private struct CachedForecast: Codable {
 /// A separate small JSON file — not a field on `StoredSettings`, which is
 /// rewritten on every preference change and would otherwise write a whole
 /// multi-day forecast back out just because a slider moved — purely so the
-/// once-an-hour weather throttle (see `AppState.minimumAutomaticFetchInterval`)
+/// 15-minute weather throttle (see `AppState.minimumAutomaticFetchInterval`)
 /// survives an app relaunch. The timestamp it depends on is in-memory only;
 /// without a cache to restore it from, every relaunch looked like the first
 /// launch ever, silently defeating the throttle. Cloud cover in particular
