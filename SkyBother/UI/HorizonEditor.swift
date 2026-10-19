@@ -32,7 +32,7 @@ struct HorizonEditor: View {
             VStack(alignment: .leading, spacing: 10) {
                 allRoundControl
 
-                Text("0° is an open horizon; 45° is blocked halfway up.")
+                Text("0° is an open horizon; 45° is blocked halfway up; 90° is blocked all the way up.")
                     .font(.scaled(.caption, scale: uiTextScale))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -45,7 +45,7 @@ struct HorizonEditor: View {
                                     .font(.scaled(.caption, scale: uiTextScale).weight(.semibold).monospaced())
                                     .foregroundStyle(.secondary)
                                     .frame(width: 26 * uiTextScale, alignment: .leading)
-                                Slider(value: directionBinding(index), in: 0...60, step: 1)
+                                Slider(value: directionBinding(index), in: 0...90, step: 1)
                                     .accessibilityLabel("Blocked horizon to the \(Site.horizonDirections[index])")
                                     .accessibilityValue("\(Int(site.horizonByDirection[index])) degrees")
                                 Text(Format.degrees(site.horizonByDirection[index]))

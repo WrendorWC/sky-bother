@@ -37,7 +37,7 @@
   {#each directions as direction, i}
     <label class="slider">
       <span>{direction}</span>
-      <input type="range" min="0" max="60" step="1" value={shown(`h${i}`, horizon[i])}
+      <input type="range" min="0" max="90" step="1" value={shown(`h${i}`, horizon[i])}
              oninput={slide(`h${i}`)} onchange={commit(`h${i}`, v => setSector(i, v))} />
       <strong>{degrees(shown(`h${i}`, horizon[i]))}</strong>
     </label>
