@@ -106,6 +106,7 @@ struct SkyCutoutClient: Sendable {
     /// unbounded number queue means they time out and get retried, which
     /// makes the queue longer still.
     private static let gate = AsyncGate(limit: 4)
+    private static let health = EndpointHealth(cooldown: 180)
 
     func image(for cutout: SkyCutout) async -> NSImage? {
         if let cached = cachedImage(for: cutout) { return cached }
@@ -113,6 +114,12 @@ struct SkyCutoutClient: Sendable {
         defer { Task { await Self.gate.leave() } }
 
         for endpoint in Self.endpoints {
+            // A server that just failed to answer is skipped for a while.
+            // When the whole service is down, every preview would otherwise
+            // wait out the full timeout on each server in turn — a minute
+            // apiece, and longer for those queued behind the gate — before
+            // admitting there's no picture.
+            guard await Self.health.isUp(endpoint) else { continue }
             guard var components = URLComponents(string: endpoint) else { continue }
             components.queryItems = [
                 URLQueryItem(name: "hips", value: Self.survey),
@@ -129,8 +136,16 @@ struct SkyCutoutClient: Sendable {
             request.setValue(Self.userAgent, forHTTPHeaderField: "User-Agent")
             request.timeoutInterval = 30
 
-            guard let (data, response) = try? await URLSession.shared.data(for: request),
-                  let http = response as? HTTPURLResponse, http.statusCode == 200,
+            let fetched: (Data, URLResponse)
+            do {
+                fetched = try await URLSession.shared.data(for: request)
+            } catch {
+                // Our own cancellation says nothing about the server.
+                if !Task.isCancelled { await Self.health.markDown(endpoint) }
+                continue
+            }
+            let (data, response) = fetched
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200,
                   let image = NSImage(data: data)
             else { continue }
 
@@ -183,6 +198,25 @@ struct SkyCutoutClient: Sendable {
     }
 }
 
+
+/// Which servers recently failed to answer, so callers can skip them until a
+/// cooldown has passed instead of each waiting out its own timeout.
+actor EndpointHealth {
+    private let cooldown: TimeInterval
+    private var downUntil: [String: Date] = [:]
+
+    init(cooldown: TimeInterval) { self.cooldown = cooldown }
+
+    func isUp(_ endpoint: String) -> Bool {
+        guard let until = downUntil[endpoint] else { return true }
+        if Date() >= until { downUntil[endpoint] = nil; return true }
+        return false
+    }
+
+    func markDown(_ endpoint: String) {
+        downUntil[endpoint] = Date().addingTimeInterval(cooldown)
+    }
+}
 
 /// A plain counting semaphore for async callers.
 actor AsyncGate {

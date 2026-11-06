@@ -5,6 +5,7 @@
   // margin; an object bigger than the frame visibly spills past its edges.
   import { view } from './view.svelte.js';
   import { fieldOfView } from './sky.js';
+  import { fetchCutout } from './cutout.js';
 
   let { target } = $props();
 
@@ -26,11 +27,6 @@
   // Past 25° the survey is a dark patchwork (the Mac switches to its star map).
   const tooWide = $derived(frame && Math.max(frame.w, frame.h) > 1500);
 
-  // SkyCutoutClient: DSS2 colour, the mirror first and the primary as fallback.
-  const endpoints = [
-    'https://alaskybis.cds.unistra.fr/hips-image-services/hips2fits',
-    'https://alasky.cds.unistra.fr/hips-image-services/hips2fits',
-  ];
   $effect(() => {
     if (!scale || tooWide) return;
     const ratio = Math.min(2, window.devicePixelRatio || 1);
@@ -42,18 +38,11 @@
     let cancelled = false;
     failed = false;
     (async () => {
-      for (const endpoint of endpoints) {
-        try {
-          const response = await fetch(`${endpoint}?${query}`);
-          if (!response.ok) continue;
-          const url = URL.createObjectURL(await response.blob());
-          if (cancelled) return URL.revokeObjectURL(url);
-          if (image) URL.revokeObjectURL(image);
-          image = url;
-          return;
-        } catch {}
-      }
-      if (!cancelled) failed = true;
+      const blob = await fetchCutout(query);
+      if (cancelled) return;
+      if (!blob) return (failed = true);
+      if (image) URL.revokeObjectURL(image);
+      image = URL.createObjectURL(blob);
     })();
     return () => (cancelled = true);
   });

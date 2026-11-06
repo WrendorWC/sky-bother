@@ -8,6 +8,7 @@
   // follow the Mac.
   import Thumbnail from './Thumbnail.svelte';
   import { view } from './view.svelte.js';
+  import { fetchCutout } from './cutout.js';
 
   let { entries, rig, designation = null, backHref = '#/' } = $props();
 
@@ -84,7 +85,6 @@
   // first view took ten or fifteen seconds to fill in.
   let firstPicture = $state(null);
   let pictureFor = 0;
-  const cutouts = ['https://alaskybis.cds.unistra.fr/hips-image-services/hips2fits', 'https://alasky.cds.unistra.fr/hips-image-services/hips2fits'];
   // Given where the view was sent rather than read back from Aladin, which
   // hasn't settled yet (its first answer is a near-whole-sky field, and the
   // picture came back as streaks).
@@ -99,17 +99,10 @@
       fov: String(Math.max(fx, fy)),
       width: String(Math.min(1600, Math.round(size.width * ratio))), height: String(Math.min(1600, Math.round(size.height * ratio))),
     });
-    for (const endpoint of cutouts) {
-      try {
-        const response = await fetch(`${endpoint}?${query}`);
-        if (!response.ok) continue;
-        const blob = await response.blob();
-        if (id !== pictureFor) return;
-        if (firstPicture) URL.revokeObjectURL(firstPicture);
-        firstPicture = URL.createObjectURL(blob);
-        return;
-      } catch {}
-    }
+    const blob = await fetchCutout(query);
+    if (!blob || id !== pictureFor) return;
+    if (firstPicture) URL.revokeObjectURL(firstPicture);
+    firstPicture = URL.createObjectURL(blob);
   }
   function dropFirstPicture() {
     pictureFor++;
