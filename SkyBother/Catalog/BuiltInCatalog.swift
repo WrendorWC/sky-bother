@@ -382,7 +382,10 @@ enum BuiltInCatalog {
                majorAxisArcminutes: 60, minorAxisArcminutes: 10, constellation: "Ori"),
         Target(designation: "NGC 2024", commonName: "Flame Nebula", type: .emissionNebula,
                rightAscension: 85.4750, declination: -1.8500, magnitude: 10.0,
-               majorAxisArcminutes: 30, minorAxisArcminutes: 30, constellation: "Ori"),
+               majorAxisArcminutes: 30, minorAxisArcminutes: 30, constellation: "Ori",
+               // Brighter than the IC 434 glow behind the Horsehead next door;
+               // its catalogued 10.0 would put it at 26.0, scored as hopeless.
+               surfaceBrightnessOverride: 21.5),
         Target(designation: "NGC 2237", commonName: "Rosette Nebula", type: .emissionNebula,
                rightAscension: 97.9250, declination: +4.9833, magnitude: 5.5,
                majorAxisArcminutes: 80, minorAxisArcminutes: 60, constellation: "Mon"),
@@ -391,7 +394,10 @@ enum BuiltInCatalog {
                majorAxisArcminutes: 60, minorAxisArcminutes: 30, constellation: "Mon"),
         Target(designation: "IC 443", commonName: "Jellyfish Nebula", type: .supernovaRemnant,
                rightAscension: 94.4500, declination: +22.5167, magnitude: 12.0,
-               majorAxisArcminutes: 50, minorAxisArcminutes: 40, constellation: "Gem"),
+               majorAxisArcminutes: 50, minorAxisArcminutes: 40, constellation: "Gem",
+               // Imaged in hydrogen-alpha, it records like the Soul or Thor's
+               // Helmet; its V magnitude of 12.0 would put it at 28.9.
+               surfaceBrightnessOverride: 24.5),
         Target(designation: "IC 405", commonName: "Flaming Star Nebula", type: .emissionNebula,
                rightAscension: 79.0500, declination: +34.2667, magnitude: 6.0,
                majorAxisArcminutes: 37, minorAxisArcminutes: 19, constellation: "Aur"),

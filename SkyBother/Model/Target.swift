@@ -111,6 +111,9 @@ struct Target: Codable, Hashable, Identifiable, Sendable {
     var majorAxisArcminutes: Double
     var minorAxisArcminutes: Double
     var constellation: String
+    /// For the rare target whose catalogued magnitude says nothing about how it
+    /// images. See `surfaceBrightness`.
+    var surfaceBrightnessOverride: Double? = nil
 
     var id: String { designation }
 
@@ -148,7 +151,17 @@ struct Target: Codable, Hashable, Identifiable, Sendable {
     /// Mean surface brightness in magnitudes per square arcsecond, derived from
     /// the integrated magnitude spread over the catalogued ellipse. Meaningless
     /// for star fields, which is why callers check `type.isStarField` first.
+    ///
+    /// A few emission targets carry a visual magnitude that badly misstates
+    /// them, since their light is almost all hydrogen-alpha, outside the V band.
+    /// The Jellyfish Nebula is listed at 12.0, which spread over its 50′ × 40′
+    /// came to 28.9 mag/arcsec²: three magnitudes fainter than anything else in
+    /// the catalogue, and scored as hopeless, when a Seestar with a dual-band
+    /// filter pulls it in well from a Bortle 6 suburb. The Flame Nebula, at 10.0,
+    /// came to 26.0 though it outshines the Horsehead beside it. Those take an
+    /// override, set from how they actually image.
     var surfaceBrightness: Double {
+        if let surfaceBrightnessOverride { return surfaceBrightnessOverride }
         let areaArcminutes = (Double.pi / 4) * max(0.01, majorAxisArcminutes) * max(0.01, minorAxisArcminutes)
         let areaArcseconds = areaArcminutes * 3600
         return magnitude + 2.5 * log10(areaArcseconds)
