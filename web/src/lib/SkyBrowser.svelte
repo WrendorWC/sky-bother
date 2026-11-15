@@ -8,7 +8,7 @@
   // follow the Mac.
   import Thumbnail from './Thumbnail.svelte';
   import { view } from './view.svelte.js';
-  import { fetchCutout } from './cutout.js';
+  import { fetchCutout, pickSurvey } from './cutout.js';
 
   let { entries, rig, designation = null, backHref = '#/' } = $props();
 
@@ -48,13 +48,16 @@
     (async () => {
       try {
         A = (await import('aladin-lite')).default;
-        await A.init;
+        const [survey] = await Promise.all([pickSurvey(), A.init]);
         if (cancelled) return;
         aladin = A.aladin(host, {
-          // CDS's own copy of the survey, named outright: left to choose, Aladin
-          // picked a mirror (IRSA) that refuses other sites, and the sky stayed
-          // black until it gave up on it.
-          survey: 'https://alasky.cds.unistra.fr/DSS/DSSColor/', projection: 'TAN', cooFrame: 'ICRS',
+          // The survey's address named outright, from the first mirror that
+          // answers (IRSA, else CDS's own): left to choose, Aladin asks CDS
+          // which mirror to use, and with CDS down the sky stayed black.
+          survey, projection: 'TAN', cooFrame: 'ICRS',
+          // No usage ping to CDS on opening: with CDS down it failed, and the
+          // failure showed as 'Something went wrong'.
+          log: false,
           fov: fitFor(start), target: `${start.rightAscension} ${start.declination}`,
           showReticle: false, showZoomControl: false, showLayersControl: false, showFrame: false,
           showFullscreenControl: false, showCooGrid: false, showProjectionControl: false,
@@ -93,13 +96,10 @@
     const id = ++pictureFor;
     const fx = fovAcross, fy = fovAcross * size.height / size.width;
     const ratio = Math.min(2, devicePixelRatio || 1);
-    const query = new URLSearchParams({
-      hips: 'CDS/P/DSS2/color', ra: String(ra), dec: String(dec), projection: 'TAN', format: 'jpg',
-      // hips2fits's field of view is along the picture's longer side.
-      fov: String(Math.max(fx, fy)),
-      width: String(Math.min(1600, Math.round(size.width * ratio))), height: String(Math.min(1600, Math.round(size.height * ratio))),
+    const blob = await fetchCutout({
+      // The field of view is along the picture's longer side.
+      ra, dec, fov: Math.max(fx, fy), width: size.width * ratio, height: size.height * ratio,
     });
-    const blob = await fetchCutout(query);
     if (!blob || id !== pictureFor) return;
     if (firstPicture) URL.revokeObjectURL(firstPicture);
     firstPicture = URL.createObjectURL(blob);
@@ -288,7 +288,7 @@
   <footer class="muted">
     <span>Drag to pan · pinch or scroll to zoom</span>
     <span>{rig.name}{frame ? ` · ${frame.width.toFixed(2)}° × ${frame.height.toFixed(2)}°` : ''}</span>
-    <span>Digitized Sky Survey (STScI/NASA), colour by CDS · <a href="https://aladin.cds.unistra.fr/AladinLite/" target="_blank" rel="noopener">Aladin Lite</a> (CDS, LGPL)</span>
+    <span>Digitized Sky Survey (STScI/NASA), colour by CDS, via IRSA · <a href="https://aladin.cds.unistra.fr/AladinLite/" target="_blank" rel="noopener">Aladin Lite</a> (CDS, LGPL)</span>
   </footer>
 </section>
 

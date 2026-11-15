@@ -6,7 +6,7 @@
 // - Everything else of the app's own (the page, the engine, the catalogue,
 //   the star and Moon maps): from the network when there is one, so an
 //   update is never mixed with an older engine, else from storage.
-// - Target photos, sky thumbnails and sky-survey framing images: from storage
+// - Target photos, sky thumbnails and sky-survey tiles: from storage
 //   once seen, so the ones you've looked at work offline.
 // - The API and weather: always the network; the page keeps its own copy of
 //   the last forecast (src/offline.js).
@@ -29,16 +29,16 @@ self.addEventListener('activate', event => {
   })());
 });
 
-const imageHosts = ['alasky.cds.unistra.fr', 'alaskybis.cds.unistra.fr'];
-// Only the framing cutouts from those hosts — not Sky Browser's survey
-// tiles, which Aladin loads itself and which, passed through here, never
-// arrived (the sky stayed black).
-const isFramingCutout = url => imageHosts.includes(url.hostname) && url.pathname.includes('hips2fits');
-// Sky Browser's survey tiles, kept once seen (as the Mac keeps its sky
-// pictures), so going back to somewhere is instant. They never change.
+// The colour sky survey's tiles, from either mirror (src/lib/hips.js) — for
+// Sky Browser and for the framing pictures drawn from them — kept once seen
+// (as the Mac keeps its sky pictures), so going back to somewhere is instant
+// and works offline. They never change. The framing pictures themselves are
+// kept by src/lib/cutout.js.
 const SKY = 'skybother-sky';
 const MAX_SKY = 3000;
-const isSurveyTile = url => imageHosts.includes(url.hostname) && /^\/DSS\/DSSColor\/+Norder\d+\//.test(url.pathname);
+const isSurveyTile = url =>
+  (url.hostname === 'irsa.ipac.caltech.edu' && /^\/data\/hips\/CDS\/DSS2\/color\/+Norder\d+\//.test(url.pathname)) ||
+  (['alasky.cds.unistra.fr', 'alaskybis.cds.unistra.fr'].includes(url.hostname) && /^\/DSS\/DSSColor\/+Norder\d+\//.test(url.pathname));
 
 self.addEventListener('fetch', event => {
   const request = event.request;
@@ -49,7 +49,7 @@ self.addEventListener('fetch', event => {
   if (own && url.pathname.startsWith('/api/')) return;
 
   // Pictures: from storage once seen.
-  if ((own && /^\/catalog\/(photos|sky)\//.test(url.pathname)) || isFramingCutout(url)) {
+  if (own && /^\/catalog\/(photos|sky)\//.test(url.pathname)) {
     event.respondWith(fromStorageFirst(request, IMAGES, true));
     return;
   }

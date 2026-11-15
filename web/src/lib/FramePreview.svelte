@@ -30,15 +30,14 @@
   $effect(() => {
     if (!scale || tooWide) return;
     const ratio = Math.min(2, window.devicePixelRatio || 1);
-    const query = new URLSearchParams({
-      hips: 'CDS/P/DSS2/color', ra: String(target.rightAscension), dec: String(target.declination),
-      fov: String(width / scale / 60), width: String(Math.round(width * ratio)), height: String(Math.round(height * ratio)),
-      format: 'jpg',
-    });
+    const request = {
+      ra: target.rightAscension, dec: target.declination,
+      fov: width / scale / 60, width: width * ratio, height: height * ratio,
+    };
     let cancelled = false;
     failed = false;
     (async () => {
-      const blob = await fetchCutout(query);
+      const blob = await fetchCutout(request);
       if (cancelled) return;
       if (!blob) return (failed = true);
       if (image) URL.revokeObjectURL(image);
@@ -70,7 +69,7 @@
     <span class="size">{fov.width.toFixed(2)}° × {fov.height.toFixed(2)}°</span>
     {#if !image && !tooWide}<span class="status">{failed ? 'Sky picture unavailable' : 'Loading the sky…'}</span>{/if}
   </div>
-  <p class="credit">Digitized Sky Survey (STScI/NASA), colour by CDS</p>
+  <p class="credit">Digitized Sky Survey (STScI/NASA), colour by CDS, via IRSA</p>
 {/if}
 
 <style>
